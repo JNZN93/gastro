@@ -1,0 +1,45 @@
+<div class="main-container">
+
+    <div class="form-container">
+        <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+    
+            <label for="username">Benutzername</label>
+            <input type="text" id="username" formControlName="username" placeholder="Benutzername">
+            <div *ngIf="isSubmitted && registerForm.controls['username'].errors">
+              <small *ngIf="registerForm.controls['username'].errors['required']">Benutzername ist erforderlich.</small>
+              <small *ngIf="registerForm.controls['username'].errors['minlength']">Mindestens 3 Zeichen.</small>
+            </div>
+
+            <label for="company">Firma</label>
+            <input type="text" id="company" formControlName="company" placeholder="Firma">
+            <div *ngIf="isSubmitted && registerForm.controls['company'].errors">
+              <small *ngIf="registerForm.controls['company'].errors['minlength']">Mindestens 3 Zeichen.</small>
+            </div>
+        
+            <label for="email">E-Mail</label>
+            <input type="email" id="email" formControlName="email" placeholder="E-Mail">
+            <div *ngIf="isSubmitted && registerForm.controls['email'].errors">
+              <small *ngIf="registerForm.controls['email'].errors['required']">E-Mail ist erforderlich.</small>
+              <small *ngIf="registerForm.controls['email'].errors['email']">Gültige E-Mail-Adresse erforderlich.</small>
+            </div>
+        
+            <label for="password">Passwort</label>
+            <input type="password" id="password" formControlName="password" placeholder="Passwort">
+            <div *ngIf="isSubmitted && registerForm.controls['password'].errors">
+              <small *ngIf="registerForm.controls['password'].errors['required']">Passwort ist erforderlich.</small>
+              <small *ngIf="registerForm.controls['password'].errors['minlength']">Mindestens 6 Zeichen.</small>
+            </div>
+        
+            <label for="confirmPassword">Passwort bestätigen</label>
+            <input type="password" id="confirmPassword" formControlName="confirmPassword" placeholder="Passwort bestätigen">
+            <div *ngIf="isSubmitted && registerForm.hasError('mismatch')">
+              <small>Passwörter stimmen nicht überein.</small>
+            </div>
+        
+            <button type="submit">Registrieren</button>
+            <p *ngIf="errorMessage" class="error">{{ errorMessage }}</p>
+        
+            <p>Bereits registriert? <a routerLink="/login">Zum Login</a></p>
+          </form>
+    </div> 
+</div>
