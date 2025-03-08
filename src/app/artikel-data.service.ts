@@ -8,7 +8,7 @@ import { Observable } from 'rxjs';
 export class ArtikelDataService {
 
   private http = inject(HttpClient);
-  private jsonUrl = '/artikel.json';
+  private jsonUrl = 'https://multi-mandant-ecommerce.onrender.com/api/products';
 
   constructor() { }
 

@@ -27,7 +27,7 @@
     input {
         all: unset;
         max-width: 150px;
-        border: 1px solid rgb(28, 126, 255);
+        border: 1px solid rgb(0, 100, 8);
         background-color: white;
         border-radius: 24px;
         padding: 8px 16px;
@@ -36,7 +36,7 @@
 
     button {
         all: unset;
-        background-color: rgb(28, 126, 255);
+        background-color: rgb(0, 97, 8);
         color: white;
         padding: 12px;
         margin-top: 8px;
@@ -45,7 +45,7 @@
         cursor: pointer;
 
         &:hover {
-            background-color: rgb(0, 110, 253);  
+            background-color: rgb(45, 143, 0);  
         }
     }
 

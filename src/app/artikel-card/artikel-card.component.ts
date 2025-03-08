@@ -17,8 +17,9 @@ export class ArtikelCardComponent implements OnInit {
 
   ngOnInit(): void {
     this.artikelService.getData().subscribe((response) => {
-      this.artikelData = response.ROWDATA;
-      console.log('Artikel-Card JSON Data:', this.artikelData);
+      this.artikelData = response;
+      console.log(response);
+      //console.log('Artikel-Card JSON Data:', this.artikelData);
     });
   }
 
@@ -32,28 +33,28 @@ export class ArtikelCardComponent implements OnInit {
     }
 
     return this.artikelData.filter(artikel =>
-      artikel.ARTIKELTEXT.toLowerCase().includes(this.searchTerm.toLowerCase())
+      artikel.article_text.toLowerCase().includes(this.searchTerm.toLowerCase())
     );
   }
 
-  addToCard(artikel: any): void {
+  addToCart(artikel: any): void {
     const existingItem = this.warenkorb.find(
-      (item) => item.DBINDEX === artikel.DBINDEX);
+      (item) => item.db_index === artikel.db_index);
 
 
-      if(!artikel.MENGE || parseInt(artikel.MENGE) < 1) {
-        artikel.MENGE = "1";
+      if(!artikel.count || parseInt(artikel.count) < 1) {
+        artikel.count = "1";
       }
 
     if (existingItem) {
       // Falls ja, Einheit um 1 erhöhen
-      existingItem.MENGE = (parseInt(existingItem.MENGE) + parseInt(artikel.MENGE)).toString();
+      existingItem.count = (parseInt(existingItem.count) + parseInt(artikel.count)).toString();
     } else {
       // Falls nicht, Artikel mit Einheit = 1 in den Warenkorb legen
-      this.warenkorb.push({ ...artikel, MENGE: artikel.MENGE.toString() });
+      this.warenkorb.push({ ...artikel, count: artikel.count.toString() });
     }
 
-    artikel.MENGE = '';
+    artikel.count = '';
     console.log('Warenkorb:', this.warenkorb);
   }
 }

@@ -1,13 +1,14 @@
 <div class="main-container">
 
     <div class="form-container">
+        <h4>Registrierung</h4>
         <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
     
-            <label for="username">Benutzername</label>
-            <input type="text" id="username" formControlName="username" placeholder="Benutzername">
-            <div *ngIf="isSubmitted && registerForm.controls['username'].errors">
-              <small *ngIf="registerForm.controls['username'].errors['required']">Benutzername ist erforderlich.</small>
-              <small *ngIf="registerForm.controls['username'].errors['minlength']">Mindestens 3 Zeichen.</small>
+            <label for="name">Name</label>
+            <input type="text" id="name" formControlName="name" placeholder="Name">
+            <div *ngIf="isSubmitted && registerForm.controls['name'].errors">
+              <small *ngIf="registerForm.controls['name'].errors['required']">Benutzername ist erforderlich.</small>
+              <small *ngIf="registerForm.controls['name'].errors['minlength']">Mindestens 3 Zeichen.</small>
             </div>
 
             <label for="company">Firma</label>

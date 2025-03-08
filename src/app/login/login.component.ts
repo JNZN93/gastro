@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { FormsModule, FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
+import { AuthService } from '../authentication.service';
 
 @Component({
   selector: 'app-login',
@@ -14,7 +15,7 @@ export class LoginComponent {
   loginForm: FormGroup;
   errorMessage: string | null = null;
 
-  constructor(private fb: FormBuilder, private router: Router) {
+  constructor(private fb: FormBuilder, private router: Router, private authService: AuthService ) {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]]
@@ -23,13 +24,17 @@ export class LoginComponent {
 
   onSubmit() {
     if (this.loginForm.valid) {
-      const { email, password } = this.loginForm.value;
-      if (email === 'admin@example.com' && password === 'password123') {
-        alert('Login erfolgreich!');
-        this.router.navigate(['/dashboard']);
-      } else {
-        this.errorMessage = 'Ungültige Anmeldedaten';
-      }
+      console.log(this.loginForm.value);
+      this.authService.login(this.loginForm.value).subscribe({
+        next: (response) => {
+          console.log('Login erfolgreich:', response);
+          this.router.navigate(['/products']); // Erfolgreich weiterleiten
+        },
+        error: (error) => {
+          console.error('Login fehlgeschlagen:', error);
+          this.errorMessage = 'Ungültige E-Mail oder Passwort';
+        }
+      });
     }
   }
 }

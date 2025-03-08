@@ -3,6 +3,8 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { AuthService } from '../authentication.service';
+
 
 @Component({
   selector: 'app-registration',
@@ -16,9 +18,9 @@ export class RegistrationComponent {
   isSubmitted = false;
   errorMessage: string | null = null;
 
-  constructor(private fb: FormBuilder, private router: Router) {
+  constructor(private fb: FormBuilder, private router: Router, private authService: AuthService ) {
     this.registerForm = this.fb.group({
-      username: ['', [Validators.required, Validators.minLength(3)]],
+      name: ['', [Validators.required, Validators.minLength(3)]],
       company: ['', [Validators.minLength(3)]],
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]],
@@ -33,11 +35,21 @@ export class RegistrationComponent {
   }
 
   onSubmit() {
+
     this.isSubmitted = true;
     if (this.registerForm.valid) {
-      console.log('Registrierung erfolgreich!', this.registerForm.value);
-      alert('Registrierung erfolgreich!');
-      this.router.navigate(['/login']);
+      console.log(this.registerForm.value);
+      this.authService.register(this.registerForm.value).subscribe({
+        next: (response) => {
+          console.log('Registrierung erfolgreich!', response);
+          alert('Registrierung erfolgreich!');
+          this.router.navigate(['/login']);
+        },
+        error: (error) => {
+          console.error('Registrierung fehlgeschlagen', error);
+          this.errorMessage = 'Registrierung fehlgeschlagen. Bitte versuche es erneut.';
+        }
+      });
     } else {
       this.errorMessage = 'Bitte alle Felder korrekt ausfüllen!';
     }

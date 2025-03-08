@@ -8,10 +8,10 @@
         <div class="card">
             <img src="https://placehold.co/100x100" alt="Avatar" style="width:100%">
             <div class="container">
-              <h4><b>{{ artikel.ARTIKELTEXT }}</b></h4>
-              <p>{{ artikel.VKPREIS }}€ pro {{ artikel.EINHEIT }}</p>
-              <input type="number" [(ngModel)]="artikel.MENGE" placeholder="Menge eingeben" min="1">
-              <button (click)="addToCard(artikel)">In den Warenkorb</button>
+              <h4><b>{{ artikel.article_text }}</b></h4>
+              <p>{{ artikel.sale_price }}€ pro {{ artikel.unit }}</p>
+              <input type="number" [(ngModel)]="artikel.count" placeholder="Menge eingeben" min="1">
+              <button (click)="addToCart(artikel)">In den Warenkorb</button>
             </div>
           </div>
     }
