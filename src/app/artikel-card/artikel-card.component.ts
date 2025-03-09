@@ -2,10 +2,14 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { ArtikelDataService } from '../artikel-data.service';
 import { FormsModule } from '@angular/forms';
+import { AuthService } from '../authentication.service';
+import { Router, RouterModule } from '@angular/router';
+import { WarenkorbComponent } from '../warenkorb/warenkorb.component';
+import { GlobalService } from '../global.service';
 
 @Component({
   selector: 'app-artikel-card',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule, WarenkorbComponent],
   templateUrl: './artikel-card.component.html',
   styleUrl: './artikel-card.component.scss',
 })
@@ -13,14 +17,35 @@ export class ArtikelCardComponent implements OnInit {
   private artikelService = inject(ArtikelDataService);
   artikelData: any[] = [];
   warenkorb: any[] = [];
+  orderData: any = {};
   searchTerm: string = '';
 
+  constructor(private router: Router, private authService: AuthService, private globalService: GlobalService) {}
+
   ngOnInit(): void {
-    this.artikelService.getData().subscribe((response) => {
-      this.artikelData = response;
-      console.log(response);
-      //console.log('Artikel-Card JSON Data:', this.artikelData);
-    });
+    const token = localStorage.getItem('token');
+
+    if (token) {
+      this.authService.checkToken(token).subscribe({
+        next: (response) => {
+          console.log('Token gültig:', response);
+          this.artikelService.getData().subscribe((res) => {
+            this.artikelData = res;
+            this.collectOrderData(response);
+            this.globalService.orderData = this.orderData;
+            console.log('global', this.globalService.orderData);
+            console.log(this.artikelData);
+            
+          });
+        },
+        error: (error) => {
+          console.error('Token ungültig oder Fehler:', error);
+          this.router.navigate(['/login']);
+        }
+      });
+    } else {
+      console.log('Kein Token gefunden.');
+    }
   }
 
   logIndex(index: number): void {
@@ -42,19 +67,25 @@ export class ArtikelCardComponent implements OnInit {
       (item) => item.db_index === artikel.db_index);
 
 
-      if(!artikel.count || parseInt(artikel.count) < 1) {
-        artikel.count = "1";
+      if(!artikel.quantity || parseInt(artikel.quantity) < 1) {
+        artikel.quantity = 1;
       }
 
     if (existingItem) {
       // Falls ja, Einheit um 1 erhöhen
-      existingItem.count = (parseInt(existingItem.count) + parseInt(artikel.count)).toString();
+      existingItem.quantity = (parseInt(existingItem.quantity) + parseInt(artikel.quantity));
     } else {
       // Falls nicht, Artikel mit Einheit = 1 in den Warenkorb legen
-      this.warenkorb.push({ ...artikel, count: artikel.count.toString() });
+      this.warenkorb.push({ ...artikel, quantity: parseInt(artikel.quantity)});
+      this.globalService.warenkorb = this.warenkorb;
     }
 
-    artikel.count = '';
+    artikel.quantity = '';
     console.log('Warenkorb:', this.warenkorb);
+  }
+
+  collectOrderData(response: any) {
+    this.orderData.user_id = response.user.id;
+    this.orderData.email = response.user.email;
   }
 }

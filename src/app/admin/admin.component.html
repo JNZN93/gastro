@@ -1,0 +1,8 @@
+@for(order of orders; track order.order_id) {
+
+    <div>
+        <span>{{ order.order_id }}, {{ order.email }}, {{ order.name }}</span><br>
+        <button (click)="generatePdf(order.name, order.email, order.order_id, order.total_price, order.items)">PDF drucken</button>
+    </div>
+
+}

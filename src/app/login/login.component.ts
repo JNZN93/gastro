@@ -24,10 +24,18 @@ export class LoginComponent {
 
   onSubmit() {
     if (this.loginForm.valid) {
+      if (this.loginForm.value.email == 'admin@admin.de' && this.loginForm.value.password == 'admin1') {
+        // Wenn Admin, Weiterleitung auf Admin-Seite
+        console.log('hello');
+        
+        this.router.navigate(['/admin'])
+        return
+      }
       console.log(this.loginForm.value);
       this.authService.login(this.loginForm.value).subscribe({
         next: (response) => {
-          console.log('Login erfolgreich:', response);
+          localStorage.setItem("token", response.token);
+          console.log('Login erfolgreich:', response.token);
           this.router.navigate(['/products']); // Erfolgreich weiterleiten
         },
         error: (error) => {

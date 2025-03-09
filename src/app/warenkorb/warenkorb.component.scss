@@ -1,0 +1,49 @@
+.cart {
+    z-index: 3;
+    opacity: 0;
+    position: fixed;
+    right: 0;
+    top: 120px;
+    background-color: rgba(255, 255, 255);
+    width: 0;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    font-size: 23px;
+    gap: 29px;
+    transition: all 0.3s ease-in-out;
+  
+    a{
+      z-index: 6;
+      visibility: hidden;
+      color: white;
+      text-decoration: none;
+      transition: all 0.3s ease-in-out;
+  
+      
+    &:hover {
+      color: black;
+    }
+    }
+  }
+  
+  .open {
+    width: 100%;
+    opacity: 1;
+  
+    a {
+      visibility: visible;
+    }
+  }
+
+  .card {
+    /* Add shadows to create the "card" effect */
+    box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+    transition: 0.3s;
+  }
+  
+  /* On mouse-over, add a deeper shadow */
+  .card:hover {
+    box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2);
+  }

@@ -3,6 +3,7 @@ import { RouterOutlet } from '@angular/router';
 import { ArtikelCardComponent } from "./artikel-card/artikel-card.component";
 import { HeaderComponent } from './header/header.component';
 import { LoginComponent } from "./login/login.component";
+import { GlobalService } from './global.service';
 
 @Component({
   selector: 'app-root',
@@ -12,4 +13,6 @@ import { LoginComponent } from "./login/login.component";
 })
 export class AppComponent {
   title = 'gastroKom';
+
+  constructor(public globalService: GlobalService) {}
 }

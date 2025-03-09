@@ -1,0 +1,22 @@
+@if (isVisible) {
+    <div class="cart open">
+      <h1>🛒 Warenkorb</h1>
+  
+      @if (this.globalService.warenkorb.length > 0) {
+        @for (artikel of this.globalService.warenkorb; track artikel.id) {
+            <div class="card">
+                <div class="container">
+                  <h4><b>{{ artikel.article_text}}</b></h4>
+                  <p>Architect & Engineer</p>
+                </div>
+              </div>
+        }
+      } @else {
+        <p>Dein Warenkorb ist leer.</p>
+      }
+  
+      <button (click)="sendOrder()">🛍️ Bestellung abschicken</button>
+    </div>
+  }
+
+

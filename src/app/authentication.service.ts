@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 @Injectable({
@@ -8,6 +8,7 @@ import { Observable } from 'rxjs';
 export class AuthService {
   private apiUrl = 'https://multi-mandant-ecommerce.onrender.com/api/auth/register'; // Backend-URL anpassen!
   private apiUrlLogIn = 'https://multi-mandant-ecommerce.onrender.com/api/auth/login'
+  private apiUrlCheckToken = 'https://multi-mandant-ecommerce.onrender.com/api/auth/validate'; // URL für Token-Validierung
 
   constructor(private http: HttpClient) {}
 
@@ -17,5 +18,13 @@ export class AuthService {
   
   login(credentials: { email: string; password: string }): Observable<any> {
     return this.http.post(this.apiUrlLogIn, credentials);
+  }
+
+  checkToken(token: any): Observable<any> {
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${token}`
+    });
+
+    return this.http.get(this.apiUrlCheckToken, { headers });
   }
 }
