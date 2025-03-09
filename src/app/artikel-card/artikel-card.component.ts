@@ -45,6 +45,7 @@ export class ArtikelCardComponent implements OnInit {
       });
     } else {
       console.log('Kein Token gefunden.');
+      this.router.navigate(['/login']);
     }
   }
 

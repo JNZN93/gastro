@@ -1,7 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { OrderService } from '../order.service';
 import { jsPDF } from 'jspdf';
+import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-admin',
@@ -10,10 +11,11 @@ import { jsPDF } from 'jspdf';
   styleUrl: './admin.component.scss'
 })
 export class AdminComponent implements OnInit {
-
+  @ViewChild('fileInput') fileInput!: ElementRef;
   orders: any[] = [];
+  xmlContent: any;
 
-  constructor(private router: Router, private orderService: OrderService) {}
+  constructor(private router: Router, private orderService: OrderService, private http: HttpClient) {}
 
   ngOnInit(): void {
     this.orderService.getAllOrders().subscribe({
@@ -28,7 +30,7 @@ export class AdminComponent implements OnInit {
     });
   }
 
-  generatePdf(name: string, email: string, orderId: string, totalPrice: number, products: { price: number, product_article_number: string, product_id: number, product_name: string, quantity: number }[]) {
+  generatePdf(fulfillment_type: string, name: string, email: string, orderId: string, totalPrice: number, products: { price: number, product_article_number: string, product_id: number, product_name: string, quantity: number }[]) {
     const doc = new jsPDF();
   
     // Titel
@@ -42,6 +44,7 @@ export class AdminComponent implements OnInit {
     doc.text('Kunde: ' + name, 14, 60);
     doc.text('E-Mail: ' + email, 14, 70);
     doc.text('Gesamtpreis: €' + totalPrice, 14, 80);
+    doc.text('Lieferart: ' + fulfillment_type, 14, 90);
   
     // Trennlinie
     doc.line(14, 85, 200, 85);
@@ -70,22 +73,20 @@ export class AdminComponent implements OnInit {
     const pdfUrl = doc.output('bloburl');
     window.open(pdfUrl, '_blank');
   }
-  
 
-/*  price
-: 
-13
-product_article_number
-: 
-"00apfe"
-product_id
-: 
-8
-product_name
-: 
-"APFEL Jonagold 10Kg"
-quantity
-: 
-2 */
+  onUploadClick() {
+    const file = this.fileInput.nativeElement.files[0];
 
+    if (file && file.type === 'text/xml') {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      this.http.post('https://multi-mandant-ecommerce.onrender.com/api/products/upload', formData).subscribe({
+        next: (res) => alert('Datei erfolgreich hochgeladen!'),
+        error: (err) => console.log('Fehler beim Hochladen!', err)
+      });
+    } else {
+      alert('Bitte eine gültige XML-Datei hochladen.');
+    }
+  }
 }

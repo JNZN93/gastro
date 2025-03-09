@@ -41,9 +41,40 @@
   }
 
   .card {
-    /* Add shadows to create the "card" effect */
+    width: 100%;
+    padding: 20px;
+    box-sizing: border-box;
+    background-color: yellow;
     box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
     transition: 0.3s;
+
+    h4 {
+      font-size: 16px;
+      margin: 0;
+    }
+
+    span {
+      font-size: 16px;
+    }
+  }
+
+  .container {
+    display: flex;
+    justify-content: space-between;
+    background-color: red;
+  }
+
+  .menge-con {
+    width: 200px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    background-color: green;
+
+    button {
+      margin-bottom: 0;
+    }
   }
   
   /* On mouse-over, add a deeper shadow */

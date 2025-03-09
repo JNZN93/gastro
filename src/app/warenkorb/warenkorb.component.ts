@@ -19,7 +19,7 @@ export class WarenkorbComponent implements OnInit {
   constructor(private toggleService: ToggleCartService, public globalService: GlobalService, private orderService: OrderService) { 
 
     this.toggleService.isVisible$.subscribe(state => {
-      this.isVisible = state; // Automatische Aktualisierung
+      this.isVisible = state;
     });
 
   }
@@ -33,7 +33,13 @@ export class WarenkorbComponent implements OnInit {
   sendOrder() {
     this.getTotalPrice();
     this.globalService.orderData.total_price = this.totalPrice;
-    const completeOrder = {orderData: this.globalService.orderData, orderItems: this.globalService.warenkorb}
+    const completeOrder = {
+      orderData: {
+          ...this.globalService.orderData,
+          fulfillment_type: "delivery" // Hier den gewünschten Wert setzen TOGGLE
+      },
+      orderItems: this.globalService.warenkorb
+  };
     const getToken = localStorage.getItem("token");
 
     this.orderService.placeOrder(completeOrder, getToken).subscribe({
@@ -55,5 +61,25 @@ export class WarenkorbComponent implements OnInit {
     this.totalPrice = this.globalService.warenkorb.reduce((summe, artikel) => summe + (artikel.sale_price * parseInt(artikel.quantity)), 0);
     console.log(this.totalPrice);
     
+  }
+
+  reduceQuantity(artikel: any) {
+    if (artikel.quantity > 1) {
+      artikel.quantity--;
+    } else {
+      this.removeItem(artikel);
+    }
+    this.getTotalPrice();
+  }
+
+  increaseQuantity(artikel: any) {
+    artikel.quantity++;
+    this.getTotalPrice();
+  }
+
+  removeItem(artikel: any) {
+    this.globalService.warenkorb = this.globalService.warenkorb.filter(item => item !== artikel);
+    this.warenkorb = [...this.globalService.warenkorb]; // Aktualisieren der lokalen Kopie
+    this.getTotalPrice();
   }
 }

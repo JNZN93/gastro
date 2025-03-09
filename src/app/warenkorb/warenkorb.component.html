@@ -7,7 +7,15 @@
             <div class="card">
                 <div class="container">
                   <h4><b>{{ artikel.article_text}}</b></h4>
-                  <p>Architect & Engineer</p>
+                  <div class="menge-con">
+                    <span>Menge</span>
+                    <div>
+                      <span (click)="reduceQuantity(artikel)">-</span>
+                      <span>{{artikel.quantity}}</span>
+                      <span (click)="increaseQuantity(artikel)">+</span>
+                      <button (click)="removeItem(artikel)">🗑️ Entfernen</button>
+                    </div>
+                  </div>
                 </div>
               </div>
         }
