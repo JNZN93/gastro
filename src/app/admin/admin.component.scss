@@ -1,3 +1,41 @@
 .upload-xml {
     margin-bottom: 80px;
 }
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    button {
+        margin: 5px;
+        padding: 10px;
+        border: none;
+        cursor: pointer;
+      }
+      
+      button:first-of-type {
+        background: green;
+        color: white;
+      }
+      
+      button:last-of-type {
+        background: red;
+        color: white;
+      }
+      
+  }
+  
+  .modal {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+  }
+  

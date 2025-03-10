@@ -7,11 +7,28 @@
     <button (click)="generateSelectedPdf()">Alle PDFs drucken</button>
   </div>
 
-@for(order of orders; track order.order_id) {
-
+  @for (order of orders; track order.order_id) {
     <div>
         <span>{{ order.order_id }}, {{ order.email }}, {{ order.name }}</span><br>
-        <button (click)="generatePdf(order.company, order.shipping_address, order.payment_status, order.order_date, order.created_at, order.fulfillment_type, order.name, order.email, order.order_id, order.total_price, order.items)">PDF drucken</button>
-    </div>
+        <button (click)="generatePdf(order.company, order.shipping_address, order.payment_status, order.order_date, order.created_at, order.fulfillment_type, order.name, order.email, order.order_id, order.total_price, order.items)">
+            PDF drucken
+        </button>
 
+        <label>Status:</label>
+        <select [(ngModel)]="order.status" (change)="onStatusChange($event, order)">
+            <option value="open" label="Offen" [selected]="order.status === 'open'"></option>
+            <option value="in_progress" label="In Bearbeitung" [selected]="order.status === 'in_progress'"></option>
+            <option value="completed" label="Fertig" [selected]="order.status === 'completed'"></option>
+        </select>
+    </div>
+}
+
+@if (showModal) {
+    <div class="modal-overlay">
+        <div class="modal">
+            <p>Möchten Sie diesen Auftrag wirklich als abgeschlossen markieren?</p>
+            <button (click)="confirmCompletion()">Ja, abschließen</button>
+            <button (click)="cancelCompletion()">Abbrechen</button>
+        </div>
+    </div>
 }
