@@ -70,8 +70,11 @@ export class AdminComponent implements OnInit {
     doc.text('Gesamtbetrag: €' + totalPrice, 14, yPosition + 10);
   
     // PDF-Dokument öffnen
+    doc.autoPrint();
     const pdfUrl = doc.output('bloburl');
     window.open(pdfUrl, '_blank');
+
+    
   }
 
   onUploadClick() {
