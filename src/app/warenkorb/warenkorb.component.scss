@@ -24,6 +24,11 @@ $danger-hover: #c9302c;
     }
 }
 
+h6 {
+    margin: 0;
+    color: gray;
+}
+
 .toggle-delivery-button {
     background-color: #ffffff;
     color: $text-color;
@@ -99,8 +104,8 @@ $danger-hover: #c9302c;
   border-radius: 10px;
 
   &:hover {
-      color: #333;
-      background: #333;
+      color: #222222;
+      background: #f1f1f1;
   }
 
   &:active {
@@ -137,6 +142,7 @@ $danger-hover: #c9302c;
     h5 {
         text-decoration: underline;
         text-underline-offset: 4px; /* Adjust this value as needed */
+        color: #000000;
     }
 }
 
@@ -230,7 +236,7 @@ h4, h5 {
   margin-top: 20px;
   margin-bottom: 20px;
   width: 100%;
-  background: #333;
+  background: #000000;
   color: #fff;
   padding: 14px;
   font-size: 1rem;
