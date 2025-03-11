@@ -2,16 +2,15 @@
     <img src="logo.png" alt="logo">
 
     @if(!shouldHideElement()){
-        <div class="logout-container">
-            <span (click)="openModal()">Abmelden</span>
+        <div (click)="openModal()" class="logout-container">
+            <img src="logout.png" alt="">
+            <span>logout</span>
         </div>
     }
 
-    <div class="burger-button" (click)="toggleWarenkorb()">
-        <span></span>
-        <span></span>
-        <span></span>
-    </div>
+        <div class="burger-button" (click)="toggleWarenkorb()">
+            <img src="shoppingcart.png" alt="">
+        </div>
 </header>
 
 @if (showModal) {
