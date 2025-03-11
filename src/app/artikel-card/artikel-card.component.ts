@@ -19,8 +19,15 @@ export class ArtikelCardComponent implements OnInit {
   warenkorb: any[] = [];
   orderData: any = {};
   searchTerm: string = '';
+  selectedCategory: string = '';
+  globalArtikels: any[] = [];
+  filteredData: any[] = [];
 
-  constructor(private router: Router, private authService: AuthService, private globalService: GlobalService) {}
+  constructor(
+    private router: Router,
+    private authService: AuthService,
+    private globalService: GlobalService
+  ) {}
 
   ngOnInit(): void {
     const token = localStorage.getItem('token');
@@ -30,18 +37,18 @@ export class ArtikelCardComponent implements OnInit {
         next: (response) => {
           console.log('Token gültig:', response);
           this.artikelService.getData().subscribe((res) => {
+            this.globalArtikels = res;
             this.artikelData = res;
             this.collectOrderData(response);
             this.globalService.orderData = this.orderData;
             console.log('global', this.globalService.orderData);
             console.log(this.artikelData);
-            
           });
         },
         error: (error) => {
           console.error('Token ungültig oder Fehler:', error);
           this.router.navigate(['/login']);
-        }
+        },
       });
     } else {
       console.log('Kein Token gefunden.');
@@ -58,26 +65,77 @@ export class ArtikelCardComponent implements OnInit {
       return this.artikelData;
     }
 
-    return this.artikelData.filter(artikel =>
-      artikel.article_text.toLowerCase().includes(this.searchTerm.toLowerCase())
-    );
+    const searchTerm = this.searchTerm?.toLowerCase() || '';
+    const terms = this.searchTerm.toLowerCase().split(/\s+/);
+
+    return this.artikelData.filter((artikel) => {
+      const matchesSearch = terms.every((term) =>
+        artikel.article_text.toLowerCase().includes(term)
+      );
+      const matchesCategory =
+        !this.selectedCategory || artikel.category === this.selectedCategory;
+
+      return matchesSearch && matchesCategory;
+    });
+  }
+
+  filterCategory(event: Event) {
+    const selectedValue = (event.target as HTMLSelectElement).value; // Wert aus Event holen
+    this.selectedCategory = selectedValue; // Kategorie speichern
+    this.filterArtikel(); // Artikel filtern
+  }
+
+  filterArtikel() {
+    if (!this.artikelData) {
+      this.filteredData = [];
+      return;
+    }
+
+    const searchTerm = this.searchTerm.toLowerCase().trim();
+    const terms = searchTerm.split(/\s+/);
+
+    this.filteredData = this.artikelData.filter(artikel => {
+      const matchesSearch = terms.every(term =>
+        artikel.article_text.toLowerCase().includes(term)
+      );
+
+      const matchesCategory = !this.selectedCategory || artikel.category === this.selectedCategory;
+
+      return matchesCategory && matchesSearch;
+    });
+  }
+  get categories(): string[] {
+    return [
+      ...new Set(
+        this.globalArtikels?.map((a) => a.category).filter((cat) => cat)
+      ),
+    ];
   }
 
   addToCart(artikel: any): void {
     // Sicherstellen, dass die Menge korrekt ist
-    if (!artikel.quantity || isNaN(Number(artikel.quantity)) || Number(artikel.quantity) < 1) {
-        artikel.quantity = 1; // Standardmenge setzen
+    if (
+      !artikel.quantity ||
+      isNaN(Number(artikel.quantity)) ||
+      Number(artikel.quantity) < 1
+    ) {
+      artikel.quantity = 1; // Standardmenge setzen
     }
 
     // Überprüfen, ob der Artikel bereits im Warenkorb ist
-    const existingItem = this.globalService.warenkorb.find(item => item.db_index === artikel.db_index);
+    const existingItem = this.globalService.warenkorb.find(
+      (item) => item.db_index === artikel.db_index
+    );
 
     if (existingItem) {
-        // Falls der Artikel existiert, die Menge erhöhen
-        existingItem.quantity += Number(artikel.quantity);
+      // Falls der Artikel existiert, die Menge erhöhen
+      existingItem.quantity += Number(artikel.quantity);
     } else {
-        // Neuen Artikel hinzufügen
-        this.globalService.warenkorb = [...this.globalService.warenkorb, { ...artikel, quantity: Number(artikel.quantity) }];
+      // Neuen Artikel hinzufügen
+      this.globalService.warenkorb = [
+        ...this.globalService.warenkorb,
+        { ...artikel, quantity: Number(artikel.quantity) },
+      ];
     }
 
     // Eingabefeld für Menge zurücksetzen
@@ -87,8 +145,7 @@ export class ArtikelCardComponent implements OnInit {
     // this.getTotalPrice();
 
     console.log('Warenkorb nach Hinzufügen:', this.globalService.warenkorb);
-}
-
+  }
 
 
   collectOrderData(response: any) {

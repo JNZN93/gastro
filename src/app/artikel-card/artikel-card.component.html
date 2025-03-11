@@ -1,5 +1,10 @@
 <div class="filter-container">
   <input type="text" [(ngModel)]="searchTerm" placeholder="Artikel suchen..." class="search-input">
+
+      <select [(ngModel)]="selectedCategory" (change)="filterCategory($event)">
+      <option value="">Alle Kategorien</option>
+      <option *ngFor="let category of categories" [value]="category">{{ category }}</option>
+    </select>
 </div>
 
 <div class="content">
