@@ -1,23 +1,25 @@
 @if (isVisible) {
     <div class="cart open">
       <button class="close-button" (click)="closeWarenkorb()" >✖</button>
-      <h1>Warenkorb</h1>
+      <h1>Kommissionierauftrag</h1>
   
       @if (this.globalService.warenkorb.length > 0) {
         @for (artikel of this.globalService.warenkorb; track artikel.id) {
             <div class="card">
                 <div class="container">
-                  <h4>{{ artikel.article_text}}</h4>
-                  <h5>{{ artikel.sale_price }} €</h5>
-                  <div class="menge-con">
-                    <span>Menge</span>
-                    <div class="quantity-buttons">
-                      <button class="quantity-btn" (click)="reduceQuantity(artikel)">-</button>
-                      <span class="amount">{{artikel.quantity}}</span>
-                      <button class="quantity-btn" (click)="increaseQuantity(artikel)">+</button>
-                      </div>
-                      <button class="remove-button" (click)="removeItem(artikel)">🗑</button>
+                  <h5>{{ artikel.article_text}}</h5>
+                  <div class="price-quantity">
+                     <h5>{{ artikel.sale_price }} €</h5>
+                     <div class="menge-con">
+                        <div class="quantity-buttons">
+                          <button class="quantity-btn" (click)="reduceQuantity(artikel)">-</button>
+                          <span class="amount">{{artikel.quantity}}</span>
+                          <button class="quantity-btn plus" (click)="increaseQuantity(artikel)">+</button>
+                        </div>
+                         <button class="remove-button" (click)="removeItem(artikel)">x</button>
+                    </div>
                   </div>
+                 
                 </div>
               </div>
         }
@@ -34,11 +36,13 @@
               Abholung
           </button>
         </div>
-        <h4>
-          Endsumme: {{this.globalService.totalPrice}} €
-       </h4>
+        <div class="total-price">
+          <h5>
+            Endsumme: {{this.globalService.totalPrice}} €
+         </h5>
+        </div>
         <div>
-            <button class="order-button" (click)="sendOrder()">Bestellung abschicken</button>
+            <button class="order-button" (click)="sendOrder()">Auftrag absenden</button>
         </div>
       }
 
