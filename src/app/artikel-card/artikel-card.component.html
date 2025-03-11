@@ -2,16 +2,15 @@
   <input type="text" [(ngModel)]="searchTerm" placeholder="Artikel suchen..." class="search-input">
 </div>
 
-
 <div class="content">
     @for (artikel of filteredArtikelData(); track $index) {
         <div class="card">
-            <img src="https://placehold.co/100x100" alt="Avatar" style="width:100%">
-            <div class="container">
-              <h4><b>{{ artikel.article_text }}</b></h4>
-              <p>{{ artikel.sale_price }}€ pro {{ artikel.unit }}</p>
-              <input type="number" [(ngModel)]="artikel.quantity" placeholder="Menge eingeben" min="1">
-              <button (click)="addToCart(artikel)">In den Warenkorb</button>
+            <img src="https://placehold.co/100x100" alt="Avatar" class="card-img">
+            <div class="card-body">
+              <h4 class="card-title"><b>{{ artikel.article_text }}</b></h4>
+              <p class="card-price">{{ artikel.sale_price }}€ pro {{ artikel.unit }}</p>
+              <input type="number" [(ngModel)]="artikel.quantity" placeholder="Menge eingeben" class="quantity-input" min="1">
+              <button (click)="addToCart(artikel)" class="add-to-cart-btn">In den Warenkorb</button>
             </div>
           </div>
     }
