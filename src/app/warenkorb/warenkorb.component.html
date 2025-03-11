@@ -1,20 +1,21 @@
 @if (isVisible) {
     <div class="cart open">
-      <h1>🛒 Warenkorb</h1>
+      <button class="close-button" (click)="closeWarenkorb()" >✖</button>
+      <h1>Warenkorb</h1>
   
       @if (this.globalService.warenkorb.length > 0) {
         @for (artikel of this.globalService.warenkorb; track artikel.id) {
             <div class="card">
                 <div class="container">
-                  <h4><b>{{ artikel.article_text}}</b></h4>
+                  <h4>{{ artikel.article_text}}</h4>
                   <div class="menge-con">
                     <span>Menge</span>
-                    <div>
-                      <span (click)="reduceQuantity(artikel)">-</span>
+                    <div class="quantity-buttons">
+                      <button class="quantity-btn" (click)="reduceQuantity(artikel)">-</button>
                       <span>{{artikel.quantity}}</span>
-                      <span (click)="increaseQuantity(artikel)">+</span>
-                      <button (click)="removeItem(artikel)">🗑️ Entfernen</button>
-                    </div>
+                      <button class="quantity-btn" (click)="increaseQuantity(artikel)">+</button>
+                      </div>
+                      <button class="remove-button" (click)="removeItem(artikel)">🗑</button>
                   </div>
                 </div>
               </div>
@@ -23,7 +24,7 @@
         <p>Dein Warenkorb ist leer.</p>
       }
   
-      <button (click)="sendOrder()">🛍️ Bestellung abschicken</button>
+      <button class="order-button" (click)="sendOrder()">Bestellung abschicken</button>
     </div>
   }
 

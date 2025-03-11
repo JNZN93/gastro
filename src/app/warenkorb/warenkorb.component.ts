@@ -12,7 +12,6 @@ import { OrderService } from '../order.service';
 export class WarenkorbComponent implements OnInit {
 
   isVisible = false;
-  warenkorb: any[] = [];
   orderData = {};
   totalPrice = 0;
 
@@ -25,8 +24,6 @@ export class WarenkorbComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.warenkorb = this.globalService.warenkorb;
-    console.log(this.warenkorb);
     this.getTotalPrice();
   }
 
@@ -60,26 +57,44 @@ export class WarenkorbComponent implements OnInit {
   getTotalPrice() {
     this.totalPrice = this.globalService.warenkorb.reduce((summe, artikel) => summe + (artikel.sale_price * parseInt(artikel.quantity)), 0);
     console.log(this.totalPrice);
-    
   }
 
   reduceQuantity(artikel: any) {
     if (artikel.quantity > 1) {
-      artikel.quantity--;
+        artikel.quantity--;
     } else {
-      this.removeItem(artikel);
+        this.removeItem(artikel);
+        return; // Verhindert zusätzliches UI-Update nach removeItem
     }
-    this.getTotalPrice();
+
+    this.updateWarenkorb();
   }
 
   increaseQuantity(artikel: any) {
     artikel.quantity++;
+    this.updateWarenkorb();
+  }
+
+  updateWarenkorb() {
+    // Setze eine neue Referenz, damit Angular das UI updated
+    this.globalService.warenkorb = [...this.globalService.warenkorb];
     this.getTotalPrice();
   }
 
   removeItem(artikel: any) {
-    this.globalService.warenkorb = this.globalService.warenkorb.filter(item => item !== artikel);
-    this.warenkorb = [...this.globalService.warenkorb]; // Aktualisieren der lokalen Kopie
+    // Warenkorb im GlobalService aktualisieren
+    this.globalService.warenkorb = this.globalService.warenkorb.filter(
+      item => item.article_number !== artikel.article_number
+    );
+
+    // Neue Referenz setzen, damit Angular das UI aktualisiert
+    this.globalService.warenkorb = [...this.globalService.warenkorb];
+    console.log(this.globalService.warenkorb)
     this.getTotalPrice();
   }
+
+  closeWarenkorb(){
+    this.toggleService.toggle();
+  }
+
 }

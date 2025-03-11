@@ -64,26 +64,32 @@ export class ArtikelCardComponent implements OnInit {
   }
 
   addToCart(artikel: any): void {
-    const existingItem = this.warenkorb.find(
-      (item) => item.db_index === artikel.db_index);
-
-
-      if(!artikel.quantity || parseInt(artikel.quantity) < 1) {
-        artikel.quantity = 1;
-      }
-
-    if (existingItem) {
-      // Falls ja, Einheit um 1 erhöhen
-      existingItem.quantity = (parseInt(existingItem.quantity) + parseInt(artikel.quantity));
-    } else {
-      // Falls nicht, Artikel mit Einheit = 1 in den Warenkorb legen
-      this.warenkorb.push({ ...artikel, quantity: parseInt(artikel.quantity)});
-      this.globalService.warenkorb = this.warenkorb;
+    // Sicherstellen, dass die Menge korrekt ist
+    if (!artikel.quantity || isNaN(Number(artikel.quantity)) || Number(artikel.quantity) < 1) {
+        artikel.quantity = 1; // Standardmenge setzen
     }
 
+    // Überprüfen, ob der Artikel bereits im Warenkorb ist
+    const existingItem = this.globalService.warenkorb.find(item => item.db_index === artikel.db_index);
+
+    if (existingItem) {
+        // Falls der Artikel existiert, die Menge erhöhen
+        existingItem.quantity += Number(artikel.quantity);
+    } else {
+        // Neuen Artikel hinzufügen
+        this.globalService.warenkorb = [...this.globalService.warenkorb, { ...artikel, quantity: Number(artikel.quantity) }];
+    }
+
+    // Eingabefeld für Menge zurücksetzen
     artikel.quantity = '';
-    console.log('Warenkorb:', this.warenkorb);
-  }
+
+    // Den Gesamtpreis aktualisieren
+    // this.getTotalPrice();
+
+    console.log('Warenkorb nach Hinzufügen:', this.globalService.warenkorb);
+}
+
+
 
   collectOrderData(response: any) {
     this.orderData.user_id = response.user.id;
