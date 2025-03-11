@@ -13,7 +13,6 @@ export class WarenkorbComponent implements OnInit {
 
   isVisible = false;
   orderData = {};
-  totalPrice = 0;
   isDelivery: boolean = true; // Standardmäßig auf Lieferung gesetzt
 
 
@@ -29,13 +28,19 @@ export class WarenkorbComponent implements OnInit {
     this.getTotalPrice();
   }
 
-  toggleDelivery() {
-    this.isDelivery = !this.isDelivery;
+  toggleDelivery(fulfillment_type:string) {
+     if (fulfillment_type == 'pickup') {
+      this.isDelivery = false;
+     }
+     else {
+      this.isDelivery = true
+     }
+     console.log(this.isDelivery)
   }
 
   sendOrder() {
     this.getTotalPrice();
-    this.globalService.orderData.total_price = this.totalPrice;
+    this.globalService.orderData.total_price = this.globalService.totalPrice
     const completeOrder = {
       orderData: {
           ...this.globalService.orderData,
@@ -61,8 +66,8 @@ export class WarenkorbComponent implements OnInit {
   }
 
   getTotalPrice() {
-    this.totalPrice = this.globalService.warenkorb.reduce((summe, artikel) => summe + (artikel.sale_price * parseInt(artikel.quantity)), 0);
-    console.log(this.totalPrice);
+    this.globalService.totalPrice = this.globalService.warenkorb.reduce((summe, artikel) => summe + (artikel.sale_price * parseInt(artikel.quantity)), 0);
+    console.log(this.globalService.totalPrice);
   }
 
   reduceQuantity(artikel: any) {

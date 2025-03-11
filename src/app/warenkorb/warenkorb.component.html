@@ -8,11 +8,12 @@
             <div class="card">
                 <div class="container">
                   <h4>{{ artikel.article_text}}</h4>
+                  <h5>{{ artikel.sale_price }} €</h5>
                   <div class="menge-con">
                     <span>Menge</span>
                     <div class="quantity-buttons">
                       <button class="quantity-btn" (click)="reduceQuantity(artikel)">-</button>
-                      <span>{{artikel.quantity}}</span>
+                      <span class="amount">{{artikel.quantity}}</span>
                       <button class="quantity-btn" (click)="increaseQuantity(artikel)">+</button>
                       </div>
                       <button class="remove-button" (click)="removeItem(artikel)">🗑</button>
@@ -25,12 +26,22 @@
       }
 
       @if ( this.globalService.warenkorb.length > 0 ) {
-        <button class="toggle-delivery-button" (click)="toggleDelivery()">
-          {{ isDelivery ? 'Lieferung' : 'Abholung' }}
-        </button>
+        <div class="button-delivery-main">
+          <button class="toggle-delivery-button" [class.active]="isDelivery" (click)="toggleDelivery('delivery')">
+              Lieferung
+          </button>
+          <button class="toggle-delivery-button" [class.active]="!isDelivery" (click)="toggleDelivery('pickup')">
+              Abholung
+          </button>
+        </div>
+        <h4>
+          Endsumme: {{this.globalService.totalPrice}} €
+       </h4>
+        <div>
+            <button class="order-button" (click)="sendOrder()">Bestellung abschicken</button>
+        </div>
       }
 
-      <button class="order-button" (click)="sendOrder()">Bestellung abschicken</button>
     </div>
   }
 

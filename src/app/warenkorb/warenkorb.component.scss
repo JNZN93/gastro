@@ -10,12 +10,26 @@ $button-hover: #d0d0d0;
 $danger-color: #d9534f;
 $danger-hover: #c9302c;
 
+.button-delivery-main {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+
+    button {
+        width: 50%;
+        justify-content: center;
+        justify-content: center;
+        align-items: center;
+    }
+}
+
 .toggle-delivery-button {
     background-color: #ffffff;
     color: $text-color;
-    padding: 12px 24px;
+    padding: 12px 10px;
     font-size: 16px;
-    border-radius: 10px;
+    border-radius: 8px;
     border: none !important;;
     cursor: pointer;
     display: flex;
@@ -25,9 +39,14 @@ $danger-hover: #c9302c;
     font-weight: bold;
     box-shadow: -4px 0 10px rgba(0, 0, 0, 0.1);
   }
+
+  .toggle-delivery-button.active {
+    background-color:#20364d;
+    color: #f8f9fa;
+  }
   
   .toggle-delivery-button:hover {
-    background-color: #050646;
+    background-color:#20364d;
     color: #f8f9fa;
   }
 
@@ -52,7 +71,7 @@ $danger-hover: #c9302c;
         display: flex;
         align-items: center;
         margin-bottom: 20px;
-        color: $text-color;
+        color:#20364d;
     }
 
     // Wenn der Warenkorb leer ist
@@ -105,9 +124,16 @@ $danger-hover: #c9302c;
 
     h4 {
         font-size: 18px;
-       
-        color: $text-color;
+        color:#20364d;
     }
+}
+
+
+
+h4, h5 {
+    font-size: 16px;
+   
+    color:#20364d;
 }
 
 // Mengenauswahl
@@ -158,19 +184,16 @@ $danger-hover: #c9302c;
 
 // Entfernen-Button (Mülleimer)
 .remove-button {
-  background: transparent;
-  color: $danger-color;
   border: none;
-  font-size: 1.2rem;
-  padding: 5px;
+  color: white !important;
+  padding: 5px 20px !important;
+  background:#6b0b08 !important;
   cursor: pointer;
   transition: all 0.2s ease-in-out;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  width: 36px;
-  height: 36px;
 
   &:hover {
       background: rgba(217, 83, 79, 0.1);
@@ -188,7 +211,7 @@ $danger-hover: #c9302c;
   margin-top: 20px;
   margin-bottom: 20px;
   width: 100%;
-  background: linear-gradient(135deg, #007bff, #0056b3);
+  background: linear-gradient(135deg, #20364d, #0056b3);
   color: #fff;
   padding: 14px;
   font-size: 1rem;
@@ -216,6 +239,10 @@ $danger-hover: #c9302c;
   }
 }
 
+.amount {
+    color:#20364d;
+}
+
 // Mengenauswahl (+/- Buttons)
 .quantity-buttons {
   display: flex;
@@ -223,10 +250,10 @@ $danger-hover: #c9302c;
   gap: 8px;
 
   .quantity-btn {
-      background: $button-bg;
+      background: #20364d;
       color: #fff;
       border: none;
-      padding: 6px 12px;
+      padding: 6px 17px;
       font-size: 1rem;
       font-weight: bold;
       border-radius: 5px;
