@@ -23,7 +23,13 @@
       } @else {
         <p>Dein Warenkorb ist leer.</p>
       }
-  
+
+      @if ( this.globalService.warenkorb.length > 0 ) {
+        <button class="toggle-delivery-button" (click)="toggleDelivery()">
+          {{ isDelivery ? 'Lieferung' : 'Abholung' }}
+        </button>
+      }
+
       <button class="order-button" (click)="sendOrder()">Bestellung abschicken</button>
     </div>
   }

@@ -14,6 +14,8 @@ export class WarenkorbComponent implements OnInit {
   isVisible = false;
   orderData = {};
   totalPrice = 0;
+  isDelivery: boolean = true; // Standardmäßig auf Lieferung gesetzt
+
 
   constructor(private toggleService: ToggleCartService, public globalService: GlobalService, private orderService: OrderService) { 
 
@@ -27,13 +29,17 @@ export class WarenkorbComponent implements OnInit {
     this.getTotalPrice();
   }
 
+  toggleDelivery() {
+    this.isDelivery = !this.isDelivery;
+  }
+
   sendOrder() {
     this.getTotalPrice();
     this.globalService.orderData.total_price = this.totalPrice;
     const completeOrder = {
       orderData: {
           ...this.globalService.orderData,
-          fulfillment_type: "delivery" // Hier den gewünschten Wert setzen TOGGLE
+          fulfillment_type: this.isDelivery ? 'delivery' : 'pickup' // Hier den gewünschten Wert setzen TOGGLE
       },
       orderItems: this.globalService.warenkorb
   };

@@ -10,6 +10,27 @@ $button-hover: #d0d0d0;
 $danger-color: #d9534f;
 $danger-hover: #c9302c;
 
+.toggle-delivery-button {
+    background-color: #ffffff;
+    color: $text-color;
+    padding: 12px 24px;
+    font-size: 16px;
+    border-radius: 10px;
+    border: none !important;;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.3s ease;
+    font-weight: bold;
+    box-shadow: -4px 0 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .toggle-delivery-button:hover {
+    background-color: #050646;
+    color: #f8f9fa;
+  }
+
 // Grundlegendes Styling für den Warenkorb
 .cart {
     z-index: 99;
@@ -71,7 +92,7 @@ $danger-hover: #c9302c;
 
 // Artikelkarte
 .card {
-    background: $card-bg;
+    background: '#ffffff';
     border-radius: 10px;
     padding: 20px;
     margin-bottom: 15px;
