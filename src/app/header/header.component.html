@@ -1,9 +1,25 @@
 <header>
     <img src="logo.png" alt="logo">
 
+    @if(!shouldHideElement()){
+        <div class="logout-container">
+            <span (click)="openModal()">Abmelden</span>
+        </div>
+    }
+
     <div class="burger-button" (click)="toggleWarenkorb()">
         <span></span>
         <span></span>
         <span></span>
     </div>
 </header>
+
+@if (showModal) {
+    <div class="modal-overlay">
+        <div class="modal">
+            <p>Möchten Sie sich wirklich abmelden?</p>
+            <button (click)="logOut()">Ja, abmelden</button>
+            <button (click)="goBack()">Abbrechen</button>
+        </div>
+    </div>
+}
