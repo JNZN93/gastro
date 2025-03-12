@@ -36,4 +36,8 @@ export class HeaderComponent {
   shouldHideElement(): boolean {
     return this.hiddenRoutes.includes(this.router.url);
   }
+
+  shouldHideElementAdmin(): boolean {
+    return this.router.url === '/admin';
+  }
 }

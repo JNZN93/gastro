@@ -26,7 +26,7 @@ export class AdminComponent implements OnInit {
     private router: Router,
     private orderService: OrderService,
     private http: HttpClient,
-    private authService: AuthService,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
@@ -34,17 +34,17 @@ export class AdminComponent implements OnInit {
     this.loadOrders();
   }
 
-  checkUserRole(){
+  checkUserRole() {
     this.authService.checkToken(localStorage.getItem('token')).subscribe({
       next: (response) => {
         console.log(response);
         if (response?.user?.role !== 'admin') {
-          this.router.navigate(['/login'])
+          this.router.navigate(['/login']);
         }
       },
       error: (error) => {
         console.error(error);
-        this.router.navigate(['/login'])
+        this.router.navigate(['/login']);
       },
       complete: () => {
         this.isLoading = false; // Sobald abgeschlossen, lade HTML
