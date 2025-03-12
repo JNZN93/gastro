@@ -62,6 +62,9 @@ export class WarenkorbComponent implements OnInit {
       next: (response) => {
         console.log('Bestellung erfolgreich:', response);
         alert('Bestellung erfolgreich abgesendet!');
+        // Warenkorb leeren
+        this.globalService.warenkorb = [];
+        this.globalService.totalPrice = 0;
       },
       error: (error) => {
         console.error('Fehler bei der Bestellung:', error);
