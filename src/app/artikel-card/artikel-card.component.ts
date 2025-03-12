@@ -143,8 +143,15 @@ export class ArtikelCardComponent implements OnInit {
 
     // Den Gesamtpreis aktualisieren
     // this.getTotalPrice();
+    this.getTotalPrice();
 
     console.log('Warenkorb nach Hinzufügen:', this.globalService.warenkorb);
+  }
+
+
+  getTotalPrice() {
+    this.globalService.totalPrice = this.globalService.warenkorb.reduce((summe, artikel) => summe + (artikel.sale_price * parseInt(artikel.quantity)), 0);
+    console.log(this.globalService.totalPrice);
   }
 
 
