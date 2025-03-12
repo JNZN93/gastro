@@ -5,6 +5,7 @@ import { jsPDF } from 'jspdf';
 import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { AuthService } from '../authentication.service';
 
 @Component({
   selector: 'app-admin',
@@ -19,22 +20,41 @@ export class AdminComponent implements OnInit {
   showModal = false;
   selectedOrder: any = null;
   newStatus: string = '';
+  isLoading: boolean = true;
 
   constructor(
     private router: Router,
     private orderService: OrderService,
-    private http: HttpClient
+    private http: HttpClient,
+    private authService: AuthService,
   ) {}
 
   ngOnInit(): void {
+    this.checkUserRole();
     this.loadOrders();
+  }
+
+  checkUserRole(){
+    this.authService.checkToken(localStorage.getItem('token')).subscribe({
+      next: (response) => {
+        console.log(response);
+        if (response?.user?.role !== 'admin') {
+          this.router.navigate(['/login'])
+        }
+      },
+      error: (error) => {
+        console.error(error);
+      },
+      complete: () => {
+        this.isLoading = false; // Sobald abgeschlossen, lade HTML
+      },
+    });
   }
 
   loadOrders() {
     this.orderService.getAllOrders().subscribe({
       next: (response) => {
         console.log(response.orders);
-
         this.orders = response.orders;
       },
       error: (error) => {
