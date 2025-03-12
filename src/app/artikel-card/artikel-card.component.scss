@@ -139,9 +139,15 @@
   .card-title {
     font-size: 16px;
     font-weight: bold;
+<<<<<<< Updated upstream
     text-align: center;
     white-space: normal; /* Erlaubt mehrere Zeilen */
     overflow-wrap: break-word;
+=======
+    color: #333;
+    margin-bottom: 10px;
+    white-space: nowrap;
+>>>>>>> Stashed changes
   }
   
   .card-price {
@@ -159,7 +165,11 @@
   }
   
   .add-to-cart-btn {
+<<<<<<< Updated upstream
     background-color: #000000;
+=======
+    background-color: #333;
+>>>>>>> Stashed changes
     color: white;
     font-size: 16px;
     padding: 10px;

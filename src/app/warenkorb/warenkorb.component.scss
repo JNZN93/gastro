@@ -150,8 +150,6 @@ h6 {
 .card {
     background: '#ffffff';
     border-radius: 10px;
-    padding: 20px;
-    margin-bottom: 15px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     transition: transform 0.2s ease-in-out;
 
@@ -161,8 +159,9 @@ h6 {
 
     h4 {
         font-size: 18px;
-        color:#333;
+        color:#151618;
     }
+
 }
 
 .total-price {
@@ -268,7 +267,7 @@ h4, h5 {
   margin-top: 20px;
   margin-bottom: 20px;
   width: 100%;
-  background: #000000;
+  background: linear-gradient(135deg, #000000, #000000);
   color: #fff;
   padding: 14px;
   font-size: 1rem;
@@ -297,7 +296,7 @@ h4, h5 {
 }
 
 .amount {
-    color:#20364d;
+    color:#333;
 }
 
 // Mengenauswahl (+/- Buttons)
