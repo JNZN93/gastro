@@ -26,7 +26,7 @@ export class HeaderComponent {
   logOut() {
     localStorage.removeItem('token');
     this.showModal = false;
-    location.reload();
+    this.router.navigate(['login'])
   }
 
   goBack() {

@@ -44,6 +44,7 @@ export class AdminComponent implements OnInit {
       },
       error: (error) => {
         console.error(error);
+        this.router.navigate(['/login'])
       },
       complete: () => {
         this.isLoading = false; // Sobald abgeschlossen, lade HTML
