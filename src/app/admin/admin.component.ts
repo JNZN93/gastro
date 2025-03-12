@@ -105,7 +105,7 @@ export class AdminComponent implements OnInit {
     doc.text('Erstellt um: ' + createdAtFormatted, 14, 60); // Uhrzeit
     doc.text('Kunde: ' + name, 14, 70);
     doc.text('E-Mail: ' + email, 14, 80);
-    doc.text('Gesamtpreis: €' + totalPrice, 14, 90);
+    doc.text('Gesamtpreis: €' + totalPrice.toFixed(2), 14, 90);
     doc.text('Lieferart: ' + fulfillmentType, 14, 100);
 
     // Zusätzliche Bestellinformationen
@@ -144,7 +144,7 @@ export class AdminComponent implements OnInit {
     // Gesamtbetrag unten
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
-    doc.text('Gesamtbetrag: €' + totalPrice, 14, yPosition + 10);
+    doc.text('Gesamtbetrag: €' + totalPrice.toFixed(2), 14, yPosition + 10);
 
     // PDF-Dokument öffnen
     doc.autoPrint();
@@ -187,7 +187,7 @@ export class AdminComponent implements OnInit {
       );
       doc.text('Kunde: ' + order.name, 14, 80);
       doc.text('E-Mail: ' + order.email, 14, 90);
-      doc.text('Gesamtpreis: €' + order.total_price, 14, 100);
+      doc.text('Gesamtpreis: €' + order.total_price.toFixed(2), 14, 100);
       doc.text('Lieferart: ' + order.fulfillment_type, 14, 110);
       doc.text('Zahlstatus: ' + order.payment_status, 14, 120);
 
@@ -218,7 +218,7 @@ export class AdminComponent implements OnInit {
       // Gesamtbetrag unten, größere Schriftart für den Endbetrag
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
-      doc.text('Gesamtbetrag: €' + order.total_price, 14, yPosition + 10);
+      doc.text('Gesamtbetrag: €' + order.total_price.toFixed(2), 14, yPosition + 10);
     });
 
     // Öffnen des Druckdialogs
