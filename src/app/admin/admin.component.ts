@@ -250,7 +250,19 @@ export class AdminComponent implements OnInit {
 
   onStatusChange(event: Event, order: any) {
     const newStatus = (event.target as HTMLSelectElement).value;
-
+    if (newStatus == 'open') {
+      this.selectedOrder = order;
+      this.newStatus = newStatus;
+      this.updateOrderStatus(this.selectedOrder, newStatus )
+      return;
+    }
+    // Wenn der Status auf "In Bearbeitung" geändert wird
+    if (newStatus == 'in_progress') {
+      this.selectedOrder = order;
+      this.newStatus = newStatus;
+      this.updateOrderStatus(this.selectedOrder, newStatus )
+      return;
+    }
     // Wenn der Status auf "Fertig" geändert wird, öffne das Modal
     if (newStatus === 'completed') {
       this.selectedOrder = order;
