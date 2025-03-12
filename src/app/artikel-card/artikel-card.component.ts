@@ -42,7 +42,6 @@ export class ArtikelCardComponent implements OnInit {
             this.collectOrderData(response);
             this.globalService.orderData = this.orderData;
             console.log('global', this.globalService.orderData);
-            console.log(this.artikelData);
           });
         },
         error: (error) => {
@@ -60,50 +59,41 @@ export class ArtikelCardComponent implements OnInit {
     console.log('Artikel-Index:', index);
   }
 
-  filteredArtikelData() {
-    if (!this.searchTerm) {
-      return this.artikelData;
-    }
 
-    const searchTerm = this.searchTerm?.toLowerCase() || '';
+filteredArtikelData() {
+  this.artikelData = this.globalArtikels;
+  console.log(this.artikelData)
+  console.log(this.searchTerm)
+  if (this.searchTerm) {
     const terms = this.searchTerm.toLowerCase().split(/\s+/);
-
-    return this.artikelData.filter((artikel) => {
-      const matchesSearch = terms.every((term) =>
-        artikel.article_text.toLowerCase().includes(term)
-      );
-      const matchesCategory =
-        !this.selectedCategory || artikel.category === this.selectedCategory;
-
-      return matchesSearch && matchesCategory;
-    });
+    this.artikelData = this.artikelData.filter((artikel) =>
+      terms.every((term) => artikel.article_text.toLowerCase().includes(term))
+    );
   }
+
+}
+
+
 
   filterCategory(event: Event) {
-    const selectedValue = (event.target as HTMLSelectElement).value; // Wert aus Event holen
-    this.selectedCategory = selectedValue; // Kategorie speichern
-    this.filterArtikel(); // Artikel filtern
-  }
-
-  filterArtikel() {
-    if (!this.artikelData) {
-      this.filteredData = [];
+    const category = (event.target as HTMLSelectElement).value; // Wert aus Event holen
+    console.log('selected', category)
+    this.selectedCategory = category; // Kategorie speichern
+    if (this.selectedCategory == "") {
+      this.artikelData = this.globalArtikels;
+      console.log(this.artikelData)
       return;
     }
-
-    const searchTerm = this.searchTerm.toLowerCase().trim();
-    const terms = searchTerm.split(/\s+/);
-
-    this.filteredData = this.artikelData.filter(artikel => {
-      const matchesSearch = terms.every(term =>
-        artikel.article_text.toLowerCase().includes(term)
-      );
-
-      const matchesCategory = !this.selectedCategory || artikel.category === this.selectedCategory;
-
-      return matchesCategory && matchesSearch;
-    });
+    this.getItemsFromCategory(category);
   }
+
+  getItemsFromCategory(category:string) {
+    this.artikelData = this.globalArtikels
+    this.artikelData = this.artikelData.map((article)=> article).filter((article)=> article?.category == category)
+    console.log(this.artikelData)
+  }
+
+
   get categories(): string[] {
     return [
       ...new Set(
@@ -124,7 +114,7 @@ export class ArtikelCardComponent implements OnInit {
 
     // Überprüfen, ob der Artikel bereits im Warenkorb ist
     const existingItem = this.globalService.warenkorb.find(
-      (item) => item.db_index === artikel.db_index
+      (item) => item.article_number == artikel.article_number
     );
 
     if (existingItem) {

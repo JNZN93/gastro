@@ -1,6 +1,5 @@
 <div class="filter-container">
-  <input type="text" [(ngModel)]="searchTerm" placeholder="Artikel suchen..." class="search-input">
-
+  <input type="text" [(ngModel)]="searchTerm" (input)="filteredArtikelData()" placeholder="Artikel suchen..." class="search-input">
       <select [(ngModel)]="selectedCategory" (change)="filterCategory($event)">
       <option value="">Alle Kategorien</option>
       <option *ngFor="let category of categories" [value]="category">{{ category }}</option>
@@ -8,7 +7,7 @@
 </div>
 
 <div class="content">
-    @for (artikel of filteredArtikelData(); track $index) {
+    @for (artikel of artikelData; track $index) {
         <div class="card">
             <img src="https://placehold.co/100x100" alt="Avatar" class="card-img">
             <div class="card-body">
