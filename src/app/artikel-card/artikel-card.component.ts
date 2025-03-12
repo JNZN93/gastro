@@ -62,8 +62,6 @@ export class ArtikelCardComponent implements OnInit {
 
 filteredArtikelData() {
   this.artikelData = this.globalArtikels;
-  console.log(this.artikelData)
-  console.log(this.searchTerm)
   if (this.searchTerm) {
     const terms = this.searchTerm.toLowerCase().split(/\s+/);
     this.artikelData = this.artikelData.filter((artikel) =>
@@ -81,7 +79,6 @@ filteredArtikelData() {
     this.selectedCategory = category; // Kategorie speichern
     if (this.selectedCategory == "") {
       this.artikelData = this.globalArtikels;
-      console.log(this.artikelData)
       return;
     }
     this.getItemsFromCategory(category);
@@ -90,7 +87,6 @@ filteredArtikelData() {
   getItemsFromCategory(category:string) {
     this.artikelData = this.globalArtikels
     this.artikelData = this.artikelData.map((article)=> article).filter((article)=> article?.category == category)
-    console.log(this.artikelData)
   }
 
 
@@ -134,14 +130,11 @@ filteredArtikelData() {
     // Den Gesamtpreis aktualisieren
     // this.getTotalPrice();
     this.getTotalPrice();
-
-    console.log('Warenkorb nach Hinzufügen:', this.globalService.warenkorb);
   }
 
 
   getTotalPrice() {
     this.globalService.totalPrice = this.globalService.warenkorb.reduce((summe, artikel) => summe + (artikel.sale_price * parseInt(artikel.quantity)), 0);
-    console.log(this.globalService.totalPrice);
   }
 
 

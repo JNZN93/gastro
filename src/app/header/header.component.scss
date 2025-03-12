@@ -2,12 +2,14 @@
 
 header {
   z-index: 4;
-  position: relative;
+  position: fixed;
   display: flex;
   justify-content: space-between;
   align-items: center;
   box-sizing: border-box;
   width: 100%;
+  left: 0;
+  top: 0;
   height: 78px;
   background-color: rgb(0, 0, 0);
   padding-left: 24px;
