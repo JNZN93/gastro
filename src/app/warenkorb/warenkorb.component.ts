@@ -15,6 +15,13 @@ export class WarenkorbComponent implements OnInit {
   orderData = {};
   isDelivery: boolean = true; // Standardmäßig auf Lieferung gesetzt
 
+  deliveryAddress = {
+    street: '',
+    zip: '',
+    city: ''
+  };
+  
+
 
   constructor(private toggleService: ToggleCartService, public globalService: GlobalService, private orderService: OrderService) { 
 

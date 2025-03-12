@@ -37,6 +37,17 @@
               Abholung
           </button>
         </div>
+
+         <!-- Adresseingabe nur sichtbar, wenn Lieferung gewählt wurde -->
+         @if (isDelivery) {
+          <div class="address-input">
+            <h3>Lieferadresse</h3>
+            <input type="text" placeholder="Straße und Hausnummer" >
+            <input type="text" placeholder="PLZ" >
+            <input type="text" placeholder="Stadt">
+          </div>
+        }
+
         <div class="total-price">
           <h5>
             Endsumme: {{(this.globalService.totalPrice).toFixed(2)}} €
