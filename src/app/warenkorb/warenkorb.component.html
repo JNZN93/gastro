@@ -42,9 +42,9 @@
          @if (isDelivery) {
           <div class="address-input">
             <h3>Lieferadresse</h3>
-            <input type="text" placeholder="Straße und Hausnummer" >
-            <input type="text" placeholder="PLZ" >
-            <input type="text" placeholder="Stadt">
+            <input [(ngModel)]="street" type="text" placeholder="Straße und Hausnummer" >
+            <input [(ngModel)]="zipCode" type="number" placeholder="PLZ" >
+            <input [(ngModel)]="city" type="text" placeholder="Stadt">
           </div>
         }
 

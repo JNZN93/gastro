@@ -2,10 +2,11 @@ import { Component, OnInit } from '@angular/core';
 import { ToggleCartService } from '../toggle-cart.service';
 import { GlobalService } from '../global.service';
 import { OrderService } from '../order.service';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-warenkorb',
-  imports: [],
+  imports: [FormsModule],
   templateUrl: './warenkorb.component.html',
   styleUrl: './warenkorb.component.scss'
 })
@@ -14,12 +15,10 @@ export class WarenkorbComponent implements OnInit {
   isVisible = false;
   orderData = {};
   isDelivery: boolean = true; // Standardmäßig auf Lieferung gesetzt
-
-  deliveryAddress = {
-    street: '',
-    zip: '',
-    city: ''
-  };
+  street: string = '';
+  zipCode: string = '';
+  city: string = '';
+  combinedValue: string = '';
   
 
 
@@ -47,10 +46,12 @@ export class WarenkorbComponent implements OnInit {
 
   sendOrder() {
     this.getTotalPrice();
+    const newAddress = this.city + '$' + this.zipCode + '$' + this.street;
     this.globalService.orderData.total_price = this.globalService.totalPrice
     const completeOrder = {
       orderData: {
           ...this.globalService.orderData,
+          shipping_address: newAddress ? newAddress : '',
           fulfillment_type: this.isDelivery ? 'delivery' : 'pickup' // Hier den gewünschten Wert setzen TOGGLE
       },
       orderItems: this.globalService.warenkorb
@@ -114,5 +115,4 @@ export class WarenkorbComponent implements OnInit {
   closeWarenkorb(){
     this.toggleService.toggle();
   }
-
 }

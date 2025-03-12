@@ -16,13 +16,8 @@
         <div class="card">
             <img src="https://placehold.co/100x100" alt="Avatar" class="card-img">
             <div class="card-body">
-<<<<<<< Updated upstream
               <h4 class="card-title"><b>{{ artikel.article_text }}</b></h4>
               <p class="card-price">Art.-Nr [{{ artikel.article_number }}]</p>
-=======
-              <p class="card-title">{{ artikel.article_text }}</p>
-              <p class="card-price">[{{ artikel.article_number }}]</p>
->>>>>>> Stashed changes
               <p class="card-price">{{ artikel.sale_price }}€ pro {{ artikel.unit }}</p>
               <input type="number" [(ngModel)]="artikel.quantity" placeholder="Menge eingeben" class="quantity-input" min="1">
               <button (click)="addToCart(artikel)" class="add-to-cart-btn">In den Warenkorb</button>
