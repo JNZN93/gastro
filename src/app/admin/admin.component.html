@@ -1,27 +1,42 @@
 <div class="admin-main">
     <div class="upload-xml">
-        <label for="xml">Upload new XML file</label>
+        <label for="xml">Produktliste aktualisieren:</label>
         <input #fileInput type="file" id="xml" name="xml" accept=".xml"/>
         
         <button (click)="onUploadClick()">Produkte aktualisieren</button>
         <button (click)="generateSelectedPdf()">Alle PDFs drucken</button>
       </div>
     
-      @for (order of orders; track order.order_id) {
-        <div>
-            <span>{{ order.order_id }}, {{ order.email }}, {{ order.name }}</span><br>
-            <button (click)="generatePdf(order.company, order.shipping_address, order.payment_status, order.order_date, order.created_at, order.fulfillment_type, order.name, order.email, order.order_id, order.total_price, order.items)">
-                PDF drucken
-            </button>
-    
-            <label>Status:</label>
-            <select [(ngModel)]="order.status" (change)="onStatusChange($event, order)">
-                <option value="open" label="Offen" [selected]="order.status === 'open'"></option>
-                <option value="in_progress" label="In Bearbeitung" [selected]="order.status === 'in_progress'"></option>
-                <option value="completed" label="Fertig" [selected]="order.status === 'completed'"></option>
-            </select>
-        </div>
+        <table>
+            <tr>
+                <th>Bestellnummer</th>
+                <th>Bestelldatum</th>
+                <th>Name</th>
+                <th>Firma</th>
+                <th>Status</th>
+                <th>Aktionen</th>
+            </tr>
+            @for (order of orders; track order.order_id) {
+            <tr>
+                <td>{{ order.order_id }}</td>
+                <td>{{ order.created_at | date: 'dd.MM.yyyy HH:mm' }}</td>
+                <td>{{ order.name }}</td>
+                <td>{{ order.company }}</td>
+                <td>
+                    <select [(ngModel)]="order.status" (change)="onStatusChange($event, order)">
+                        <option value="open" [selected]="order.status === 'open'">Offen</option>
+                        <option value="in_progress" [selected]="order.status === 'in_progress'">In Bearbeitung</option>
+                        <option value="completed" [selected]="order.status === 'completed'">Fertig</option>
+                    </select>
+                </td>
+                <td>
+                    <button (click)="generatePdf(order.company, order.shipping_address, order.payment_status, order.order_date, order.created_at, order.fulfillment_type, order.name, order.email, order.order_id, order.total_price, order.items)">
+                        PDF drucken
+                    </button>
+                </td>
+            </tr>
     }
+</table>
     
     @if (showModal) {
         <div class="modal-overlay">
