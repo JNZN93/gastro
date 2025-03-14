@@ -1,15 +1,19 @@
 <div class="article-container">
-  <div class="filter-container">
-    <input type="text" [(ngModel)]="searchTerm" (input)="filteredArtikelData()" placeholder="Artikel suchen..." class="search-input">
-    <div class="custom-select">
-      <select [(ngModel)]="selectedCategory" (change)="filterCategory($event)">
-        <option value="">📂 Alle Kategorien</option>
-        <option *ngFor="let category of categories" [value]="category">
-          {{ category }}
-        </option>
-      </select>
+
+    <div class="filter-wrapper">
+        <div class="filter-container">
+          <input type="text" [(ngModel)]="searchTerm" (input)="filteredArtikelData()" placeholder="Artikel suchen..." class="search-input">
+          <div class="custom-select">
+            <select [(ngModel)]="selectedCategory" (change)="filterCategory($event)">
+              <option value="">📂 Alle Kategorien</option>
+              <option *ngFor="let category of categories" [value]="category">
+                {{ category }}
+              </option>
+            </select>
+          </div>
+      </div>
     </div>
- </div>
+
 
  <div class="content">
     @for (artikel of artikelData; track $index) {

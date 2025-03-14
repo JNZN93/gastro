@@ -67,6 +67,7 @@ header {
   border-radius: 10px;
   cursor: pointer;
   transition: all 0.2s ease-in-out;
+  z-index: 111;
 
   img {
     width: 30px;
@@ -88,6 +89,7 @@ header {
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 99;
 
   button {
     margin: 5px;

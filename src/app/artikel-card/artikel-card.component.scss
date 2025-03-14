@@ -45,6 +45,15 @@
 .article-container {
   position: relative;
   margin-top: 200px;
+  width: 100%;
+}
+
+.filter-wrapper {
+  width: 100%;
+  position: fixed;
+  background: white;
+  height: 80px;
+  top: 80px; /* Abstand vom oberen Rand (Headerhöhe) */
 }
 
 /* Container for the search input */
@@ -61,7 +70,7 @@
     width: 90%;
     background-color: white; /* Hintergrundfarbe für die Eingabefelder */
     padding: 16px;
-    z-index: 98; /* Sicherstellen, dass es über dem Inhalt liegt */
+    z-index: 99;
   }
 
   
@@ -176,12 +185,10 @@
     border-radius: 5px;
     cursor: pointer;
     transition: transform 0.2s ease-in-out, background-color 0.3s ease-in-out;
-    transform: scale(1); /* Sicherstellen, dass der Button im Normalzustand nicht skaliert ist */
-}
+  }
 
-.add-to-cart-btn.clicked {
-    transform: scale(1.1); /* Vergrößerung um 10% */
-    background-color: rgb(255, 102, 0); /* Orange Hintergrund */
+  .add-to-cart-btn.clicked {
+    transform: scale(1.1);
 }
   
   .add-to-cart-btn:hover {
