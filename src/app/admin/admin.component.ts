@@ -6,10 +6,11 @@ import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../authentication.service';
+import { UploadLoadingComponent } from "../upload-loading/upload-loading.component";
 
 @Component({
   selector: 'app-admin',
-  imports: [RouterModule, CommonModule, FormsModule],
+  imports: [RouterModule, CommonModule, FormsModule, UploadLoadingComponent],
   templateUrl: './admin.component.html',
   styleUrl: './admin.component.scss',
 })
@@ -21,6 +22,8 @@ export class AdminComponent implements OnInit {
   selectedOrder: any = null;
   newStatus: string = '';
   isLoading: boolean = true;
+  isVisible: boolean = true;
+  isUploading: boolean = false;
 
   constructor(
     private router: Router,
@@ -234,14 +237,23 @@ export class AdminComponent implements OnInit {
       const formData = new FormData();
       formData.append('file', file);
 
+      this.isUploading = true;
+
       this.http
         .post(
           'https://multi-mandant-ecommerce.onrender.com/api/products/upload',
           formData
         )
         .subscribe({
-          next: (res) => alert('Datei erfolgreich hochgeladen!'),
-          error: (err) => console.log('Fehler beim Hochladen!', err),
+          next: (res) => {
+            alert('Datei erfolgreich hochgeladen!'),
+            this.isUploading = false; // Upload-Loading ausblenden
+            this.isVisible = false; // Upload-Komponente ausblenden
+          },
+          error: (err) => {
+            console.log('Fehler beim Hochladen!', err),
+            this.isUploading = false;
+          },
         });
     } else {
       alert('Bitte eine gültige XML-Datei hochladen.');

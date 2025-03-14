@@ -6,10 +6,11 @@ import { AuthService } from '../authentication.service';
 import { Router, RouterModule } from '@angular/router';
 import { WarenkorbComponent } from '../warenkorb/warenkorb.component';
 import { GlobalService } from '../global.service';
+import { UploadLoadingComponent } from '../upload-loading/upload-loading.component';
 
 @Component({
   selector: 'app-artikel-card',
-  imports: [CommonModule, FormsModule, RouterModule, WarenkorbComponent],
+  imports: [CommonModule, FormsModule, RouterModule, WarenkorbComponent, UploadLoadingComponent],
   templateUrl: './artikel-card.component.html',
   styleUrl: './artikel-card.component.scss',
 })
@@ -22,6 +23,7 @@ export class ArtikelCardComponent implements OnInit {
   selectedCategory: string = '';
   globalArtikels: any[] = [];
   filteredData: any[] = [];
+  isVisible: boolean = true;
 
   constructor(
     private router: Router,
@@ -47,14 +49,17 @@ export class ArtikelCardComponent implements OnInit {
             this.collectOrderData(response);
             this.globalService.orderData = this.orderData;
             console.log('global', this.globalService.orderData);
+            this.isVisible = false;
           });
         },
         error: (error) => {
+          this.isVisible = false;
           console.error('Token ungültig oder Fehler:', error);
           this.router.navigate(['/login']);
         },
       });
     } else {
+      this.isVisible = false;
       console.log('Kein Token gefunden.');
       this.router.navigate(['/login']);
     }
