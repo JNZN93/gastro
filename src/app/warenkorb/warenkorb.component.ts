@@ -15,9 +15,9 @@ export class WarenkorbComponent implements OnInit {
   isVisible = false;
   orderData = {};
   isDelivery: boolean = true; // Standardmäßig auf Lieferung gesetzt
-  street: string = '';
-  zipCode: string = '';
-  city: string = '';
+  street: string | null = localStorage.getItem('street') ? localStorage.getItem('street') : '';
+  zipCode: string | null = localStorage.getItem('zipcode') ? localStorage.getItem('zipcode') : '';
+  city: string | null= localStorage.getItem('city') ? localStorage.getItem('city') : '';
   combinedValue: string = '';
   
 
@@ -47,6 +47,11 @@ export class WarenkorbComponent implements OnInit {
   sendOrder() {
     this.getTotalPrice();
     const newAddress = this.city + '$' + this.zipCode + '$' + this.street;
+    // save address for next orders
+    localStorage.setItem('city', this.city ? this.city : '')
+    localStorage.setItem('zipcode', this.zipCode ? this.zipCode : '')
+    localStorage.setItem('street', this.street ? this.street : '')
+
     this.globalService.orderData.total_price = this.globalService.totalPrice
     const completeOrder = {
       orderData: {
