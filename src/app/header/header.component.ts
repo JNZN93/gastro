@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { ToggleCartService } from '../toggle-cart.service';
 import { Router } from '@angular/router';
+import { GlobalService } from '../global.service';
 
 @Component({
   selector: 'app-header',
@@ -12,7 +13,7 @@ export class HeaderComponent {
   showModal = false;
   private hiddenRoutes: string[] = ['/login', '/registration'];
 
-  constructor(private toggleService: ToggleCartService, private router: Router) {}
+  constructor(private toggleService: ToggleCartService, private router: Router, public globalService:GlobalService) {}
 
   toggleWarenkorb() {
     this.toggleService.toggle(); // Toggle-Funktion aufrufen

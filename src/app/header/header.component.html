@@ -11,6 +11,9 @@
     @if (!shouldHideElementAdmin()) {
     <div class="burger-button" (click)="toggleWarenkorb()">
         <img src="shoppingcart.png" alt="">
+        @if (this.globalService.warenkorb.length > 0) {
+            <div class="cart-badge">{{ this.globalService.warenkorb.length }}</div>
+        }
     </div>
     }
 </header>

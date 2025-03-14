@@ -98,7 +98,7 @@ filteredArtikelData() {
     ];
   }
 
-  addToCart(artikel: any): void {
+  addToCart(event: Event, artikel: any): void {
     // Sicherstellen, dass die Menge korrekt ist
     if (
       !artikel.quantity ||
@@ -127,10 +127,31 @@ filteredArtikelData() {
     // Eingabefeld für Menge zurücksetzen
     artikel.quantity = '';
 
+    const button = event.target as HTMLElement;
+
+    // Klasse entfernen, dann mit requestAnimationFrame neu hinzufügen, um die Animation zu triggern
+    button.classList.remove('clicked');
+    
+    // Animation zurücksetzen
+    requestAnimationFrame(() => {
+        button.classList.add('clicked'); // Füge die Klasse wieder hinzu
+    });
+
+    // Sofort Hintergrundfarbe ändern
+    button.style.backgroundColor = "rgb(255, 102, 0)"; // Orange
+
+    // Button vergrößern und danach wieder auf Normalgröße setzen
+    button.style.transform = "scale(1.1)";
+    
+    // Nach 500ms zurücksetzen
+    setTimeout(() => {
+      button.style.transform = "scale(1)"; // Zurück auf Ausgangsgröße
+      button.style.backgroundColor = "#000000"; // Zurück zu Schwarz
+    }, 500);
+
     // Den Gesamtpreis aktualisieren
-    // this.getTotalPrice();
     this.getTotalPrice();
-  }
+}
 
 
   getTotalPrice() {

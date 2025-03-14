@@ -20,7 +20,7 @@
               <p class="card-price">Art.-Nr [{{ artikel.article_number }}]</p>
               <p class="card-price">{{ artikel.sale_price }}€ pro {{ artikel.unit }}</p>
               <input type="number" [(ngModel)]="artikel.quantity" placeholder="Menge eingeben" class="quantity-input" min="1">
-              <button (click)="addToCart(artikel)" class="add-to-cart-btn">In den Warenkorb</button>
+              <button (click)="addToCart( $event, artikel)" class="add-to-cart-btn"  >In den Warenkorb</button>
             </div>
           </div>
     }

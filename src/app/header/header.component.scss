@@ -22,6 +22,24 @@ header {
   }
 }
 
+.cart-badge {
+  position: absolute;
+  background-color: rgb(255, 174, 0);
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  top: 13px;
+  right: 14px;
+  width: 28px; /* Stelle sicher, dass Breite und Höhe gleich sind */
+  height: 25px;
+  border-radius: 50%; /* Macht es rund */
+  display: flex; /* Zentriert die Zahl */
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+
 .burger-button {
   display: flex;
   flex-direction: column;

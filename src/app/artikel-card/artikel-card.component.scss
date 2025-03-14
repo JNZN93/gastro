@@ -58,7 +58,7 @@
     left: 50%; /* Setzt den linken Rand auf die Mitte */
     transform: translateX(-50%); /* Verschiebt den Container um 50% seiner Breite nach links */
     right: 0;
-    width: 100%;
+    width: 90%;
     background-color: white; /* Hintergrundfarbe für die Eingabefelder */
     padding: 16px;
     z-index: 98; /* Sicherstellen, dass es über dem Inhalt liegt */
@@ -175,8 +175,14 @@
     border: none;
     border-radius: 5px;
     cursor: pointer;
-    transition: background-color 0.3s ease;
-  }
+    transition: transform 0.2s ease-in-out, background-color 0.3s ease-in-out;
+    transform: scale(1); /* Sicherstellen, dass der Button im Normalzustand nicht skaliert ist */
+}
+
+.add-to-cart-btn.clicked {
+    transform: scale(1.1); /* Vergrößerung um 10% */
+    background-color: rgb(255, 102, 0); /* Orange Hintergrund */
+}
   
   .add-to-cart-btn:hover {
     background-color: #3d3d3d;
