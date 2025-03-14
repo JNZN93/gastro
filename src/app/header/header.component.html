@@ -8,7 +8,7 @@
     </div>
     }
 
-    @if (!shouldHideElementAdmin()) {
+    @if (!shouldHideElementAdmin() && !shouldHideElement()) {
     <div class="burger-button" (click)="toggleWarenkorb()">
         <img src="shoppingcart.png" alt="">
         @if (this.globalService.warenkorb.length > 0) {
