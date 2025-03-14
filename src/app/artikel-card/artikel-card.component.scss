@@ -67,7 +67,8 @@
     left: 50%; /* Setzt den linken Rand auf die Mitte */
     transform: translateX(-50%); /* Verschiebt den Container um 50% seiner Breite nach links */
     right: 0;
-    width: 90%;
+    width: 100%;
+    box-sizing: border-box;
     background-color: white; /* Hintergrundfarbe für die Eingabefelder */
     padding: 16px;
     z-index: 99;
@@ -102,7 +103,7 @@
     font-size: 16px;
     border: 2px solid #ddd;
     border-radius: 8px;
-    width: 300px;
+    width: 180px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     transition: border-color 0.3s ease;
   }
@@ -236,4 +237,8 @@
     display: none;
   }
   
-  
+  @media only screen and (max-width: 590px) {
+    .filter-container {
+      flex-direction: column;
+    }
+  }

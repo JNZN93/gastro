@@ -19,6 +19,7 @@ export class WarenkorbComponent implements OnInit {
   zipCode: string | null = localStorage.getItem('zipcode') ? localStorage.getItem('zipcode') : '';
   city: string | null= localStorage.getItem('city') ? localStorage.getItem('city') : '';
   combinedValue: string = '';
+
   
 
 
@@ -70,6 +71,7 @@ export class WarenkorbComponent implements OnInit {
         // Warenkorb leeren
         this.globalService.warenkorb = [];
         this.globalService.totalPrice = 0;
+        localStorage.removeItem('warenkorb');
       },
       error: (error) => {
         console.error('Fehler bei der Bestellung:', error);
@@ -106,6 +108,7 @@ export class WarenkorbComponent implements OnInit {
     // Setze eine neue Referenz, damit Angular das UI updated
     this.globalService.warenkorb = [...this.globalService.warenkorb];
     this.getTotalPrice();
+    localStorage.setItem('warenkorb', JSON.stringify(this.globalService.warenkorb))
   }
 
   removeItem(artikel: any) {
@@ -116,8 +119,8 @@ export class WarenkorbComponent implements OnInit {
 
     // Neue Referenz setzen, damit Angular das UI aktualisiert
     this.globalService.warenkorb = [...this.globalService.warenkorb];
-    console.log(this.globalService.warenkorb)
     this.getTotalPrice();
+    localStorage.setItem('warenkorb', JSON.stringify(this.globalService.warenkorb))
   }
 
   closeWarenkorb(){

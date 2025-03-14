@@ -31,6 +31,11 @@ export class ArtikelCardComponent implements OnInit {
 
   ngOnInit(): void {
     const token = localStorage.getItem('token');
+    const loadedWarenkorb = localStorage.getItem('warenkorb')
+
+    if(loadedWarenkorb) {
+      this.globalService.warenkorb = JSON.parse(loadedWarenkorb);
+    }
 
     if (token) {
       this.authService.checkToken(token).subscribe({
@@ -99,6 +104,7 @@ filteredArtikelData() {
   }
 
   addToCart(event: Event, artikel: any): void {
+
     // Sicherstellen, dass die Menge korrekt ist
     if (
       !artikel.quantity ||
@@ -149,8 +155,9 @@ filteredArtikelData() {
       button.style.backgroundColor = "#000000"; // Zurück zu Schwarz
     }, 500);
 
-    // Den Gesamtpreis aktualisieren
     this.getTotalPrice();
+    //Warenkorb und Endsumme speichern LocalStorage
+    localStorage.setItem('warenkorb', JSON.stringify(this.globalService.warenkorb));
 }
 
 
