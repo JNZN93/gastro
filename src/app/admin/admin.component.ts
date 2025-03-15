@@ -30,11 +30,14 @@ export class AdminComponent implements OnInit {
     private orderService: OrderService,
     private http: HttpClient,
     private authService: AuthService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.checkUserRole();
     this.loadOrders();
+    setInterval(() => {
+      this.loadOrders();
+    }, 1000 * 60)
   }
 
   checkUserRole() {
@@ -247,12 +250,12 @@ export class AdminComponent implements OnInit {
         .subscribe({
           next: (res) => {
             alert('Datei erfolgreich hochgeladen!'),
-            this.isUploading = false; // Upload-Loading ausblenden
+              this.isUploading = false; // Upload-Loading ausblenden
             this.isVisible = false; // Upload-Komponente ausblenden
           },
           error: (err) => {
             console.log('Fehler beim Hochladen!', err),
-            this.isUploading = false;
+              this.isUploading = false;
           },
         });
     } else {
@@ -265,14 +268,14 @@ export class AdminComponent implements OnInit {
     if (newStatus == 'open') {
       this.selectedOrder = order;
       this.newStatus = newStatus;
-      this.updateOrderStatus(this.selectedOrder, newStatus )
+      this.updateOrderStatus(this.selectedOrder, newStatus)
       return;
     }
     // Wenn der Status auf "In Bearbeitung" geändert wird
     if (newStatus == 'in_progress') {
       this.selectedOrder = order;
       this.newStatus = newStatus;
-      this.updateOrderStatus(this.selectedOrder, newStatus )
+      this.updateOrderStatus(this.selectedOrder, newStatus)
       return;
     }
     // Wenn der Status auf "Fertig" geändert wird, öffne das Modal
