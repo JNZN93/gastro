@@ -9,7 +9,7 @@
 }
 
 .form-container {
-    width: 300px;
+    min-width: 300px;
     padding: 20px;
     background-color: white;
     border-radius: 40px;
@@ -38,14 +38,14 @@ input {
 button {
     all: unset;
     cursor: pointer;
-    background-color: rgb(0, 39, 83);
+    background-color: rgb(0, 0, 0);
     color: white;
     padding: 12px 24px;
     border-radius: 25px;
     margin-top: 12px;
 
     &:hover {
-        background-color: rgb(1, 49, 104);
+        background: rgb(20, 20, 20);
     }
 }
 
