@@ -24,6 +24,29 @@
   }
 }
 
+.function-container {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  margin-left: 8px;
+
+  button {
+    background-color: green;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 10px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+
+    &:hover {
+      background-color: #00b400;
+    }
+  }
+}
+
 input {
   color: #252525;
   box-sizing: border-box;
@@ -97,7 +120,7 @@ table {
     transition: all 0.2s ease-in-out;
 
     &:hover {
-      background-color: #252525;
+      background-color: #ff0000;
     }
   }
 }

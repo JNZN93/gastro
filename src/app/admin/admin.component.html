@@ -4,7 +4,11 @@
         <input #fileInput type="file" id="xml" name="xml" accept=".xml"/>
         
         <button (click)="onUploadClick()">Produkte aktualisieren</button>
+      </div>
+
+      <div class="function-container">
         <button (click)="generateSelectedPdf()">Alle PDFs drucken</button>
+        <button routerLink="/products">Zur Kundenansicht</button>
       </div>
     
         <table>
