@@ -5,8 +5,8 @@
           <input type="text" [(ngModel)]="searchTerm" (input)="filteredArtikelData()" placeholder="Artikel suchen..." class="search-input">
           <div class="custom-select">
             <select class="selected" [(ngModel)]="selectedCategory" (change)="filterCategory($event)">
-              <option value="">📂 Alle Kategorien</option>
-              <option value="FAVORITEN">FAVORITEN</option>
+              <option value="">Alle Kategorien 📂</option>
+              <option value="FAVORITEN">FAVORITEN ⭐️</option>
               <option *ngFor="let category of categories" [value]="category">
                 {{ category }}
               </option>

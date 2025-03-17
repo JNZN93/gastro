@@ -56,7 +56,7 @@ input {
 }
 
 input::file-selector-button {
-  background-color: #0044ff;
+  background-color: #004d57;
   color: white;
   border: none;
   padding: 5px 10px;
@@ -65,7 +65,7 @@ input::file-selector-button {
   transition: all 0.2s ease-in-out;
 
   &:hover {
-    background-color: #4e7dff;
+    background-color: #007585;
   }
 }
 

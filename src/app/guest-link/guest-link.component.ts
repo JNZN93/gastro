@@ -44,7 +44,6 @@ export class GuestLinkComponent implements OnInit {
   }
 
 
-
   checkUserRole() {
     this.authService.checkToken(localStorage.getItem('token')).subscribe({
       next: (response) => {
