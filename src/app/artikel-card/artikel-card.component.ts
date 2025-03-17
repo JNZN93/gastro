@@ -87,6 +87,10 @@ filteredArtikelData() {
     const category = (event.target as HTMLSelectElement).value; // Wert aus Event holen
     console.log('selected', category)
     this.selectedCategory = category; // Kategorie speichern
+    if (this.selectedCategory == "FAVORITEN") {
+        this.artikelData = JSON.parse(localStorage.getItem('warenkorb') || '[]');
+        return
+    }
     if (this.selectedCategory == "") {
       this.artikelData = this.globalArtikels;
       return;

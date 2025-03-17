@@ -1,0 +1,14 @@
+<div class="main-container">
+
+    <h3>Gastzugang erstellen</h3>
+
+    <div class="guest-link-form">
+        <input [(ngModel)]="name" type="text" placeholder="Name eingeben...">
+        <button (click)="generateLink()">Gastzugang erstellen</button>
+    </div>
+
+    <div class="guest-link-container">
+        <span>Link:</span><input [value]="newLink" type="text" placeholder="Hier erscheint der Link">
+        <span>PIN:</span><input [value]="newPin" type="text" placeholder="Hier erscheint PIN">
+    </div>
+</div>

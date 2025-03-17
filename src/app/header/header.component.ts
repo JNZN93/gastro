@@ -11,7 +11,7 @@ import { GlobalService } from '../global.service';
 })
 export class HeaderComponent {
   showModal = false;
-  private hiddenRoutes: string[] = ['/login', '/registration'];
+  private hiddenRoutes: string[] = ['/login', '/registration', 'guest-link'];
 
   constructor(private toggleService: ToggleCartService, private router: Router, public globalService:GlobalService) {}
 

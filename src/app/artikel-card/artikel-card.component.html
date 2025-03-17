@@ -6,6 +6,7 @@
           <div class="custom-select">
             <select [(ngModel)]="selectedCategory" (change)="filterCategory($event)">
               <option value="">📂 Alle Kategorien</option>
+              <option value="FAVORITEN">FAVORITEN</option>
               <option *ngFor="let category of categories" [value]="category">
                 {{ category }}
               </option>
