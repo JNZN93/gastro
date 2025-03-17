@@ -80,7 +80,7 @@ export class ArtikelCardComponent implements OnInit {
       console.log('Artikel hinzugefügt');
       icon.classList.add('fa-star'); // Füge den gefüllten Stern hinzu
     } else {
-      this.globalService.favoriteItems = this.globalService.favoriteItems.filter((item: any) => item.id !== artikel.id);
+      this.globalService.favoriteItems = this.globalService.favoriteItems.filter((item: any) => item.article_number !== artikel.article_number);
       console.log('Artikel entfernt');
       icon.classList.remove('fa-star'); // Entferne den gefüllten Stern
     }
