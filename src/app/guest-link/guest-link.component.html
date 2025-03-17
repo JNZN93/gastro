@@ -8,7 +8,25 @@
     </div>
 
     <div class="guest-link-container">
-        <span>Link:</span><input [value]="newLink" type="text" placeholder="Hier erscheint der Link">
-        <span>PIN:</span><input [value]="newPin" type="text" placeholder="Hier erscheint PIN">
+        <span>Link:</span>
+        <div class="input-container">
+            <input #inputLink [value]="newLink" type="text" placeholder="Hier erscheint der Link">
+            <img src="copy.png" (click)="copyLink()">
+        </div>
+
+        <span>PIN:</span>
+        <div class="input-container">
+            <input #inputPin [value]="newPin" type="text" placeholder="Hier erscheint PIN">
+            <img src="copy.png" (click)="copyPin()">
+        </div>
     </div>
+
+    @if(showSnackbar) {
+        @if(showPin) {
+            <div class="snackbar">PIN Kopiert!</div>
+        }
+        @if(showLink) {
+            <div class="snackbar">Link Kopiert!</div>
+        }
+    }
 </div>

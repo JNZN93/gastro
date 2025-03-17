@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { AuthService } from '../authentication.service';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
@@ -15,7 +15,12 @@ export class GuestLinkComponent implements OnInit {
   name: string = "";
   newLink: string = "";
   newPin: string = "";
+  showSnackbar = false;
+  showPin = false;
+  showLink = false;
   
+  @ViewChild('inputLink') inputLink!: ElementRef;
+  @ViewChild('inputPin') inputPin!: ElementRef;
 
   constructor(private http: HttpClient, private authService: AuthService, private router: Router) {
   }
@@ -52,5 +57,33 @@ export class GuestLinkComponent implements OnInit {
         this.router.navigate(['/login']);
       },
     });
+  }
+
+  copyLink() {
+      const inputLink = this.inputLink.nativeElement;
+      navigator.clipboard.writeText(inputLink.value)
+        .then(() => {
+          this.showLink = true;
+          this.showSnackbar = true;
+          setTimeout(() => {
+            this.showLink = false;
+            this.showSnackbar = false;
+          }, 2000); // Snackbar nach 2 Sekunden ausblenden
+        })
+        .catch(err => console.error('Fehler beim Kopieren:', err));
+  }
+
+  copyPin() {
+    const inputPin = this.inputPin.nativeElement;
+    navigator.clipboard.writeText(inputPin.value)
+      .then(() => {
+        this.showPin = true;
+        this.showSnackbar = true;
+        setTimeout(() => {
+          this.showPin = false;
+          this.showSnackbar = false;
+        }, 2000); // Snackbar nach 2 Sekunden ausblenden
+      })
+      .catch(err => console.error('Fehler beim Kopieren:', err));
   }
 }
