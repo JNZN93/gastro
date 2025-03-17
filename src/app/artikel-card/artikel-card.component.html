@@ -4,7 +4,7 @@
         <div class="filter-container">
           <input type="text" [(ngModel)]="searchTerm" (input)="filteredArtikelData()" placeholder="Artikel suchen..." class="search-input">
           <div class="custom-select">
-            <select [(ngModel)]="selectedCategory" (change)="filterCategory($event)">
+            <select class="selected" [(ngModel)]="selectedCategory" (change)="filterCategory($event)">
               <option value="">📂 Alle Kategorien</option>
               <option value="FAVORITEN">FAVORITEN</option>
               <option *ngFor="let category of categories" [value]="category">
@@ -19,13 +19,21 @@
  <div class="content">
     @for (artikel of artikelData; track $index) {
         <div class="card">
+            <!-- Stern-Icon für Favoriten -->
+            <div class="favorite-icon" (click)="toggleFavorite($event, artikel)">
+               <i></i>
+            </div>
             <!--<img src="https://placehold.co/100x100" alt="Avatar" class="card-img"> -->
             <div class="card-body">
               <h4 class="card-title"><b>{{ artikel.article_text }}</b></h4>
               <p class="card-price">Art.-Nr [{{ artikel.article_number }}]</p>
               <!--<p class="card-price">{{ artikel.sale_price }}€ pro {{ artikel.unit }}</p> -->
-              <input type="number" [(ngModel)]="artikel.quantity" placeholder="Menge eingeben" class="quantity-input" min="1">
-              <button (click)="addToCart( $event, artikel)" class="add-to-cart-btn"  >In den Warenkorb</button>
+              <div class="card-footer">
+                  <div class="input-main">
+                     <input type="number" [(ngModel)]="artikel.quantity" placeholder="Menge eingeben" class="quantity-input" min="1">
+                     <button (click)="addToCart($event, artikel)" class="add-to-cart-btn">In den Warenkorb</button>
+                  </div>                 
+              </div>
             </div>
           </div>
     }

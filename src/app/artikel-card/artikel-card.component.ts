@@ -65,21 +65,42 @@ export class ArtikelCardComponent implements OnInit {
     }
   }
 
+  toggleFavorite(event: Event, artikel: any): void {
+    const icon = event.target as HTMLElement; // Das angeklickte Element
+    // Wenn isFavorite null ist, setze es auf true
+    if (artikel.isFavorite === null) {
+      artikel.isFavorite = true;
+      icon.classList.add('fa-star');    // Füge den gefüllten Stern hinzu
+    } else {
+      // Andernfalls wechsle zwischen true und false
+      artikel.isFavorite = !artikel.isFavorite;
+
+      if (artikel.isFavorite) {
+        icon.classList.add('fa-star');    // Füge den gefüllten Stern hinzu
+      }
+      else {
+        icon.classList.remove('fa-star');    // Füge den gefüllten Stern hinzu
+      }
+    }
+
+   console.log(artikel)
+  }
+
+
   logIndex(index: number): void {
     console.log('Artikel-Index:', index);
   }
 
 
-filteredArtikelData() {
-  this.artikelData = this.globalArtikels;
-  if (this.searchTerm) {
-    const terms = this.searchTerm.toLowerCase().split(/\s+/);
-    this.artikelData = this.artikelData.filter((artikel) =>
-      terms.every((term) => artikel.article_text.toLowerCase().includes(term))
-    );
+  filteredArtikelData() {
+    this.artikelData = this.globalArtikels;
+    if (this.searchTerm) {
+      const terms = this.searchTerm.toLowerCase().split(/\s+/);
+      this.artikelData = this.artikelData.filter((artikel) =>
+        terms.every((term) => artikel.article_text.toLowerCase().includes(term))
+      );
+    }
   }
-
-}
 
 
 
@@ -87,6 +108,9 @@ filteredArtikelData() {
     const category = (event.target as HTMLSelectElement).value; // Wert aus Event holen
     console.log('selected', category)
     this.selectedCategory = category; // Kategorie speichern
+    // Seite nach oben scrollen
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
     if (this.selectedCategory == "FAVORITEN") {
         this.artikelData = JSON.parse(localStorage.getItem('warenkorb') || '[]');
         return
