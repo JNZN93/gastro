@@ -78,18 +78,20 @@
 
   .favorite-icon {
     cursor: pointer;
+    content: url('../../../public/star-default.png');
     font-size: 24px; /* Größe des Stern-Icons */
     color: gold; /* Farbe des Sterns */
     position: absolute;
     right: 10px;
     top: 10px;
-    box-shadow: 1px 1px 1px 1px gray;
     background: white;
     padding: 20px;
+    width: 35px;
+    height: 35px;
   }
 
   .fa-star {
-    background: yellow;
+    content: url('../../../public/star-orange.png');
   }
   
   .favorite-icon i {

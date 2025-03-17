@@ -65,32 +65,28 @@ export class ArtikelCardComponent implements OnInit {
     }
   }
 
+  isFavorite(artikel: any): boolean {
+    return JSON.parse(localStorage.getItem('favoriteItems') || '[]').some((item: any) => item.article_number === artikel.article_number);
+    
+  }
+
   toggleFavorite(event: Event, artikel: any): void {
     const icon = event.target as HTMLElement; // Das angeklickte Element
-    // Wenn isFavorite null ist, setze es auf true
-    if (artikel.isFavorite === null) {
-      artikel.isFavorite = true;
-      icon.classList.add('fa-star');    // Füge den gefüllten Stern hinzu
+    console.log(artikel.isFavorite);
+  
+    artikel.isFavorite = !artikel.isFavorite; // Zustand umkehren
+    if (artikel.isFavorite) {
+      this.globalService.favoriteItems = [...this.globalService.favoriteItems, artikel];
+      console.log('Artikel hinzugefügt');
+      icon.classList.add('fa-star'); // Füge den gefüllten Stern hinzu
     } else {
-      // Andernfalls wechsle zwischen true und false
-      artikel.isFavorite = !artikel.isFavorite;
-
-      if (artikel.isFavorite) {
-        icon.classList.add('fa-star');    // Füge den gefüllten Stern hinzu
-      }
-      else {
-        icon.classList.remove('fa-star');    // Füge den gefüllten Stern hinzu
-      }
+      this.globalService.favoriteItems = this.globalService.favoriteItems.filter((item: any) => item.id !== artikel.id);
+      console.log('Artikel entfernt');
+      icon.classList.remove('fa-star'); // Entferne den gefüllten Stern
     }
-
-   console.log(artikel)
+    console.log(this.globalService.favoriteItems);
+    localStorage.setItem('favoriteItems', JSON.stringify(this.globalService.favoriteItems));
   }
-
-
-  logIndex(index: number): void {
-    console.log('Artikel-Index:', index);
-  }
-
 
   filteredArtikelData() {
     this.artikelData = this.globalArtikels;
@@ -102,8 +98,6 @@ export class ArtikelCardComponent implements OnInit {
     }
   }
 
-
-
   filterCategory(event: Event) {
     const category = (event.target as HTMLSelectElement).value; // Wert aus Event holen
     console.log('selected', category)
@@ -112,7 +106,7 @@ export class ArtikelCardComponent implements OnInit {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
     if (this.selectedCategory == "FAVORITEN") {
-        this.artikelData = JSON.parse(localStorage.getItem('warenkorb') || '[]');
+        this.artikelData = JSON.parse(localStorage.getItem('favoriteItems') || '[]');
         return
     }
     if (this.selectedCategory == "") {

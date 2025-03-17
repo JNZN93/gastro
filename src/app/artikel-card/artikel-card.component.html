@@ -20,9 +20,15 @@
     @for (artikel of artikelData; track $index) {
         <div class="card">
             <!-- Stern-Icon für Favoriten -->
-            <div class="favorite-icon" (click)="toggleFavorite($event, artikel)">
-               <i></i>
-            </div>
+             @if(isFavorite(artikel)) {
+              <div class="favorite-icon fa-star" (click)="toggleFavorite($event, artikel)">
+                <img src="star-default.png" alt="">
+              </div>
+             }@else {
+              <div class="favorite-icon" (click)="toggleFavorite($event, artikel)">
+                <img src="star-default.png" alt="">
+              </div>
+             }
             <!--<img src="https://placehold.co/100x100" alt="Avatar" class="card-img"> -->
             <div class="card-body">
               <h4 class="card-title"><b>{{ artikel.article_text }}</b></h4>
