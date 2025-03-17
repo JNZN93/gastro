@@ -38,6 +38,7 @@ export class GuestLinkComponent implements OnInit {
       },
       error: (error) => {
         console.error(error);
+        alert('Es ist ein Fehler aufgetreten!')
       },
     });
   }

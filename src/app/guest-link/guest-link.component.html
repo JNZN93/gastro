@@ -3,20 +3,20 @@
     <h3>Gastzugang erstellen</h3>
 
     <div class="guest-link-form">
-        <input [(ngModel)]="name" type="text" placeholder="Name eingeben...">
+        <input [(ngModel)]="name" type="text" placeholder="Name eingeben..." minlength="1">
         <button (click)="generateLink()">Gastzugang erstellen</button>
     </div>
 
     <div class="guest-link-container">
         <span>Link:</span>
         <div class="input-container">
-            <input #inputLink [value]="newLink" type="text" placeholder="Hier erscheint der Link">
+            <input #inputLink [value]="newLink" type="text" placeholder="Hier erscheint der Link" readonly>
             <img src="copy.png" (click)="copyLink()">
         </div>
 
         <span>PIN:</span>
         <div class="input-container">
-            <input #inputPin [value]="newPin" type="text" placeholder="Hier erscheint PIN">
+            <input #inputPin [value]="newPin" type="text" placeholder="Hier erscheint PIN" readonly>
             <img src="copy.png" (click)="copyPin()">
         </div>
     </div>
