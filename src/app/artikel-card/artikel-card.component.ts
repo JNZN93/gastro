@@ -35,9 +35,13 @@ export class ArtikelCardComponent implements OnInit {
     const token = localStorage.getItem('token');
     const loadedWarenkorb = localStorage.getItem('warenkorb')
 
+    console.log('loaded', loadedWarenkorb)
+
     if(loadedWarenkorb) {
       this.globalService.warenkorb = JSON.parse(loadedWarenkorb);
     }
+
+    console.log(this.globalService.warenkorb)
 
     if (token) {
       this.authService.checkToken(token).subscribe({

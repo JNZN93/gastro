@@ -32,7 +32,7 @@ export class WarenkorbComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.getTotalPrice();
+   
   }
 
   toggleDelivery(fulfillment_type:string) {

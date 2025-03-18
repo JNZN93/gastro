@@ -29,6 +29,7 @@ export class HeaderComponent {
     localStorage.removeItem('warenkorb');
     this.showModal = false;
     this.router.navigate(['login'])
+    window.location.reload();
   }
 
   goBack() {
