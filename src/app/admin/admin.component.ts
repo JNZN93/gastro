@@ -112,7 +112,7 @@ export class AdminComponent implements OnInit {
     doc.text('Kunde: ' + name, 14, 70);
     doc.text('E-Mail: ' + email, 14, 80);
     doc.text('Gesamtpreis: €' + Number(totalPrice).toFixed(2), 14, 90);
-    doc.text('Lieferart: ' + fulfillmentType, 14, 100);
+    doc.text('Lieferart: ' + (fulfillmentType == 'delivery' ? 'Lieferung' : 'Abholung'), 14, 100);
 
     // Zusätzliche Bestellinformationen
     doc.text('Firma: ' + (company ? company : 'Keine Angabe'), 14, 110);
@@ -194,7 +194,7 @@ export class AdminComponent implements OnInit {
       doc.text('Kunde: ' + order.name, 14, 80);
       doc.text('E-Mail: ' + order.email, 14, 90);
       doc.text('Gesamtpreis: €' + Number(order.total_price).toFixed(2), 14, 100);
-      doc.text('Lieferart: ' + order.fulfillment_type, 14, 110);
+      doc.text('Lieferart: ' + (order.fulfillment_type == 'delivery' ?  'Lieferung': 'Abholung'), 14, 110);
       doc.text('Zahlstatus: ' + order.payment_status, 14, 120);
 
       // Trennlinie
