@@ -41,8 +41,7 @@ export class RegistrationComponent {
       console.log(this.registerForm.value);
       this.authService.register(this.registerForm.value).subscribe({
         next: (response) => {
-          console.log('Registrierung erfolgreich!', response);
-          alert('Registrierung erfolgreich!');
+          alert('Bitte öffnen Sie Ihr Postfach und klicken Sie auf den Verifizierungslink, um Ihre E-Mail-Adresse zu bestätigen.');
           this.router.navigate(['/login']);
         },
         error: (error) => {

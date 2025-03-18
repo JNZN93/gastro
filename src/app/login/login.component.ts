@@ -44,4 +44,15 @@ export class LoginComponent {
       });
     }
   }
-}
+
+  forgotPassword() {
+    this.authService.forgotPassword(this.loginForm.value).subscribe({
+      next: (response) => {
+        alert(response.message)
+      },
+      error: (error) => {
+        alert('Es ist ein Fehler aufgetreten!')
+      }
+    });
+  }
+  }

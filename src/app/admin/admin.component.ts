@@ -131,8 +131,7 @@ export class AdminComponent implements OnInit {
     doc.setFont('helvetica', 'bold');
     doc.text('Artikelnummer', 14, 145);
     doc.text('Artikel', 60, 145);
-    doc.text('Menge', 120, 145);
-    doc.text('Preis', 160, 145);
+    doc.text('Menge', 180, 145);
 
     // Artikel und Mengen
     doc.setFontSize(12);
@@ -142,8 +141,7 @@ export class AdminComponent implements OnInit {
     products.forEach((product) => {
       doc.text(product.product_article_number, 14, yPosition); // Artikelnummer
       doc.text(product.product_name, 60, yPosition); // Artikelname
-      doc.text(String(product.quantity), 120, yPosition); // Menge
-      doc.text('€' + product.price, 160, yPosition); // Preis
+      doc.text(String(product.quantity), 180, yPosition); // Menge
       yPosition += 10; // Abstand zwischen den Zeilen
     });
 
@@ -205,8 +203,7 @@ export class AdminComponent implements OnInit {
       doc.setFont('helvetica', 'bold');
       doc.text('Artikelnummer', 14, 135);
       doc.text('Artikel', 60, 135);
-      doc.text('Menge', 120, 135);
-      doc.text('Preis', 160, 135);
+      doc.text('Menge', 180, 135);
 
       // Tabelleninhalte (normaler Text)
       doc.setFontSize(12);
@@ -216,15 +213,13 @@ export class AdminComponent implements OnInit {
       order.items.forEach((product: any) => {
         doc.text(product.product_article_number, 14, yPosition); // Artikelnummer
         doc.text(product.product_name, 60, yPosition); // Produktname
-        doc.text(String(product.quantity), 120, yPosition); // Menge
-        doc.text('€' + product.price, 160, yPosition); // Preis
+        doc.text(String(product.quantity), 180, yPosition); // Menge
         yPosition += 10; // Abstand zwischen den Zeilen
       });
 
       // Gesamtbetrag unten, größere Schriftart für den Endbetrag
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
-      doc.text('Gesamtbetrag: €' + Number(order.total_price).toFixed(2), 14, yPosition + 10);
     });
 
     // Öffnen des Druckdialogs

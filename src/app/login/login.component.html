@@ -12,7 +12,7 @@
             <label for="password"></label>
             <input type="password" name="password" id="password" formControlName="password" placeholder="Passwort">
 
-            <div class="forgot"><a routerLink="/login">Passwort vergessen</a> | <a routerLink="/registration">Hier registrieren</a></div>
+            <div class="forgot"><a routerLink="/login" (click)="forgotPassword()">Passwort vergessen</a> | <a routerLink="/registration">Hier registrieren</a></div>
 
             <button type="submit" [disabled]="loginForm.invalid">Anmelden</button>
         </form>
