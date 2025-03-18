@@ -26,6 +26,7 @@ export class HeaderComponent {
 
   logOut() {
     localStorage.removeItem('token');
+    localStorage.removeItem('warenkorb');
     this.showModal = false;
     this.router.navigate(['login'])
   }
