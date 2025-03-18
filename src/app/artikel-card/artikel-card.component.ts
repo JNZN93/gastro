@@ -66,28 +66,30 @@ export class ArtikelCardComponent implements OnInit {
   }
 
   isFavorite(artikel: any): boolean {
-    return JSON.parse(localStorage.getItem('favoriteItems') || '[]').some((item: any) => item.article_number === artikel.article_number);
+    const favs = localStorage.getItem('favoriteItems') || '[]';
+    return JSON.parse(favs).some((item: any) => item.article_number === artikel.article_number);
     
   }
 
   toggleFavorite(event: Event, artikel: any): void {
-    const icon = event.target as HTMLElement; // Das angeklickte Element
-    console.log(artikel.isFavorite);
+    let favorites = JSON.parse(localStorage.getItem('favoriteItems') || '[]');
   
-    artikel.isFavorite = !artikel.isFavorite; // Zustand umkehren
-    if (artikel.isFavorite) {
-      this.globalService.favoriteItems = [...this.globalService.favoriteItems, artikel];
-      console.log('Artikel hinzugefügt');
-      icon.classList.add('fa-star'); // Füge den gefüllten Stern hinzu
-    } else {
-      this.globalService.favoriteItems = this.globalService.favoriteItems.filter((item: any) => item.article_number !== artikel.article_number);
+    const index = favorites.findIndex((item: any) => item.article_number === artikel.article_number);
+  
+    if (index > -1) {
+      // Artikel existiert -> Entfernen
+      favorites.splice(index, 1);
       console.log('Artikel entfernt');
-      icon.classList.remove('fa-star'); // Entferne den gefüllten Stern
+    } else {
+      // Artikel hinzufügen
+      favorites.push(artikel);
+      console.log('Artikel hinzugefügt');
     }
-    console.log(this.globalService.favoriteItems);
-    localStorage.setItem('favoriteItems', JSON.stringify(this.globalService.favoriteItems));
+  
+    localStorage.setItem('favoriteItems', JSON.stringify(favorites));
   }
 
+  
   filteredArtikelData() {
     this.artikelData = this.globalArtikels;
     if (this.searchTerm) {
