@@ -25,6 +25,7 @@ export class AdminComponent implements OnInit {
   isVisible: boolean = true;
   isUploading: boolean = false;
 
+  
   constructor(
     private router: Router,
     private orderService: OrderService,
