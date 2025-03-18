@@ -147,7 +147,6 @@ export class AdminComponent implements OnInit {
     // Gesamtbetrag unten
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
-    doc.text('Gesamtbetrag: €' + Number(totalPrice).toFixed(2), 14, yPosition + 10);
 
     // PDF-Dokument öffnen
     doc.autoPrint();
