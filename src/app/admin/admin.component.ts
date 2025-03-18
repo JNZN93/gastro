@@ -318,6 +318,7 @@ export class AdminComponent implements OnInit {
   cancelCompletion() {
     if (this.selectedOrder) {
       this.selectedOrder.status = 'in_progress';
+      this.updateOrderStatus(this.selectedOrder, this.selectedOrder.status);
     }
     this.showModal = false;
     this.selectedOrder = null;
