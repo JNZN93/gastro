@@ -48,6 +48,9 @@ export class ArtikelCardComponent implements OnInit {
         next: (response) => {
           console.log('Token gültig:', response);
           this.artikelService.getData().subscribe((res) => {
+            if(response.user.role == 'admin') {
+              this.globalService.isAdmin = true;
+            }
             this.globalArtikels = res;
             this.artikelData = res;
             this.collectOrderData(response);

@@ -11,7 +11,7 @@ import { GlobalService } from '../global.service';
 })
 export class HeaderComponent {
   showModal = false;
-  private hiddenRoutes: string[] = ['/login', '/registration', 'guest-link'];
+  private hiddenRoutes: string[] = ['/login', '/registration', '/guest-link', '/verify'];
 
   constructor(private toggleService: ToggleCartService, private router: Router, public globalService:GlobalService) {}
 
@@ -42,5 +42,9 @@ export class HeaderComponent {
 
   shouldHideElementAdmin(): boolean {
     return this.router.url === '/admin';
+  }
+
+  navigateToAdmin() {
+    this.router.navigate(['/admin']);
   }
 }

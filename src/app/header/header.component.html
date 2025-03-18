@@ -2,10 +2,21 @@
     <img src="logo.png" alt="logo">
 
     @if(!shouldHideElement()){
-    <div (click)="openModal()" class="logout-container">
-        <img src="logout.png" alt="">
-        <span>logout</span>
-    </div>
+        <div class="dashboard-container">
+            <div (click)="openModal()" class="logout-container">
+                <img src="logout.png" alt="">
+                <span>Abmelden</span>
+            </div>
+            @if (this.globalService.isAdmin) {
+                @if (!shouldHideElementAdmin()) {
+                    <div class="logout-container" (click)="navigateToAdmin()">
+                        <img src="dashboard.png" alt="">
+                        <span>Dashboard</span>
+                    </div>
+                }
+            }
+        </div>
+
     }
 
     @if (!shouldHideElementAdmin() && !shouldHideElement()) {

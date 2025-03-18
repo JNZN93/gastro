@@ -11,6 +11,7 @@ export class AuthService {
   private apiUrlCheckToken = 'https://multi-mandant-ecommerce.onrender.com/api/auth/validate'; // URL für Token-Validierung
   private apiUrlGenerate = 'https://multi-mandant-ecommerce.onrender.com/api/auth/generate-link';
   private apiUrlVerifyPin = 'https://multi-mandant-ecommerce.onrender.com/api/auth/validate-pin';
+  private apiUrlForgotPassword = 'https://multi-mandant-ecommerce.onrender.com/api/auth/forgot-password';
 
   constructor(private http: HttpClient) {}
 
@@ -41,4 +42,10 @@ export class AuthService {
     });
     return this.http.post(this.apiUrlVerifyPin, {pin} , { headers });
   }
+
+  forgotPassword(credentials: { email: string; password: string }): Observable<any> {
+    return this.http.post(this.apiUrlForgotPassword, credentials )
+
+  }
+
 }

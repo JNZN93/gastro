@@ -8,6 +8,7 @@ export class GlobalService {
   public orderData:any = {};
   public totalPrice:any = 0;
   public favoriteItems: any = [];
+  public isAdmin: boolean = false;
 
   constructor() { }
 }

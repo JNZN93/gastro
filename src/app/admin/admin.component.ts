@@ -111,8 +111,7 @@ export class AdminComponent implements OnInit {
     doc.text('Erstellt um: ' + createdAtFormatted, 14, 60); // Uhrzeit
     doc.text('Kunde: ' + name, 14, 70);
     doc.text('E-Mail: ' + email, 14, 80);
-    doc.text('Gesamtpreis: €' + Number(totalPrice).toFixed(2), 14, 90);
-    doc.text('Lieferart: ' + fulfillmentType, 14, 100);
+    doc.text('Lieferart: ' + (fulfillmentType == 'delivery' ? 'Lieferung' : 'Abholung'), 14, 100);
 
     // Zusätzliche Bestellinformationen
     doc.text('Firma: ' + (company ? company : 'Keine Angabe'), 14, 110);
@@ -131,8 +130,7 @@ export class AdminComponent implements OnInit {
     doc.setFont('helvetica', 'bold');
     doc.text('Artikelnummer', 14, 145);
     doc.text('Artikel', 60, 145);
-    doc.text('Menge', 120, 145);
-    doc.text('Preis', 160, 145);
+    doc.text('Menge', 180, 145);
 
     // Artikel und Mengen
     doc.setFontSize(12);
@@ -142,15 +140,13 @@ export class AdminComponent implements OnInit {
     products.forEach((product) => {
       doc.text(product.product_article_number, 14, yPosition); // Artikelnummer
       doc.text(product.product_name, 60, yPosition); // Artikelname
-      doc.text(String(product.quantity), 120, yPosition); // Menge
-      doc.text('€' + product.price, 160, yPosition); // Preis
+      doc.text(String(product.quantity), 180, yPosition); // Menge
       yPosition += 10; // Abstand zwischen den Zeilen
     });
 
     // Gesamtbetrag unten
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
-    doc.text('Gesamtbetrag: €' + Number(totalPrice).toFixed(2), 14, yPosition + 10);
 
     // PDF-Dokument öffnen
     doc.autoPrint();
@@ -193,8 +189,7 @@ export class AdminComponent implements OnInit {
       );
       doc.text('Kunde: ' + order.name, 14, 80);
       doc.text('E-Mail: ' + order.email, 14, 90);
-      doc.text('Gesamtpreis: €' + Number(order.total_price).toFixed(2), 14, 100);
-      doc.text('Lieferart: ' + order.fulfillment_type, 14, 110);
+      doc.text('Lieferart: ' + (order.fulfillment_type == 'delivery' ?  'Lieferung': 'Abholung'), 14, 110);
       doc.text('Zahlstatus: ' + order.payment_status, 14, 120);
 
       // Trennlinie
@@ -205,8 +200,7 @@ export class AdminComponent implements OnInit {
       doc.setFont('helvetica', 'bold');
       doc.text('Artikelnummer', 14, 135);
       doc.text('Artikel', 60, 135);
-      doc.text('Menge', 120, 135);
-      doc.text('Preis', 160, 135);
+      doc.text('Menge', 180, 135);
 
       // Tabelleninhalte (normaler Text)
       doc.setFontSize(12);
@@ -216,15 +210,13 @@ export class AdminComponent implements OnInit {
       order.items.forEach((product: any) => {
         doc.text(product.product_article_number, 14, yPosition); // Artikelnummer
         doc.text(product.product_name, 60, yPosition); // Produktname
-        doc.text(String(product.quantity), 120, yPosition); // Menge
-        doc.text('€' + product.price, 160, yPosition); // Preis
+        doc.text(String(product.quantity), 180, yPosition); // Menge
         yPosition += 10; // Abstand zwischen den Zeilen
       });
 
       // Gesamtbetrag unten, größere Schriftart für den Endbetrag
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
-      doc.text('Gesamtbetrag: €' + Number(order.total_price).toFixed(2), 14, yPosition + 10);
     });
 
     // Öffnen des Druckdialogs

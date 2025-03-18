@@ -111,6 +111,7 @@ export class WarenkorbComponent implements OnInit {
     localStorage.setItem('warenkorb', JSON.stringify(this.globalService.warenkorb))
   }
 
+  
   removeItem(artikel: any) {
     // Warenkorb im GlobalService aktualisieren
     this.globalService.warenkorb = this.globalService.warenkorb.filter(
