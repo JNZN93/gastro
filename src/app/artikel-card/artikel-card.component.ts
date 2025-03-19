@@ -188,7 +188,7 @@ export class ArtikelCardComponent implements OnInit {
     // Nach 500ms zurücksetzen
     setTimeout(() => {
       button.style.transform = "scale(1)"; // Zurück auf Ausgangsgröße
-      button.style.backgroundColor = "#000000"; // Zurück zu Schwarz
+      button.style.backgroundColor = "#10b981"; // Zurück zu Grün
     }, 500);
 
     this.getTotalPrice();

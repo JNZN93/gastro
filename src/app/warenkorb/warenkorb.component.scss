@@ -85,12 +85,12 @@ h6 {
   }
 
   .toggle-delivery-button.active {
-    background-color:#333;
+    background-color:#10b981;
     color: #f8f9fa;
   }
   
   .toggle-delivery-button:hover {
-    background-color:#333;
+    background-color:#32d7a0;
     color: #f8f9fa;
   }
 
@@ -289,7 +289,7 @@ h4, h5 {
   margin-bottom: 20px;
   width: 100%;
   padding: 16px;
-  background: linear-gradient(135deg, #000000, #000000);
+  background: rgb(255, 102, 0);
   color: #fff;
   font-size: 1rem;
   font-weight: 600;
@@ -304,7 +304,7 @@ h4, h5 {
   box-shadow: 0 4px 10px rgba(0, 91, 187, 0.2);
 
   &:hover {
-      background: #222222;
+      background: rgb(255, 129, 44);
       box-shadow: 0 6px 15px rgba(0, 91, 187, 0.3);
       transform: translateY(-2px);
   }

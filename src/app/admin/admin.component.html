@@ -9,7 +9,7 @@
 
     <div class="function-container flex gap-4 mb-6">
         <button (click)="generateSelectedPdf()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
-            Alle PDFs drucken
+            Alle Bestellungen anzeigen
         </button>
         <button routerLink="/products" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700">
             Zur Kundenansicht
@@ -49,7 +49,7 @@
                     <td class="p-2">
                         <button (click)="generatePdf(order.company, order.shipping_address, order.payment_status, order.order_date, order.created_at, order.fulfillment_type, order.name, order.email, order.order_id, order.total_price, order.items)"
                             class="pdf-button px-4 py-2 rounded-lg font-semibold transition duration-300">
-                            PDF drucken
+                            Anzeigen
                         </button>
                     </td>
                 </tr>

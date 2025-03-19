@@ -2,9 +2,14 @@
   background-color: #f3f4f6;
   min-height: 100vh;
   padding: 24px;
+  margin-top: 79px;
 }
 
 .upload-xml {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  align-items: flex-start;
   background: white;
   padding: 16px;
   border-radius: 8px;
@@ -20,7 +25,6 @@
 }
 
 .upload-xml input {
-  width: 100%;
   border: 1px solid #ccc;
   padding: 8px;
   border-radius: 6px;
@@ -149,15 +153,20 @@ select {
 }
 
 .pdf-button {
-  background-color: #66e971; /* Rotes Design für PDF */
+  background-color: #10b981; /* Rotes Design für PDF */
   color: white;
   border-radius: 5px;
-  border-style: solid;
-  border-color: rgb(175, 250, 191);
+  border: none;
   cursor: pointer;
   padding: 10px;
 }
 
 .pdf-button:hover {
-  background-color: #34790c;
+  background-color: #11ce8f;
+}
+
+@media only screen and (max-width: 425px) {
+  .function-container {
+    flex-direction: column;
+  }
 }
