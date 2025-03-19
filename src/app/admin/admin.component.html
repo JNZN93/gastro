@@ -1,60 +1,80 @@
-<div class="admin-main">
-    <div class="upload-xml">
-        <label for="xml">Produktliste aktualisieren:</label>
-        <input #fileInput type="file" id="xml" name="xml" accept=".xml"/>
-        
-        <button (click)="onUploadClick()">Produkte aktualisieren</button>
-      </div>
+<div class="admin-main p-6 bg-gray-100 min-h-screen">
+    <div class="upload-xml p-4 rounded-lg shadow-md mb-6">
+        <label for="xml" class="block text-lg font-semibold mb-2">Produktliste aktualisieren:</label>
+        <input #fileInput type="file" id="xml" name="xml" accept=".xml" class="w-full border p-2 rounded-lg" />
+        <button (click)="onUploadClick()" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+            Produkte aktualisieren
+        </button>
+    </div>
 
-      <div class="function-container">
-        <button (click)="generateSelectedPdf()">Alle PDFs drucken</button>
-        <button routerLink="/products">Zur Kundenansicht</button>
-        <button routerLink="/guest-link">Gastzugang erstellen</button>
-      </div>
-    
-        <table>
-            <tr>
-                <th>Bestellnummer</th>
-                <th>Bestelldatum</th>
-                <th>Name</th>
-                <th>Firma</th>
-                <th>Status</th>
-                <th>Aktionen</th>
-            </tr>
-            @for (order of orders; track order.order_id) {
-            <tr>
-                <td>{{ order.order_id }}</td>
-                <td>{{ order.created_at | date: 'dd.MM.yyyy HH:mm' }}</td>
-                <td>{{ order.name }}</td>
-                <td>{{ order.company }}</td>
-                <td>
-                    <select [(ngModel)]="order.status" (change)="onStatusChange($event, order)">
-                        <option value="open" [selected]="order.status === 'open'">Offen</option>
-                        <option value="in_progress" [selected]="order.status === 'in_progress'">In Bearbeitung</option>
-                        <option value="completed" [selected]="order.status === 'completed'">Fertig</option>
-                    </select>
-                </td>
-                <td>
-                    <button (click)="generatePdf(order.company, order.shipping_address, order.payment_status, order.order_date, order.created_at, order.fulfillment_type, order.name, order.email, order.order_id, order.total_price, order.items)">
-                        PDF drucken
-                    </button>
-                </td>
-            </tr>
-    }
-</table>
-    
+    <div class="function-container flex gap-4 mb-6">
+        <button (click)="generateSelectedPdf()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+            Alle PDFs drucken
+        </button>
+        <button routerLink="/products" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700">
+            Zur Kundenansicht
+        </button>
+        <button routerLink="/guest-link" class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700">
+            Gastzugang erstellen
+        </button>
+    </div>
+
+    <div class="bg-white p-4 rounded-lg shadow-md overflow-x-auto">
+        <table class="w-full border-collapse">
+            <thead>
+                <tr class="bg-gray-200">
+                    <th class="p-2 text-left">Bestellnummer</th>
+                    <th class="p-2 text-left">Bestelldatum</th>
+                    <th class="p-2 text-left">Name</th>
+                    <th class="p-2 text-left">Firma</th>
+                    <th class="p-2 text-left">Status</th>
+                    <th class="p-2 text-left">Aktionen</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (order of orders; track order.order_id) {
+                <tr class="border-t">
+                    <td class="p-2">{{ order.order_id }}</td>
+                    <td class="p-2">{{ order.created_at | date: 'dd.MM.yyyy HH:mm' }}</td>
+                    <td class="p-2">{{ order.name }}</td>
+                    <td class="p-2">{{ order.company }}</td>
+                    <td class="p-2">
+                        <select [(ngModel)]="order.status" (change)="onStatusChange($event, order)"
+                            class="border p-2 rounded-lg w-full">
+                            <option value="open" [selected]="order.status === 'open'">Offen</option>
+                            <option value="in_progress" [selected]="order.status === 'in_progress'">In Bearbeitung</option>
+                            <option value="completed" [selected]="order.status === 'completed'">Fertig</option>
+                        </select>
+                    </td>
+                    <td class="p-2">
+                        <button (click)="generatePdf(order.company, order.shipping_address, order.payment_status, order.order_date, order.created_at, order.fulfillment_type, order.name, order.email, order.order_id, order.total_price, order.items)"
+                            class="pdf-button px-4 py-2 rounded-lg font-semibold transition duration-300">
+                            PDF drucken
+                        </button>
+                    </td>
+                </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
     @if (showModal) {
-        <div class="modal-overlay">
-            <div class="modal">
-                <p>Möchten Sie diesen Auftrag wirklich als abgeschlossen markieren?</p>
-                <button (click)="confirmCompletion()">Ja, abschließen</button>
-                <button (click)="cancelCompletion()">Abbrechen</button>
+    <div class="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+        <div class="modal bg-white p-6 rounded-lg shadow-lg">
+            <p class="text-lg font-semibold mb-4">Möchten Sie diesen Auftrag wirklich als abgeschlossen markieren?</p>
+            <div class="flex gap-4">
+                <button (click)="confirmCompletion()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                    Ja, abschließen
+                </button>
+                <button (click)="cancelCompletion()" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
+                    Abbrechen
+                </button>
             </div>
         </div>
+    </div>
     }
 
     @if (isUploading) {
         <app-upload-loading></app-upload-loading>
     }
-    
 </div>
