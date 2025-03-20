@@ -7,6 +7,8 @@ import { LoadingScreenComponent } from './loading-screen/loading-screen.componen
 import { AdminComponent } from './admin/admin.component';
 import { GuestLinkComponent } from './guest-link/guest-link.component';
 import { VerifyComponent } from './verify/verify.component';
+import { PrivacyPolicyComponent } from './privacy-policy/privacy-policy.component';
+import { ImpressComponent } from './impress/impress.component';
 
 export const routes: Routes = [
     { path: '', component: LoadingScreenComponent },
@@ -15,5 +17,7 @@ export const routes: Routes = [
     { path: 'registration', component: RegistrationComponent },
     { path: 'admin', component: AdminComponent},
     { path: 'guest-link', component: GuestLinkComponent},
-    { path: 'verify' , component: VerifyComponent}
+    { path: 'verify', component: VerifyComponent},
+    { path: 'privacy', component: PrivacyPolicyComponent},
+    { path: 'impress', component: ImpressComponent}
 ];

@@ -1,0 +1,19 @@
+* {
+    line-height: 1.6;
+    max-width: 800px;
+}
+
+section {
+    box-sizing: border-box;
+    margin-top: 100px;
+    padding: 20px;
+    width: 100%;
+    min-height: calc(100vh - 200px);
+}
+
+h1, h2 {
+    color: #333;
+}
+ul {
+    padding-left: 20px;
+}
