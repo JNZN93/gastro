@@ -17,3 +17,27 @@ h1, h2 {
 ul {
     padding-left: 20px;
 }
+
+.go-back-con {
+    position: fixed;
+    top: 100px;
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+    padding: 20px;
+    box-sizing: border-box;
+
+    img {
+        background-color: white;
+        padding: 6px;
+        border-radius: 100%;
+        width: 35px;
+        cursor: pointer;
+        transition: all 0.3s ease-in-out;
+
+        &:hover {
+            scale: 1.1;
+        }
+    }
+
+}
