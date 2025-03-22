@@ -1,17 +1,17 @@
 import { Component } from '@angular/core';
 import { ToggleCartService } from '../toggle-cart.service';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { GlobalService } from '../global.service';
 
 @Component({
   selector: 'app-header',
-  imports: [],
+  imports: [RouterModule],
   templateUrl: './header.component.html',
   styleUrl: './header.component.scss'
 })
 export class HeaderComponent {
   showModal = false;
-  private hiddenRoutes: string[] = ['/login', '/registration', '/verify'];
+  private hiddenRoutes: string[] = ['/login', '/registration', '/verify', '/impress', '/privacy'];
 
   constructor(private toggleService: ToggleCartService, private router: Router, public globalService:GlobalService) {}
 
