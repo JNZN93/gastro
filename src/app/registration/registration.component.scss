@@ -5,12 +5,15 @@
     width: 100%;
     display: flex;
     justify-content: center;
-    align-items: center;
+    margin-top: 120px;
+    margin-bottom: 40px;
 }
 
 .form-container {
-    min-width: 300px;
+    width: 100%;
+    max-width: 600px;
     padding: 20px;
+    box-sizing: border-box;
     background-color: white;
     border-radius: 6px;
     display: flex;
@@ -19,11 +22,11 @@
     align-items: center;
 
     form {
+        width: 80%;
         display: flex;
         flex-direction: column;
         justify-content: center;
-        align-items: center;
-        gap: 8px;
+
     }
 }
 
@@ -34,11 +37,15 @@ input {
     border-radius: 6px;
     padding: 12px 24px;
     font-size: 17px; /* Standardgröße für Input-Felder */
+    margin-bottom: 12px;
 }
 
 button {
     all: unset;
     cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     background-color: #10b981;
     color: white;
     padding: 12px 24px;
@@ -67,4 +74,8 @@ a {
     display: flex;
     justify-content: center;
     align-items: center;
+}
+
+small {
+    font-size: 10px;
 }

@@ -51,7 +51,7 @@ export class LoginComponent {
         alert(response.message)
       },
       error: (error) => {
-        alert('Es ist ein Fehler aufgetreten!')
+        alert('Bitte "NUR" E-Mail Adresse eingeben und auf "Passwort vergessen" drücken!')
       }
     });
   }
