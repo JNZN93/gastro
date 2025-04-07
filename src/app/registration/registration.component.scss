@@ -38,6 +38,7 @@ input {
     padding: 12px 24px;
     font-size: 17px; /* Standardgröße für Input-Felder */
     margin-bottom: 12px;
+    width: -webkit-fill-available;
 }
 
 button {
@@ -78,4 +79,20 @@ a {
 
 small {
     font-size: 10px;
+}
+
+.password-container {
+    position: relative;
+
+    img {
+        position: absolute;
+        cursor: pointer;
+        right: 12px;
+        top: 50%;
+        transform: translateY(calc(-50% - 6px));
+        width: 20px;
+        background-color: rgb(238, 238, 238);
+        -webkit-tap-highlight-color: transparent;
+        -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+    }
 }

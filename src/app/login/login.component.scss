@@ -79,5 +79,7 @@ a {
         top: 50%;
         transform: translateY(-50%);
         width: 20px;
+        -webkit-tap-highlight-color: transparent;
+        -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
     };
 }

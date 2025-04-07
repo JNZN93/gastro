@@ -25,14 +25,20 @@
             </div>
         
             <label for="password">Passwort</label>
-            <input type="password" id="password" formControlName="password" placeholder="Passwort">
+            <div class="password-container">
+              <input [type]="passwordVisible ? 'text' : 'password'" id="password" formControlName="password" placeholder="Passwort">
+              <img (click)="togglePassword()" [src]="currentImage" alt="">
+            </div>
             <div *ngIf="isSubmitted && registerForm.controls['password'].errors">
               <small *ngIf="registerForm.controls['password'].errors['required']">Passwort ist erforderlich.</small>
               <small *ngIf="registerForm.controls['password'].errors['minlength']">Mindestens 6 Zeichen.</small>
             </div>
         
             <label for="confirmPassword">Passwort bestätigen</label>
-            <input type="password" id="confirmPassword" formControlName="confirmPassword" placeholder="Passwort bestätigen">
+            <div class="password-container">
+              <input [type]="confirmPasswordVisible ? 'text' : 'password'" id="confirmPassword" formControlName="confirmPassword" placeholder="Passwort bestätigen">
+              <img (click)="toggleConfirmPassword()" [src]="currentImageConfirm" alt="">
+            </div>
             <div *ngIf="isSubmitted && registerForm.hasError('mismatch')">
               <small>Passwörter stimmen nicht überein.</small>
             </div>

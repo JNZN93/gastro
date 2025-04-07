@@ -17,6 +17,12 @@ export class RegistrationComponent {
   registerForm: FormGroup;
   isSubmitted = false;
   errorMessage: string | null = null;
+  passwordVisible: boolean = false;
+  confirmPasswordVisible: boolean = false;
+  passwordImgOn = 'visibility_on.png';
+  passwordImgOff = 'visibility_off.png';
+  currentImage = this.passwordImgOff;
+  currentImageConfirm = this.passwordImgOff;
 
   constructor(private fb: FormBuilder, private router: Router, private authService: AuthService ) {
     this.registerForm = this.fb.group({
@@ -52,5 +58,15 @@ export class RegistrationComponent {
     } else {
       this.errorMessage = 'Bitte alle Felder korrekt ausfüllen!';
     }
+  }
+
+    togglePassword() {
+    this.currentImage = this.currentImage === this.passwordImgOff ? this.passwordImgOn : this.passwordImgOff;
+    this.passwordVisible = !this.passwordVisible;
+  }
+
+  toggleConfirmPassword() {
+    this.currentImageConfirm = this.currentImageConfirm === this.passwordImgOff ? this.passwordImgOn : this.passwordImgOff;
+    this.confirmPasswordVisible = !this.confirmPasswordVisible;
   }
 }
