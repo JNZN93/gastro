@@ -68,3 +68,16 @@ a {
     justify-content: center;
     align-items: center;
 }
+
+.password-container {
+    position: relative;
+
+    img {
+        position: absolute;
+        cursor: pointer;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 20px;
+    };
+}

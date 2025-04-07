@@ -14,6 +14,10 @@ export class LoginComponent {
 
   loginForm: FormGroup;
   errorMessage: string | null = null;
+  passwordVisible: boolean = false;
+  passwordImgOn = 'visibility_on.png';
+  passwordImgOff = 'visibility_off.png';
+  currentImage = this.passwordImgOff;
 
   constructor(private fb: FormBuilder, private router: Router, private authService: AuthService ) {
     this.loginForm = this.fb.group({
@@ -54,5 +58,10 @@ export class LoginComponent {
         alert('Bitte "NUR" E-Mail Adresse eingeben und auf "Passwort vergessen" Klicken!')
       }
     });
+  }
+
+  togglePassword() {
+    this.currentImage = this.currentImage === this.passwordImgOff ? this.passwordImgOn : this.passwordImgOff;
+    this.passwordVisible = !this.passwordVisible;
   }
   }

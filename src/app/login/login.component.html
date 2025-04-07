@@ -10,7 +10,10 @@
             <input type="email" name="email" id="email" placeholder="E-Mail" formControlName="email" required>
 
             <label for="password"></label>
-            <input type="password" name="password" id="password" formControlName="password" placeholder="Passwort">
+            <div class="password-container">
+                <input [type]="passwordVisible ? 'text' : 'password'" name="password" id="password" formControlName="password" placeholder="Passwort">
+                <img (click)="togglePassword()" [src]="currentImage" alt="">
+            </div>
 
             <div class="forgot"><a routerLink="/login" (click)="forgotPassword()">Passwort vergessen</a> | <a routerLink="/registration">Hier registrieren</a></div>
 
