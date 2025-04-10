@@ -237,7 +237,7 @@ export class AdminComponent implements OnInit {
           doc.setFontSize(14);
           doc.setFont('helvetica', 'bold');
           doc.text('Menge', 14, yPosition);
-          doc.text('Artikel', 60, yPosition);
+          doc.text('Artikel', 40, yPosition);
           doc.text('Artikelnr.', 160, yPosition);
   
           yPosition += 10;
