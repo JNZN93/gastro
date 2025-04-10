@@ -180,74 +180,92 @@ export class AdminComponent implements OnInit {
 
   generateSelectedPdf() {
     const doc = new jsPDF();
-
+  
     this.orders.forEach((order, index) => {
       if (index !== 0) doc.addPage(); // Neue Seite für jede Bestellung (außer der ersten)
-
+  
       // Titel
       doc.setFontSize(20);
       doc.setFont('helvetica', 'bold');
       doc.text('Kommissionierungsschein', 14, 20);
-
+  
       // Bestellinformationen
       doc.setFontSize(12);
       doc.setFont('helvetica', 'normal');
-
-      // Bestellnummer und weitere Infos
-      const orderDateFormatted = new Date(
-        order.order_date
-      ).toLocaleDateString(); // Datum
-      const createdAtFormatted = new Date(
-        order.created_at
-      ).toLocaleTimeString(); // Uhrzeit
-
+  
+      const orderDateFormatted = new Date(order.order_date).toLocaleDateString();
+      const createdAtFormatted = new Date(order.created_at).toLocaleTimeString();
+  
       doc.text('Bestellnummer: ' + order.order_id, 14, 40);
-      doc.text('Datum: ' + orderDateFormatted, 14, 50); // Datum
-      doc.text('Erstellt um: ' + createdAtFormatted, 14, 60); // Uhrzeit
-
-      // Firma (optional)
-      doc.text(
-        'Firma: ' + (order.company ? order.company : 'Keine Angabe'),
-        14,
-        70
-      );
+      doc.text('Datum: ' + orderDateFormatted, 14, 50);
+      doc.text('Erstellt um: ' + createdAtFormatted, 14, 60);
+      doc.text('Firma: ' + (order.company ? order.company : 'Keine Angabe'), 14, 70);
       doc.text('Kunde: ' + order.name, 14, 80);
       doc.text('E-Mail: ' + order.email, 14, 90);
-      doc.text('Lieferart: ' + (order.fulfillment_type == 'delivery' ?  'Lieferung': 'Abholung'), 14, 110);
+      doc.text('Lieferart: ' + (order.fulfillment_type == 'delivery' ? 'Lieferung' : 'Abholung'), 14, 110);
       doc.text('Zahlstatus: ' + order.payment_status, 14, 120);
-
+  
       // Trennlinie
       doc.line(14, 125, 200, 125);
-
-      // Tabellenüberschriften (fett, größere Schrift)
+  
+      // Tabellenüberschriften
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
       doc.text('Artikelnummer', 14, 135);
       doc.text('Artikel', 60, 135);
       doc.text('Menge', 180, 135);
-
-      // Tabelleninhalte (normaler Text)
+  
+      // Tabelleninhalte
       doc.setFontSize(12);
       doc.setFont('helvetica', 'normal');
-
-      let yPosition = 145;
+  
+      let yPosition = 155;
+      const lineHeight = 10;
+      const pageHeight = 297; // A4-Höhe in mm
+      const bottomMargin = 20;
+  
       order.items.forEach((product: any) => {
-        doc.text(product.product_article_number, 14, yPosition); // Artikelnummer
-        doc.text(product.product_name, 60, yPosition); // Produktname
-        doc.text(String(product.quantity), 180, yPosition); // Menge
-        yPosition += 10; // Abstand zwischen den Zeilen
+        // Wenn kein Platz mehr für neue Zeile -> neue Seite
+        if (yPosition + lineHeight > pageHeight - bottomMargin) {
+          doc.addPage();
+          yPosition = 20;
+  
+          // Tabellenüberschrift auf neuer Seite wiederholen
+          doc.setFontSize(14);
+          doc.setFont('helvetica', 'bold');
+          doc.text('Artikelnummer', 14, yPosition);
+          doc.text('Artikel', 60, yPosition);
+          doc.text('Menge', 180, yPosition);
+  
+          yPosition += 10;
+          doc.setFontSize(12);
+          doc.setFont('helvetica', 'normal');
+        }
+  
+        doc.text(product.product_article_number, 14, yPosition);
+        doc.text(product.product_name, 60, yPosition);
+        doc.text(String(product.quantity), 180, yPosition);
+        yPosition += lineHeight;
       });
-
-      // Gesamtbetrag unten, größere Schriftart für den Endbetrag
-      doc.setFontSize(14);
-      doc.setFont('helvetica', 'bold');
+  
+      // Gesamtbetrag (falls vorhanden)
+      if (order.total_price) {
+        if (yPosition + 20 > pageHeight - bottomMargin) {
+          doc.addPage();
+          yPosition = 20;
+        }
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        /*doc.text('Gesamtpreis: ' + order.total_price.toFixed(2) + ' €', 14, yPosition + 10);*/
+      }
     });
-
+  
     // Öffnen des Druckdialogs
     doc.autoPrint();
     const pdfUrl = doc.output('bloburl');
     window.open(pdfUrl, '_blank');
   }
+  
 
   onUploadClick() {
     const file = this.fileInput.nativeElement.files[0];
