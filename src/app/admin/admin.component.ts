@@ -129,9 +129,9 @@ export class AdminComponent implements OnInit {
     // Artikelüberschrift
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
-    doc.text('Artikelnummer', 14, 145);
-    doc.text('Artikel', 60, 145);
-    doc.text('Menge', 180, 145);
+    doc.text('Menge', 14, 145);
+    doc.text('Artikel', 40, 145);
+    doc.text('Artikelnr.', 160, 145);
 
     // Artikel und Mengen
     doc.setFontSize(12);
@@ -146,14 +146,15 @@ export class AdminComponent implements OnInit {
   // Wenn yPosition zu weit unten ist, neue Seite
   if (yPosition + lineHeight > pageHeight - bottomMargin) {
     doc.addPage();
-    yPosition = 20;
+    doc.text('Bestellnummer: ' + orderId, 14, 40);
+    yPosition = 60;
 
     // Tabellenüberschrift auf neuer Seite wiederholen (optional)
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
-    doc.text('Artikelnummer', 14, yPosition);
-    doc.text('Artikel', 60, yPosition);
-    doc.text('Menge', 180, yPosition);
+    doc.text('Menge', 14, yPosition);
+    doc.text('Artikel', 40, yPosition);
+    doc.text('Artikelnr.', 160, yPosition);
     yPosition += 10;
     
     doc.setFontSize(12);
@@ -161,9 +162,9 @@ export class AdminComponent implements OnInit {
   }
 
   // Artikeldaten
-  doc.text(product.product_article_number, 14, yPosition);
-  doc.text(product.product_name, 60, yPosition);
-  doc.text(String(product.quantity), 180, yPosition);
+  doc.text(String(product.quantity), 14, yPosition);
+  doc.text(product.product_name, 40, yPosition);
+  doc.text(product.product_article_number, 160, yPosition);
 
   yPosition += lineHeight;
 });
@@ -211,9 +212,9 @@ export class AdminComponent implements OnInit {
       // Tabellenüberschriften
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
-      doc.text('Artikelnummer', 14, 135);
-      doc.text('Artikel', 60, 135);
-      doc.text('Menge', 180, 135);
+      doc.text('Menge', 14, 135);
+      doc.text('Artikel', 40, 135);
+      doc.text('Artikelnr', 160, 135);
   
       // Tabelleninhalte
       doc.setFontSize(12);
@@ -228,23 +229,25 @@ export class AdminComponent implements OnInit {
         // Wenn kein Platz mehr für neue Zeile -> neue Seite
         if (yPosition + lineHeight > pageHeight - bottomMargin) {
           doc.addPage();
-          yPosition = 20;
+          doc.text('Bestellnummer: ' + order.order_id, 14, 40);
+          yPosition = 60;
+
   
           // Tabellenüberschrift auf neuer Seite wiederholen
           doc.setFontSize(14);
           doc.setFont('helvetica', 'bold');
-          doc.text('Artikelnummer', 14, yPosition);
+          doc.text('Menge', 14, yPosition);
           doc.text('Artikel', 60, yPosition);
-          doc.text('Menge', 180, yPosition);
+          doc.text('Artikelnr.', 160, yPosition);
   
           yPosition += 10;
           doc.setFontSize(12);
           doc.setFont('helvetica', 'normal');
         }
   
-        doc.text(product.product_article_number, 14, yPosition);
-        doc.text(product.product_name, 60, yPosition);
-        doc.text(String(product.quantity), 180, yPosition);
+        doc.text(String(product.quantity), 14, yPosition);
+        doc.text(product.product_name, 40, yPosition);
+        doc.text(product.product_article_number, 160, yPosition);
         yPosition += lineHeight;
       });
   
