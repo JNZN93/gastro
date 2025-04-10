@@ -138,12 +138,35 @@ export class AdminComponent implements OnInit {
     doc.setFont('helvetica', 'normal');
 
     let yPosition = 155;
-    products.forEach((product) => {
-      doc.text(product.product_article_number, 14, yPosition); // Artikelnummer
-      doc.text(product.product_name, 60, yPosition); // Artikelname
-      doc.text(String(product.quantity), 180, yPosition); // Menge
-      yPosition += 10; // Abstand zwischen den Zeilen
-    });
+    const lineHeight = 10;
+    const pageHeight = 297; // A4 in mm
+    const bottomMargin = 20;
+
+    products.forEach((product, index) => {
+  // Wenn yPosition zu weit unten ist, neue Seite
+  if (yPosition + lineHeight > pageHeight - bottomMargin) {
+    doc.addPage();
+    yPosition = 20;
+
+    // Tabellenüberschrift auf neuer Seite wiederholen (optional)
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Artikelnummer', 14, yPosition);
+    doc.text('Artikel', 60, yPosition);
+    doc.text('Menge', 180, yPosition);
+    yPosition += 10;
+    
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+  }
+
+  // Artikeldaten
+  doc.text(product.product_article_number, 14, yPosition);
+  doc.text(product.product_name, 60, yPosition);
+  doc.text(String(product.quantity), 180, yPosition);
+
+  yPosition += lineHeight;
+});
 
     // Gesamtbetrag unten
     doc.setFontSize(14);
