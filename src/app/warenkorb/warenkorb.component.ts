@@ -3,6 +3,8 @@ import { ToggleCartService } from '../toggle-cart.service';
 import { GlobalService } from '../global.service';
 import { OrderService } from '../order.service';
 import { FormsModule } from '@angular/forms';
+import { MatDialog } from '@angular/material/dialog';
+import { MyDialogComponent } from '../my-dialog/my-dialog.component';
 
 @Component({
   selector: 'app-warenkorb',
@@ -23,7 +25,7 @@ export class WarenkorbComponent implements OnInit {
   
 
 
-  constructor(private toggleService: ToggleCartService, public globalService: GlobalService, private orderService: OrderService) { 
+  constructor(private toggleService: ToggleCartService, public globalService: GlobalService, private orderService: OrderService, private dialog: MatDialog) { 
 
     this.toggleService.isVisible$.subscribe(state => {
       this.isVisible = state;
@@ -42,7 +44,6 @@ export class WarenkorbComponent implements OnInit {
      else {
       this.isDelivery = true
      }
-     console.log(this.isDelivery)
   }
 
   sendOrder() {
@@ -66,16 +67,14 @@ export class WarenkorbComponent implements OnInit {
 
     this.orderService.placeOrder(completeOrder, getToken).subscribe({
       next: (response) => {
-        console.log('Bestellung erfolgreich:', response);
-        alert('Bestellung erfolgreich abgesendet!');
+        this.showOrderCompletedDialog();
         // Warenkorb leeren
         this.globalService.warenkorb = [];
         this.globalService.totalPrice = 0;
         localStorage.removeItem('warenkorb');
       },
       error: (error) => {
-        console.error('Fehler bei der Bestellung:', error);
-        alert('Bestellung konnte nicht abgesendet werden');
+        this.showOrderErrorDialog();
       },
       complete: () => {
         this.isVisible = false; // Warenkorb schließen nach Abschluss
@@ -127,4 +126,28 @@ export class WarenkorbComponent implements OnInit {
   closeWarenkorb(){
     this.toggleService.toggle();
   }
+
+  showOrderCompletedDialog(): void {
+    this.dialog.open(MyDialogComponent, {
+      data: {
+        title: 'Bestellung abgeschlossen',
+        message: 'Vielen Dank für deine Bestellung! Eine Bestellbestätigung wurde an deine E-Mail-Adresse gesendet.',
+        buttonLabel: 'OK'
+      },
+      maxWidth: '400px',
+      minWidth: '300px',
+    });
+    }
+  
+    showOrderErrorDialog() {
+      this.dialog.open(MyDialogComponent, {
+        data: {
+          title: 'Fehler!',
+          message: 'Die Bestellung konnte nicht abgesendet werden! Versuche es erneut.',
+          buttonLabel: 'OK'
+        },
+        maxWidth: '400px',
+        minWidth: '300px',
+      });
+    }
 }
