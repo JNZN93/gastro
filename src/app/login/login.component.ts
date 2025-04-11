@@ -19,7 +19,7 @@ export class LoginComponent {
   passwordImgOff = 'visibility_off.png';
   currentImage = this.passwordImgOff;
 
-  constructor(private fb: FormBuilder, private router: Router, private authService: AuthService ) {
+  constructor(private fb: FormBuilder, private router: Router, private authService: AuthService) {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]]
