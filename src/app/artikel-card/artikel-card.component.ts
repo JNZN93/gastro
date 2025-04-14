@@ -105,6 +105,7 @@ export class ArtikelCardComponent implements OnInit {
         terms.every((term) => artikel.article_text.toLowerCase().includes(term))
       );
     }
+    window.scrollTo({ top: 0});
   }
 
   filterCategory(event: Event) {
