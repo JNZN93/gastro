@@ -113,7 +113,7 @@ export class ArtikelCardComponent implements OnInit {
     console.log('selected', category)
     this.selectedCategory = category; // Kategorie speichern
     // Seite nach oben scrollen
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0});
 
     if (this.selectedCategory == "FAVORITEN") {
         this.artikelData = JSON.parse(localStorage.getItem('favoriteItems') || '[]');
