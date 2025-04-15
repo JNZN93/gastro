@@ -92,7 +92,11 @@ export class ArtikelCardComponent implements OnInit {
       favorites.push(artikel);
       console.log('Artikel hinzugefügt');
     }
-  
+    // Alphabetisch sortieren nach artikel.name (case-insensitive)
+    favorites.sort((a: any, b: any) => 
+      a.article_text.localeCompare(b.article_text, undefined, { sensitivity: 'base' })
+    );
+
     localStorage.setItem('favoriteItems', JSON.stringify(favorites));
   }
 
