@@ -9,6 +9,7 @@ import { GuestLinkComponent } from './guest-link/guest-link.component';
 import { VerifyComponent } from './verify/verify.component';
 import { PrivacyPolicyComponent } from './privacy-policy/privacy-policy.component';
 import { ImpressComponent } from './impress/impress.component';
+import { ImageManagementComponent } from './image-management/image-management.component';
 
 export const routes: Routes = [
     { path: '', component: LoadingScreenComponent },
@@ -19,5 +20,6 @@ export const routes: Routes = [
     { path: 'guest-link', component: GuestLinkComponent},
     { path: 'verify', component: VerifyComponent},
     { path: 'privacy', component: PrivacyPolicyComponent},
-    { path: 'impress', component: ImpressComponent}
+    { path: 'impress', component: ImpressComponent},
+    { path: 'image-management', component: ImageManagementComponent}
 ];

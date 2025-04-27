@@ -1,0 +1,79 @@
+<div class="container-fluid">
+    <h1 class="h3">Bildverwaltung</h1>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Artikelnummer</th>
+                            <th>Artikelname</th>
+                            <th>Bild</th>
+                            <th>Aktionen</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (product of products; track product.article_number) {
+                            <tr>
+                                <td>{{ product.article_number }}</td>
+                                <td>{{ product.article_text }}</td>
+                                <td>
+                                    @if (product.image_url) {
+                                        <img [src]="product.image_url" 
+                                             [alt]="product.article_text"
+                                             class="img-thumbnail">
+                                    } @else {
+                                        <span class="text-muted">Kein Bild vorhanden</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="btn-group">
+                                        <button type="button" 
+                                                class="btn-outline-primary"
+                                                (click)="onProductSelect(product)">
+                                            {{ selectedProduct?.article_number === product.article_number ? 'Ausgewählt' : 'Auswählen' }}
+                                        </button>
+                                        
+                                        @if (selectedProduct?.article_number === product.article_number) {
+                                            <div class="ms-2 d-inline-block">
+                                                <input type="file" 
+                                                       accept="image/*" 
+                                                       (change)="onImageSelect($event)"
+                                                       class="form-control">
+                                                
+                                                <button type="button"
+                                                        class="btn-primary"
+                                                        (click)="uploadImage()"
+                                                        [disabled]="!selectedImage">
+                                                    <i class="bi bi-upload"></i> Hochladen
+                                                </button>
+                                            </div>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload-Status Modal -->
+    @if (isUploading) {
+        <div class="modal fade show" style="display: block;" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-body text-center p-4">
+                        <div class="spinner-border text-primary mb-3" role="status">
+                            <span class="visually-hidden">Lädt...</span>
+                        </div>
+                        <p class="mb-0">Bild wird hochgeladen...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-backdrop fade show"></div>
+    }
+</div> 
