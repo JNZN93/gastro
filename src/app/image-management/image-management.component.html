@@ -3,6 +3,17 @@
 
     <div class="card">
         <div class="card-body">
+            <div class="search-container">
+                <div class="search-input-wrapper">
+                    <i class="bi bi-search"></i>
+                    <input type="text" 
+                           class="search-input" 
+                           [(ngModel)]="searchTerm"
+                           (ngModelChange)="filterProducts()"
+                           placeholder="Artikel suchen...">
+                </div>
+            </div>
+
             <div class="table-responsive">
                 <table class="table">
                     <thead>
@@ -14,7 +25,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @for (product of products; track product.article_number) {
+                        @for (product of filteredProducts; track product.article_number) {
                             <tr>
                                 <td>{{ product.article_number }}</td>
                                 <td>{{ product.article_text }}</td>
@@ -28,25 +39,36 @@
                                     }
                                 </td>
                                 <td>
-                                    <div class="btn-group">
+                                    <div class="action-container">
                                         <button type="button" 
-                                                class="btn-outline-primary"
-                                                (click)="onProductSelect(product)">
-                                            {{ selectedProduct?.article_number === product.article_number ? 'Ausgewählt' : 'Auswählen' }}
+                                                class="select-btn"
+                                                [class.selected]="selectedProduct?.article_number === product.article_number"
+                                                (click)="toggleUploadSection(product)">
+                                            <i class="bi" 
+                                               [class.bi-chevron-down]="selectedProduct?.article_number === product.article_number && isUploadSectionOpen"
+                                               [class.bi-chevron-right]="selectedProduct?.article_number === product.article_number && !isUploadSectionOpen"
+                                               [class.bi-plus-circle]="selectedProduct?.article_number !== product.article_number">
+                                            </i>
+                                            Auswählen
                                         </button>
                                         
-                                        @if (selectedProduct?.article_number === product.article_number) {
-                                            <div class="ms-2 d-inline-block">
-                                                <input type="file" 
-                                                       accept="image/*" 
-                                                       (change)="onImageSelect($event)"
-                                                       class="form-control">
+                                        @if (selectedProduct?.article_number === product.article_number && isUploadSectionOpen) {
+                                            <div class="upload-section">
+                                                <label class="file-upload-btn">
+                                                    <i class="bi bi-image"></i>
+                                                    Bild auswählen
+                                                    <input type="file" 
+                                                           accept="image/*" 
+                                                           (change)="onImageSelect($event)"
+                                                           class="file-input">
+                                                </label>
                                                 
                                                 <button type="button"
-                                                        class="btn-primary"
+                                                        class="upload-btn"
                                                         (click)="uploadImage()"
                                                         [disabled]="!selectedImage">
-                                                    <i class="bi bi-upload"></i> Hochladen
+                                                    <i class="bi bi-cloud-upload"></i>
+                                                    Hochladen
                                                 </button>
                                             </div>
                                         }
