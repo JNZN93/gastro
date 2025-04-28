@@ -1,31 +1,66 @@
 <div class="main-container">
-    <h3>Gastzugang erstellen</h3>
+    <div class="content-wrapper">
+        <h1 class="title">Pflege Artikelbilder</h1>
+        
+        <div class="result-section">
+            <div class="result-group">
+                <label for="name">Name des Gastes</label>
+                <div class="input-group">
+                    <input id="name" 
+                           [(ngModel)]="name" 
+                           type="text" 
+                           placeholder="Name eingeben..." 
+                           minlength="1"
+                           class="form-input">
+                </div>
+            </div>
 
-    <div class="guest-link-form">
-        <input [(ngModel)]="name" type="text" placeholder="Name eingeben..." minlength="1">
-        <button (click)="generateLink()">Gastzugang erstellen</button>
-    </div>
+            <div class="result-group">
+                <label>Link</label>
+                <div class="input-group">
+                    <input #inputLink 
+                           [value]="newLink" 
+                           type="text" 
+                           placeholder="Hier erscheint der Link" 
+                           readonly
+                           class="form-input">
+                    <button class="icon-button" (click)="copyLink()">
+                        <img src="copy.png" alt="Copy">
+                    </button>
+                </div>
+            </div>
 
-    <div class="guest-link-container">
-        <span>Link:</span>
-        <div class="input-container">
-            <input #inputLink [value]="newLink" type="text" placeholder="Hier erscheint der Link" readonly>
-            <img src="copy.png" (click)="copyLink()">
+            <div class="result-group">
+                <label>PIN</label>
+                <div class="input-group">
+                    <input #inputPin 
+                           [value]="newPin" 
+                           type="text" 
+                           placeholder="Hier erscheint PIN" 
+                           readonly
+                           class="form-input">
+                    <button class="icon-button" (click)="copyPin()">
+                        <img src="copy.png" alt="Copy">
+                    </button>
+                </div>
+            </div>
+
+            <button class="primary-button" (click)="generateLink()">
+                <i class="bi bi-plus-circle"></i>
+                Gastzugang erstellen
+            </button>
         </div>
 
-        <span>PIN:</span>
-        <div class="input-container">
-            <input #inputPin [value]="newPin" type="text" placeholder="Hier erscheint PIN" readonly>
-            <img src="copy.png" (click)="copyPin()">
-        </div>
+        @if(showSnackbar) {
+            <div class="snackbar" [class.show]="showSnackbar">
+                <i class="bi bi-check-circle"></i>
+                @if(showPin) {
+                    PIN Kopiert!
+                }
+                @if(showLink) {
+                    Link Kopiert!
+                }
+            </div>
+        }
     </div>
-
-    @if(showSnackbar) {
-        @if(showPin) {
-            <div class="snackbar">PIN Kopiert!</div>
-        }
-        @if(showLink) {
-            <div class="snackbar">Link Kopiert!</div>
-        }
-    }
 </div>
