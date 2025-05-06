@@ -1,27 +1,45 @@
-<div class="main-container">
+<div class="login-container">
+    <div class="login-card">
+        <div class="login-header">
+            <h1>Willkommen zurück</h1>
+            <p>Melden Sie sich mit Ihren Zugangsdaten an</p>
+        </div>
 
-    <div class="form-container">
-
-        <h4>Login</h4>
-
-        <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
-
-            <label for="email"></label>
-            <input type="email" name="email" id="email" placeholder="E-Mail" formControlName="email" required>
-
-            <label for="password"></label>
-            <div class="password-container">
-                <input [type]="passwordVisible ? 'text' : 'password'" name="password" id="password" formControlName="password" placeholder="Passwort">
-                <img (click)="togglePassword()" [src]="currentImage" alt="">
+        <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+            <div class="input-group">
+                <input type="email" formControlName="email" placeholder=" " required>
+                <label>E-Mail-Adresse</label>
+                <span class="input-border"></span>
             </div>
 
-            <div class="forgot"><a routerLink="/login" (click)="forgotPassword()">Passwort vergessen</a> | <a routerLink="/registration">Hier registrieren</a></div>
+            <div class="input-group">
+                <input [type]="passwordVisible ? 'text' : 'password'" formControlName="password" placeholder=" " required>
+                <label>Passwort</label>
+                <span class="input-border"></span>
+                <button type="button" class="toggle-password" (click)="togglePassword()">
+                    <i class="material-icons">{{passwordVisible ? 'visibility_off' : 'visibility'}}</i>
+                </button>
+            </div>
 
-            <button type="submit" [disabled]="loginForm.invalid">Anmelden</button>
+            <div class="form-actions">
+                <button type="submit" class="login-btn" [disabled]="loginForm.invalid">
+                    Anmelden
+                    <span class="btn-arrow">→</span>
+                </button>
+            </div>
+
+            <div class="form-footer">
+                <a routerLink="/login" (click)="forgotPassword()">Passwort vergessen?</a>
+                <span class="divider">|</span>
+                <a routerLink="/registration">Account erstellen</a>
+            </div>
         </form>
+
         @if(errorMessage) {
-        <div>{{ errorMessage }}</div>
+        <div class="error-message">
+            <i class="material-icons">error_outline</i>
+            <span>{{ errorMessage }}</span>
+        </div>
         }
     </div>
-
 </div>
