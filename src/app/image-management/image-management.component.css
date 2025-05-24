@@ -117,10 +117,15 @@
 }
 
 /* Container Styles */
+.container {
+    margin-top: 100px;
+}
+
 .container-fluid {
     max-width: 1400px;
     margin: 0 auto;
     padding: 2rem;
+    background: red;
 }
 
 /* Heading Styles */
