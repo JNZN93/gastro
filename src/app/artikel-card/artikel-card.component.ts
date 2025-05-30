@@ -119,6 +119,10 @@ export class ArtikelCardComponent implements OnInit {
     window.scrollTo({ top: 0});
   }
 
+  clearSearch() {
+    this.searchTerm = '';
+    this.filteredArtikelData();
+  }
 
 /*FILTER BY SCANNING*/
 

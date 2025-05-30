@@ -4,11 +4,16 @@
         <div class="filter-container">
           <div class="controls">
             <button (click)="startScanner()" [disabled]="isScanning" class="scanner-btn">
-              <span class="material-icons">qr_code_scanner</span>
-              Scanner starten
+              <span class="material-symbols-outlined">barcode</span>
+              Artikel scannen
             </button>
           </div>
-          <input type="text" [(ngModel)]="searchTerm" (input)="filteredArtikelData()" placeholder="Artikel suchen..." class="search-input">
+          <div class="search-container">
+            <input type="text" [(ngModel)]="searchTerm" (input)="filteredArtikelData()" placeholder="Artikel suchen..." class="search-input">
+            <button *ngIf="searchTerm" (click)="clearSearch()" class="clear-search">
+              <span class="material-icons">close</span>
+            </button>
+          </div>
           <div class="custom-select">
             <select class="selected" [(ngModel)]="selectedCategory" (change)="filterCategory($event)">
               <option value="">Alle Kategorien 📂</option>
