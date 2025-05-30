@@ -2,6 +2,20 @@
 
     <div class="filter-wrapper">
         <div class="filter-container">
+          <div class="controls">
+  <button (click)="startScanner()" [disabled]="isScanning">Kamera starten</button>
+  <button (click)="stopScanner()" [disabled]="!isScanning">Kamera stoppen</button>
+</div>
+          <div class="scanner-container">
+<div class="scanner-container" *ngIf="isScanning">
+  <zxing-scanner
+    #scanner
+    [formats]="[]"
+    (scanSuccess)="onCodeResult($event)"
+    style="width: 100%; height: 300px; display: block;">
+  </zxing-scanner>
+</div>
+          </div>
           <input type="text" [(ngModel)]="searchTerm" (input)="filteredArtikelData()" placeholder="Artikel suchen..." class="search-input">
           <div class="custom-select">
             <select class="selected" [(ngModel)]="selectedCategory" (change)="filterCategory($event)">
