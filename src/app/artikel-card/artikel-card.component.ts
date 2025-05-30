@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, OnInit, ViewChild, inject } from '@angular/core';
+import { Component, OnInit, ViewChild, inject } from '@angular/core';
 import { ArtikelDataService } from '../artikel-data.service';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../authentication.service';
@@ -7,14 +7,16 @@ import { Router, RouterModule } from '@angular/router';
 import { WarenkorbComponent } from '../warenkorb/warenkorb.component';
 import { GlobalService } from '../global.service';
 import { UploadLoadingComponent } from '../upload-loading/upload-loading.component';
+import { ZXingScannerComponent, ZXingScannerModule } from '@zxing/ngx-scanner';
 
 @Component({
   selector: 'app-artikel-card',
-  imports: [CommonModule, FormsModule, RouterModule, WarenkorbComponent, UploadLoadingComponent],
+  imports: [CommonModule, FormsModule, RouterModule, WarenkorbComponent, UploadLoadingComponent, ZXingScannerModule],
   templateUrl: './artikel-card.component.html',
   styleUrl: './artikel-card.component.scss',
 })
 export class ArtikelCardComponent implements OnInit {
+  @ViewChild(ZXingScannerComponent) scanner!: ZXingScannerComponent;
   private artikelService = inject(ArtikelDataService);
   artikelData: any[] = [];
   warenkorb: any[] = [];
@@ -24,6 +26,7 @@ export class ArtikelCardComponent implements OnInit {
   globalArtikels: any[] = [];
   filteredData: any[] = [];
   isVisible: boolean = true;
+  isScanning = false;
 
   constructor(
     private router: Router,
@@ -106,10 +109,38 @@ export class ArtikelCardComponent implements OnInit {
     if (this.searchTerm) {
       const terms = this.searchTerm.toLowerCase().split(/\s+/);
       this.artikelData = this.artikelData.filter((artikel) =>
-        terms.every((term) => artikel.article_text.toLowerCase().includes(term))
-      );
+      terms.every((term) =>
+        artikel.article_text.toLowerCase().includes(term) ||
+        artikel.article_number?.toLowerCase().includes(term) ||
+        artikel.ean?.toLowerCase().includes(term)
+      )
+    );
     }
     window.scrollTo({ top: 0});
+  }
+
+  clearSearch() {
+    this.searchTerm = '';
+    this.filteredArtikelData();
+  }
+
+/*FILTER BY SCANNING*/
+
+  onCodeResult(result: string) {
+    this.stopScanner(); // optional Kamera nach Scan stoppen
+    console.log('Scan erfolgreich:', result);
+    this.searchTerm = result;
+    this.filteredArtikelData();
+  }
+
+  startScanner() {
+    this.isScanning = true;
+    this.scanner?.scanStart(); // aktiviert Kamera
+  }
+
+  stopScanner() {
+    this.isScanning = false;
+    this.scanner?.reset(); // stoppt Kamera & löst Vorschau
   }
 
   filterCategory(event: Event) {
