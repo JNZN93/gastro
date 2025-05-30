@@ -3,18 +3,10 @@
     <div class="filter-wrapper">
         <div class="filter-container">
           <div class="controls">
-  <button (click)="startScanner()" [disabled]="isScanning">Kamera starten</button>
-  <button (click)="stopScanner()" [disabled]="!isScanning">Kamera stoppen</button>
-</div>
-          <div class="scanner-container">
-<div class="scanner-container" *ngIf="isScanning">
-  <zxing-scanner
-    #scanner
-    [formats]="[]"
-    (scanSuccess)="onCodeResult($event)"
-    style="width: 100%; height: 300px; display: block;">
-  </zxing-scanner>
-</div>
+            <button (click)="startScanner()" [disabled]="isScanning" class="scanner-btn">
+              <span class="material-icons">qr_code_scanner</span>
+              Scanner starten
+            </button>
           </div>
           <input type="text" [(ngModel)]="searchTerm" (input)="filteredArtikelData()" placeholder="Artikel suchen..." class="search-input">
           <div class="custom-select">
@@ -66,3 +58,20 @@
 @if (isVisible) {
   <app-upload-loading></app-upload-loading>
 }
+
+<!-- Scanner Modal -->
+<div class="scanner-modal" *ngIf="isScanning">
+  <div class="scanner-content">
+    <button class="close-scanner" (click)="stopScanner()">
+      <span class="material-icons">close</span>
+    </button>
+    <div class="scanner-wrapper">
+      <zxing-scanner
+        #scanner
+        [formats]="[]"
+        (scanSuccess)="onCodeResult($event)"
+        style="width: 100%; height: 100%;">
+      </zxing-scanner>
+    </div>
+  </div>
+</div>
