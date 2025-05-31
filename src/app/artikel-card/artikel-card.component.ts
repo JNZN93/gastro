@@ -28,14 +28,13 @@ export class ArtikelCardComponent implements OnInit {
   isVisible: boolean = true;
   isScanning = false;
   isTorchOn = false;
-videoConstraints = {
-  facingMode: { ideal: 'environment' },
-  width: { ideal: 1920 },
-  height: { ideal: 1080 },
-  // Trick: "advanced" mit cast auf "any"
-  // focusMode ist nicht offiziell in MediaTrackConstraintSet
-  advanced: [{ focusMode: 'continuous' }] as any
-};
+  selectedDevice: MediaDeviceInfo | undefined;
+
+    videoConstraints: MediaTrackConstraints = {
+    facingMode: { ideal: 'environment' },
+    width: { ideal: 1920 },
+    height: { ideal: 1080 }
+  };
 
   constructor(
     private router: Router,
@@ -47,7 +46,10 @@ videoConstraints = {
     const token = localStorage.getItem('token');
     const loadedWarenkorb = localStorage.getItem('warenkorb')
 
-    console.log('loaded', loadedWarenkorb)
+    navigator.mediaDevices.enumerateDevices().then(devices => {
+      const videoDevices = devices.filter(device => device.kind === 'videoinput');
+      this.selectedDevice = videoDevices.find(d => d.label.toLowerCase().includes('back')) || videoDevices[0];
+    });
 
     if(loadedWarenkorb) {
       this.globalService.warenkorb = JSON.parse(loadedWarenkorb);
