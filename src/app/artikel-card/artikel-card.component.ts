@@ -46,11 +46,6 @@ export class ArtikelCardComponent implements OnInit {
     const token = localStorage.getItem('token');
     const loadedWarenkorb = localStorage.getItem('warenkorb')
 
-    navigator.mediaDevices.enumerateDevices().then(devices => {
-      const videoDevices = devices.filter(device => device.kind === 'videoinput');
-      this.selectedDevice = videoDevices.find(d => d.label.toLowerCase().includes('back')) || videoDevices[0];
-    });
-
     if(loadedWarenkorb) {
       this.globalService.warenkorb = JSON.parse(loadedWarenkorb);
     }
@@ -147,6 +142,12 @@ export class ArtikelCardComponent implements OnInit {
   startScanner() {
     this.isScanning = true;
     this.scanner?.scanStart(); // aktiviert Kamera
+
+    navigator.mediaDevices.enumerateDevices().then(devices => {
+      const videoDevices = devices.filter(device => device.kind === 'videoinput');
+      this.selectedDevice = videoDevices.find(d => d.label.toLowerCase().includes('back')) || videoDevices[0];
+    });
+
     // Torch einschalten
     if (this.scanner) {
       this.scanner.torch = true;
