@@ -71,8 +71,13 @@
       <span class="material-icons">close</span>
     </button>
     <div class="scanner-wrapper">
-      <zxing-scanner #scanner [device]="selectedDevice" [videoConstraints]="videoConstraints" [tryHarder]="true" [formats]="[]"
-        [torch]="true" (scanSuccess)="onCodeResult($event)">
+      <zxing-scanner #scanner 
+      [device]="selectedDevice"
+      [videoConstraints]="videoConstraints"
+      [tryHarder]="true"
+      [formats]="[]"
+      [torch]="true"
+      (scanSuccess)="onCodeResult($event)">
       </zxing-scanner>
     </div>
   </div>

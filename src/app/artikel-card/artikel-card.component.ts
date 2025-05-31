@@ -28,9 +28,10 @@ export class ArtikelCardComponent implements OnInit {
   isVisible: boolean = true;
   isScanning = false;
   isTorchOn = false;
-  selectedDevice: MediaDeviceInfo | undefined;
+  availableDevices: MediaDeviceInfo[] = [];
+  selectedDevice?: MediaDeviceInfo;
 
-    videoConstraints: MediaTrackConstraints = {
+  videoConstraints: MediaTrackConstraints = {
     facingMode: { ideal: 'environment' },
     width: { ideal: 1920 },
     height: { ideal: 1080 }
@@ -47,9 +48,13 @@ export class ArtikelCardComponent implements OnInit {
     const loadedWarenkorb = localStorage.getItem('warenkorb')
 
     navigator.mediaDevices.enumerateDevices().then(devices => {
-      const videoDevices = devices.filter(device => device.kind === 'videoinput');
-      this.selectedDevice = videoDevices.find(d => d.label.toLowerCase().includes('back')) || videoDevices[1];
+      this.availableDevices = devices.filter(device => device.kind === 'videoinput');
+
+      // Rückkamera suchen
+      const backCam = this.availableDevices.find(d => d.label.toLowerCase().includes('back'));
+      this.selectedDevice = backCam || this.availableDevices[0];
     });
+
     if(loadedWarenkorb) {
       this.globalService.warenkorb = JSON.parse(loadedWarenkorb);
     }
@@ -137,6 +142,7 @@ export class ArtikelCardComponent implements OnInit {
 /*FILTER BY SCANNING*/
 
   onCodeResult(result: string) {
+    this.playBeep();
     this.stopScanner(); // optional Kamera nach Scan stoppen
     console.log('Scan erfolgreich:', result);
     this.searchTerm = result;
@@ -162,6 +168,11 @@ export class ArtikelCardComponent implements OnInit {
     }
     this.scanner?.reset(); // stoppt Kamera & löst Vorschau
   }
+
+  playBeep(): void {
+  const audio = new Audio('beep.mp3');
+  audio.play().catch(err => console.error('Fehler beim Abspielen des Tons:', err));
+}
 
   filterCategory(event: Event) {
     const category = (event.target as HTMLSelectElement).value; // Wert aus Event holen
