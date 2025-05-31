@@ -32,7 +32,6 @@ export class ArtikelCardComponent implements OnInit {
   selectedDevice?: MediaDeviceInfo;
 
   videoConstraints: MediaTrackConstraints = {
-    facingMode: { ideal: 'environment' },
     width: { ideal: 1920 },
     height: { ideal: 1080 }
   };
@@ -47,18 +46,22 @@ export class ArtikelCardComponent implements OnInit {
     const token = localStorage.getItem('token');
     const loadedWarenkorb = localStorage.getItem('warenkorb')
 
-navigator.mediaDevices.enumerateDevices().then(devices => {
-  const videoDevices = devices.filter(d => d.kind === 'videoinput');
+    navigator.mediaDevices.enumerateDevices().then(devices => {
+      const videoDevices = devices.filter(d => d.kind === 'videoinput');
+      this.availableDevices = videoDevices;
 
-  // Kamera suchen, die *nicht* Weitwinkel ist
-  const standardCam = videoDevices.find(d =>
-    d.label.toLowerCase().includes('back') &&
-    !d.label.toLowerCase().includes('wide') &&
-    !d.label.toLowerCase().includes('ultra')
-  );
+      // 🎯 Wähle Kamera mit "back" im Namen, aber NICHT "wide", "ultra", "tele"
+      const preferredCam = videoDevices.find(d => {
+        const name = d.label.toLowerCase();
+        return name.includes('back') &&
+               !name.includes('wide') &&
+               !name.includes('ultra') &&
+               !name.includes('tele');
+      });
 
-  this.selectedDevice = standardCam || videoDevices[0];
-});
+      // Fallback: Erste Kamera
+      this.selectedDevice = preferredCam || videoDevices[0];
+    });
 
     if(loadedWarenkorb) {
       this.globalService.warenkorb = JSON.parse(loadedWarenkorb);

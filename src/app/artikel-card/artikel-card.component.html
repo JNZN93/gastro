@@ -66,6 +66,11 @@
 
 <!-- Scanner Modal -->
 <div class="scanner-modal" *ngIf="isScanning">
+  <select [(ngModel)]="selectedDevice">
+  <option *ngFor="let device of availableDevices" [ngValue]="device">
+    {{ device.label }}
+  </option>
+</select>
   <div class="scanner-content">
     <button class="close-scanner" (click)="stopScanner()">
       <span class="material-icons">close</span>
