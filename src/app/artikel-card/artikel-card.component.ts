@@ -28,6 +28,14 @@ export class ArtikelCardComponent implements OnInit {
   isVisible: boolean = true;
   isScanning = false;
   isTorchOn = false;
+videoConstraints = {
+  facingMode: { ideal: 'environment' },
+  width: { ideal: 1280 },
+  height: { ideal: 720 },
+  // Trick: "advanced" mit cast auf "any"
+  // focusMode ist nicht offiziell in MediaTrackConstraintSet
+  advanced: [{ focusMode: 'continuous' }] as any
+};
 
   constructor(
     private router: Router,
@@ -143,7 +151,7 @@ export class ArtikelCardComponent implements OnInit {
     }
   }
 
-  
+
   stopScanner() {
     this.isScanning = false;
     // Torch ausschalten

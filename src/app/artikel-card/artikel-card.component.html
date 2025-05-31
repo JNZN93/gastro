@@ -71,8 +71,8 @@
     <div class="scanner-wrapper">
       <zxing-scanner
         #scanner
+        [videoConstraints]="videoConstraints"
         [formats]="[]"
-        [torch]="true"
         [tryHarder]="true"
         (scanSuccess)="onCodeResult($event)"
         style="width: 100%; height: 100%;">
