@@ -143,6 +143,7 @@ export class ArtikelCardComponent implements OnInit {
     }
   }
 
+  
   stopScanner() {
     this.isScanning = false;
     // Torch ausschalten
