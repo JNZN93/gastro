@@ -72,7 +72,8 @@
       <zxing-scanner
         #scanner
         [formats]="[]"
-        [torch]="isScanning"
+        [torch]="isTorchOn"
+        [tryHarder]="true"
         (scanSuccess)="onCodeResult($event)"
         style="width: 100%; height: 100%;">
       </zxing-scanner>
