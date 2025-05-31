@@ -179,6 +179,7 @@ export class ArtikelCardComponent implements OnInit {
 
   playBeep(): void {
   const audio = new Audio('beep.mp3');
+  audio.volume = 0.5;
   audio.play().catch(err => console.error('Fehler beim Abspielen des Tons:', err));
 }
 
