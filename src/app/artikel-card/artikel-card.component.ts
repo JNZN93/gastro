@@ -135,14 +135,20 @@ export class ArtikelCardComponent implements OnInit {
   }
 
   startScanner() {
-    this.isTorchOn = true;
     this.isScanning = true;
     this.scanner?.scanStart(); // aktiviert Kamera
+    // Torch einschalten
+    if (this.scanner) {
+      this.scanner.torch = true;
+    }
   }
 
   stopScanner() {
-    this.isTorchOn = false;
     this.isScanning = false;
+    // Torch ausschalten
+    if (this.scanner) {
+      this.scanner.torch = false;
+    }
     this.scanner?.reset(); // stoppt Kamera & löst Vorschau
   }
 
