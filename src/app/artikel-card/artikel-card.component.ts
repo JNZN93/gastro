@@ -30,8 +30,8 @@ export class ArtikelCardComponent implements OnInit {
   isTorchOn = false;
 videoConstraints = {
   facingMode: { ideal: 'environment' },
-  width: { ideal: 1280 },
-  height: { ideal: 720 },
+  width: { ideal: 1920 },
+  height: { ideal: 1080 },
   // Trick: "advanced" mit cast auf "any"
   // focusMode ist nicht offiziell in MediaTrackConstraintSet
   advanced: [{ focusMode: 'continuous' }] as any
