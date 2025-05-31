@@ -26,7 +26,7 @@
       </div>
     </div>
 
-    
+
 
  <div class="content">
     @for (artikel of artikelData; track $index) {
@@ -72,6 +72,7 @@
       <zxing-scanner
         #scanner
         [formats]="[]"
+        [torch]="true"
         (scanSuccess)="onCodeResult($event)"
         style="width: 100%; height: 100%;">
       </zxing-scanner>

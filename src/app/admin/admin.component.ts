@@ -82,6 +82,7 @@ export class AdminComponent implements OnInit {
     email: string,
     orderId: string,
     totalPrice: number,
+    delivery_date: string,
     products: {
       price: number;
       product_article_number: string;
@@ -121,7 +122,7 @@ export class AdminComponent implements OnInit {
       14,
       120
     );
-    doc.text('Zahlstatus: ' + paymentStatus, 14, 130);
+    doc.text('Liefer-/ Abholdatum ' + this.formatDate(delivery_date), 14, 130);
 
     // Trennlinie
     doc.line(14, 135, 200, 135);
@@ -204,7 +205,7 @@ export class AdminComponent implements OnInit {
       doc.text('Kunde: ' + order.name, 14, 80);
       doc.text('E-Mail: ' + order.email, 14, 90);
       doc.text('Lieferart: ' + (order.fulfillment_type == 'delivery' ? 'Lieferung' : 'Abholung'), 14, 110);
-      doc.text('Zahlstatus: ' + order.payment_status, 14, 120);
+      doc.text('Liefer-/ Abholdatum ' + this.formatDate(order.delivery_date), 14, 120);
   
       // Trennlinie
       doc.line(14, 125, 200, 125);
@@ -269,6 +270,16 @@ export class AdminComponent implements OnInit {
     window.open(pdfUrl, '_blank');
   }
   
+formatDate(dateString: string): string {
+  if (!dateString) return '';
+
+  const date = new Date(dateString);
+  const day = date.getDate().toString().padStart(2, '0');   // TT
+  const month = (date.getMonth() + 1).toString().padStart(2, '0'); // MM (0-basiert)
+  const year = date.getFullYear(); // JJJJ
+
+  return `${day}.${month}.${year}`;
+}
 
   onUploadClick() {
     const file = this.fileInput.nativeElement.files[0];

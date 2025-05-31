@@ -20,6 +20,7 @@ export class WarenkorbComponent implements OnInit {
   street: string | null = localStorage.getItem('street') ? localStorage.getItem('street') : '';
   zipCode: string | null = localStorage.getItem('zipcode') ? localStorage.getItem('zipcode') : '';
   city: string | null= localStorage.getItem('city') ? localStorage.getItem('city') : '';
+  delivery_date: string | null = '';
   combinedValue: string = '';
 
   
@@ -59,7 +60,8 @@ export class WarenkorbComponent implements OnInit {
       orderData: {
           ...this.globalService.orderData,
           shipping_address: newAddress ? newAddress : '',
-          fulfillment_type: this.isDelivery ? 'delivery' : 'pickup' // Hier den gewünschten Wert setzen TOGGLE
+          fulfillment_type: this.isDelivery ? 'delivery' : 'pickup', // Hier den gewünschten Wert setzen TOGGLE
+          delivery_date: this.delivery_date
       },
       orderItems: this.globalService.warenkorb
   };

@@ -27,6 +27,7 @@ export class ArtikelCardComponent implements OnInit {
   filteredData: any[] = [];
   isVisible: boolean = true;
   isScanning = false;
+  isTorchOn = false;
 
   constructor(
     private router: Router,
@@ -134,11 +135,13 @@ export class ArtikelCardComponent implements OnInit {
   }
 
   startScanner() {
+    this.isTorchOn = true;
     this.isScanning = true;
     this.scanner?.scanStart(); // aktiviert Kamera
   }
 
   stopScanner() {
+    this.isTorchOn = false;
     this.isScanning = false;
     this.scanner?.reset(); // stoppt Kamera & löst Vorschau
   }

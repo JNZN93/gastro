@@ -1,64 +1,73 @@
 @if (isVisible) {
-    <div class="cart open">
-      <button class="close-button" (click)="closeWarenkorb()" >✖</button>
-      <h1>Kommissionierauftrag</h1>
-  
-      @if (this.globalService.warenkorb.length > 0) {
-        @for (artikel of this.globalService.warenkorb; track artikel.id) {
-            <div class="card">
-                <div class="container">
-                  <h5>{{ artikel.article_text}}</h5>
-                  <h6>Art-No. [{{ artikel.article_number}}]</h6>
-                  <div class="price-quantity">
-                     <!--<h5>{{ artikel.sale_price }} €</h5> -->
-                     <div class="menge-con">
-                        <div class="quantity-buttons">
-                          <button class="quantity-btn" (click)="reduceQuantity(artikel)">-</button>
-                          <span class="amount">{{artikel.quantity}}</span>
-                          <button class="quantity-btn plus" (click)="increaseQuantity(artikel)">+</button>
-                        </div>
-                         <button class="remove-button" (click)="removeItem(artikel)">x</button>
-                    </div>
-                  </div>
-                 
-                </div>
-              </div>
-        }
-      } @else {
-        <p>Dein Warenkorb ist leer.</p>
-      }
+<div class="cart open">
+  <button class="close-button" (click)="closeWarenkorb()">✖</button>
+  <h1>Kommissionierauftrag</h1>
 
-      @if ( this.globalService.warenkorb.length > 0 ) {
-        <div class="button-delivery-main">
-          <button class="toggle-delivery-button" [class.active]="isDelivery" (click)="toggleDelivery('delivery')">
-              Lieferung
-          </button>
-          <button class="toggle-delivery-button" [class.active]="!isDelivery" (click)="toggleDelivery('pickup')">
-              Abholung
-          </button>
-        </div>
-
-         <!-- Adresseingabe nur sichtbar, wenn Lieferung gewählt wurde -->
-         @if (isDelivery) {
-          <div class="address-input">
-            <h3>Lieferadresse</h3>
-            <input [(ngModel)]="street" type="text" placeholder="Straße und Hausnummer" >
-            <input [(ngModel)]="zipCode" type="number" placeholder="PLZ" >
-            <input [(ngModel)]="city" type="text" placeholder="Stadt">
+  @if (this.globalService.warenkorb.length > 0) {
+  @for (artikel of this.globalService.warenkorb; track artikel.id) {
+  <div class="card">
+    <div class="container">
+      <h5>{{ artikel.article_text}}</h5>
+      <h6>Art-No. [{{ artikel.article_number}}]</h6>
+      <div class="price-quantity">
+        <!--<h5>{{ artikel.sale_price }} €</h5> -->
+        <div class="menge-con">
+          <div class="quantity-buttons">
+            <button class="quantity-btn" (click)="reduceQuantity(artikel)">-</button>
+            <span class="amount">{{artikel.quantity}}</span>
+            <button class="quantity-btn plus" (click)="increaseQuantity(artikel)">+</button>
           </div>
-        }
+          <button class="remove-button" (click)="removeItem(artikel)">x</button>
+        </div>
+      </div>
 
-        <!-- <div class="total-price">
+    </div>
+  </div>
+  }
+  } @else {
+  <p>Dein Warenkorb ist leer.</p>
+  }
+
+  @if ( this.globalService.warenkorb.length > 0 ) {
+  <div class="button-delivery-main">
+    <button class="toggle-delivery-button" [class.active]="isDelivery" (click)="toggleDelivery('delivery')">
+      Lieferung
+    </button>
+    <button class="toggle-delivery-button" [class.active]="!isDelivery" (click)="toggleDelivery('pickup')">
+      Abholung
+    </button>
+  </div>
+
+  <!-- Adresseingabe nur sichtbar, wenn Lieferung gewählt wurde -->
+  @if (isDelivery) {
+  <div class="address-input">
+    <h3>Lieferadresse</h3>
+    <input [(ngModel)]="street" type="text" placeholder="Straße und Hausnummer">
+    <input [(ngModel)]="zipCode" type="number" placeholder="PLZ">
+    <input [(ngModel)]="city" type="text" placeholder="Stadt">
+    <label>
+      <h3>Lieferdatum</h3>
+      <input [(ngModel)]="delivery_date" type="date">
+    </label>
+  </div>
+  } @else {
+  <div class="address-input">
+    <label>
+      <h3>Abholdatum</h3>
+      <input [(ngModel)]="delivery_date" type="date">
+    </label>
+  </div>
+  }
+
+  <!-- <div class="total-price">
           <h5>
             Endsumme: {{(this.globalService.totalPrice).toFixed(2)}} €
          </h5> 
         </div> -->
-        <div class="order-main">
-            <button class="order-button" (click)="sendOrder()">Auftrag absenden</button>
-        </div>
-      }
-
-    </div>
+  <div class="order-main">
+    <button class="order-button" (click)="sendOrder()">Auftrag absenden</button>
+  </div>
   }
 
-
+</div>
+}
