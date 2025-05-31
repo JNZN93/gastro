@@ -47,13 +47,18 @@ export class ArtikelCardComponent implements OnInit {
     const token = localStorage.getItem('token');
     const loadedWarenkorb = localStorage.getItem('warenkorb')
 
-    navigator.mediaDevices.enumerateDevices().then(devices => {
-      this.availableDevices = devices.filter(device => device.kind === 'videoinput');
+navigator.mediaDevices.enumerateDevices().then(devices => {
+  const videoDevices = devices.filter(d => d.kind === 'videoinput');
 
-      // Rückkamera suchen
-      const backCam = this.availableDevices.find(d => d.label.toLowerCase().includes('back'));
-      this.selectedDevice = backCam || this.availableDevices[0];
-    });
+  // Kamera suchen, die *nicht* Weitwinkel ist
+  const standardCam = videoDevices.find(d =>
+    d.label.toLowerCase().includes('back') &&
+    !d.label.toLowerCase().includes('wide') &&
+    !d.label.toLowerCase().includes('ultra')
+  );
+
+  this.selectedDevice = standardCam || videoDevices[0];
+});
 
     if(loadedWarenkorb) {
       this.globalService.warenkorb = JSON.parse(loadedWarenkorb);
