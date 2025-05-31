@@ -381,6 +381,21 @@
   justify-content: center;
   align-items: center;
   flex-direction: column;
+
+  select {
+        padding: 8px 12px;
+    margin-top: 4px;
+    margin-bottom: 12px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    background-color: #f8f8f8;
+    font-size: 1rem;
+    color: #333;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 1px 1px 3px rgba(0,0,0,0.05);
+    transition: border-color 0.2s ease;
+  }
 }
 
 .scanner-content {
