@@ -46,28 +46,9 @@ export class ArtikelCardComponent implements OnInit {
     const token = localStorage.getItem('token');
     const loadedWarenkorb = localStorage.getItem('warenkorb')
 
-    navigator.mediaDevices.enumerateDevices().then(devices => {
-      const videoDevices = devices.filter(d => d.kind === 'videoinput');
-      this.availableDevices = videoDevices;
-
-      // 🎯 Wähle Kamera mit "back" im Namen, aber NICHT "wide", "ultra", "tele"
-      const preferredCam = videoDevices.find(d => {
-        const name = d.label.toLowerCase();
-        return name.includes('back') &&
-               !name.includes('wide') &&
-               !name.includes('ultra') &&
-               !name.includes('tele');
-      });
-
-      // Fallback: Erste Kamera
-      this.selectedDevice = preferredCam || videoDevices[0];
-    });
-
     if(loadedWarenkorb) {
       this.globalService.warenkorb = JSON.parse(loadedWarenkorb);
     }
-
-    console.log(this.globalService.warenkorb)
 
     if (token) {
       this.authService.checkToken(token).subscribe({
@@ -159,6 +140,22 @@ export class ArtikelCardComponent implements OnInit {
 
   startScanner() {
     this.isScanning = true;
+        navigator.mediaDevices.enumerateDevices().then(devices => {
+      const videoDevices = devices.filter(d => d.kind === 'videoinput');
+      this.availableDevices = videoDevices;
+
+      // 🎯 Wähle Kamera mit "back" im Namen, aber NICHT "wide", "ultra", "tele"
+      const preferredCam = videoDevices.find(d => {
+        const name = d.label.toLowerCase();
+        return name.includes('back') &&
+               !name.includes('wide') &&
+               !name.includes('ultra') &&
+               !name.includes('tele');
+      });
+
+      // Fallback: Erste Kamera
+      this.selectedDevice = preferredCam || videoDevices[0];
+    });
     this.scanner?.scanStart(); // aktiviert Kamera
 
     // Torch einschalten
