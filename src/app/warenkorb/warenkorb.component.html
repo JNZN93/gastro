@@ -49,12 +49,20 @@
       <h3>Lieferdatum</h3>
       <input [(ngModel)]="delivery_date" type="date">
     </label>
+            <label>
+      <h3>Anmerkungen</h3>
+      <textarea [(ngModel)]="customer_notes" ></textarea>
+    </label>
   </div>
   } @else {
   <div class="address-input">
     <label>
       <h3>Abholdatum</h3>
       <input [(ngModel)]="delivery_date" type="date">
+    </label>
+        <label>
+      <h3>Anmerkungen</h3>
+      <textarea [(ngModel)]="customer_notes" ></textarea>
     </label>
   </div>
   }
