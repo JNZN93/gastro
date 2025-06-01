@@ -66,9 +66,9 @@
 
 <!-- Scanner Modal -->
 <div class="scanner-modal" *ngIf="isScanning">
-  <select [(ngModel)]="selectedDevice">
+<select [(ngModel)]="selectedDevice" (ngModelChange)="onCameraChange()">
   <option *ngFor="let device of availableDevices" [ngValue]="device">
-    {{ device.label }}
+    {{ device.label || 'Unbenannte Kamera' }}
   </option>
 </select>
   <div class="scanner-content">
