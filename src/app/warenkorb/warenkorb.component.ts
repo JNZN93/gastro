@@ -88,7 +88,6 @@ export class WarenkorbComponent implements OnInit {
 
   getTotalPrice() {
     this.globalService.totalPrice = this.globalService.warenkorb.reduce((summe, artikel) => summe + (artikel.sale_price * parseInt(artikel.quantity)), 0);
-    console.log(this.globalService.totalPrice);
   }
 
   reduceQuantity(artikel: any) {

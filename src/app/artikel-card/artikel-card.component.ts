@@ -53,7 +53,6 @@ export class ArtikelCardComponent implements OnInit {
     if (token) {
       this.authService.checkToken(token).subscribe({
         next: (response) => {
-          console.log('Token gültig:', response);
           this.artikelService.getData().subscribe((res) => {
             if(response.user.role == 'admin') {
               this.globalService.isAdmin = true;
@@ -62,7 +61,6 @@ export class ArtikelCardComponent implements OnInit {
             this.artikelData = res;
             this.collectOrderData(response);
             this.globalService.orderData = this.orderData;
-            console.log('global', this.globalService.orderData);
             this.isVisible = false;
           });
         },
@@ -93,11 +91,9 @@ export class ArtikelCardComponent implements OnInit {
     if (index > -1) {
       // Artikel existiert -> Entfernen
       favorites.splice(index, 1);
-      console.log('Artikel entfernt');
     } else {
       // Artikel hinzufügen
       favorites.push(artikel);
-      console.log('Artikel hinzugefügt');
     }
     // Alphabetisch sortieren nach artikel.name (case-insensitive)
     favorites.sort((a: any, b: any) => 
@@ -133,7 +129,6 @@ export class ArtikelCardComponent implements OnInit {
   onCodeResult(result: string) {
     this.playBeep();
     this.stopScanner(); // optional Kamera nach Scan stoppen
-    console.log('Scan erfolgreich:', result);
     this.searchTerm = result;
     this.filteredArtikelData();
   }
@@ -182,7 +177,6 @@ export class ArtikelCardComponent implements OnInit {
 
   filterCategory(event: Event) {
     const category = (event.target as HTMLSelectElement).value; // Wert aus Event holen
-    console.log('selected', category)
     this.selectedCategory = category; // Kategorie speichern
     // Seite nach oben scrollen
     window.scrollTo({ top: 0});
