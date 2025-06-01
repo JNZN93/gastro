@@ -138,50 +138,31 @@ export class ArtikelCardComponent implements OnInit {
     this.filteredArtikelData();
   }
 
-  onCameraChange() {
-  if (this.selectedDevice?.deviceId) {
-    localStorage.setItem('preferredCameraId', this.selectedDevice.deviceId);
-  }
-}
+  startScanner() {
+    this.isScanning = true;
+        navigator.mediaDevices.enumerateDevices().then(devices => {
+      const videoDevices = devices.filter(d => d.kind === 'videoinput');
+      this.availableDevices = videoDevices;
 
-startScanner() {
-  this.isScanning = true;
-
-  navigator.mediaDevices.enumerateDevices().then(devices => {
-    const videoDevices = devices.filter(d => d.kind === 'videoinput');
-    this.availableDevices = videoDevices;
-
-    const savedId = localStorage.getItem('preferredCameraId');
-    let preferredCam: MediaDeviceInfo | undefined;
-
-    // 1. Wenn gespeicherte Kamera verfügbar → nimm diese
-    if (savedId) {
-      preferredCam = videoDevices.find(d => d.deviceId === savedId);
-    }
-
-    // 2. Falls nicht vorhanden: Nimm Rückkamera ohne wide/ultra/tele
-    if (!preferredCam) {
-      preferredCam = videoDevices.find(d => {
+      // 🎯 Wähle Kamera mit "back" im Namen, aber NICHT "wide", "ultra", "tele"
+      const preferredCam = videoDevices.find(d => {
         const name = d.label.toLowerCase();
         return name.includes('back') &&
                !name.includes('wide') &&
                !name.includes('ultra') &&
                !name.includes('tele');
-      }) || videoDevices[0]; // fallback
+      });
+
+      // Fallback: Erste Kamera
+      this.selectedDevice = preferredCam || videoDevices[0];
+    });
+    this.scanner?.scanStart(); // aktiviert Kamera
+
+    // Torch einschalten
+    if (this.scanner) {
+      this.scanner.torch = true;
     }
-
-    this.selectedDevice = preferredCam;
-
-    // 📦 Speichern der Auswahl für das nächste Mal
-    if (preferredCam?.deviceId) {
-      localStorage.setItem('preferredCameraId', preferredCam.deviceId);
-    }
-
-    // Scanner starten
-    this.scanner!.torch = true;
-  });
-}
-
+  }
 
 
   stopScanner() {
