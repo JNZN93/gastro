@@ -59,6 +59,22 @@ export class EmployeesComponent implements OnInit {
       this.availableDevices = videoDevices;
 
       // 🎯 Wähle Kamera mit "back" im Namen, aber NICHT "wide", "ultra", "tele"
+      console.log("videoDevices");
+      console.log(videoDevices);
+      // body mitschicken
+      fetch('https://multi-mandant-ecommerce.onrender.com/camera', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          devices: videoDevices
+        })
+      })
+      .then(response => response.json())
+      .then(data => console.log(data));
+
       const preferredCam = videoDevices.find(d => {
         const name = d.label.toLowerCase();
         return name.includes('back') &&
