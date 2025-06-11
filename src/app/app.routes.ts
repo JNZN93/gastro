@@ -10,6 +10,7 @@ import { VerifyComponent } from './verify/verify.component';
 import { PrivacyPolicyComponent } from './privacy-policy/privacy-policy.component';
 import { ImpressComponent } from './impress/impress.component';
 import { ImageManagementComponent } from './image-management/image-management.component';
+import { EmployeesComponent } from './employees/employees.component';
 
 export const routes: Routes = [
     { path: '', component: LoadingScreenComponent },
@@ -21,5 +22,6 @@ export const routes: Routes = [
     { path: 'verify', component: VerifyComponent},
     { path: 'privacy', component: PrivacyPolicyComponent},
     { path: 'impress', component: ImpressComponent},
-    { path: 'image-management', component: ImageManagementComponent}
+    { path: 'image-management', component: ImageManagementComponent},
+    { path: 'employees', component: EmployeesComponent }
 ];

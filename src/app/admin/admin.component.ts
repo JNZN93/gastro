@@ -44,7 +44,6 @@ export class AdminComponent implements OnInit {
   checkUserRole() {
     this.authService.checkToken(localStorage.getItem('token')).subscribe({
       next: (response) => {
-        console.log(response);
         if (response?.user?.role !== 'admin') {
           this.router.navigate(['/login']);
         }
@@ -62,7 +61,6 @@ export class AdminComponent implements OnInit {
   loadOrders() {
     this.orderService.getAllOrders().subscribe({
       next: (response) => {
-        console.log(response.orders);
         this.orders = response.orders;
       },
       error: (error) => {
@@ -336,7 +334,6 @@ formatDate(dateString: string): string {
 
   updateOrderStatus(order: any, status: string) {
     order.status = status;
-    console.log(`Bestellung ${order.order_id} hat jetzt den Status: ${status}`);
 
     // Hier wird die API zur Statusaktualisierung aufgerufen
     this.orderService
