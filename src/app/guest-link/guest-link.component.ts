@@ -13,6 +13,7 @@ import { FormsModule } from '@angular/forms';
 export class GuestLinkComponent implements OnInit {
 
   name: string = "";
+  role: string= "";
   newLink: string = "";
   newPin: string = "";
   showSnackbar = false;

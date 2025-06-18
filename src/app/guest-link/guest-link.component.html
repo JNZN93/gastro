@@ -14,6 +14,16 @@
                            class="form-input">
                 </div>
             </div>
+                        <div class="result-group">
+                <label for="role">Rolle</label>
+                <div class="input-group">
+                    <select name="role" id="role" [(ngModel)]="role" class="form-input">
+                        <option value="" disabled selected hidden>Bitte auswählen</option>
+                        <option value="customer">Kunde</option>
+                        <option value="employee">Mitarbeiter</option>
+                    </select>
+                </div>
+            </div>
 
             <div class="result-group">
                 <label>Link</label>
