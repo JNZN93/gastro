@@ -33,11 +33,11 @@ export class LoginComponent {
         next: (response) => {
           localStorage.setItem("token", response.token);
           console.log('Login erfolgreich:', response);
-          if (response?.user.role == 'admin') {
+          if (response?.role == 'admin') {
             this.router.navigate(['/admin']);
             return
           }
-          if (response?.user.role == 'employee') {
+          if (response?.role == 'employee') {
             this.router.navigate(['/employees']);
             return
           }
