@@ -39,7 +39,7 @@ export class VerifyComponent implements OnInit {
       next: (response) => {
         console.log(response);
         localStorage.setItem('token', response.token);
-        this.router.navigate(['/products']);
+        this.router.navigate(['']);
       },
       error: (error) => {
         console.error(error);
