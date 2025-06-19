@@ -31,7 +31,7 @@ export class GuestLinkComponent implements OnInit {
   }
 
   generateLink() {
-    this.authService.generateLink(this.name).subscribe({
+    this.authService.generateLink(this.name, this.role).subscribe({
       next: (response) => {
         console.log(response.link);
         this.newLink = response.link;

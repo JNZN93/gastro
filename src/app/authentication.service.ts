@@ -31,8 +31,8 @@ export class AuthService {
     return this.http.get(this.apiUrlCheckToken, { headers });
   }
 
-  generateLink(customerName : string): Observable<any> {
-    return this.http.post(this.apiUrlGenerate, { customerName })
+  generateLink(customerName : string, role : string): Observable<any> {
+    return this.http.post(this.apiUrlGenerate, { customerName, role })
 
   }
 
