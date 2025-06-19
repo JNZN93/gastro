@@ -39,7 +39,14 @@ export class VerifyComponent implements OnInit {
       next: (response) => {
         console.log(response);
         localStorage.setItem('token', response.token);
+
+        if(response.user.role == "user") {
         this.router.navigate(['/products']);
+        }
+
+        if(response.user.role == "employee") {
+          this.router.navigate(['/employees']);
+        }
       },
       error: (error) => {
         console.error(error);
