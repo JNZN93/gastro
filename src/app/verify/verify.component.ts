@@ -15,7 +15,7 @@ export class VerifyComponent implements OnInit {
   pin = "";
   url = window.location.search;
 
-  constructor(private http: HttpClient, private authService: AuthService, private router: Router) { }
+  constructor(private http: HttpClient, private authService: AuthService, private router: Router) {}
 
   ngOnInit(): void {
     this.authService.checkToken(localStorage.getItem('token')).subscribe({
@@ -33,20 +33,13 @@ export class VerifyComponent implements OnInit {
     const params = new URLSearchParams(this.url);
     const token = params.get("token");
     console.log(this.pin);
-
+    
 
     this.authService.verifyPin(this.pin, token).subscribe({
       next: (response) => {
         console.log(response);
         localStorage.setItem('token', response.token);
-        if (response?.role === "employee") {
-          this.router.navigate(['/employees']);
-        } else if (response?.role === "user") {
-          this.router.navigate(['/products']);
-        } else {
-          // optional: Fallback
-          console.warn('Unbekannte Rolle:', response?.role);
-        }
+        this.router.navigate(['/login']);
       },
       error: (error) => {
         console.error(error);
