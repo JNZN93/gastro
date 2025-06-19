@@ -37,7 +37,7 @@ export class LoginComponent {
             this.router.navigate(['/admin']);
             return
           }
-          if (response?.role == 'employee') {
+          else if (response?.role == 'employee') {
             this.router.navigate(['/employees']);
             return
           }

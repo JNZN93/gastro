@@ -20,7 +20,13 @@ export class LoadingScreenComponent implements OnInit {
       this.authService.checkToken(token).subscribe({
         next: (response) => {
           console.log('Token gültig:', response);
-          this.router.navigate(['/products']);
+          if(response?.user.role == "admin") {
+          this.router.navigate(['/admin']);
+          }else if(response?.user.role == "employee"){
+            this.router.navigate(['/employees']);
+          }else {
+            this.router.navigate(['/products']);
+          }
           this.isTokenValid = true;
         },
         error: (error) => {
