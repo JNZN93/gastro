@@ -105,19 +105,15 @@ export class ProductSelectionComponent implements OnInit {
 
     const doc = new jsPDF();
 
-    // Titel
-    doc.setFontSize(20);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Etikettendruck - Produktauswahl', 14, 20);
-
-
-    // Grid-Layout Einstellungen
-    const startY = 50;
+    // Grid-Layout Einstellungen für 7x2 Grid (14 Etiketten pro Seite)
+    const startY = 20;
     const cardWidth = 85;
-    const cardHeight = 45; // Höher für mehr Inhalt
+    const cardHeight = 30; // Angepasst für 7 Reihen
     const marginX = 10;
-    const marginY = 8;
+    const marginY = 4; // Reduzierter Abstand zwischen Reihen
     const cardsPerRow = 2;
+    const rowsPerPage = 7; // 7 Reihen pro Seite
+    const cardsPerPage = cardsPerRow * rowsPerPage; // 14 Etiketten pro Seite
     const startX = 14;
 
     let currentX = startX;
@@ -125,8 +121,8 @@ export class ProductSelectionComponent implements OnInit {
     let cardIndex = 0;
 
     this.selectedProducts.forEach((product, index) => {
-      // Neue Seite wenn nötig
-      if (currentY + cardHeight > 270) {
+      // Neue Seite nach 14 Etiketten (7 Reihen x 2 Spalten)
+      if (index > 0 && index % cardsPerPage === 0) {
         doc.addPage();
         currentY = startY;
         currentX = startX;
@@ -148,44 +144,43 @@ export class ProductSelectionComponent implements OnInit {
       const maxWidth = cardWidth - 6;
       const lines = doc.splitTextToSize(labelFormat, maxWidth);
       
-      let textY = currentY + 8;
+      let textY = currentY + 6;
       lines.forEach((line: string, lineIndex: number) => {
         if (lineIndex < 2) { // Maximal 2 Zeilen
           doc.text(line, currentX + 3, textY);
-          textY += 5;
+          textY += 4;
         }
       });
 
       // Artikelnummer
       doc.setFontSize(8);
       doc.setFont('helvetica', 'normal');
-      doc.text(`Art.-Nr.: ${product.article_number}`, currentX + 3, currentY + 20);
+      doc.text(`Art.-Nr.: ${product.article_number}`, currentX + 3, currentY + 16);
 
       // EAN falls vorhanden
       if (product.ean) {
         doc.setFontSize(7);
-        doc.text(`EAN: ${product.ean}`, currentX + 3, currentY + 25);
+        doc.text(`EAN: ${product.ean}`, currentX + 3, currentY + 20);
       }
 
-      // Preis und MwSt.
-      let priceY = currentY + (product.ean ? 30 : 25);
-      
-      // Netto-Preis
+      // Preis rechts platzieren
       if (product.sale_price) {
-        doc.setFontSize(9);
+        doc.setFontSize(16);
         doc.setFont('helvetica', 'bold');
-        doc.text(`€ ${product.sale_price.toFixed(2)}`, currentX + 3, priceY);
-        priceY += 4;
-      }
-
-      // MwSt.-Information
-      if (product.tax_code) {
-        doc.setFontSize(7);
-        doc.setFont('helvetica', 'normal');
-        const taxText = product.tax_code === 1 ? 'zzgl. 19% MwSt.' : 
-                       product.tax_code === 2 ? 'zzgl. 7% MwSt.' : 
-                       ` zzgl. ${product.tax_code}% MwSt.`;
-        doc.text(taxText, currentX + 3, priceY);
+        const priceText = `€ ${product.sale_price.toFixed(2)}`;
+        const priceWidth = doc.getTextWidth(priceText);
+        doc.text(priceText, currentX + cardWidth - priceWidth - 3, currentY + 24);
+        
+        // MwSt.-Information unter dem Preis
+        if (product.tax_code) {
+          doc.setFontSize(6);
+          doc.setFont('helvetica', 'normal');
+          const taxText = product.tax_code === 1 ? 'zzgl. 19% MwSt.' : 
+                         product.tax_code === 2 ? 'zzgl. 7% MwSt.' : 
+                         ` zzgl. ${product.tax_code}% MwSt.`;
+          const taxWidth = doc.getTextWidth(taxText);
+          doc.text(taxText, currentX + cardWidth - taxWidth - 3, currentY + 28);
+        }
       }
 
       // Kleine Trennlinie
@@ -207,17 +202,15 @@ export class ProductSelectionComponent implements OnInit {
       }
     });
 
-    // Gesamtanzahl am Ende
-    if (currentY > startY) {
-      currentY += cardHeight + 10;
+    // Gesamtanzahl am Ende der letzten Seite
+    const remainingSpace = 297 - currentY; // DIN A4 Höhe - aktuelle Position
+    if (remainingSpace > 20) {
+      currentY += 15;
+      
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Gesamt: ${this.selectedProducts.length} Produkte`, startX, currentY);
     }
-    if (currentY > 270) {
-      doc.addPage();
-      currentY = 50;
-    }
-
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
 
     // PDF öffnen
     doc.autoPrint();
