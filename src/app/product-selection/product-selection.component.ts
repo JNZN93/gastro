@@ -28,10 +28,8 @@ export class ProductSelectionComponent implements OnInit {
   products: Product[] = [];
   filteredProducts: Product[] = [];
   selectedProducts: Product[] = [];
-  selectedProduct: Product | null = null;
   searchTerm: string = '';
   isLoading: boolean = false;
-  isSelectionOpen: boolean = false;
 
   constructor(private http: HttpClient, private router: Router) {}
 
@@ -72,21 +70,10 @@ export class ProductSelectionComponent implements OnInit {
     );
   }
 
-  toggleSelection(product: Product): void {
-    if (this.selectedProduct?.id === product.id) {
-      this.isSelectionOpen = !this.isSelectionOpen;
-    } else {
-      this.selectedProduct = product;
-      this.isSelectionOpen = true;
-    }
-  }
-
   addToCart(product: Product): void {
     if (!this.isProductSelected(product)) {
       this.selectedProducts.push(product);
     }
-    this.isSelectionOpen = false;
-    this.selectedProduct = null;
   }
 
   removeFromCart(productId: number): void {
@@ -211,11 +198,10 @@ export class ProductSelectionComponent implements OnInit {
 
   formatProductName(product: Product): string {
     // Format: "brand product_name article_number"
-    const brand = product.brand || 'avery zweckform';
     const name = product.article_text;
     const articleNumber = product.article_number;
     
-    return `${brand} ${name} ${articleNumber}`;
+    return `${name} ${articleNumber}`;
   }
 
   trackByProductId(index: number, product: Product): number {
@@ -226,11 +212,7 @@ export class ProductSelectionComponent implements OnInit {
     return this.selectedProducts.some(p => p.id === product.id);
   }
 
-  getSelectButtonText(product: Product): string {
-    return this.isProductSelected(product) ? 'Ausgewählt' : 'Auswählen';
-  }
-
   getAddToCartButtonText(product: Product): string {
-    return this.isProductSelected(product) ? 'Bereits im Warenkorb' : 'Zum Warenkorb hinzufügen';
+    return this.isProductSelected(product) ? 'Hinzugefügt' : 'Hinzufügen';
   }
 }

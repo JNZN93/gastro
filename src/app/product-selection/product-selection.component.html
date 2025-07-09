@@ -79,35 +79,13 @@
                             <td>{{ product.ean || 'N/A' }}</td>
                             <td>
                                 <div class="action-container">
-                                    <button type="button" 
-                                            class="select-btn"
-                                            [class.selected]="selectedProduct?.id === product.id"
-                                            (click)="toggleSelection(product)">
-                                        <i class="bi" 
-                                           [class.bi-chevron-down]="selectedProduct?.id === product.id && isSelectionOpen"
-                                           [class.bi-chevron-right]="selectedProduct?.id === product.id && !isSelectionOpen"
-                                           [class.bi-plus-circle]="selectedProduct?.id !== product.id">
-                                        </i>
-                                        {{ getSelectButtonText(product) }}
+                                    <button type="button"
+                                            class="add-to-cart-btn-direct"
+                                            (click)="addToCart(product)"
+                                            [disabled]="isProductSelected(product)">
+                                        <i class="bi bi-cart-plus"></i>
+                                        {{ getAddToCartButtonText(product) }}
                                     </button>
-                                    
-                                    <div *ngIf="selectedProduct?.id === product.id && isSelectionOpen" class="selection-section">
-                                        <div class="product-preview">
-                                            <div class="product-name">{{ formatProductName(product) }}</div>
-                                            <div class="product-details">
-                                                <span><strong>Artikel:</strong> {{ product.article_number }}</span>
-                                                <span *ngIf="product.ean"><strong>EAN:</strong> {{ product.ean }}</span>
-                                            </div>
-                                        </div>
-                                        
-                                        <button type="button"
-                                                class="add-to-cart-btn"
-                                                (click)="addToCart(product)"
-                                                [disabled]="isProductSelected(product)">
-                                            <i class="bi bi-cart-plus"></i>
-                                            {{ getAddToCartButtonText(product) }}
-                                        </button>
-                                    </div>
                                 </div>
                             </td>
                         </tr>
