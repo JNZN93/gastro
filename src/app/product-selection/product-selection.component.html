@@ -1,0 +1,124 @@
+<div class="go-back-con">
+    <img (click)="historyBack()" src="back.png" alt="back">
+</div>
+
+<div class="container">
+    <div class="card">
+        <div class="card-body">
+            <div class="header-section">
+                <h2 class="h3">Produktauswahl</h2>
+                
+                <!-- Search Section -->
+                <div class="search-container">
+                    <div class="search-input-wrapper">
+                        <i class="bi bi-search"></i>
+                        <input type="text" 
+                               class="search-input" 
+                               [(ngModel)]="searchTerm"
+                               (ngModelChange)="filterProducts()"
+                               placeholder="Artikel nach Nummer, Name oder EAN suchen...">
+                    </div>
+                </div>
+                
+                <!-- Cart Section -->
+                <div class="cart-section" *ngIf="selectedProducts.length > 0">
+                    <div class="cart-header">
+                        <h4>Warenkorb ({{ selectedProducts.length }} Artikel)</h4>
+                        <div class="cart-actions">
+                            <button type="button" class="btn btn-success" (click)="generatePdf()">
+                                <i class="bi bi-file-earmark-pdf"></i>
+                                PDF generieren
+                            </button>
+                            <button type="button" class="btn btn-outline-danger" (click)="clearCart()">
+                                <i class="bi bi-trash"></i>
+                                Warenkorb leeren
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="cart-items">
+                        <div *ngFor="let product of selectedProducts; trackBy: trackByProductId" class="cart-item">
+                            <div class="cart-item-info">
+                                <div class="cart-item-name">{{ formatProductName(product) }}</div>
+                                <div class="cart-item-details">
+                                    <span class="cart-item-number">{{ product.article_number }}</span>
+                                    <span class="cart-item-ean" *ngIf="product.ean">EAN: {{ product.ean }}</span>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-danger" (click)="removeFromCart(product.id)">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading Spinner -->
+            <div *ngIf="isLoading" class="loading-container">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Lädt...</span>
+                </div>
+                <p>Produkte werden geladen...</p>
+            </div>
+
+            <!-- Products Table -->
+            <div class="table-responsive" *ngIf="!isLoading">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Artikelnummer</th>
+                            <th>Artikelname</th>
+                            <th>EAN</th>
+                            <th>Aktionen</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let product of filteredProducts; trackBy: trackByProductId">
+                            <td>{{ product.article_number }}</td>
+                            <td>{{ product.article_text }}</td>
+                            <td>{{ product.ean || 'N/A' }}</td>
+                            <td>
+                                <div class="action-container">
+                                    <button type="button" 
+                                            class="select-btn"
+                                            [class.selected]="selectedProduct?.id === product.id"
+                                            (click)="toggleSelection(product)">
+                                        <i class="bi" 
+                                           [class.bi-chevron-down]="selectedProduct?.id === product.id && isSelectionOpen"
+                                           [class.bi-chevron-right]="selectedProduct?.id === product.id && !isSelectionOpen"
+                                           [class.bi-plus-circle]="selectedProduct?.id !== product.id">
+                                        </i>
+                                        {{ getSelectButtonText(product) }}
+                                    </button>
+                                    
+                                    <div *ngIf="selectedProduct?.id === product.id && isSelectionOpen" class="selection-section">
+                                        <div class="product-preview">
+                                            <div class="product-name">{{ formatProductName(product) }}</div>
+                                            <div class="product-details">
+                                                <span><strong>Artikel:</strong> {{ product.article_number }}</span>
+                                                <span *ngIf="product.ean"><strong>EAN:</strong> {{ product.ean }}</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <button type="button"
+                                                class="add-to-cart-btn"
+                                                (click)="addToCart(product)"
+                                                [disabled]="isProductSelected(product)">
+                                            <i class="bi bi-cart-plus"></i>
+                                            {{ getAddToCartButtonText(product) }}
+                                        </button>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <!-- No Results Message -->
+                <div *ngIf="filteredProducts.length === 0 && !isLoading" class="no-results">
+                    <p>Keine Produkte gefunden.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

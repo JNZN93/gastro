@@ -11,6 +11,7 @@ import { PrivacyPolicyComponent } from './privacy-policy/privacy-policy.componen
 import { ImpressComponent } from './impress/impress.component';
 import { ImageManagementComponent } from './image-management/image-management.component';
 import { EmployeesComponent } from './employees/employees.component';
+import { ProductSelectionComponent } from './product-selection/product-selection.component';
 
 export const routes: Routes = [
     { path: '', component: LoadingScreenComponent },
@@ -23,5 +24,6 @@ export const routes: Routes = [
     { path: 'privacy', component: PrivacyPolicyComponent},
     { path: 'impress', component: ImpressComponent},
     { path: 'image-management', component: ImageManagementComponent},
-    { path: 'employees', component: EmployeesComponent }
+    { path: 'employees', component: EmployeesComponent },
+    { path: 'product-selection', component: ProductSelectionComponent }
 ];
