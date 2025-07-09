@@ -30,6 +30,7 @@ export class ProductSelectionComponent implements OnInit {
   selectedProducts: Product[] = [];
   searchTerm: string = '';
   isLoading: boolean = false;
+  isCartExpanded: boolean = true; // Cart starts expanded by default
 
   constructor(private http: HttpClient, private router: Router) {}
 
@@ -210,6 +211,10 @@ export class ProductSelectionComponent implements OnInit {
 
   isProductSelected(product: Product): boolean {
     return this.selectedProducts.some(p => p.id === product.id);
+  }
+
+  toggleCart(): void {
+    this.isCartExpanded = !this.isCartExpanded;
   }
 
   getAddToCartButtonText(product: Product): string {
