@@ -13,6 +13,8 @@ interface Product {
   brand?: string;
   category?: string;
   price?: number;
+  sale_price?: number;
+  tax_code?: number;
 }
 
 @Component({
@@ -106,75 +108,116 @@ export class ProductSelectionComponent implements OnInit {
     // Titel
     doc.setFontSize(20);
     doc.setFont('helvetica', 'bold');
-    doc.text('Produktauswahl', 14, 20);
+    doc.text('Etikettendruck - Produktauswahl', 14, 20);
 
-    // Datum
-    const currentDate = new Date().toLocaleDateString('de-DE');
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Erstellt am: ${currentDate}`, 14, 35);
 
-    // Trennlinie
-    doc.line(14, 40, 200, 40);
+    // Grid-Layout Einstellungen
+    const startY = 50;
+    const cardWidth = 85;
+    const cardHeight = 45; // Höher für mehr Inhalt
+    const marginX = 10;
+    const marginY = 8;
+    const cardsPerRow = 2;
+    const startX = 14;
 
-    // Tabellenüberschrift
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Artikelnummer', 14, 55);
-    doc.text('Artikelname', 60, 55);
-    doc.text('EAN', 140, 55);
-
-    // Trennlinie unter Überschrift
-    doc.line(14, 58, 200, 58);
-
-    // Produkte
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'normal');
-
-    let yPosition = 68;
-    const lineHeight = 8;
-    const pageHeight = 297; // A4 in mm
-    const bottomMargin = 20;
+    let currentX = startX;
+    let currentY = startY;
+    let cardIndex = 0;
 
     this.selectedProducts.forEach((product, index) => {
-      // Wenn yPosition zu weit unten ist, neue Seite
-      if (yPosition + lineHeight > pageHeight - bottomMargin) {
+      // Neue Seite wenn nötig
+      if (currentY + cardHeight > 270) {
         doc.addPage();
-        yPosition = 20;
-
-        // Tabellenüberschrift auf neuer Seite wiederholen
-        doc.setFontSize(14);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Artikelnummer', 14, yPosition);
-        doc.text('Artikelname', 60, yPosition);
-        doc.text('EAN', 140, yPosition);
-        
-        doc.line(14, yPosition + 3, 200, yPosition + 3);
-        
-        yPosition += 13;
-        doc.setFontSize(11);
-        doc.setFont('helvetica', 'normal');
+        currentY = startY;
+        currentX = startX;
+        cardIndex = 0;
       }
 
-      // Produktdaten
-      doc.text(product.article_number, 14, yPosition);
-      
-      // Artikelname kürzen falls zu lang
-      const maxNameLength = 50;
-      const articleName = product.article_text.length > maxNameLength 
-        ? product.article_text.substring(0, maxNameLength) + '...'
-        : product.article_text;
-      doc.text(articleName, 60, yPosition);
-      
-      doc.text(product.ean || 'N/A', 140, yPosition);
+      // Produktkarte zeichnen
+      // Rahmen
+      doc.setLineWidth(0.5);
+      doc.rect(currentX, currentY, cardWidth, cardHeight);
 
-      yPosition += lineHeight;
+      // Produktname (Etikettenformat)
+      const labelFormat = `${product.article_text}`
+      
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      
+      // Text umbrechen falls zu lang
+      const maxWidth = cardWidth - 6;
+      const lines = doc.splitTextToSize(labelFormat, maxWidth);
+      
+      let textY = currentY + 8;
+      lines.forEach((line: string, lineIndex: number) => {
+        if (lineIndex < 2) { // Maximal 2 Zeilen
+          doc.text(line, currentX + 3, textY);
+          textY += 5;
+        }
+      });
+
+      // Artikelnummer
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Art.-Nr.: ${product.article_number}`, currentX + 3, currentY + 20);
+
+      // EAN falls vorhanden
+      if (product.ean) {
+        doc.setFontSize(7);
+        doc.text(`EAN: ${product.ean}`, currentX + 3, currentY + 25);
+      }
+
+      // Preis und MwSt.
+      let priceY = currentY + (product.ean ? 30 : 25);
+      
+      // Netto-Preis
+      if (product.sale_price) {
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`€ ${product.sale_price.toFixed(2)}`, currentX + 3, priceY);
+        priceY += 4;
+      }
+
+      // MwSt.-Information
+      if (product.tax_code) {
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'normal');
+        const taxText = product.tax_code === 1 ? 'zzgl. 19% MwSt.' : 
+                       product.tax_code === 2 ? 'zzgl. 7% MwSt.' : 
+                       ` zzgl. ${product.tax_code}% MwSt.`;
+        doc.text(taxText, currentX + 3, priceY);
+      }
+
+      // Kleine Trennlinie
+      doc.setLineWidth(0.2);
+
+      // Index/Nummer
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'italic');
+
+      // Nächste Position berechnen
+      cardIndex++;
+      if (cardIndex % cardsPerRow === 0) {
+        // Neue Zeile
+        currentX = startX;
+        currentY += cardHeight + marginY;
+      } else {
+        // Nächste Spalte
+        currentX += cardWidth + marginX;
+      }
     });
 
-    // Gesamtanzahl
+    // Gesamtanzahl am Ende
+    if (currentY > startY) {
+      currentY += cardHeight + 10;
+    }
+    if (currentY > 270) {
+      doc.addPage();
+      currentY = 50;
+    }
+
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
-    doc.text(`Gesamtanzahl Produkte: ${this.selectedProducts.length}`, 14, yPosition + 10);
 
     // PDF öffnen
     doc.autoPrint();
