@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { jsPDF } from 'jspdf';
 import { Router } from '@angular/router';
+import JsBarcode from 'jsbarcode';
 
 interface Product {
   id: number;
@@ -85,6 +86,53 @@ export class ProductSelectionComponent implements OnInit {
     this.selectedProducts = [];
   }
 
+  generateEanBarcode(ean: string): string {
+    const canvas = document.createElement('canvas');
+    try {
+      // EAN-Code bereinigen (nur Zahlen)
+      const cleanEan = ean.replace(/\D/g, '');
+      
+      // Format basierend auf der Länge bestimmen
+      let format: string;
+      let width: number;
+      
+      switch (cleanEan.length) {
+        case 8:
+          format = 'EAN8';
+          width = 1.2;
+          break;
+        case 12:
+          format = 'UPC';
+          width = 1.5;
+          break;
+        case 13:
+          format = 'EAN13';
+          width = 1.5;
+          break;
+        default:
+          // Fallback für andere Längen - versuche CODE128
+          format = 'CODE128';
+          width = 1.0;
+          break;
+      }
+      
+      JsBarcode(canvas, cleanEan, {
+        format: format,
+        width: width,
+        height: 30,
+        displayValue: false,
+        margin: 0,
+        background: '#ffffff',
+        lineColor: '#000000'
+      });
+      
+      return canvas.toDataURL('image/png');
+    } catch (error) {
+      console.error('Error generating barcode for EAN:', ean, error);
+      return '';
+    }
+  }
+
   generatePdf(): void {
     if (this.selectedProducts.length === 0) {
       alert('Bitte wählen Sie mindestens ein Produkt aus.');
@@ -96,12 +144,12 @@ export class ProductSelectionComponent implements OnInit {
     // Grid-Layout Einstellungen für 7x2 Grid (14 Etiketten pro Seite)
     const startY = 20;
     const cardWidth = 85;
-    const cardHeight = 30; // Angepasst für 7 Reihen
+    const cardHeight = 35; // Erhöht für Barcode
     const marginX = 10;
     const marginY = 4; // Reduzierter Abstand zwischen Reihen
     const cardsPerRow = 2;
-    const rowsPerPage = 7; // 7 Reihen pro Seite
-    const cardsPerPage = cardsPerRow * rowsPerPage; // 14 Etiketten pro Seite
+    const rowsPerPage = 6; // 6 Reihen pro Seite (reduziert wegen größerer Karten)
+    const cardsPerPage = cardsPerRow * rowsPerPage; // 12 Etiketten pro Seite
     const startX = 14;
 
     let currentX = startX;
@@ -109,7 +157,7 @@ export class ProductSelectionComponent implements OnInit {
     let cardIndex = 0;
 
     this.selectedProducts.forEach((product, index) => {
-      // Neue Seite nach 14 Etiketten (7 Reihen x 2 Spalten)
+      // Neue Seite nach 12 Etiketten (6 Reihen x 2 Spalten)
       if (index > 0 && index % cardsPerPage === 0) {
         doc.addPage();
         currentY = startY;
@@ -149,6 +197,14 @@ export class ProductSelectionComponent implements OnInit {
       if (product.ean) {
         doc.setFontSize(7);
         doc.text(`EAN: ${product.ean}`, currentX + 3, currentY + 20);
+        
+        // EAN Barcode generieren und hinzufügen
+        const barcodeDataUrl = this.generateEanBarcode(product.ean);
+        if (barcodeDataUrl) {
+          const barcodeWidth = 30;
+          const barcodeHeight = 6;
+          doc.addImage(barcodeDataUrl, 'PNG', currentX + 3, currentY + 22, barcodeWidth, barcodeHeight);
+        }
       }
 
       // Preis rechts platzieren
