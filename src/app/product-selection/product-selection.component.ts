@@ -167,7 +167,7 @@ export class ProductSelectionComponent implements OnInit {
       if (product.sale_price) {
         doc.setFontSize(16);
         doc.setFont('helvetica', 'bold');
-        const priceText = `€ ${product.sale_price.toFixed(2)}`;
+        const priceText = `€ ${product.sale_price.toFixed(2).replace('.', ',')}`;
         const priceWidth = doc.getTextWidth(priceText);
         doc.text(priceText, currentX + cardWidth - priceWidth - 3, currentY + 24);
         
@@ -202,15 +202,6 @@ export class ProductSelectionComponent implements OnInit {
       }
     });
 
-    // Gesamtanzahl am Ende der letzten Seite
-    const remainingSpace = 297 - currentY; // DIN A4 Höhe - aktuelle Position
-    if (remainingSpace > 20) {
-      currentY += 15;
-      
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'bold');
-      doc.text(`Gesamt: ${this.selectedProducts.length} Produkte`, startX, currentY);
-    }
 
     // PDF öffnen
     doc.autoPrint();

@@ -184,6 +184,7 @@
   border-collapse: separate;
   border-spacing: 0;
   margin-bottom: 0;
+  table-layout: fixed; /* Fixed layout for consistent column widths */
 }
 
 .table thead th {
@@ -196,6 +197,32 @@
   top: 0;
   z-index: 1;
   text-align: left;
+}
+
+/* Column specific widths for better responsiveness */
+.table th:nth-child(1),
+.table td:nth-child(1) {
+  width: 15%; /* Artikelnummer */
+}
+
+.table th:nth-child(2),
+.table td:nth-child(2) {
+  width: 35%; /* Artikelname - begrenzte Breite */
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.table th:nth-child(3),
+.table td:nth-child(3) {
+  width: 20%; /* EAN */
+}
+
+.table th:nth-child(4),
+.table td:nth-child(4) {
+  width: 30%; /* Aktionen */
+  min-width: 200px;
 }
 
 .table tbody tr {
@@ -437,6 +464,19 @@
   .table td {
     padding: 0.5rem;
   }
+  
+  /* Mobile table adjustments */
+  .table th:nth-child(2),
+  .table td:nth-child(2) {
+    width: 30%;
+    max-width: 150px;
+  }
+  
+  .table th:nth-child(4),
+  .table td:nth-child(4) {
+    width: 35%;
+    min-width: 150px;
+  }
 }
 
 @media (max-width: 576px) {
@@ -448,12 +488,32 @@
     padding: 1rem;
   }
   
-  .cart-section {
-    padding: 1rem;
+  /* Extra small screen adjustments */
+  .table th:nth-child(1),
+  .table td:nth-child(1) {
+    width: 20%;
+  }
+  
+  .table th:nth-child(2),
+  .table td:nth-child(2) {
+    width: 25%;
+    max-width: 100px;
+  }
+  
+  .table th:nth-child(3),
+  .table td:nth-child(3) {
+    width: 15%;
+    font-size: 0.8rem;
+  }
+  
+  .table th:nth-child(4),
+  .table td:nth-child(4) {
+    width: 40%;
+    min-width: 120px;
   }
   
   .table td {
-    padding: 0.25rem;
-    font-size: 0.875rem;
+    padding: 0.3rem;
+    font-size: 0.9rem;
   }
 }
