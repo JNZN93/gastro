@@ -5,7 +5,7 @@
       <div class="controls">
         <button (click)="startScanner()" [disabled]="isScanning" class="scanner-btn">
           <span class="material-symbols-outlined">barcode</span>
-          Artikel scannen
+  
         </button>
       </div>
       <div class="search-container">
@@ -15,15 +15,7 @@
           <span class="material-icons">close</span>
         </button>
       </div>
-      <div class="custom-select">
-        <select class="selected" [(ngModel)]="selectedCategory" (change)="filterCategory($event)">
-          <option value="">Alle Kategorien 📂</option>
-          <option value="FAVORITEN">FAVORITEN ⭐️</option>
-          <option *ngFor="let category of categories" [value]="category">
-            {{ category }}
-          </option>
-        </select>
-      </div>
+   
     </div>
   </div>
 
@@ -32,15 +24,6 @@
   <div class="content">
     @for (artikel of artikelData; track $index) {
     <div class="card">
-      @if(isFavorite(artikel)) {
-      <div class="favorite-icon fa-star" (click)="toggleFavorite($event, artikel)">
-        <img src="star-default.png" alt="">
-      </div>
-      }@else {
-      <div class="favorite-icon" (click)="toggleFavorite($event, artikel)">
-        <img src="star-default.png" alt="">
-      </div>
-      }
       <div class="card-body">
         <h4 class="card-title"><b>{{ artikel.article_text }}</b></h4>
         <p class="card-price">Art.-Nr [{{ artikel.article_number }}]</p>
