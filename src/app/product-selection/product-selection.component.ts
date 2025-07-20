@@ -301,7 +301,7 @@ export class ProductSelectionComponent implements OnInit {
       return;
     }
 
-    const doc = new jsPDF();
+    const doc = new jsPDF('landscape'); // Querformat (Landscape)
 
     this.selectedProducts.forEach((product, index) => {
       // Neue Seite für jedes Produkt (außer dem ersten)
@@ -309,9 +309,9 @@ export class ProductSelectionComponent implements OnInit {
         doc.addPage();
       }
 
-      // DIN A4 Seitenmaße: 210mm x 297mm
-      const pageWidth = 210;
-      const pageHeight = 297;
+      // DIN A4 Querformat: 297mm x 210mm
+      const pageWidth = 297;
+      const pageHeight = 210;
       const margin = 20;
       const contentWidth = pageWidth - (2 * margin);
       const contentHeight = pageHeight - (2 * margin);
@@ -394,12 +394,7 @@ export class ProductSelectionComponent implements OnInit {
         infoY += 15;
       }
 
-      // Seitenzahl
-      doc.setFontSize(12);
-      doc.setFont('helvetica', 'italic');
-      const pageText = `Seite ${index + 1} von ${this.selectedProducts.length}`;
-      const pageWidth_text = doc.getTextWidth(pageText);
-      doc.text(pageText, pageWidth - margin - pageWidth_text, pageHeight - margin - 10);
+
     });
 
     // PDF öffnen
