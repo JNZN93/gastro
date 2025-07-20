@@ -295,6 +295,119 @@ export class ProductSelectionComponent implements OnInit {
     window.open(pdfUrl, '_blank');
   }
 
+  generateFullPagePdf(): void {
+    if (this.selectedProducts.length === 0) {
+      alert('Bitte wählen Sie mindestens ein Produkt aus.');
+      return;
+    }
+
+    const doc = new jsPDF();
+
+    this.selectedProducts.forEach((product, index) => {
+      // Neue Seite für jedes Produkt (außer dem ersten)
+      if (index > 0) {
+        doc.addPage();
+      }
+
+      // DIN A4 Seitenmaße: 210mm x 297mm
+      const pageWidth = 210;
+      const pageHeight = 297;
+      const margin = 20;
+      const contentWidth = pageWidth - (2 * margin);
+      const contentHeight = pageHeight - (2 * margin);
+
+      // Rahmen für die gesamte Seite
+      doc.setLineWidth(1);
+      doc.rect(margin, margin, contentWidth, contentHeight);
+
+      // Produktname (groß und prominent)
+      doc.setFontSize(24);
+      doc.setFont('helvetica', 'bold');
+      const productName = product.article_text;
+      const maxNameWidth = contentWidth - 20;
+      const nameLines = doc.splitTextToSize(productName, maxNameWidth);
+      
+      let nameY = margin + 40;
+      nameLines.forEach((line: string, lineIndex: number) => {
+        if (lineIndex < 4) { // Maximal 4 Zeilen für den Namen
+          doc.text(line, margin + 10, nameY);
+          nameY += 12;
+        }
+      });
+
+      // Artikelnummer (mittelgroß)
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Artikelnummer: ${product.article_number}`, margin + 10, nameY + 20);
+
+      // EAN falls vorhanden
+      if (product.ean) {
+        doc.setFontSize(16);
+        doc.text(`EAN: ${product.ean}`, margin + 10, nameY + 40);
+        
+        // EAN Barcode (größer für DIN A4)
+        const barcodeDataUrl = this.generateEanBarcode(product.ean);
+        if (barcodeDataUrl) {
+          const barcodeWidth = 80;
+          const barcodeHeight = 20;
+          doc.addImage(barcodeDataUrl, 'PNG', margin + 10, nameY + 50, barcodeWidth, barcodeHeight);
+        }
+      }
+
+      // Preis (sehr groß und prominent)
+      if (product.sale_price) {
+        doc.setFontSize(48);
+        doc.setFont('helvetica', 'bold');
+        const priceText = `€ ${product.sale_price.toFixed(2).replace('.', ',')}`;
+        const priceWidth = doc.getTextWidth(priceText);
+        const priceX = pageWidth - margin - priceWidth - 10;
+        const priceY = pageHeight - margin - 60;
+        doc.text(priceText, priceX, priceY);
+        
+        // MwSt.-Information unter dem Preis
+        if (product.tax_code) {
+          doc.setFontSize(14);
+          doc.setFont('helvetica', 'normal');
+          const taxText = product.tax_code === 1 ? 'zzgl. 19% MwSt.' : 
+                         product.tax_code === 2 ? 'zzgl. 7% MwSt.' : 
+                         `zzgl. ${product.tax_code}% MwSt.`;
+          const taxWidth = doc.getTextWidth(taxText);
+          const taxX = pageWidth - margin - taxWidth - 10;
+          doc.text(taxText, taxX, priceY + 15);
+        }
+      }
+
+      // Zusätzliche Produktinformationen (falls vorhanden)
+      let infoY = nameY + 80;
+      
+      if (product.brand) {
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Marke: ${product.brand}`, margin + 10, infoY);
+        infoY += 15;
+      }
+
+      if (product.category) {
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Kategorie: ${product.category}`, margin + 10, infoY);
+        infoY += 15;
+      }
+
+      // Seitenzahl
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'italic');
+      const pageText = `Seite ${index + 1} von ${this.selectedProducts.length}`;
+      const pageWidth_text = doc.getTextWidth(pageText);
+      doc.text(pageText, pageWidth - margin - pageWidth_text, pageHeight - margin - 10);
+    });
+
+    // PDF öffnen
+    doc.autoPrint();
+    const pdfUrl = doc.output('bloburl');
+    window.open(pdfUrl, '_blank');
+  }
+
   formatProductName(product: Product): string {
     // Format: "brand product_name article_number"
     const name = product.article_text;
