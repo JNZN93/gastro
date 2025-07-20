@@ -33,10 +33,13 @@ export class ProductSelectionComponent implements OnInit {
   isLoading: boolean = false;
   isCartExpanded: boolean = true; // Cart starts expanded by default
 
+  private readonly CART_STORAGE_KEY = 'product-selection-cart';
+
   constructor(private http: HttpClient, private router: Router) {}
 
   ngOnInit(): void {
     this.loadProducts();
+    this.loadCartFromLocalStorage();
   }
 
   historyBack(): void {
@@ -50,12 +53,47 @@ export class ProductSelectionComponent implements OnInit {
         this.products = data;
         this.filteredProducts = [...this.products];
         this.isLoading = false;
+        // After loading products, restore cart items that are still available
+        this.restoreCartItems();
       },
       error: (error) => {
         console.error('Fehler beim Laden der Produkte:', error);
         this.isLoading = false;
       }
     });
+  }
+
+  // Save cart to localStorage
+  private saveCartToLocalStorage(): void {
+    try {
+      localStorage.setItem(this.CART_STORAGE_KEY, JSON.stringify(this.selectedProducts));
+    } catch (error) {
+      console.error('Fehler beim Speichern des Warenkorbs:', error);
+    }
+  }
+
+  // Load cart from localStorage
+  private loadCartFromLocalStorage(): void {
+    try {
+      const savedCart = localStorage.getItem(this.CART_STORAGE_KEY);
+      if (savedCart) {
+        this.selectedProducts = JSON.parse(savedCart);
+      }
+    } catch (error) {
+      console.error('Fehler beim Laden des Warenkorbs:', error);
+      this.selectedProducts = [];
+    }
+  }
+
+  // Restore cart items that are still available in the products list
+  private restoreCartItems(): void {
+    if (this.selectedProducts.length > 0 && this.products.length > 0) {
+      const availableProductIds = this.products.map(p => p.id);
+      this.selectedProducts = this.selectedProducts.filter(item => 
+        availableProductIds.includes(item.id)
+      );
+      this.saveCartToLocalStorage();
+    }
   }
 
   filterProducts(): void {
@@ -75,15 +113,18 @@ export class ProductSelectionComponent implements OnInit {
   addToCart(product: Product): void {
     if (!this.isProductSelected(product)) {
       this.selectedProducts.push(product);
+      this.saveCartToLocalStorage();
     }
   }
 
   removeFromCart(productId: number): void {
     this.selectedProducts = this.selectedProducts.filter(p => p.id !== productId);
+    this.saveCartToLocalStorage();
   }
 
   clearCart(): void {
     this.selectedProducts = [];
+    this.saveCartToLocalStorage();
   }
 
   generateEanBarcode(ean: string): string {
