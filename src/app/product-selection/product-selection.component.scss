@@ -333,6 +333,19 @@
   transform: none;
 }
 
+.add-to-cart-btn-direct.added-to-cart {
+  background-color: #6c757d;
+  border-color: #6c757d;
+  cursor: pointer;
+}
+
+.add-to-cart-btn-direct.added-to-cart:hover {
+  background-color: #5a6268;
+  border-color: #545b62;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
 .add-to-cart-btn-direct i {
   font-size: 1.1rem;
 }

@@ -111,15 +111,16 @@ export class ProductSelectionComponent implements OnInit {
   }
 
   addToCart(product: Product): void {
-    if (!this.isProductSelected(product)) {
-      this.selectedProducts.push(product);
-      this.saveCartToLocalStorage();
-    }
+    this.selectedProducts.push(product);
+    this.saveCartToLocalStorage();
   }
 
   removeFromCart(productId: number): void {
-    this.selectedProducts = this.selectedProducts.filter(p => p.id !== productId);
-    this.saveCartToLocalStorage();
+    const index = this.selectedProducts.findIndex(p => p.id === productId);
+    if (index !== -1) {
+      this.selectedProducts.splice(index, 1);
+      this.saveCartToLocalStorage();
+    }
   }
 
   clearCart(): void {
@@ -310,11 +311,27 @@ export class ProductSelectionComponent implements OnInit {
     return this.selectedProducts.some(p => p.id === product.id);
   }
 
+  getProductCount(product: Product): number {
+    return this.selectedProducts.filter(p => p.id === product.id).length;
+  }
+
+  getUniqueProductCount(): number {
+    const uniqueIds = new Set(this.selectedProducts.map(p => p.id));
+    return uniqueIds.size;
+  }
+
   toggleCart(): void {
     this.isCartExpanded = !this.isCartExpanded;
   }
 
   getAddToCartButtonText(product: Product): string {
-    return this.isProductSelected(product) ? 'Hinzugefügt' : 'Hinzufügen';
+    const count = this.getProductCount(product);
+    if (count === 0) {
+      return 'Hinzufügen';
+    } else if (count === 1) {
+      return 'Hinzugefügt';
+    } else {
+      return `Hinzugefügt (${count})`;
+    }
   }
 }
