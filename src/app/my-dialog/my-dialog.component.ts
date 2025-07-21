@@ -12,10 +12,25 @@ import { CommonModule } from '@angular/common';
 export class MyDialogComponent {
 
   constructor(public dialogRef: MatDialogRef<MyDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: { title: string; message: string; buttonLabel?: string }
+    @Inject(MAT_DIALOG_DATA) public data: { 
+      title: string; 
+      message: string; 
+      buttonLabel?: string;
+      isConfirmation?: boolean;
+      confirmLabel?: string;
+      cancelLabel?: string;
+    }
   ) {}
 
   close(): void {
     this.dialogRef.close();
+  }
+
+  confirm(): void {
+    this.dialogRef.close(true);
+  }
+
+  cancel(): void {
+    this.dialogRef.close(false);
   }
 }

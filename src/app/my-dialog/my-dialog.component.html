@@ -3,5 +3,10 @@
   <p>{{ data.message }}</p>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
-  <button mat-button (click)="dialogRef.close()">{{ data.buttonLabel || 'OK' }}</button>
+  @if (data.isConfirmation) {
+    <button mat-button (click)="cancel()">{{ data.cancelLabel || 'Abbrechen' }}</button>
+    <button mat-button color="warn" (click)="confirm()">{{ data.confirmLabel || 'Bestätigen' }}</button>
+  } @else {
+    <button mat-button (click)="close()">{{ data.buttonLabel || 'OK' }}</button>
+  }
 </mat-dialog-actions>

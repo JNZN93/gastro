@@ -5,6 +5,8 @@ import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { jsPDF } from 'jspdf';
 import { Router } from '@angular/router';
 import JsBarcode from 'jsbarcode';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MyDialogComponent } from '../my-dialog/my-dialog.component';
 
 interface Product {
   id: number;
@@ -21,7 +23,7 @@ interface Product {
 @Component({
   selector: 'app-product-selection',
   standalone: true,
-  imports: [CommonModule, FormsModule, HttpClientModule],
+  imports: [CommonModule, FormsModule, HttpClientModule, MatDialogModule],
   templateUrl: './product-selection.component.html',
   styleUrls: ['./product-selection.component.scss']
 })
@@ -35,7 +37,7 @@ export class ProductSelectionComponent implements OnInit {
 
   private readonly CART_STORAGE_KEY = 'product-selection-cart';
 
-  constructor(private http: HttpClient, private router: Router) {}
+  constructor(private http: HttpClient, private router: Router, private dialog: MatDialog) {}
 
   ngOnInit(): void {
     this.loadProducts();
@@ -124,8 +126,24 @@ export class ProductSelectionComponent implements OnInit {
   }
 
   clearCart(): void {
-    this.selectedProducts = [];
-    this.saveCartToLocalStorage();
+    const dialogRef = this.dialog.open(MyDialogComponent, {
+      data: {
+        title: 'Warenkorb leeren',
+        message: 'Sind Sie sicher, dass Sie den Warenkorb leeren möchten? Diese Aktion kann nicht rückgängig gemacht werden.',
+        isConfirmation: true,
+        confirmLabel: 'Leeren',
+        cancelLabel: 'Abbrechen'
+      },
+      maxWidth: '400px',
+      minWidth: '300px',
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result === true) {
+        this.selectedProducts = [];
+        this.saveCartToLocalStorage();
+      }
+    });
   }
 
   generateEanBarcode(ean: string): string {
