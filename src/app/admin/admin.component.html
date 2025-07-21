@@ -1,10 +1,22 @@
 <div class="admin-main p-6 bg-gray-100 min-h-screen">
-    <div class="upload-xml p-4 rounded-lg shadow-md mb-6">
-        <label for="xml" class="block text-lg font-semibold mb-2">Produktliste aktualisieren:</label>
-        <input #fileInput type="file" id="xml" name="xml" accept=".xml" class="w-full border p-2 rounded-lg" />
-        <button (click)="onUploadClick()" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-            Produkte aktualisieren
-        </button>
+    <div class="upload-section grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <!-- Produkt Upload -->
+        <div class="upload-xml p-4 rounded-lg shadow-md bg-white">
+            <label for="productXml" class="block text-lg font-semibold mb-2">Produktliste aktualisieren:</label>
+            <input #productFileInput type="file" id="productXml" name="productXml" accept=".xml" class="w-full border p-2 rounded-lg" />
+            <button (click)="onProductUploadClick()" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                Produkte aktualisieren
+            </button>
+        </div>
+
+        <!-- Kunden Upload -->
+        <div class="upload-xml p-4 rounded-lg shadow-md bg-white">
+            <label for="customerXml" class="block text-lg font-semibold mb-2">Kundenliste aktualisieren:</label>
+            <input #customerFileInput type="file" id="customerXml" name="customerXml" accept=".xml" class="w-full border p-2 rounded-lg" />
+            <button (click)="onCustomerUploadClick()" class="mt-4 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                Kunden aktualisieren
+            </button>
+        </div>
     </div>
 
     <div class="function-container flex gap-4 mb-6">
