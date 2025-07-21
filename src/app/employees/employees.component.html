@@ -15,6 +15,10 @@
           <span class="material-icons">close</span>
         </button>
       </div>
+      <button (click)="openCustomerModal()" class="customer-btn">
+        <span class="material-icons">people</span>
+        Kunden
+      </button>
    
     </div>
   </div>
@@ -67,6 +71,53 @@
       [torch]="true"
       (scanSuccess)="onCodeResult($event)">
       </zxing-scanner>
+    </div>
+  </div>
+</div>
+
+<!-- Customer Modal -->
+<div class="customer-modal" *ngIf="isCustomerModalOpen">
+  <div class="customer-modal-content">
+    <div class="customer-modal-header">
+      <h2>Kundenliste</h2>
+      <button class="close-customer-modal" (click)="closeCustomerModal()">
+        <span class="material-icons">close</span>
+      </button>
+    </div>
+    
+    <div class="customer-modal-body">
+      <div class="customer-search">
+        <input type="text" [(ngModel)]="customerSearchTerm" (input)="filterCustomers()" placeholder="Kunden suchen..." class="customer-search-input">
+      </div>
+      
+      <div class="customers-grid">
+        @for (customer of filteredCustomers; track customer.id) {
+        <div class="customer-card">
+          <div class="customer-card-header">
+            <h3>{{ customer.customer_number }}</h3>
+          </div>
+          <div class="customer-card-body">
+            <p class="customer-name"><strong>{{ customer.last_name_company || 'Kein Name' }}</strong></p>
+            <p class="customer-addition" *ngIf="customer.name_addition">{{ customer.name_addition }}</p>
+            <p class="customer-city" *ngIf="customer.city">{{ customer.city }}</p>
+            <p class="customer-email" *ngIf="customer.email">{{ customer.email }}</p>
+          </div>
+        </div>
+        }
+      </div>
+      
+      @if (isLoadingCustomers) {
+      <div class="customer-loading">
+        <div class="loader"></div>
+        <p>Kunden werden geladen...</p>
+      </div>
+      }
+      
+      @if (!isLoadingCustomers && filteredCustomers.length === 0) {
+      <div class="no-customers">
+        <p>Keine Kunden gefunden.</p>
+      </div>
+      }
     </div>
   </div>
 </div>
