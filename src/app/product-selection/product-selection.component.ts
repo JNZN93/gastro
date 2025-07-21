@@ -338,18 +338,30 @@ export class ProductSelectionComponent implements OnInit {
       doc.setLineWidth(1);
       doc.rect(margin, margin, contentWidth, contentHeight);
 
-      // Produktname (groß und prominent)
-      doc.setFontSize(24);
+      // Produktname (dynamische Schriftgröße für eine Zeile)
       doc.setFont('helvetica', 'bold');
       const productName = product.article_text;
       const maxNameWidth = contentWidth - 20;
-      const nameLines = doc.splitTextToSize(productName, maxNameWidth);
       
+      // Dynamische Schriftgröße: Starte mit 48 und reduziere bis es passt
+      let fontSize = 48;
+      let nameLines: string[] = [];
+      
+      while (fontSize > 8) {
+        doc.setFontSize(fontSize);
+        nameLines = doc.splitTextToSize(productName, maxNameWidth);
+        if (nameLines.length <= 1) {
+          break; // Text passt in eine Zeile
+        }
+        fontSize -= 2; // Reduziere Schriftgröße um 2
+      }
+      
+      // Verwende die gefundene Schriftgröße
+      doc.setFontSize(fontSize);
       let nameY = margin + 40;
       nameLines.forEach((line: string, lineIndex: number) => {
-        if (lineIndex < 4) { // Maximal 4 Zeilen für den Namen
+        if (lineIndex < 1) { // Nur eine Zeile
           doc.text(line, margin + 10, nameY);
-          nameY += 12;
         }
       });
 
@@ -374,7 +386,7 @@ export class ProductSelectionComponent implements OnInit {
 
       // Preis (sehr groß und prominent)
       if (product.sale_price) {
-        doc.setFontSize(48);
+        doc.setFontSize(96);
         doc.setFont('helvetica', 'bold');
         const priceText = `€ ${product.sale_price.toFixed(2).replace('.', ',')}`;
         const priceWidth = doc.getTextWidth(priceText);
