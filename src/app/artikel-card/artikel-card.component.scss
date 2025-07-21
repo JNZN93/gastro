@@ -607,7 +607,7 @@
   /* Tablet Optimierungen */
   @media only screen and (min-width: 591px) and (max-width: 1024px) {
     .content {
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
       gap: 14px;
       padding: 0 10px;
     }
@@ -656,7 +656,7 @@
   /* Desktop Optimierungen */
   @media only screen and (min-width: 1025px) {
     .content {
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
       gap: 12px;
       padding: 0 16px;
       max-width: 1400px;
