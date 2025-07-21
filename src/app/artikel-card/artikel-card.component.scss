@@ -330,10 +330,7 @@
   
   @media only screen and (max-width: 590px) {
     .filter-container {
-      flex-direction: column;
-    }
-    .article-container {
-      margin-top: 300px;
+      flex-direction: row;
     }
   }
 
