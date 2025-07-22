@@ -340,12 +340,25 @@
   @media only screen and (max-width: 590px) {
     .filter-container {
       flex-direction: row;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+    }
+    
+    .selected-customer-info {
+      width: 100%;
+      max-width: 400px;
+      justify-content: center;
+      margin: 0 auto;
+      margin-top: 8px;
+      order: 1;
     }
     
     .content {
       grid-template-columns: 1fr;
       gap: 16px;
       padding: 0 16px;
+      margin-top: 230px;
     }
     
     .card {
@@ -398,6 +411,12 @@
   }
   
   @media only screen and (max-width: 400px) {
+    .selected-customer-info {
+      max-width: 350px;
+      font-size: 13px;
+      padding: 6px 10px;
+    }
+    
     .content {
       grid-template-columns: 1fr;
       gap: 12px;
