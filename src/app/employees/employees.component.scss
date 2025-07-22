@@ -722,3 +722,77 @@
     font-size: 16px;
   }
 }
+
+// Neue Styles für Kundenauswahl
+.customer-card-footer {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.select-customer-btn {
+  width: 100%;
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+
+  &:hover {
+    background: #059669;
+    transform: translateY(-1px);
+  }
+
+  .material-icons {
+    font-size: 16px;
+  }
+}
+
+.selected-customer-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #eff6ff;
+  border: 1px solid #3b82f6;
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-top: 8px;
+
+  .material-icons {
+    color: #3b82f6;
+    font-size: 18px;
+  }
+
+  .customer-info-text {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 500;
+    color: #1f2937;
+  }
+
+  .clear-customer-btn {
+    background: none;
+    border: none;
+    color: #ef4444;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s;
+
+    &:hover {
+      background: #fef2f2;
+    }
+
+    .material-icons {
+      font-size: 16px;
+    }
+  }
+}

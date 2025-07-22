@@ -19,6 +19,18 @@
         <span class="material-icons">people</span>
         Kunden
       </button>
+      
+      @if (globalService.selectedCustomer) {
+      <div class="selected-customer-info">
+        <span class="material-icons">person</span>
+        <span class="customer-info-text">
+          {{ globalService.selectedCustomer.customer_number }} - {{ globalService.selectedCustomer.last_name_company || 'Kein Name' }}
+        </span>
+        <button class="clear-customer-btn" (click)="clearSelectedCustomer()">
+          <span class="material-icons">close</span>
+        </button>
+      </div>
+      }
    
     </div>
   </div>
@@ -101,6 +113,12 @@
             <p class="customer-addition" *ngIf="customer.name_addition">{{ customer.name_addition }}</p>
             <p class="customer-city" *ngIf="customer.city">{{ customer.city }}</p>
             <p class="customer-email" *ngIf="customer.email">{{ customer.email }}</p>
+          </div>
+          <div class="customer-card-footer">
+            <button class="select-customer-btn" (click)="selectCustomer(customer)">
+              <span class="material-icons">check</span>
+              Auswählen
+            </button>
           </div>
         </div>
         }

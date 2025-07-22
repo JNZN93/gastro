@@ -55,7 +55,7 @@ export class EmployeesComponent implements OnInit {
   constructor(
     private router: Router,
     private authService: AuthService,
-    private globalService: GlobalService
+    public globalService: GlobalService
   ) {}
 
   ngOnInit(): void {
@@ -403,5 +403,15 @@ export class EmployeesComponent implements OnInit {
         originalEmail.includes(searchTerm)
       );
     });
+  }
+
+  selectCustomer(customer: any) {
+    this.globalService.selectedCustomer = customer;
+    this.closeCustomerModal();
+    console.log('Kunde ausgewählt:', customer);
+  }
+
+  clearSelectedCustomer() {
+    this.globalService.selectedCustomer = null;
   }
 }

@@ -57,9 +57,24 @@ export class WarenkorbComponent implements OnInit {
     localStorage.setItem('street', this.street ? this.street : '')
 
     this.globalService.orderData.total_price = this.globalService.totalPrice
+    
+    // Kundendaten hinzufügen, falls ein Kunde ausgewählt wurde
+    let customerData = {};
+    if (this.globalService.selectedCustomer) {
+      customerData = {
+        customer_id: this.globalService.selectedCustomer.id,
+        customer_number: this.globalService.selectedCustomer.customer_number,
+        customer_name: this.globalService.selectedCustomer.last_name_company,
+        customer_addition: this.globalService.selectedCustomer.name_addition,
+        customer_city: this.globalService.selectedCustomer.city,
+        customer_email: this.globalService.selectedCustomer.email
+      };
+    }
+    
     const completeOrder = {
       orderData: {
           ...this.globalService.orderData,
+          ...customerData,
           shipping_address: newAddress ? newAddress : '',
           fulfillment_type: this.isDelivery ? 'delivery' : 'pickup', // Hier den gewünschten Wert setzen TOGGLE
           delivery_date: this.delivery_date,
