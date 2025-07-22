@@ -9,6 +9,7 @@ export class GlobalService {
   public totalPrice: any = 0;
   public favoriteItems: any = [];
   public isAdmin: boolean = false;
+  public selectedCustomer: any = null;
 
   constructor() { }
 }

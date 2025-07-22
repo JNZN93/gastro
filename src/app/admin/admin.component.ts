@@ -15,7 +15,8 @@ import { UploadLoadingComponent } from "../upload-loading/upload-loading.compone
   styleUrl: './admin.component.scss',
 })
 export class AdminComponent implements OnInit {
-  @ViewChild('fileInput') fileInput!: ElementRef;
+  @ViewChild('productFileInput') productFileInput!: ElementRef;
+  @ViewChild('customerFileInput') customerFileInput!: ElementRef;
   orders: any[] = [];
   xmlContent: any;
   showModal = false;
@@ -279,8 +280,8 @@ formatDate(dateString: string): string {
   return `${day}.${month}.${year}`;
 }
 
-  onUploadClick() {
-    const file = this.fileInput.nativeElement.files[0];
+  onProductUploadClick() {
+    const file = this.productFileInput.nativeElement.files[0];
 
     if (file && file.type === 'text/xml') {
       const formData = new FormData();
@@ -295,13 +296,58 @@ formatDate(dateString: string): string {
         )
         .subscribe({
           next: (res) => {
-            alert('Datei erfolgreich hochgeladen!'),
+            alert('Produktdatei erfolgreich hochgeladen!'),
               this.isUploading = false; // Upload-Loading ausblenden
             this.isVisible = false; // Upload-Komponente ausblenden
           },
           error: (err) => {
             console.log('Fehler beim Hochladen!', err),
               this.isUploading = false;
+          },
+        });
+    } else {
+      alert('Bitte eine gültige XML-Datei hochladen.');
+    }
+  }
+
+  onCustomerUploadClick() {
+    const file = this.customerFileInput.nativeElement.files[0];
+
+    if (file && file.type === 'text/xml') {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      this.isUploading = true;
+
+      // Token aus dem localStorage holen
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        alert('Kein gültiger Token gefunden. Bitte melden Sie sich erneut an.');
+        this.isUploading = false;
+        return;
+      }
+
+      this.http
+        .post(
+          'https://multi-mandant-ecommerce.onrender.com/api/customers/upload',
+          formData,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          }
+        )
+        .subscribe({
+          next: (res) => {
+            alert('Kundendatei erfolgreich hochgeladen!'),
+              this.isUploading = false; // Upload-Loading ausblenden
+            this.isVisible = false; // Upload-Komponente ausblenden
+          },
+          error: (err) => {
+            console.log('Fehler beim Hochladen!', err),
+              this.isUploading = false;
+            alert('Fehler beim Hochladen der Kundendatei. Bitte versuchen Sie es erneut.');
           },
         });
     } else {

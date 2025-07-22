@@ -29,6 +29,13 @@ export class EmployeesComponent implements OnInit {
   isVisible: boolean = true;
   isScanning = false;
   isTorchOn = false;
+  
+  // Customer modal properties
+  isCustomerModalOpen: boolean = false;
+  customers: any[] = [];
+  filteredCustomers: any[] = [];
+  customerSearchTerm: string = '';
+  isLoadingCustomers: boolean = false;
   availableDevices: MediaDeviceInfo[] = [];
   selectedDevice?: MediaDeviceInfo;
   formatsEnabled: BarcodeFormat[] = [
@@ -48,7 +55,7 @@ export class EmployeesComponent implements OnInit {
   constructor(
     private router: Router,
     private authService: AuthService,
-    private globalService: GlobalService
+    public globalService: GlobalService
   ) {}
 
   ngOnInit(): void {
@@ -314,5 +321,97 @@ export class EmployeesComponent implements OnInit {
   collectOrderData(response: any) {
     this.orderData.user_id = response.user.id;
     this.orderData.email = response.user.email;
+  }
+
+  // Customer modal methods
+  openCustomerModal() {
+    this.isCustomerModalOpen = true;
+    this.loadCustomers();
+  }
+
+  closeCustomerModal() {
+    this.isCustomerModalOpen = false;
+    this.customerSearchTerm = '';
+    this.filteredCustomers = [];
+  }
+
+  loadCustomers() {
+    this.isLoadingCustomers = true;
+    const token = localStorage.getItem('token');
+    
+    fetch('https://multi-mandant-ecommerce.onrender.com/api/customers', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Fehler beim Laden der Kunden');
+      }
+      return response.json();
+    })
+    .then(data => {
+      this.customers = data;
+      this.filteredCustomers = data;
+      this.isLoadingCustomers = false;
+    })
+    .catch(error => {
+      console.error('Fehler beim Laden der Kunden:', error);
+      this.isLoadingCustomers = false;
+    });
+  }
+
+  filterCustomers() {
+    if (!this.customerSearchTerm.trim()) {
+      this.filteredCustomers = this.customers;
+      return;
+    }
+
+    const searchTerm = this.customerSearchTerm.toLowerCase();
+    this.filteredCustomers = this.customers.filter(customer => {
+      // Normalisiere die Suchbegriffe (entferne Leerzeichen und mache lowercase)
+      const normalizedSearchTerm = searchTerm.replace(/\s+/g, '');
+      
+      // Normalisiere die Kundendaten
+      const normalizedCustomerNumber = customer.customer_number?.toLowerCase().replace(/\s+/g, '') || '';
+      const normalizedCompanyName = customer.last_name_company?.toLowerCase().replace(/\s+/g, '') || '';
+      const normalizedNameAddition = customer.name_addition?.toLowerCase().replace(/\s+/g, '') || '';
+      const normalizedCity = customer.city?.toLowerCase().replace(/\s+/g, '') || '';
+      const normalizedEmail = customer.email?.toLowerCase().replace(/\s+/g, '') || '';
+      
+      // Prüfe auch die ursprünglichen Werte (für exakte Suche)
+      const originalCustomerNumber = customer.customer_number?.toLowerCase() || '';
+      const originalCompanyName = customer.last_name_company?.toLowerCase() || '';
+      const originalNameAddition = customer.name_addition?.toLowerCase() || '';
+      const originalCity = customer.city?.toLowerCase() || '';
+      const originalEmail = customer.email?.toLowerCase() || '';
+      
+      return (
+        // Normalisierte Suche (ohne Leerzeichen)
+        normalizedCustomerNumber.includes(normalizedSearchTerm) ||
+        normalizedCompanyName.includes(normalizedSearchTerm) ||
+        normalizedNameAddition.includes(normalizedSearchTerm) ||
+        normalizedCity.includes(normalizedSearchTerm) ||
+        normalizedEmail.includes(normalizedSearchTerm) ||
+        // Ursprüngliche Suche (mit Leerzeichen)
+        originalCustomerNumber.includes(searchTerm) ||
+        originalCompanyName.includes(searchTerm) ||
+        originalNameAddition.includes(searchTerm) ||
+        originalCity.includes(searchTerm) ||
+        originalEmail.includes(searchTerm)
+      );
+    });
+  }
+
+  selectCustomer(customer: any) {
+    this.globalService.selectedCustomer = customer;
+    this.closeCustomerModal();
+    console.log('Kunde ausgewählt:', customer);
+  }
+
+  clearSelectedCustomer() {
+    this.globalService.selectedCustomer = null;
   }
 }
