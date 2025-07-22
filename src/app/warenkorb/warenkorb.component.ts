@@ -91,6 +91,8 @@ export class WarenkorbComponent implements OnInit {
         this.globalService.warenkorb = [];
         this.globalService.totalPrice = 0;
         localStorage.removeItem('warenkorb');
+        // Ausgewählten Kunden löschen
+        this.globalService.selectedCustomer = null;
       },
       error: (error) => {
         this.showOrderErrorDialog();
