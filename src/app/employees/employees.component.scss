@@ -577,13 +577,11 @@
 
 .customer-modal-content {
   background: white;
-  border-radius: 12px;
   width: 100%;
-  max-width: 1200px;
-  max-height: 90vh;
+  height: 100vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  box-shadow: none;
 }
 
 .customer-modal-header {
@@ -593,7 +591,6 @@
   padding: 20px 24px;
   border-bottom: 1px solid #e5e7eb;
   background: #f8fafc;
-  border-radius: 12px 12px 0 0;
 
   h2 {
     margin: 0;
@@ -628,6 +625,9 @@
   padding: 24px;
   flex: 1;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .customer-search {
@@ -653,6 +653,9 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 16px;
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .customer-card {
