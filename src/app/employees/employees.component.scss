@@ -564,21 +564,21 @@
 // Customer Modal Styles
 .customer-modal {
   position: fixed;
-  top: 0;
+  top: 80px; /* Beginnt direkt unter dem Header */
   left: 0;
   width: 100%;
-  height: 100%;
+  height: calc(100vh - 80px); /* Höhe abzüglich der Header-Höhe */
   background-color: rgba(0, 0, 0, 0.8);
   z-index: 1000;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start; /* Ausrichtung am oberen Rand */
 }
 
 .customer-modal-content {
   background: white;
   width: 100%;
-  height: 100vh;
+  height: calc(100vh - 80px); /* Höhe abzüglich der Header-Höhe */
   display: flex;
   flex-direction: column;
   box-shadow: none;
