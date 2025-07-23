@@ -59,6 +59,7 @@ export class EmployeesComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.loadCustomers();
     const token = localStorage.getItem('token');
     const loadedWarenkorb = localStorage.getItem('warenkorb');
             navigator.mediaDevices.enumerateDevices().then(devices => {
@@ -326,13 +327,16 @@ export class EmployeesComponent implements OnInit {
   // Customer modal methods
   openCustomerModal() {
     this.isCustomerModalOpen = true;
-    this.loadCustomers();
+    // Verwende die bereits geladenen Kunden
+    this.filteredCustomers = this.customers;
+    this.customerSearchTerm = '';
   }
 
   closeCustomerModal() {
     this.isCustomerModalOpen = false;
     this.customerSearchTerm = '';
-    this.filteredCustomers = [];
+    // Behalte die gefilterten Kunden bei, damit sie beim nächsten Öffnen verfügbar sind
+    // this.filteredCustomers = []; // Entfernt - Kunden bleiben verfügbar
   }
 
   loadCustomers() {
