@@ -1,0 +1,208 @@
+<div class="article-container">
+
+  <div class="filter-wrapper">
+    <div class="filter-container">
+      <div class="controls">
+        <button (click)="startScanner()" [disabled]="isScanning" class="scanner-btn">
+          <span class="material-symbols-outlined">barcode</span>
+        </button>
+      </div>
+      <div class="search-container">
+        <input type="text" [(ngModel)]="searchTerm" (input)="filteredArtikelData()" placeholder="Artikel suchen..."
+          class="search-input">
+        <button *ngIf="searchTerm" (click)="clearSearch()" class="clear-search">
+          <span class="material-icons">close</span>
+        </button>
+      </div>
+      
+      @if (globalService.selectedCustomer) {
+      <div class="selected-customer-info">
+        <span class="material-icons">person</span>
+        <span class="customer-info-text">
+          {{ globalService.selectedCustomer.customer_number }} - {{ globalService.selectedCustomer.last_name_company || 'Kein Name' }}
+        </span>
+        @if (customerArticlePrices.length > 0) {
+        <span class="customer-prices-info">
+          <span class="material-icons">euro</span>
+          Kundenspezifische Preise geladen ({{ customerArticlePrices.length }} Artikel)
+        </span>
+        }
+        <button class="clear-customer-btn" (click)="clearSelectedCustomer()">
+          <span class="material-icons">close</span>
+        </button>
+      </div>
+      }
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- Versteckte Artikel für die Suche -->
+    <div class="hidden-artikels" style="display: none;">
+      @for (artikel of artikelData; track $index) {
+      <div class="artikel-item">
+        {{ artikel.article_text }} - {{ artikel.article_number }}
+      </div>
+      }
+    </div>
+
+    <!-- Suchergebnisse für Artikel -->
+    @if (searchTerm && filteredArtikels.length > 0) {
+    <div class="search-results">
+      <h3>Suchergebnisse für "{{ searchTerm }}"</h3>
+      @for (artikel of filteredArtikels; track $index) {
+      <div class="search-result-card">
+        <div class="search-result-body">
+          <h4 class="search-result-title">{{ artikel.article_text }}</h4>
+          <p class="search-result-number">Art.-Nr: {{ artikel.article_number }}</p>
+          <p class="search-result-price">Preis: €{{ artikel.sale_price }}</p>
+          <div class="search-result-footer">
+            <div class="input-main">
+              <input type="number" [(ngModel)]="artikel.quantity" placeholder="Menge eingeben" class="quantity-input"
+                min="1">
+              <button (click)="addToOrder($event, artikel)" class="add-to-order-btn">Zum Auftrag hinzufügen</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      }
+    </div>
+    }
+
+    <!-- Auftragszusammenfassung -->
+    @if (globalService.selectedCustomer) {
+    <div class="order-summary">
+      <h3>Auftrag für {{ globalService.selectedCustomer.last_name_company || globalService.selectedCustomer.customer_number }}</h3>
+      
+      @if (orderItems.length > 0) {
+      <div class="order-items">
+        @for (item of orderItems; track $index) {
+        <div class="order-item">
+          <div class="order-item-info">
+            <span class="order-item-name">{{ item.article_text }}</span>
+            <span class="order-item-number">({{ item.article_number }})</span>
+          </div>
+          <div class="order-item-controls">
+            <span class="order-item-quantity">{{ item.quantity }}x</span>
+            <span class="order-item-price">€{{ (item.sale_price * item.quantity).toFixed(2) }}</span>
+            <button (click)="removeFromOrder($index)" class="remove-item-btn">
+              <span class="material-icons">delete</span>
+            </button>
+          </div>
+        </div>
+        }
+        
+        <div class="order-total">
+          <strong>Gesamt: €{{ getOrderTotal().toFixed(2) }}</strong>
+        </div>
+        
+        <div class="order-actions">
+          <button (click)="saveOrder()" class="save-order-btn">
+            <span class="material-icons">save</span>
+            Auftrag speichern
+          </button>
+          <button (click)="clearOrder()" class="clear-order-btn">
+            <span class="material-icons">clear</span>
+            Auftrag löschen
+          </button>
+        </div>
+      </div>
+      } @else {
+      <div class="no-items">
+        <p>Noch keine Artikel im Auftrag. Suchen Sie nach Artikeln und fügen Sie sie hinzu.</p>
+      </div>
+      }
+    </div>
+    } @else {
+    <div class="no-customer-selected">
+      <h3>Auftragserstellung</h3>
+      <p>Bitte wählen Sie zuerst einen Kunden aus, um einen Auftrag zu erstellen.</p>
+      <button (click)="openCustomerModal()" class="select-customer-btn">
+        <span class="material-icons">people</span>
+        Kunde auswählen
+      </button>
+    </div>
+    }
+  </div>
+
+</div>
+
+@if (isVisible) {
+<app-upload-loading></app-upload-loading>
+}
+
+<!-- Scanner Modal -->
+<div class="scanner-modal" *ngIf="isScanning">
+  <select [(ngModel)]="selectedDevice">
+    <option *ngFor="let device of availableDevices" [ngValue]="device">
+      {{ device.label }}
+    </option>
+  </select>
+  <div class="scanner-content">
+    <button class="close-scanner" (click)="stopScanner()">
+      <span class="material-icons">close</span>
+    </button>
+    <div class="scanner-wrapper">
+      <zxing-scanner #scanner 
+      [device]="selectedDevice"
+      [videoConstraints]="videoConstraints"
+      [tryHarder]="true"
+      [formats]="formatsEnabled"
+      [torch]="true"
+      (scanSuccess)="onCodeResult($event)">
+      </zxing-scanner>
+    </div>
+  </div>
+</div>
+
+<!-- Customer Modal -->
+<div class="customer-modal" *ngIf="isCustomerModalOpen">
+  <div class="customer-modal-content">
+    <div class="customer-modal-header">
+      <h2>Kundenliste</h2>
+      <button class="close-customer-modal" (click)="closeCustomerModal()">
+        <span class="material-icons">close</span>
+      </button>
+    </div>
+    
+    <div class="customer-modal-body">
+      <div class="customer-search">
+        <input type="text" [(ngModel)]="customerSearchTerm" (input)="filterCustomers()" placeholder="Kunden suchen..." class="customer-search-input">
+      </div>
+      
+      <div class="customers-grid">
+        @for (customer of filteredCustomers; track customer.id) {
+        <div class="customer-card">
+          <div class="customer-card-header">
+            <h3>{{ customer.customer_number }}</h3>
+          </div>
+          <div class="customer-card-body">
+            <p class="customer-name"><strong>{{ customer.last_name_company || 'Kein Name' }}</strong></p>
+            <p class="customer-addition" *ngIf="customer.name_addition">{{ customer.name_addition }}</p>
+            <p class="customer-city" *ngIf="customer.city">{{ customer.city }}</p>
+            <p class="customer-email" *ngIf="customer.email">{{ customer.email }}</p>
+          </div>
+          <div class="customer-card-footer">
+            <button class="select-customer-btn" (click)="selectCustomer(customer)">
+              <span class="material-icons">check</span>
+              Auswählen
+            </button>
+          </div>
+        </div>
+        }
+      </div>
+      
+      @if (isLoadingCustomers) {
+      <div class="customer-loading">
+        <div class="loader"></div>
+        <p>Kunden werden geladen...</p>
+      </div>
+      }
+      
+      @if (!isLoadingCustomers && filteredCustomers.length === 0) {
+      <div class="no-customers">
+        <p>Keine Kunden gefunden.</p>
+      </div>
+      }
+    </div>
+  </div>
+</div>

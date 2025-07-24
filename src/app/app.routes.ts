@@ -12,6 +12,7 @@ import { ImpressComponent } from './impress/impress.component';
 import { ImageManagementComponent } from './image-management/image-management.component';
 import { EmployeesComponent } from './employees/employees.component';
 import { ProductSelectionComponent } from './product-selection/product-selection.component';
+import { CustomerOrdersComponent } from './customer-orders/customer-orders.component';
 
 export const routes: Routes = [
     { path: '', component: LoadingScreenComponent },
@@ -25,5 +26,6 @@ export const routes: Routes = [
     { path: 'impress', component: ImpressComponent},
     { path: 'image-management', component: ImageManagementComponent},
     { path: 'employees', component: EmployeesComponent },
-    { path: 'product-selection', component: ProductSelectionComponent }
+    { path: 'product-selection', component: ProductSelectionComponent },
+    { path: 'customer-orders', component: CustomerOrdersComponent }
 ];
