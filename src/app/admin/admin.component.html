@@ -1,20 +1,29 @@
 <div class="admin-main p-6 bg-gray-100 min-h-screen">
-    <div class="upload-section grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+    <div class="upload-section flex flex-wrap gap-3 mb-6">
         <!-- Produkt Upload -->
-        <div class="upload-xml p-4 rounded-lg shadow-md bg-white">
-            <label for="productXml" class="block text-lg font-semibold mb-2">Produktliste aktualisieren:</label>
-            <input #productFileInput type="file" id="productXml" name="productXml" accept=".xml" class="w-full border p-2 rounded-lg" />
-            <button (click)="onProductUploadClick()" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+        <div class="upload-xml p-3 rounded-lg shadow-md bg-white flex-1 min-w-[280px] max-w-[320px]">
+            <label for="productXml" class="block text-sm font-semibold mb-1">Produktliste:</label>
+            <input #productFileInput type="file" id="productXml" name="productXml" accept=".xml" class="w-full border p-1 rounded text-xs mb-2" />
+            <button (click)="onProductUploadClick()" class="w-full bg-blue-600 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-700">
                 Produkte aktualisieren
             </button>
         </div>
 
         <!-- Kunden Upload -->
-        <div class="upload-xml p-4 rounded-lg shadow-md bg-white">
-            <label for="customerXml" class="block text-lg font-semibold mb-2">Kundenliste aktualisieren:</label>
-            <input #customerFileInput type="file" id="customerXml" name="customerXml" accept=".xml" class="w-full border p-2 rounded-lg" />
-            <button (click)="onCustomerUploadClick()" class="mt-4 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+        <div class="upload-xml p-3 rounded-lg shadow-md bg-white flex-1 min-w-[280px] max-w-[320px]">
+            <label for="customerXml" class="block text-sm font-semibold mb-1">Kundenliste:</label>
+            <input #customerFileInput type="file" id="customerXml" name="customerXml" accept=".xml" class="w-full border p-1 rounded text-xs mb-2" />
+            <button (click)="onCustomerUploadClick()" class="w-full bg-green-600 text-white px-3 py-1.5 rounded text-sm hover:bg-green-700">
                 Kunden aktualisieren
+            </button>
+        </div>
+
+        <!-- Kunden Artikel Preise Upload -->
+        <div class="upload-xml p-3 rounded-lg shadow-md bg-white flex-1 min-w-[280px] max-w-[320px]">
+            <label for="customerArticlePricesXml" class="block text-sm font-semibold mb-1">Kunden-Artikelpreise:</label>
+            <input #customerArticlePricesFileInput type="file" id="customerArticlePricesXml" name="customerArticlePricesXml" accept=".xml" class="w-full border p-1 rounded text-xs mb-2" />
+            <button (click)="onCustomerArticlePricesUploadClick()" class="w-full bg-purple-600 text-white px-3 py-1.5 rounded text-sm hover:bg-purple-700">
+                Preise aktualisieren
             </button>
         </div>
     </div>
@@ -34,6 +43,9 @@
         </button>
         <button routerLink="/product-selection" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
             Preisschilder erstellen
+        </button>
+        <button routerLink="/employees" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+            Mitarbeiteransicht
         </button>
     </div>
 
