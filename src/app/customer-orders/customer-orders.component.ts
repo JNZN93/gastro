@@ -901,14 +901,22 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     console.log('🔍 [ARTICLE-PRICES-MODAL] Filtere Artikel-Preise...');
     console.log('🔍 [ARTICLE-PRICES-MODAL] Suchbegriff:', this.articlePricesSearchTerm);
     console.log('🔍 [ARTICLE-PRICES-MODAL] Verfügbare Artikel-Preise:', this.customerArticlePrices.length);
+    console.log('🔍 [ARTICLE-PRICES-MODAL] Globale Artikel:', this.globalArtikels.length);
+    
+    // Zuerst filtere nach Verfügbarkeit in globalArtikels
+    let availableCustomerPrices = this.customerArticlePrices.filter(customerPrice => {
+      return this.isArticleAvailableInGlobal(customerPrice);
+    });
+    
+    console.log('📊 [ARTICLE-PRICES-MODAL] Verfügbare Artikel in globalArtikels:', availableCustomerPrices.length);
     
     if (!this.articlePricesSearchTerm.trim()) {
-      // Wenn kein Suchbegriff, zeige alle Artikel-Preise an
-      this.filteredArticlePrices = [...this.customerArticlePrices];
+      // Wenn kein Suchbegriff, zeige alle verfügbaren Artikel-Preise an
+      this.filteredArticlePrices = availableCustomerPrices;
     } else {
-      // Filtere nach Suchbegriff
+      // Filtere nach Suchbegriff innerhalb der verfügbaren Artikel
       const searchTerm = this.articlePricesSearchTerm.toLowerCase();
-      this.filteredArticlePrices = this.customerArticlePrices.filter(customerPrice => {
+      this.filteredArticlePrices = availableCustomerPrices.filter(customerPrice => {
         // Suche in Artikel-Text und Artikel-Nummer
         const articleText = customerPrice.article_text?.toLowerCase() || '';
         const articleNumber = customerPrice.article_number?.toLowerCase() || '';
@@ -921,6 +929,36 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     }
     
     console.log('📊 [ARTICLE-PRICES-MODAL] Gefilterte Artikel-Preise:', this.filteredArticlePrices.length);
+  }
+
+  // Neue Hilfsmethode zur Überprüfung der Verfügbarkeit in globalArtikels
+  private isArticleAvailableInGlobal(customerPrice: any): boolean {
+    // Suche nach verschiedenen Feldern in globalArtikels
+    const foundInGlobal = this.globalArtikels.some(globalArtikel => {
+      // 1. Suche nach product_id
+      if (customerPrice.product_id && globalArtikel.article_number == customerPrice.product_id) {
+        return true;
+      }
+      
+      // 2. Suche nach article_number
+      if (customerPrice.article_number && globalArtikel.article_number == customerPrice.article_number) {
+        return true;
+      }
+      
+      // 3. Suche nach id
+      if (customerPrice.id && globalArtikel.id == customerPrice.id) {
+        return true;
+      }
+      
+      // 4. Suche nach EAN (falls vorhanden)
+      if (customerPrice.ean && globalArtikel.ean == customerPrice.ean) {
+        return true;
+      }
+      
+      return false;
+    });
+    
+    return foundInGlobal;
   }
 
   addArticleFromPricesModal(customerPrice: any) {
