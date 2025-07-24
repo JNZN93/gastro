@@ -540,20 +540,30 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const orderData = {
+    // Kundendaten für den Request
+    const customerData = {
       customer_id: this.globalService.selectedCustomerForOrders.id,
       customer_number: this.globalService.selectedCustomerForOrders.customer_number,
       customer_name: this.globalService.selectedCustomerForOrders.last_name_company,
-      items: this.orderItems,
-      total: this.getOrderTotal(),
-      created_at: new Date().toISOString(),
-      status: 'pending'
+      customer_addition: this.globalService.selectedCustomerForOrders.name_addition,
+      customer_city: this.globalService.selectedCustomerForOrders.city,
+      customer_email: this.globalService.selectedCustomerForOrders.email
+    };
+
+    const completeOrder = {
+      orderData: {
+        ...customerData,
+        total_price: this.getOrderTotal(),
+        created_at: new Date().toISOString(),
+        status: 'pending'
+      },
+      orderItems: this.orderItems
     };
 
     const token = localStorage.getItem('token');
 
-    console.log('💾 MOCK UP [SAVE-ORDER] Auftrag wird gespeichert:', orderData);
-    
+    console.log('💾 MOCK UP [SAVE-ORDER] Auftrag wird gespeichert:', completeOrder);
+    alert('Auftrag erfolgreich gespeichert!');
     /*
     fetch('https://multi-mandant-ecommerce.onrender.com/api/orders', {
       method: 'POST',
@@ -561,7 +571,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(orderData)
+      body: JSON.stringify(completeOrder)
     })
     .then(response => {
       if (!response.ok) {
