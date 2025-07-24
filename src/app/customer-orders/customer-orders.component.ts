@@ -33,6 +33,11 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   filteredCustomers: any[] = [];
   customerSearchTerm: string = '';
   isLoadingCustomers: boolean = false;
+  
+  // Article prices modal properties
+  isArticlePricesModalOpen: boolean = false;
+  articlePricesSearchTerm: string = '';
+  filteredArticlePrices: any[] = [];
   availableDevices: MediaDeviceInfo[] = [];
   selectedDevice?: MediaDeviceInfo;
   formatsEnabled: BarcodeFormat[] = [
@@ -504,6 +509,113 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     console.log('🗑️ [CLEAR-CUSTOMER] customerArticlePrices zurückgesetzt');
     
     console.log('✅ [CLEAR-CUSTOMER] Kunde erfolgreich zurückgesetzt');
+  }
+
+  // Artikel-Preise-Modal Methoden
+  openArticlePricesModal() {
+    console.log('📋 [ARTICLE-PRICES-MODAL] Öffne Artikel-Preise-Modal...');
+    this.isArticlePricesModalOpen = true;
+    this.articlePricesSearchTerm = '';
+    this.filterArticlePrices();
+  }
+
+  closeArticlePricesModal() {
+    console.log('📋 [ARTICLE-PRICES-MODAL] Schließe Artikel-Preise-Modal...');
+    this.isArticlePricesModalOpen = false;
+    this.articlePricesSearchTerm = '';
+    this.filteredArticlePrices = [];
+  }
+
+  filterArticlePrices() {
+    console.log('🔍 [ARTICLE-PRICES-MODAL] Filtere Artikel-Preise...');
+    console.log('🔍 [ARTICLE-PRICES-MODAL] Suchbegriff:', this.articlePricesSearchTerm);
+    console.log('🔍 [ARTICLE-PRICES-MODAL] Verfügbare Artikel-Preise:', this.customerArticlePrices.length);
+    
+    if (!this.articlePricesSearchTerm.trim()) {
+      // Wenn kein Suchbegriff, zeige alle Artikel-Preise an
+      this.filteredArticlePrices = [...this.customerArticlePrices];
+    } else {
+      // Filtere nach Suchbegriff
+      const searchTerm = this.articlePricesSearchTerm.toLowerCase();
+      this.filteredArticlePrices = this.customerArticlePrices.filter(customerPrice => {
+        // Suche in Artikel-Text und Artikel-Nummer
+        const articleText = customerPrice.article_text?.toLowerCase() || '';
+        const articleNumber = customerPrice.article_number?.toLowerCase() || '';
+        const productId = customerPrice.product_id?.toLowerCase() || '';
+        
+        return articleText.includes(searchTerm) || 
+               articleNumber.includes(searchTerm) || 
+               productId.includes(searchTerm);
+      });
+    }
+    
+    console.log('📊 [ARTICLE-PRICES-MODAL] Gefilterte Artikel-Preise:', this.filteredArticlePrices.length);
+  }
+
+  addArticleFromPricesModal(customerPrice: any) {
+    console.log('➕ [ARTICLE-PRICES-MODAL] Füge Artikel hinzu:', customerPrice);
+    
+    // Finde den entsprechenden Artikel in den globalen Artikeln
+    const artikel = this.globalArtikels.find(art => 
+      art.article_number === customerPrice.article_number || 
+      art.product_id === customerPrice.product_id
+    );
+    
+    if (artikel) {
+      // Erstelle einen neuen Auftrag-Artikel mit den kundenspezifischen Preisen
+      const orderItem = {
+        ...artikel,
+        quantity: 1,
+        different_price: parseFloat(customerPrice.unit_price_net),
+        original_price: artikel.sale_price
+      };
+      
+      // Füge zum Auftrag hinzu
+      this.orderItems.push(orderItem);
+      
+      // Speichere den Zustand
+      this.globalService.saveCustomerOrders(this.orderItems);
+      
+      console.log('✅ [ARTICLE-PRICES-MODAL] Artikel erfolgreich zum Auftrag hinzugefügt');
+      
+      // Schließe das Modal
+      this.closeArticlePricesModal();
+    } else {
+      console.error('❌ [ARTICLE-PRICES-MODAL] Artikel nicht in globalen Artikeln gefunden:', customerPrice);
+    }
+  }
+
+  getStandardPriceForArticle(customerPrice: any): number | null {
+    // Finde den entsprechenden Artikel in den globalen Artikeln
+    const artikel = this.globalArtikels.find(art => 
+      art.article_number === customerPrice.article_number || 
+      art.product_id === customerPrice.product_id
+    );
+    
+    return artikel ? artikel.sale_price : null;
+  }
+
+  formatInvoiceDate(dateString: string | null | undefined): string {
+    if (!dateString) {
+      return '-';
+    }
+    
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        return '-';
+      }
+      
+      // Formatiere das Datum im deutschen Format (DD.MM.YYYY)
+      return date.toLocaleDateString('de-DE', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+    } catch (error) {
+      console.error('Fehler beim Formatieren des Datums:', error);
+      return '-';
+    }
   }
 
   // Neue Methode zum Laden der Kunden-Artikel-Preise
