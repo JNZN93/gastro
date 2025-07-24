@@ -675,12 +675,57 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
 
   addArticleFromPricesModal(customerPrice: any) {
     console.log('➕ [ARTICLE-PRICES-MODAL] Füge Artikel hinzu:', customerPrice);
+    console.log('🔍 [ARTICLE-PRICES-MODAL] Suche nach Artikel mit:');
+    console.log('   - article_number:', customerPrice.article_number);
+    console.log('   - product_id:', customerPrice.product_id);
+    console.log('   - id:', customerPrice.id);
+    console.log('📊 [ARTICLE-PRICES-MODAL] Anzahl globaler Artikel:', this.globalArtikels.length);
     
-    // Finde den entsprechenden Artikel in den globalen Artikeln
-    const artikel = this.globalArtikels.find(art => 
-      art.article_number === customerPrice.article_number || 
-      art.product_id === customerPrice.product_id
-    );
+    // Erweiterte Suche: Versuche verschiedene Felder zu finden
+    let artikel = null;
+    
+    // 1. Suche nach article_number
+    if (customerPrice.article_number) {
+      artikel = this.globalArtikels.find(art => art.article_number === customerPrice.article_number);
+      if (artikel) {
+        console.log('✅ [ARTICLE-PRICES-MODAL] Artikel gefunden über article_number:', artikel.article_text);
+      }
+    }
+    
+    // 2. Suche nach product_id
+    if (!artikel && customerPrice.product_id) {
+      artikel = this.globalArtikels.find(art => art.product_id === customerPrice.product_id);
+      if (artikel) {
+        console.log('✅ [ARTICLE-PRICES-MODAL] Artikel gefunden über product_id:', artikel.article_text);
+      }
+    }
+    
+    // 3. Suche nach id
+    if (!artikel && customerPrice.id) {
+      artikel = this.globalArtikels.find(art => art.id === customerPrice.id);
+      if (artikel) {
+        console.log('✅ [ARTICLE-PRICES-MODAL] Artikel gefunden über id:', artikel.article_text);
+      }
+    }
+    
+    // 4. Suche nach EAN (falls vorhanden)
+    if (!artikel && customerPrice.ean) {
+      artikel = this.globalArtikels.find(art => art.ean === customerPrice.ean);
+      if (artikel) {
+        console.log('✅ [ARTICLE-PRICES-MODAL] Artikel gefunden über ean:', artikel.article_text);
+      }
+    }
+    
+    // 5. Fallback: Suche nach Artikeltext (fuzzy search)
+    if (!artikel && customerPrice.article_text) {
+      const searchText = customerPrice.article_text.toLowerCase();
+      artikel = this.globalArtikels.find(art => 
+        art.article_text && art.article_text.toLowerCase().includes(searchText)
+      );
+      if (artikel) {
+        console.log('✅ [ARTICLE-PRICES-MODAL] Artikel gefunden über fuzzy search:', artikel.article_text);
+      }
+    }
     
     if (artikel) {
       // Erstelle einen neuen Auftrag-Artikel mit den kundenspezifischen Preisen
@@ -703,15 +748,47 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       this.closeArticlePricesModal();
     } else {
       console.error('❌ [ARTICLE-PRICES-MODAL] Artikel nicht in globalen Artikeln gefunden:', customerPrice);
+      console.log('🔍 [ARTICLE-PRICES-MODAL] Debug: Erste 5 globale Artikel:');
+      this.globalArtikels.slice(0, 5).forEach((art, index) => {
+        console.log(`   ${index + 1}. ID: ${art.id}, Art-Nr: ${art.article_number}, Product-ID: ${art.product_id}, Text: ${art.article_text}`);
+      });
+      
+      // Zeige eine Benutzerbenachrichtigung
+      alert(`Artikel "${customerPrice.article_text || customerPrice.product_id}" konnte nicht in der Artikeldatenbank gefunden werden. Bitte überprüfen Sie die Artikelnummer oder kontaktieren Sie den Administrator.`);
     }
   }
 
   getStandardPriceForArticle(customerPrice: any): number | null {
-    // Finde den entsprechenden Artikel in den globalen Artikeln
-    const artikel = this.globalArtikels.find(art => 
-      art.article_number === customerPrice.article_number || 
-      art.product_id === customerPrice.product_id
-    );
+    // Erweiterte Suche: Versuche verschiedene Felder zu finden
+    let artikel = null;
+    
+    // 1. Suche nach article_number
+    if (customerPrice.article_number) {
+      artikel = this.globalArtikels.find(art => art.article_number === customerPrice.article_number);
+    }
+    
+    // 2. Suche nach product_id
+    if (!artikel && customerPrice.product_id) {
+      artikel = this.globalArtikels.find(art => art.product_id === customerPrice.product_id);
+    }
+    
+    // 3. Suche nach id
+    if (!artikel && customerPrice.id) {
+      artikel = this.globalArtikels.find(art => art.id === customerPrice.id);
+    }
+    
+    // 4. Suche nach EAN (falls vorhanden)
+    if (!artikel && customerPrice.ean) {
+      artikel = this.globalArtikels.find(art => art.ean === customerPrice.ean);
+    }
+    
+    // 5. Fallback: Suche nach Artikeltext (fuzzy search)
+    if (!artikel && customerPrice.article_text) {
+      const searchText = customerPrice.article_text.toLowerCase();
+      artikel = this.globalArtikels.find(art => 
+        art.article_text && art.article_text.toLowerCase().includes(searchText)
+      );
+    }
     
     return artikel ? artikel.sale_price : null;
   }
@@ -817,12 +894,18 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       // Erstelle eine Map für schnellen Zugriff auf die Kunden-Preise
       const customerPriceMap = new Map();
       this.customerArticlePrices.forEach(customerPrice => {
-        // Verwende sowohl product_id als auch article_number als Keys
+        // Verwende verschiedene Felder als Keys für bessere Suche
         if (customerPrice.product_id) {
           customerPriceMap.set(customerPrice.product_id, customerPrice);
         }
         if (customerPrice.article_number) {
           customerPriceMap.set(customerPrice.article_number, customerPrice);
+        }
+        if (customerPrice.id) {
+          customerPriceMap.set(customerPrice.id.toString(), customerPrice);
+        }
+        if (customerPrice.ean) {
+          customerPriceMap.set(customerPrice.ean, customerPrice);
         }
       });
       
@@ -835,7 +918,21 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
 
       // Aktualisiere die globalen Artikel mit den kundenspezifischen Preisen
       this.globalArtikels = this.globalArtikels.map(artikel => {
-        const customerPrice = customerPriceMap.get(artikel.article_number);
+        // Erweiterte Suche: Versuche verschiedene Felder zu finden
+        let customerPrice = customerPriceMap.get(artikel.article_number);
+        
+        if (!customerPrice && artikel.product_id) {
+          customerPrice = customerPriceMap.get(artikel.product_id);
+        }
+        
+        if (!customerPrice && artikel.id) {
+          customerPrice = customerPriceMap.get(artikel.id.toString());
+        }
+        
+        if (!customerPrice && artikel.ean) {
+          customerPrice = customerPriceMap.get(artikel.ean);
+        }
+        
         if (customerPrice) {
           const originalPrice = artikel.sale_price;
           const customerNetPrice = parseFloat(customerPrice.unit_price_net);
@@ -912,7 +1009,21 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     let unchangedOrderItems = 0;
 
     this.orderItems = this.orderItems.map(orderItem => {
-      const customerPrice = customerPriceMap.get(orderItem.article_number);
+      // Erweiterte Suche: Versuche verschiedene Felder zu finden
+      let customerPrice = customerPriceMap.get(orderItem.article_number);
+      
+      if (!customerPrice && orderItem.product_id) {
+        customerPrice = customerPriceMap.get(orderItem.product_id);
+      }
+      
+      if (!customerPrice && orderItem.id) {
+        customerPrice = customerPriceMap.get(orderItem.id.toString());
+      }
+      
+      if (!customerPrice && orderItem.ean) {
+        customerPrice = customerPriceMap.get(orderItem.ean);
+      }
+      
       if (customerPrice) {
         const originalPrice = orderItem.original_price || orderItem.sale_price;
         const customerNetPrice = parseFloat(customerPrice.unit_price_net);
