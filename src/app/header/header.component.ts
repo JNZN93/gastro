@@ -27,6 +27,7 @@ export class HeaderComponent {
   logOut() {
     localStorage.removeItem('token');
     localStorage.removeItem('warenkorb');
+    this.globalService.clearSelectedCustomer();
     this.showModal = false;
     this.router.navigate(['login'])
     window.location.reload();
@@ -45,6 +46,7 @@ export class HeaderComponent {
   }
 
   navigateToAdmin() {
+    this.globalService.clearSelectedCustomer();
     this.router.navigate(['/admin']);
   }
 }

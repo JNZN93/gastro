@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { FormsModule, FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../authentication.service';
+import { GlobalService } from '../global.service';
 
 @Component({
   selector: 'app-login',
@@ -19,7 +20,7 @@ export class LoginComponent {
   passwordImgOff = 'visibility_off.png';
   currentImage = this.passwordImgOff;
 
-  constructor(private fb: FormBuilder, private router: Router, private authService: AuthService) {
+  constructor(private fb: FormBuilder, private router: Router, private authService: AuthService, private globalService: GlobalService) {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]]
@@ -33,6 +34,9 @@ export class LoginComponent {
         next: (response) => {
           localStorage.setItem("token", response.token);
           console.log('Login erfolgreich:', response);
+          // selectedCustomer bei Login löschen
+          this.globalService.clearSelectedCustomer();
+          
           if (response?.role == 'admin') {
             this.router.navigate(['/admin']);
             return

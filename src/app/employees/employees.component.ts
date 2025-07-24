@@ -410,12 +410,12 @@ export class EmployeesComponent implements OnInit {
   }
 
   selectCustomer(customer: any) {
-    this.globalService.selectedCustomer = customer;
+    this.globalService.setSelectedCustomer(customer);
     this.closeCustomerModal();
     console.log('Kunde ausgewählt:', customer);
   }
 
   clearSelectedCustomer() {
-    this.globalService.selectedCustomer = null;
+    this.globalService.clearSelectedCustomer();
   }
 }

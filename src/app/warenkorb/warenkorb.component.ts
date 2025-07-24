@@ -71,60 +71,20 @@ export class WarenkorbComponent implements OnInit {
       };
     }
     
-    const getToken = localStorage.getItem("token");
-
-    // Prüfen ob ein Kunde ausgewählt wurde
-    if (this.globalService.selectedCustomer) {
-      // Kunden-spezifische Preise abrufen
-      this.orderService.getCustomerArticlePrices(this.globalService.selectedCustomer.customer_number, getToken).subscribe({
-        next: (customerPrices) => {
-          // Order Items mit customer prices erweitern
-          const orderItemsWithPrices = this.globalService.warenkorb.map(item => {
-            // Suche nach customer price für diesen Artikel
-            const customerPrice = customerPrices.find((price: any) => 
-              price.product_id === item.article_number
-            );
-            
-            if (customerPrice) {
-              // Customer price gefunden - different_price hinzufügen
-              return {
-                ...item,
-                different_price: customerPrice.unit_price_net
-              };
-            } else {
-              // Kein customer price gefunden - normaler Artikel
-              return item;
-            }
-          });
-
-          this.placeOrderWithItems(orderItemsWithPrices, customerData, newAddress, getToken);
-        },
-        error: (error) => {
-          console.error('Fehler beim Abrufen der Kundenpreise:', error);
-          // Bei Fehler normal bestellen ohne customer prices
-          this.placeOrderWithItems(this.globalService.warenkorb, customerData, newAddress, getToken);
-        }
-      });
-    } else {
-      // Kein Kunde ausgewählt - normal bestellen
-      this.placeOrderWithItems(this.globalService.warenkorb, customerData, newAddress, getToken);
-    }
-  }
-
-  private placeOrderWithItems(orderItems: any[], customerData: any, newAddress: string, token: string | null) {
     const completeOrder = {
       orderData: {
           ...this.globalService.orderData,
           ...customerData,
           shipping_address: newAddress ? newAddress : '',
-          fulfillment_type: this.isDelivery ? 'delivery' : 'pickup',
+          fulfillment_type: this.isDelivery ? 'delivery' : 'pickup', // Hier den gewünschten Wert setzen TOGGLE
           delivery_date: this.delivery_date,
           customer_notes: this.customer_notes
       },
-      orderItems: orderItems
-    };
+      orderItems: this.globalService.warenkorb
+  };
+    const getToken = localStorage.getItem("token");
 
-    this.orderService.placeOrder(completeOrder, token).subscribe({
+    this.orderService.placeOrder(completeOrder, getToken).subscribe({
       next: (response) => {
         this.showOrderCompletedDialog();
         // Warenkorb leeren
@@ -132,10 +92,12 @@ export class WarenkorbComponent implements OnInit {
         this.globalService.totalPrice = 0;
         localStorage.removeItem('warenkorb');
         // Ausgewählten Kunden löschen
-        this.globalService.selectedCustomer = null;
+        this.globalService.clearSelectedCustomer();
       },
       error: (error) => {
         this.showOrderErrorDialog();
+        // Ausgewählten Kunden auch bei Fehler löschen
+        this.globalService.clearSelectedCustomer();
       },
       complete: () => {
         this.isVisible = false; // Warenkorb schließen nach Abschluss

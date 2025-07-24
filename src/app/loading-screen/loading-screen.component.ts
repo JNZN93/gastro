@@ -1,6 +1,7 @@
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { AuthService } from '../authentication.service';
 import { Router, RouterModule } from '@angular/router';
+import { GlobalService } from '../global.service';
 
 @Component({
   selector: 'app-loading-screen',
@@ -11,7 +12,7 @@ import { Router, RouterModule } from '@angular/router';
 export class LoadingScreenComponent implements OnInit {
   isTokenValid: boolean | null = null;
 
-  constructor(private authService: AuthService, private router: Router) { }
+  constructor(private authService: AuthService, private router: Router, private globalService: GlobalService) { }
 
   ngOnInit(): void {
     const token = localStorage.getItem('token');
@@ -20,6 +21,9 @@ export class LoadingScreenComponent implements OnInit {
       this.authService.checkToken(token).subscribe({
         next: (response) => {
           console.log('Token gültig:', response);
+          // selectedCustomer bei Navigation löschen
+          this.globalService.clearSelectedCustomer();
+          
           if(response?.user.role == "admin") {
           this.router.navigate(['/admin']);
           }else if(response?.user.role == "employee"){
