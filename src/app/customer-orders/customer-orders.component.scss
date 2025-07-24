@@ -1485,3 +1485,19 @@
   }
 }
 
+.price-input-container {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  
+  .price-edit {
+    flex: 1;
+    min-width: 80px;
+    
+    &.custom-price {
+      background-color: #fff3cd;
+      border-color: #ffc107;
+    }
+  }
+}
+

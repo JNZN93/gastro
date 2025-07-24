@@ -539,13 +539,42 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   }
 
   updateItemTotal(item: any): void {
+    console.log('💰 [UPDATE-ITEM] Aktualisiere Artikel:', item.article_text);
+    console.log('💰 [UPDATE-ITEM] Vorher - different_price:', item.different_price);
+    console.log('💰 [UPDATE-ITEM] Vorher - sale_price:', item.sale_price);
+    
     // Stelle sicher, dass die Werte numerisch sind
     item.quantity = Number(item.quantity) || 1;
     
-    // Aktualisiere den different_price wenn der Preis geändert wurde
-    if (item.different_price !== undefined) {
-      item.different_price = Number(item.different_price) || 0;
+    // Prüfe, ob das Preis-Feld leer ist oder ungültige Werte enthält
+    if (item.different_price === '' || item.different_price === null || item.different_price === undefined) {
+      // Feld ist leer - verwende Standard-Preis
+      item.different_price = undefined;
+      console.log('🔄 [UPDATE-ITEM] Feld ist leer - verwende Standard-Preis:', item.sale_price);
+    } else {
+      // Preis wurde eingegeben - validiere und verwende ihn
+      const newPrice = Number(item.different_price);
+      
+      // Validierung: Preis muss positiv sein
+      if (isNaN(newPrice) || newPrice < 0) {
+        console.warn('⚠️ [UPDATE-ITEM] Ungültiger Preis, setze auf Standard-Preis');
+        item.different_price = undefined;
+      } else {
+        item.different_price = newPrice;
+        console.log('✅ [UPDATE-ITEM] different_price aktualisiert auf:', item.different_price);
+      }
     }
+    
+    // Berechne den neuen Gesamtpreis
+    const itemPrice = this.getItemPrice(item);
+    const totalPrice = itemPrice * item.quantity;
+    
+    console.log('💰 [UPDATE-ITEM] Nachher - verwendeter Preis:', itemPrice);
+    console.log('💰 [UPDATE-ITEM] Nachher - Gesamtpreis:', totalPrice);
+    
+    // Speichere die Änderungen automatisch
+    this.globalService.saveCustomerOrders(this.orderItems);
+    console.log('💾 [UPDATE-ITEM] Änderungen gespeichert');
   }
 
   saveOrder(): void {
@@ -582,7 +611,11 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     const token = localStorage.getItem('token');
 
     console.log('💾 [SAVE-ORDER] Auftrag wird gespeichert:', completeOrder);
+    
+    // Temporär: Sofort Erfolg anzeigen (für Testzwecke)
     alert('Auftrag erfolgreich gespeichert!');
+    this.clearAllOrderData();
+    
     
     fetch('https://multi-mandant-ecommerce.onrender.com/api/orders', {
       method: 'POST',
@@ -600,19 +633,70 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     })
     .then(data => {
       alert('Auftrag erfolgreich gespeichert!');
-      this.clearOrder();
-      // Lösche alle customer-orders Daten nach erfolgreicher Bestellung
-      this.globalService.clearAllCustomerOrdersData();
-      console.log('🗑️ [SAVE-ORDER] Alle customer-orders Daten nach erfolgreicher Bestellung gelöscht');
+      this.clearAllOrderData();
     })
     .catch(error => {
       console.error('Fehler beim Speichern des Auftrags:', error);
       alert('Fehler beim Speichern des Auftrags: ' + error.message);
     });
-
-
   }
 
+  // Neue Methode zum vollständigen Leeren aller auftragsrelevanten Daten
+  clearAllOrderData(): void {
+    console.log('🗑️ [CLEAR-ALL-ORDER] Starte vollständiges Leeren aller auftragsrelevanten Daten...');
+    
+    // 1. Leere den Auftrag
+    this.orderItems = [];
+    console.log('✅ [CLEAR-ALL-ORDER] Auftrag geleert');
+    
+    // 2. Leere den ausgewählten Kunden
+    this.globalService.clearSelectedCustomerForOrders();
+    console.log('✅ [CLEAR-ALL-ORDER] Ausgewählter Kunde geleert');
+    
+    // 3. Leere die kundenspezifischen Preise
+    this.customerArticlePrices = [];
+    console.log('✅ [CLEAR-ALL-ORDER] Kundenspezifische Preise geleert');
+    
+    // 4. Setze alle Artikel auf Standard-Preise zurück
+    this.globalArtikels = this.globalArtikels.map(artikel => ({
+      ...artikel,
+      different_price: undefined,
+      original_price: undefined
+    }));
+    console.log('✅ [CLEAR-ALL-ORDER] Alle Artikel auf Standard-Preise zurückgesetzt');
+    
+    // 5. Aktualisiere die artikelData
+    this.artikelData = [...this.globalArtikels];
+    console.log('✅ [CLEAR-ALL-ORDER] artikelData aktualisiert');
+    
+    // 6. Leere das Suchfeld und gefilterte Artikel
+    this.searchTerm = '';
+    this.filteredArtikels = [];
+    this.showDropdown = false;
+    this.selectedIndex = -1;
+    console.log('✅ [CLEAR-ALL-ORDER] Suchfeld und gefilterte Artikel geleert');
+    
+    // 7. Leere die Modals
+    this.isCustomerModalOpen = false;
+    this.isArticlePricesModalOpen = false;
+    this.customerSearchTerm = '';
+    this.articlePricesSearchTerm = '';
+    this.filteredCustomers = [];
+    this.filteredArticlePrices = [];
+    console.log('✅ [CLEAR-ALL-ORDER] Modals geleert');
+    
+    // 8. Leere localStorage
+    this.globalService.clearCustomerOrders();
+    console.log('✅ [CLEAR-ALL-ORDER] localStorage geleert');
+    
+    // 9. Reset pendingCustomerForPriceUpdate
+    this.pendingCustomerForPriceUpdate = null;
+    console.log('✅ [CLEAR-ALL-ORDER] pendingCustomerForPriceUpdate zurückgesetzt');
+    
+    console.log('🎉 [CLEAR-ALL-ORDER] Alle auftragsrelevanten Daten erfolgreich geleert!');
+  }
+
+  // Methode zum Leeren nur des Auftrags (für andere Funktionen)
   clearOrder(): void {
     console.log('🗑️ [CLEAR-ORDER] Auftrag wird gelöscht...');
     
