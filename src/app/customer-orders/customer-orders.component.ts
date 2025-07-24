@@ -595,18 +595,33 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       customer_name: this.globalService.selectedCustomerForOrders.last_name_company,
       customer_addition: this.globalService.selectedCustomerForOrders.name_addition,
       customer_city: this.globalService.selectedCustomerForOrders.city,
-      customer_email: this.globalService.selectedCustomerForOrders.email
+      customer_email: this.globalService.selectedCustomerForOrders.email,
+      status: 'completed'
     };
 
     const completeOrder = {
       orderData: {
         ...customerData,
         total_price: this.getOrderTotal(),
-        created_at: new Date().toISOString(),
-        status: 'pending'
+        created_at: new Date().toISOString()
       },
       orderItems: this.orderItems
     };
+
+    /*
+      const completeOrder = {
+      orderData: {
+          ...this.globalService.orderData,
+          ...customerData,
+          shipping_address: newAddress ? newAddress : '',
+          fulfillment_type: this.isDelivery ? 'delivery' : 'pickup', // Hier den gewünschten Wert setzen TOGGLE
+          delivery_date: this.delivery_date,
+          customer_notes: this.customer_notes
+      },
+      orderItems: this.globalService.warenkorb
+  };
+
+  */
 
     const token = localStorage.getItem('token');
 
