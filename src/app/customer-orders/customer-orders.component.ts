@@ -544,6 +544,11 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
         console.log('📊 [CUSTOMER-ARTICLE-PRICES] Erste 3 Artikel-Preise:', data.slice(0, 3));
         if (data.length > 0) {
           console.log('📊 [CUSTOMER-ARTICLE-PRICES] Beispiel Artikel-Preis:', data[0]);
+          // Debug: Zeige alle verfügbaren Felder des ersten Eintrags
+          console.log('🔍 [CUSTOMER-ARTICLE-PRICES] Verfügbare Felder im ersten Eintrag:', Object.keys(data[0]));
+          console.log('🔍 [CUSTOMER-ARTICLE-PRICES] product_id:', data[0].product_id);
+          console.log('🔍 [CUSTOMER-ARTICLE-PRICES] article_number:', data[0].article_number);
+          console.log('🔍 [CUSTOMER-ARTICLE-PRICES] unit_price_net:', data[0].unit_price_net);
         }
       }
       
@@ -579,7 +584,13 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       // Erstelle eine Map für schnellen Zugriff auf die Kunden-Preise
       const customerPriceMap = new Map();
       this.customerArticlePrices.forEach(customerPrice => {
-        customerPriceMap.set(customerPrice.product_id, customerPrice);
+        // Verwende sowohl product_id als auch article_number als Keys
+        if (customerPrice.product_id) {
+          customerPriceMap.set(customerPrice.product_id, customerPrice);
+        }
+        if (customerPrice.article_number) {
+          customerPriceMap.set(customerPrice.article_number, customerPrice);
+        }
       });
       
       console.log('🗺️ [UPDATE-PRICES] Customer Price Map erstellt, Größe:', customerPriceMap.size);
