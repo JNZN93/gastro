@@ -827,7 +827,6 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   addArticleFromPricesModal(customerPrice: any) {
     console.log('➕ [ARTICLE-PRICES-MODAL] Füge Artikel hinzu:', customerPrice);
     console.log('🔍 [ARTICLE-PRICES-MODAL] Suche nach Artikel mit:');
-    console.log('   - article_number:', customerPrice.article_number);
     console.log('   - product_id:', customerPrice.product_id);
     console.log('   - id:', customerPrice.id);
     console.log('📊 [ARTICLE-PRICES-MODAL] Anzahl globaler Artikel:', this.globalArtikels.length);
@@ -836,45 +835,11 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     let artikel = null;
     
     // 1. Suche nach article_number
-    if (customerPrice.article_number) {
-      artikel = this.globalArtikels.find(art => art.article_number === customerPrice.article_number);
+    if (customerPrice.product_id) {
+      artikel = this.globalArtikels.find(art => art.article_number == customerPrice.product_id);
+
       if (artikel) {
-        console.log('✅ [ARTICLE-PRICES-MODAL] Artikel gefunden über article_number:', artikel.article_text);
-      }
-    }
-    
-    // 2. Suche nach product_id
-    if (!artikel && customerPrice.product_id) {
-      artikel = this.globalArtikels.find(art => art.product_id === customerPrice.product_id);
-      if (artikel) {
-        console.log('✅ [ARTICLE-PRICES-MODAL] Artikel gefunden über product_id:', artikel.article_text);
-      }
-    }
-    
-    // 3. Suche nach id
-    if (!artikel && customerPrice.id) {
-      artikel = this.globalArtikels.find(art => art.id === customerPrice.id);
-      if (artikel) {
-        console.log('✅ [ARTICLE-PRICES-MODAL] Artikel gefunden über id:', artikel.article_text);
-      }
-    }
-    
-    // 4. Suche nach EAN (falls vorhanden)
-    if (!artikel && customerPrice.ean) {
-      artikel = this.globalArtikels.find(art => art.ean === customerPrice.ean);
-      if (artikel) {
-        console.log('✅ [ARTICLE-PRICES-MODAL] Artikel gefunden über ean:', artikel.article_text);
-      }
-    }
-    
-    // 5. Fallback: Suche nach Artikeltext (fuzzy search)
-    if (!artikel && customerPrice.article_text) {
-      const searchText = customerPrice.article_text.toLowerCase();
-      artikel = this.globalArtikels.find(art => 
-        art.article_text && art.article_text.toLowerCase().includes(searchText)
-      );
-      if (artikel) {
-        console.log('✅ [ARTICLE-PRICES-MODAL] Artikel gefunden über fuzzy search:', artikel.article_text);
+        console.log('✅ [ARTICLE-PRICES-MODAL] Artikel gefunden über article_number:', artikel.article_number);
       }
     }
     
