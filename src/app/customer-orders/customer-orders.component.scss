@@ -2,9 +2,11 @@
   position: relative;
   margin-top: 100px;
   width: 100%;
-  height: 100vh;
+  height: calc(100vh - 100px); // Geändert von 100vh zu calc(100vh - 100px)
   display: flex;
   flex-direction: column;
+  overflow: hidden; // Verhindert Scrollbars auf Container-Ebene
+  max-height: calc(100vh - 100px); // Zusätzliche Sicherheit
 }
 
 .content {
@@ -12,8 +14,8 @@
   flex-direction: column;
   gap: 16px;
   padding: 16px;
-  height: calc(100vh - 100px);
-  overflow: hidden;
+  height: 100%; // Geändert von calc(100vh - 100px) zu 100%
+  overflow: hidden; // Verhindert Scrollbars
 }
 
 // Hauptbereich mit zwei Spalten
@@ -32,12 +34,14 @@
   height: 100%;
   display: flex;
   flex-direction: column;
+  overflow: hidden; // Verhindert Scrollbars
 }
 
 // Rechte Spalte: Artikelauswahl
 .articles-column {
   min-width: 0; // Verhindert Überlauf
   height: auto;
+  overflow: visible; // Erlaubt Dropdown-Anzeige
 }
 
 // Artikelliste
@@ -51,6 +55,7 @@
   top: 16px;
   display: flex;
   flex-direction: column;
+  overflow: visible; // Erlaubt Dropdown-Anzeige
 
   h3 {
     margin: 0 0 8px 0;
@@ -74,6 +79,7 @@
   flex: 1;
   display: flex;
   align-items: center;
+  overflow: visible; // Erlaubt Dropdown-Anzeige
 }
 
 .search-input {
@@ -161,7 +167,7 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   max-height: 250px;
   overflow-y: auto;
-  z-index: 1000;
+  z-index: 9999; // Erhöhter z-index für bessere Sichtbarkeit
   margin-top: 4px;
 }
 
@@ -481,7 +487,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  max-height: calc(100vh - 300px);
+  max-height: none; // Entfernt die feste max-height Berechnung
 }
 
 .order-table {
@@ -643,9 +649,6 @@
   .order-total-row {
     background-color: #f8f9fa;
     font-weight: 600;
-    position: sticky;
-    bottom: 0;
-    z-index: 10;
     height: 32px !important;
     min-height: 32px !important;
     max-height: 32px !important;
@@ -674,6 +677,12 @@
   justify-content: flex-end;
   margin-top: 12px;
   flex-shrink: 0;
+  position: sticky;
+  bottom: 0;
+  background: white;
+  padding: 8px 0;
+  border-top: 1px solid #e0e0e0;
+  z-index: 10;
 }
 
 .save-order-btn, .clear-order-btn {
@@ -799,14 +808,14 @@
   }
 
   .order-table-container {
-    max-height: 400px;
+    max-height: none; // Entfernt die feste max-height
   }
 }
 
 @media (max-width: 768px) {
   .content {
     padding: 12px;
-    height: calc(100vh - 100px);
+    height: 100%; // Geändert zu 100% statt calc(100vh - 100px)
   }
 
   .articles-section {
@@ -814,7 +823,7 @@
   }
 
   .order-table-container {
-    max-height: 300px;
+    max-height: none; // Entfernt die feste max-height
   }
 
   .order-header {

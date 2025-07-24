@@ -4,11 +4,13 @@ body, html{
     padding: 0;
     box-sizing: border-box;
     font-family: 'Poppins', sans-serif;
+    overflow-x: hidden; // Verhindert horizontale Scrollbars
 }
 
 body {
     background-color: #dadada;
-    min-height: calc(100vh - 100px)
+    min-height: calc(100vh - 100px);
+    overflow-x: hidden; // Verhindert horizontale Scrollbars
 }
 
 input[type="number"]::-webkit-outer-spin-button,
