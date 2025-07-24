@@ -147,6 +147,17 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     if (savedOrders && savedOrders.length > 0) {
       console.log('📱 [LOAD-STORED] Gespeicherte Aufträge gefunden:', savedOrders.length);
       this.orderItems = savedOrders;
+      
+      // Stelle sicher, dass die Aufträge korrekte Preise haben
+      this.orderItems = this.orderItems.map(orderItem => ({
+        ...orderItem,
+        // Stelle sicher, dass different_price korrekt gesetzt ist
+        different_price: orderItem.different_price !== undefined ? orderItem.different_price : undefined,
+        // Stelle sicher, dass original_price korrekt gesetzt ist
+        original_price: orderItem.original_price || orderItem.sale_price
+      }));
+      
+      console.log('✅ [LOAD-STORED] Aufträge mit korrekten Preisen geladen');
     }
   }
 
@@ -154,13 +165,24 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     this.filteredArtikels = [];
     if (this.searchTerm) {
       const terms = this.searchTerm.toLowerCase().split(/\s+/);
-      this.filteredArtikels = this.globalArtikels.filter((artikel) =>
+      // Erstelle eine neue Referenz für filteredArtikels, damit Angular die Änderungen erkennt
+      this.filteredArtikels = [...this.globalArtikels.filter((artikel) =>
         terms.every((term) =>
           artikel.article_text.toLowerCase().includes(term) ||
           artikel.article_number?.toLowerCase().includes(term) ||
           artikel.ean?.toLowerCase().includes(term)
         )
-      );
+      )];
+      
+      console.log('🔍 [FILTER] Gefilterte Artikel aktualisiert:', this.filteredArtikels.length);
+      if (this.filteredArtikels.length > 0) {
+        console.log('🔍 [FILTER] Beispiel Artikel:', {
+          article_text: this.filteredArtikels[0].article_text,
+          article_number: this.filteredArtikels[0].article_number,
+          sale_price: this.filteredArtikels[0].sale_price,
+          different_price: this.filteredArtikels[0].different_price
+        });
+      }
     }
   }
 
@@ -189,6 +211,10 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
         
         if (foundInGlobal) {
           this.addToOrder(new Event('enter'), foundInGlobal);
+          // Leere das Suchfeld nach dem Hinzufügen
+          this.searchTerm = '';
+          this.filteredArtikels = [];
+          console.log('🧹 [ENTER] Suchfeld geleert (Fallback)');
           return;
         }
       }
@@ -202,6 +228,10 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       const singleArticle = this.filteredArtikels[0];
       console.log('✅ [ENTER] Einziger Artikel gefunden, füge hinzu:', singleArticle.article_text);
       this.addToOrder(new Event('enter'), singleArticle);
+      // Leere das Suchfeld nach dem Hinzufügen
+      this.searchTerm = '';
+      this.filteredArtikels = [];
+      console.log('🧹 [ENTER] Suchfeld geleert');
       return;
     }
 
@@ -397,9 +427,56 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   }
 
   clearOrder(): void {
+    console.log('🗑️ [CLEAR-ORDER] Auftrag wird gelöscht...');
+    
     this.orderItems = [];
     // Lösche auch aus localStorage
     this.globalService.clearCustomerOrders();
+    
+    // Setze die kundenspezifischen Preise in der Artikelauswahl zurück
+    if (this.customerArticlePrices.length > 0) {
+      console.log('🔄 [CLEAR-ORDER] Setze kundenspezifische Preise zurück...');
+      
+      // Setze alle Artikel auf Standard-Preise zurück
+      this.globalArtikels = this.globalArtikels.map(artikel => ({
+        ...artikel,
+        different_price: undefined,
+        original_price: undefined
+      }));
+      
+      // Aktualisiere auch die artikelData
+      this.artikelData = [...this.globalArtikels];
+      
+      // Aktualisiere die gefilterten Artikel, falls bereits gesucht wurde
+      if (this.searchTerm) {
+        console.log('🔄 [CLEAR-ORDER] Aktualisiere gefilterte Artikel...');
+        this.filteredArtikelData();
+      }
+      
+      console.log('✅ [CLEAR-ORDER] Kundenspezifische Preise zurückgesetzt');
+    } else {
+      // Auch wenn keine kundenspezifischen Preise vorhanden sind, stelle sicher, dass alle Artikel Standard-Preise haben
+      console.log('🔄 [CLEAR-ORDER] Setze alle Artikel auf Standard-Preise zurück...');
+      
+      this.globalArtikels = this.globalArtikels.map(artikel => ({
+        ...artikel,
+        different_price: undefined,
+        original_price: undefined
+      }));
+      
+      // Aktualisiere auch die artikelData
+      this.artikelData = [...this.globalArtikels];
+      
+      // Aktualisiere die gefilterten Artikel, falls bereits gesucht wurde
+      if (this.searchTerm) {
+        console.log('🔄 [CLEAR-ORDER] Aktualisiere gefilterte Artikel...');
+        this.filteredArtikelData();
+      }
+      
+      console.log('✅ [CLEAR-ORDER] Alle Artikel auf Standard-Preise zurückgesetzt');
+    }
+    
+    console.log('✅ [CLEAR-ORDER] Auftrag erfolgreich gelöscht');
   }
 
   // Customer modal methods
@@ -490,6 +567,10 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     this.closeCustomerModal();
     console.log('🔒 [SELECT-CUSTOMER] Customer Modal geschlossen');
     
+    // Lösche das Suchfeld und gefilterte Artikel beim Kundenwechsel
+    this.clearSearch();
+    console.log('🧹 [SELECT-CUSTOMER] Suchfeld und gefilterte Artikel geleert');
+    
     // Lade Kunden-Artikel-Preise für den ausgewählten Kunden
     console.log('🔄 [SELECT-CUSTOMER] Starte loadCustomerArticlePrices für Kunde:', customer.customer_number);
     this.loadCustomerArticlePrices(customer.customer_number);
@@ -507,6 +588,10 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     
     this.customerArticlePrices = []; // Lösche auch die Kunden-Artikel-Preise
     console.log('🗑️ [CLEAR-CUSTOMER] customerArticlePrices zurückgesetzt');
+    
+    // Lösche das Suchfeld und gefilterte Artikel beim Zurücksetzen des Kunden
+    this.clearSearch();
+    console.log('🧹 [CLEAR-CUSTOMER] Suchfeld und gefilterte Artikel geleert');
     
     console.log('✅ [CLEAR-CUSTOMER] Kunde erfolgreich zurückgesetzt');
   }
@@ -729,7 +814,11 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
           };
         } else {
           unchangedCount++;
-          return artikel;
+          return {
+            ...artikel,
+            different_price: undefined, // Stelle sicher, dass keine alten kundenspezifischen Preise übrig bleiben
+            original_price: undefined
+          };
         }
       });
 
@@ -741,14 +830,40 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       this.artikelData = [...this.globalArtikels];
       console.log('💾 [UPDATE-PRICES] artikelData aktualisiert');
       
+      // Aktualisiere IMMER die filteredArtikels, falls bereits gefiltert wurde
+      if (this.searchTerm) {
+        console.log('🔄 [UPDATE-PRICES] Aktualisiere filteredArtikels nach Kundenwechsel...');
+        this.filteredArtikelData();
+      }
+      
       // Aktualisiere die Preise der Artikel im aktuellen Auftrag
       this.updateOrderItemsPrices(customerPriceMap);
       
       console.log('✅ [UPDATE-PRICES] Artikel mit kundenspezifischen Preisen erfolgreich aktualisiert');
     } else {
-      console.log('⚠️ [UPDATE-PRICES] Keine kundenspezifischen Preise vorhanden, überspringe Update');
+      console.log('⚠️ [UPDATE-PRICES] Keine kundenspezifischen Preise vorhanden, setze alle auf Standard-Preise zurück');
+      
+      // Setze alle Artikel auf Standard-Preise zurück
+      this.globalArtikels = this.globalArtikels.map(artikel => ({
+        ...artikel,
+        different_price: undefined,
+        original_price: undefined
+      }));
+      
+      // Aktualisiere auch die artikelData
+      this.artikelData = [...this.globalArtikels];
+      console.log('💾 [UPDATE-PRICES] artikelData auf Standard-Preise zurückgesetzt');
+      
       // Setze alle Preise auf Standard-Preise zurück
       this.resetOrderItemsToStandardPrices();
+      
+      // Aktualisiere auch hier die filteredArtikels, falls bereits gefiltert wurde
+      if (this.searchTerm) {
+        console.log('🔄 [UPDATE-PRICES] Aktualisiere filteredArtikels nach Zurücksetzen der Preise...');
+        this.filteredArtikelData();
+      }
+      
+      console.log('✅ [UPDATE-PRICES] Alle Artikel auf Standard-Preise zurückgesetzt');
     }
   }
 
@@ -790,6 +905,10 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       }
     });
 
+    // Speichere die aktualisierten Aufträge
+    this.globalService.saveCustomerOrders(this.orderItems);
+    console.log('💾 [UPDATE-ORDER-PRICES] Aktualisierte Aufträge gespeichert');
+
     console.log('📊 [UPDATE-ORDER-PRICES] Aktualisierte Auftrag-Artikel:', updatedOrderItems);
     console.log('📊 [UPDATE-ORDER-PRICES] Unveränderte Auftrag-Artikel:', unchangedOrderItems);
     console.log('📊 [UPDATE-ORDER-PRICES] Gesamt Auftrag-Artikel:', this.orderItems.length);
@@ -806,11 +925,15 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       
       return {
         ...orderItem,
-        // sale_price bleibt unverändert
+        sale_price: standardPrice, // Stelle sicher, dass sale_price den Standard-Preis verwendet
         different_price: undefined, // Entferne kundenspezifischen Preis
         original_price: standardPrice
       };
     });
+
+    // Speichere die aktualisierten Aufträge
+    this.globalService.saveCustomerOrders(this.orderItems);
+    console.log('💾 [RESET-ORDER-PRICES] Aktualisierte Aufträge gespeichert');
 
     console.log('✅ [RESET-ORDER-PRICES] Auftrag-Preise erfolgreich zurückgesetzt');
   }
