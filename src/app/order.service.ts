@@ -9,6 +9,7 @@ export class OrderService {
 
   apiUrlOrder = 'https://multi-mandant-ecommerce.onrender.com/api/orders';
   apiUrlAllOrders = 'https://multi-mandant-ecommerce.onrender.com/api/orders/all-orders-pending';
+  apiUrlCustomerPrices = 'https://multi-mandant-ecommerce.onrender.com/api/customer-article-prices';
 
   constructor(private http: HttpClient) { }
 
@@ -33,5 +34,14 @@ export class OrderService {
     });
 
     return this.http.put(this.apiUrlOrder + '/' + orderId, {status}, { headers });
+  }
+
+  getCustomerArticlePrices(customerId: string, token: string | null): Observable<any> {
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    });
+
+    return this.http.get(`${this.apiUrlCustomerPrices}/customer/${customerId}`, { headers });
   }
 }
