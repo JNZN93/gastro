@@ -57,7 +57,6 @@
                   <th>Artikel</th>
                   <th>Art.-Nr.</th>
                   <th>Menge</th>
-                  <th>Standardpreis (€)</th>
                   <th>Kundenpreis (€)</th>
                   <th>Gesamtpreis (€)</th>
                   <th>Aktionen</th>
@@ -71,9 +70,6 @@
                   <td class="article-number">{{ item.article_number }}</td>
                   <td class="quantity">
                     <input type="number" [(ngModel)]="item.quantity" min="1" class="quantity-edit" (change)="updateItemTotal(item)">
-                  </td>
-                  <td class="standard-price">
-                    <span class="price-display">€{{ item.sale_price }}</span>
                   </td>
                   <td class="customer-price">
                     <input type="number" 
@@ -95,7 +91,7 @@
               </tbody>
               <tfoot>
                 <tr class="order-total-row">
-                  <td colspan="6" class="total-label"><strong>Gesamt:</strong></td>
+                  <td colspan="5" class="total-label"><strong>Gesamt:</strong></td>
                   <td class="total-amount"><strong>€{{ getOrderTotal().toFixed(2) }}</strong></td>
                   <td></td>
                 </tr>
