@@ -484,6 +484,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     console.log('🔄 [UPDATE-PRICES] Starte updateArtikelsWithCustomerPrices...');
     console.log('📊 [UPDATE-PRICES] customerArticlePrices Länge:', this.customerArticlePrices.length);
     console.log('📊 [UPDATE-PRICES] globalArtikels Länge:', this.globalArtikels.length);
+    console.log('📊 [UPDATE-PRICES] orderItems Länge:', this.orderItems.length);
     
     if (this.customerArticlePrices.length > 0) {
       console.log('✅ [UPDATE-PRICES] Kundenspezifische Preise vorhanden, erstelle Map...');
@@ -530,9 +531,77 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       this.artikelData = [...this.globalArtikels];
       console.log('💾 [UPDATE-PRICES] artikelData aktualisiert');
       
+      // Aktualisiere die Preise der Artikel im aktuellen Auftrag
+      this.updateOrderItemsPrices(customerPriceMap);
+      
       console.log('✅ [UPDATE-PRICES] Artikel mit kundenspezifischen Preisen erfolgreich aktualisiert');
     } else {
       console.log('⚠️ [UPDATE-PRICES] Keine kundenspezifischen Preise vorhanden, überspringe Update');
+      // Setze alle Preise auf Standard-Preise zurück
+      this.resetOrderItemsToStandardPrices();
     }
+  }
+
+  // Neue Methode zum Aktualisieren der Preise im aktuellen Auftrag
+  private updateOrderItemsPrices(customerPriceMap: Map<string, any>) {
+    console.log('🔄 [UPDATE-ORDER-PRICES] Starte updateOrderItemsPrices...');
+    console.log('📊 [UPDATE-ORDER-PRICES] orderItems Länge:', this.orderItems.length);
+    
+    let updatedOrderItems = 0;
+    let unchangedOrderItems = 0;
+
+    this.orderItems = this.orderItems.map(orderItem => {
+      const customerPrice = customerPriceMap.get(orderItem.article_number);
+      if (customerPrice) {
+        const originalPrice = orderItem.original_price || orderItem.sale_price;
+        const customerNetPrice = parseFloat(customerPrice.unit_price_net);
+        
+        console.log(`💰 [UPDATE-ORDER-PRICES] Auftrag-Artikel ${orderItem.article_number} (${orderItem.article_text}): ${orderItem.sale_price}€ → ${customerNetPrice}€ (Kundenpreis)`);
+        
+        updatedOrderItems++;
+        return {
+          ...orderItem,
+          sale_price: customerNetPrice, // Aktualisiere den aktuellen Preis
+          different_price: customerNetPrice, // Setze den kundenspezifischen Preis
+          original_price: originalPrice // Behalte den ursprünglichen Standard-Preis
+        };
+      } else {
+        // Kein kundenspezifischer Preis verfügbar, verwende Standard-Preis
+        const standardPrice = orderItem.original_price || orderItem.sale_price;
+        console.log(`💰 [UPDATE-ORDER-PRICES] Auftrag-Artikel ${orderItem.article_number} (${orderItem.article_text}): ${orderItem.sale_price}€ → ${standardPrice}€ (Standard-Preis)`);
+        
+        unchangedOrderItems++;
+        return {
+          ...orderItem,
+          sale_price: standardPrice,
+          different_price: undefined, // Entferne kundenspezifischen Preis
+          original_price: standardPrice
+        };
+      }
+    });
+
+    console.log('📊 [UPDATE-ORDER-PRICES] Aktualisierte Auftrag-Artikel:', updatedOrderItems);
+    console.log('📊 [UPDATE-ORDER-PRICES] Unveränderte Auftrag-Artikel:', unchangedOrderItems);
+    console.log('📊 [UPDATE-ORDER-PRICES] Gesamt Auftrag-Artikel:', this.orderItems.length);
+    console.log('✅ [UPDATE-ORDER-PRICES] Auftrag-Preise erfolgreich aktualisiert');
+  }
+
+  // Neue Methode zum Zurücksetzen der Auftrag-Preise auf Standard-Preise
+  private resetOrderItemsToStandardPrices() {
+    console.log('🔄 [RESET-ORDER-PRICES] Setze Auftrag-Preise auf Standard-Preise zurück...');
+    
+    this.orderItems = this.orderItems.map(orderItem => {
+      const standardPrice = orderItem.original_price || orderItem.sale_price;
+      console.log(`💰 [RESET-ORDER-PRICES] Auftrag-Artikel ${orderItem.article_number} (${orderItem.article_text}): ${orderItem.sale_price}€ → ${standardPrice}€ (Standard-Preis)`);
+      
+      return {
+        ...orderItem,
+        sale_price: standardPrice,
+        different_price: undefined, // Entferne kundenspezifischen Preis
+        original_price: standardPrice
+      };
+    });
+
+    console.log('✅ [RESET-ORDER-PRICES] Auftrag-Preise erfolgreich zurückgesetzt');
   }
 }
