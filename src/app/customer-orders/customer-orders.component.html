@@ -5,10 +5,10 @@
     <div class="main-content">
       <!-- Linke Spalte: Auftrag -->
       <div class="order-column">
-        @if (globalService.selectedCustomer) {
+        @if (globalService.selectedCustomerForOrders) {
         <div class="order-section">
           <div class="order-header">
-            <h3>Auftrag für {{ globalService.selectedCustomer.last_name_company || globalService.selectedCustomer.customer_number }}</h3>
+            <h3>Auftrag für {{ globalService.selectedCustomerForOrders.last_name_company || globalService.selectedCustomerForOrders.customer_number }}</h3>
             <button (click)="openCustomerModal()" class="change-customer-btn">
               <span class="material-icons">swap_horiz</span>
               Kunde wechseln
@@ -19,12 +19,12 @@
           <div class="customer-info-box">
             <div class="customer-details">
               <div class="customer-basic-info">
-                <h4>{{ globalService.selectedCustomer.last_name_company || globalService.selectedCustomer.customer_number }}</h4>
-                @if (globalService.selectedCustomer.name_addition) {
-                  <p class="customer-addition">{{ globalService.selectedCustomer.name_addition }}</p>
+                <h4>{{ globalService.selectedCustomerForOrders.last_name_company || globalService.selectedCustomerForOrders.customer_number }}</h4>
+                @if (globalService.selectedCustomerForOrders.name_addition) {
+                  <p class="customer-addition">{{ globalService.selectedCustomerForOrders.name_addition }}</p>
                 }
-                @if (globalService.selectedCustomer.city) {
-                  <p class="customer-location">{{ globalService.selectedCustomer.city }}</p>
+                @if (globalService.selectedCustomerForOrders.city) {
+                  <p class="customer-location">{{ globalService.selectedCustomerForOrders.city }}</p>
                 }
               </div>
               <div class="customer-pricing-info">

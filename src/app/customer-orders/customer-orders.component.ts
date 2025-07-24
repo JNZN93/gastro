@@ -60,6 +60,10 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     this.hideFooter();
     
     this.loadCustomers();
+    
+    // Lade gespeicherte Daten aus localStorage
+    this.loadStoredData();
+    
     const token = localStorage.getItem('token');
     
     navigator.mediaDevices.enumerateDevices().then(devices => {
@@ -123,6 +127,24 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     }
   }
 
+  // Lade gespeicherte Daten aus localStorage
+  private loadStoredData(): void {
+    // Lade gespeicherten Kunden
+    const savedCustomer = this.globalService.loadSelectedCustomerForOrders();
+    if (savedCustomer) {
+      console.log('📱 [LOAD-STORED] Gespeicherter Kunde gefunden:', savedCustomer);
+      // Lade Kunden-Artikel-Preise für den gespeicherten Kunden
+      this.loadCustomerArticlePrices(savedCustomer.customer_number);
+    }
+
+    // Lade gespeicherte Aufträge
+    const savedOrders = this.globalService.loadCustomerOrders();
+    if (savedOrders && savedOrders.length > 0) {
+      console.log('📱 [LOAD-STORED] Gespeicherte Aufträge gefunden:', savedOrders.length);
+      this.orderItems = savedOrders;
+    }
+  }
+
   filteredArtikelData() {
     this.filteredArtikels = [];
     if (this.searchTerm) {
@@ -143,7 +165,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   }
 
   addFirstFilteredArticle() {
-    if (!this.globalService.selectedCustomer) {
+    if (!this.globalService.selectedCustomerForOrders) {
       alert('Bitte wählen Sie zuerst einen Kunden aus.');
       return;
     }
@@ -236,7 +258,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   }
 
   addToOrder(event: Event, artikel: any): void {
-    if (!this.globalService.selectedCustomer) {
+    if (!this.globalService.selectedCustomerForOrders) {
       alert('Bitte wählen Sie zuerst einen Kunden aus.');
       return;
     }
@@ -269,6 +291,9 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
 
     artikel.quantity = '';
 
+    // Speichere Aufträge im localStorage
+    this.globalService.saveCustomerOrders(this.orderItems);
+
     const button = event.target as HTMLElement;
     button.classList.remove('clicked');
     
@@ -289,6 +314,8 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
 
   removeFromOrder(index: number): void {
     this.orderItems.splice(index, 1);
+    // Speichere aktualisierte Aufträge im localStorage
+    this.globalService.saveCustomerOrders(this.orderItems);
   }
 
   getOrderTotal(): number {
@@ -315,7 +342,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   }
 
   saveOrder(): void {
-    if (!this.globalService.selectedCustomer) {
+    if (!this.globalService.selectedCustomerForOrders) {
       alert('Bitte wählen Sie zuerst einen Kunden aus.');
       return;
     }
@@ -326,9 +353,9 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     }
 
     const orderData = {
-      customer_id: this.globalService.selectedCustomer.id,
-      customer_number: this.globalService.selectedCustomer.customer_number,
-      customer_name: this.globalService.selectedCustomer.last_name_company,
+      customer_id: this.globalService.selectedCustomerForOrders.id,
+      customer_number: this.globalService.selectedCustomerForOrders.customer_number,
+      customer_name: this.globalService.selectedCustomerForOrders.last_name_company,
       items: this.orderItems,
       total: this.getOrderTotal(),
       created_at: new Date().toISOString(),
@@ -354,6 +381,9 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     .then(data => {
       alert('Auftrag erfolgreich gespeichert!');
       this.clearOrder();
+      // Lösche alle customer-orders Daten nach erfolgreicher Bestellung
+      this.globalService.clearAllCustomerOrdersData();
+      console.log('🗑️ [SAVE-ORDER] Alle customer-orders Daten nach erfolgreicher Bestellung gelöscht');
     })
     .catch(error => {
       console.error('Fehler beim Speichern des Auftrags:', error);
@@ -363,6 +393,8 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
 
   clearOrder(): void {
     this.orderItems = [];
+    // Lösche auch aus localStorage
+    this.globalService.clearCustomerOrders();
   }
 
   // Customer modal methods
@@ -447,8 +479,8 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     console.log('👤 [SELECT-CUSTOMER] Kundenummer:', customer.customer_number);
     console.log('👤 [SELECT-CUSTOMER] Kundenname:', customer.last_name_company);
     
-    this.globalService.setSelectedCustomer(customer);
-    console.log('💾 [SELECT-CUSTOMER] Kunde im GlobalService gespeichert');
+    this.globalService.setSelectedCustomerForOrders(customer);
+    console.log('💾 [SELECT-CUSTOMER] Kunde im GlobalService und localStorage gespeichert');
     
     this.closeCustomerModal();
     console.log('🔒 [SELECT-CUSTOMER] Customer Modal geschlossen');
@@ -462,8 +494,8 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     console.log('🗑️ [CLEAR-CUSTOMER] Kunde wird zurückgesetzt...');
     console.log('🗑️ [CLEAR-CUSTOMER] Aktuelle customerArticlePrices Länge:', this.customerArticlePrices.length);
     
-    this.globalService.clearSelectedCustomer();
-    console.log('💾 [CLEAR-CUSTOMER] Kunde im GlobalService zurückgesetzt');
+    this.globalService.clearSelectedCustomerForOrders();
+    console.log('💾 [CLEAR-CUSTOMER] Kunde im GlobalService und localStorage zurückgesetzt');
     
     this.clearOrder();
     console.log('🗑️ [CLEAR-CUSTOMER] Auftrag zurückgesetzt');
