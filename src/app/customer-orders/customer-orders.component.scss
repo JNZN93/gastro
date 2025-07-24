@@ -326,13 +326,13 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
-  gap: 12px;
+  margin-bottom: 8px;
+  gap: 8px;
 
   h3 {
     margin: 0;
     color: #333;
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 600;
     flex: 1;
   }
@@ -341,14 +341,14 @@
 .change-customer-btn {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
+  gap: 4px;
+  padding: 4px 8px;
   background-color: #007bff;
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 4px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
   transition: all 0.3s ease;
   white-space: nowrap;
@@ -361,7 +361,7 @@
   }
 
   .material-icons {
-    font-size: 14px;
+    font-size: 12px;
   }
 }
 
@@ -372,10 +372,10 @@
   align-items: flex-start;
   background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
   border: 1px solid #dee2e6;
-  border-radius: 8px;
-  padding: 12px;
-  margin-bottom: 12px;
-  gap: 12px;
+  border-radius: 6px;
+  padding: 8px;
+  margin-bottom: 8px;
+  gap: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
@@ -383,35 +383,35 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
 }
 
 .customer-basic-info {
   h4 {
-    margin: 0 0 2px 0;
+    margin: 0 0 1px 0;
     color: #2c3e50;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
   }
 
   .customer-addition {
     margin: 0 0 1px 0;
     color: #6c757d;
-    font-size: 12px;
+    font-size: 11px;
     font-style: italic;
   }
 
   .customer-location {
     margin: 0;
     color: #495057;
-    font-size: 12px;
+    font-size: 11px;
     display: flex;
     align-items: center;
     gap: 4px;
 
     &::before {
       content: "📍";
-      font-size: 10px;
+      font-size: 9px;
     }
   }
 }
@@ -420,10 +420,10 @@
   .pricing-status {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 6px 8px;
-    border-radius: 6px;
-    font-size: 12px;
+    gap: 4px;
+    padding: 4px 6px;
+    border-radius: 4px;
+    font-size: 11px;
     font-weight: 500;
 
     &.success {
@@ -447,7 +447,7 @@
     }
 
     .material-icons {
-      font-size: 14px;
+      font-size: 12px;
     }
   }
 }
@@ -456,12 +456,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   background-color: #dc3545;
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 4px;
   cursor: pointer;
   transition: all 0.3s ease;
   flex-shrink: 0;
@@ -472,7 +472,7 @@
   }
 
   .material-icons {
-    font-size: 14px;
+    font-size: 12px;
   }
 }
 
@@ -497,7 +497,7 @@
 
   th {
     background-color: #f8f9fa;
-    padding: 8px 12px;
+    padding: 6px 8px;
     text-align: left;
     font-weight: 600;
     color: #333;
@@ -506,17 +506,34 @@
     position: sticky;
     top: 0;
     z-index: 10;
+    height: 28px !important;
+    min-height: 28px !important;
+    max-height: 28px !important;
+    line-height: 1.2;
+    box-sizing: border-box;
   }
 
   td {
-    padding: 6px 12px;
+    padding: 4px 8px;
     border-bottom: 1px solid #e0e0e0;
     vertical-align: middle;
     font-size: 12px;
+    height: 32px !important;
+    min-height: 32px !important;
+    max-height: 32px !important;
+    line-height: 1.2;
+    box-sizing: border-box;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
   }
 
   .order-row {
     transition: background-color 0.3s ease;
+    height: 32px !important;
+    min-height: 32px !important;
+    max-height: 32px !important;
+    box-sizing: border-box;
 
     &:hover {
       background-color: #f8f9fa;
@@ -542,13 +559,17 @@
   }
 
   .quantity-edit, .price-edit {
-    width: 60px;
-    padding: 4px 6px;
+    width: 50px;
+    padding: 2px 4px;
     border: 1px solid #ddd;
-    border-radius: 4px;
+    border-radius: 3px;
     text-align: center;
-    font-size: 12px;
+    font-size: 11px;
     box-sizing: border-box;
+    height: 24px !important;
+    min-height: 24px !important;
+    max-height: 24px !important;
+    line-height: 1;
 
     &:focus {
       border-color: #007bff;
@@ -558,7 +579,7 @@
   }
 
   .price-edit {
-    width: 70px;
+    width: 60px;
   }
 
   .standard-price {
@@ -596,16 +617,26 @@
     border: none;
     color: #dc3545;
     cursor: pointer;
-    padding: 4px;
-    border-radius: 4px;
+    padding: 2px;
+    border-radius: 3px;
     transition: background-color 0.3s ease;
+    width: 20px !important;
+    height: 20px !important;
+    min-width: 20px !important;
+    min-height: 20px !important;
+    max-width: 20px !important;
+    max-height: 20px !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
 
     &:hover {
       background-color: #f8d7da;
     }
 
     .material-icons {
-      font-size: 14px;
+      font-size: 12px;
     }
   }
 
@@ -615,6 +646,10 @@
     position: sticky;
     bottom: 0;
     z-index: 10;
+    height: 32px !important;
+    min-height: 32px !important;
+    max-height: 32px !important;
+    box-sizing: border-box;
 
     .total-label {
       text-align: right;
@@ -624,7 +659,7 @@
     .total-amount {
       text-align: right;
       color: #28a745;
-      font-size: 14px;
+      font-size: 13px;
     }
   }
 
@@ -785,34 +820,34 @@
   .order-header {
     flex-direction: column;
     align-items: stretch;
-    gap: 8px;
+    gap: 6px;
 
     h3 {
       text-align: center;
-      font-size: 14px;
+      font-size: 13px;
     }
   }
 
   .customer-info-box {
     flex-direction: column;
     align-items: stretch;
-    gap: 8px;
-    padding: 8px;
+    gap: 6px;
+    padding: 6px;
 
     .customer-details {
-      gap: 6px;
+      gap: 4px;
     }
 
     .customer-basic-info {
       h4 {
         text-align: center;
-        font-size: 13px;
+        font-size: 12px;
       }
 
       .customer-addition,
       .customer-location {
         text-align: center;
-        font-size: 11px;
+        font-size: 10px;
       }
     }
 
@@ -820,8 +855,8 @@
       .pricing-status {
         justify-content: center;
         text-align: center;
-        font-size: 11px;
-        padding: 4px 6px;
+        font-size: 10px;
+        padding: 3px 5px;
       }
     }
   }
@@ -829,8 +864,8 @@
   .change-customer-btn {
     width: 100%;
     justify-content: center;
-    padding: 6px 8px;
-    font-size: 11px;
+    padding: 4px 6px;
+    font-size: 10px;
   }
 
   .search-container {
@@ -854,36 +889,64 @@
   }
 
   .order-table {
-    font-size: 11px;
+    font-size: 10px;
 
     th, td {
-      padding: 4px 6px;
+      padding: 3px 4px;
+      height: 28px !important;
+      min-height: 28px !important;
+      max-height: 28px !important;
+      box-sizing: border-box;
+    }
+
+    th {
+      height: 24px !important;
+      min-height: 24px !important;
+      max-height: 24px !important;
     }
 
     .article-name {
-      max-width: 100px;
+      max-width: 80px;
     }
 
     .position {
-      width: 30px;
+      width: 25px;
     }
 
     .article-number {
-      width: 60px;
+      width: 50px;
     }
 
     .quantity-edit, .price-edit {
-      width: 50px;
-      padding: 2px 4px;
-      font-size: 11px;
+      width: 40px;
+      padding: 1px 2px;
+      font-size: 10px;
+      height: 20px !important;
+      min-height: 20px !important;
+      max-height: 20px !important;
+      box-sizing: border-box;
     }
 
     .price-edit {
-      width: 60px;
+      width: 50px;
     }
 
     .actions {
-      width: 30px;
+      width: 25px;
+    }
+
+    .remove-btn {
+      width: 18px !important;
+      height: 18px !important;
+      min-width: 18px !important;
+      min-height: 18px !important;
+      max-width: 18px !important;
+      max-height: 18px !important;
+      box-sizing: border-box;
+
+      .material-icons {
+        font-size: 10px;
+      }
     }
   }
 
