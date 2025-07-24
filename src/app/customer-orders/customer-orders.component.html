@@ -71,14 +71,14 @@
                   </td>
                   <td class="unit-price">
                     <input type="number" 
-                           [(ngModel)]="item.sale_price" 
+                           [(ngModel)]="item.different_price" 
                            step="0.01" 
                            min="0" 
                            class="price-edit" 
                            (change)="updateItemTotal(item)"
-                           [placeholder]="item.original_price || item.sale_price">
+                           [placeholder]="item.sale_price">
                   </td>
-                  <td class="total-price">€{{ (item.sale_price * item.quantity).toFixed(2) }}</td>
+                  <td class="total-price">€{{ (getItemPrice(item) * item.quantity).toFixed(2) }}</td>
                   <td class="actions">
                     <button (click)="removeFromOrder(i)" class="remove-btn" title="Entfernen">
                       <span class="material-icons">delete</span>

@@ -256,15 +256,13 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     if (existingItem) {
       existingItem.quantity += Number(artikel.quantity);
     } else {
-      // Verwende different_price falls vorhanden, ansonsten sale_price
-      const priceToUse = artikel.different_price !== undefined ? artikel.different_price : artikel.sale_price;
-      
       this.orderItems = [
         ...this.orderItems,
         { 
           ...artikel, 
-          quantity: Number(artikel.quantity),
-          sale_price: priceToUse // Verwende den korrekten Preis
+          quantity: Number(artikel.quantity)
+          // sale_price bleibt unverändert (Standard-Preis)
+          // different_price bleibt als separates Attribut (falls vorhanden)
         },
       ];
     }
@@ -294,17 +292,25 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   }
 
   getOrderTotal(): number {
-    return this.orderItems.reduce((sum, item) => sum + (item.sale_price * item.quantity), 0);
+    return this.orderItems.reduce((sum, item) => {
+      // Verwende different_price falls vorhanden, ansonsten sale_price
+      const priceToUse = item.different_price !== undefined ? item.different_price : item.sale_price;
+      return sum + (priceToUse * item.quantity);
+    }, 0);
+  }
+
+  // Hilfsmethode um den korrekten Preis für ein orderItem zu bekommen
+  getItemPrice(item: any): number {
+    return item.different_price !== undefined ? item.different_price : item.sale_price;
   }
 
   updateItemTotal(item: any): void {
     // Stelle sicher, dass die Werte numerisch sind
     item.quantity = Number(item.quantity) || 1;
-    item.sale_price = Number(item.sale_price) || 0;
     
     // Aktualisiere den different_price wenn der Preis geändert wurde
-    if (item.original_price && item.sale_price !== item.original_price) {
-      item.different_price = item.sale_price;
+    if (item.different_price !== undefined) {
+      item.different_price = Number(item.different_price) || 0;
     }
   }
 
@@ -610,7 +616,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
         updatedOrderItems++;
         return {
           ...orderItem,
-          sale_price: customerNetPrice, // Aktualisiere den aktuellen Preis
+          // sale_price bleibt unverändert (Standard-Preis)
           different_price: customerNetPrice, // Setze den kundenspezifischen Preis
           original_price: originalPrice // Behalte den ursprünglichen Standard-Preis
         };
@@ -645,7 +651,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       
       return {
         ...orderItem,
-        sale_price: standardPrice,
+        // sale_price bleibt unverändert
         different_price: undefined, // Entferne kundenspezifischen Preis
         original_price: standardPrice
       };
