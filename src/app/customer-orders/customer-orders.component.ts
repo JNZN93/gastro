@@ -316,6 +316,13 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     this.selectedIndex = -1;
   }
 
+  onSearchFocus() {
+    this.showDropdown = this.filteredArtikels.length > 0;
+    if (this.selectedIndex >= 0) {
+      this.scrollToSelectedItem();
+    }
+  }
+
   onArticleClick(artikel: any) {
     this.addToOrder(new Event('click'), artikel);
     this.clearSearch();
@@ -544,7 +551,10 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     };
 
     const token = localStorage.getItem('token');
+
+    console.log('💾 MOCK UP [SAVE-ORDER] Auftrag wird gespeichert:', orderData);
     
+    /*
     fetch('https://multi-mandant-ecommerce.onrender.com/api/orders', {
       method: 'POST',
       headers: {
@@ -570,6 +580,10 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       console.error('Fehler beim Speichern des Auftrags:', error);
       alert('Fehler beim Speichern des Auftrags: ' + error.message);
     });
+
+    */
+
+
   }
 
   clearOrder(): void {
