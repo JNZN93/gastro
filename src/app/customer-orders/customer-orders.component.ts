@@ -581,9 +581,9 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
 
     const token = localStorage.getItem('token');
 
-    console.log('💾 MOCK UP [SAVE-ORDER] Auftrag wird gespeichert:', completeOrder);
+    console.log('💾 [SAVE-ORDER] Auftrag wird gespeichert:', completeOrder);
     alert('Auftrag erfolgreich gespeichert!');
-    /*
+    
     fetch('https://multi-mandant-ecommerce.onrender.com/api/orders', {
       method: 'POST',
       headers: {
@@ -609,8 +609,6 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       console.error('Fehler beim Speichern des Auftrags:', error);
       alert('Fehler beim Speichern des Auftrags: ' + error.message);
     });
-
-    */
 
 
   }
