@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, ViewChild, inject, OnDestroy } from '@angular/core';
+import { Component, OnInit, ViewChild, inject, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { ArtikelDataService } from '../artikel-data.service';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../authentication.service';
@@ -17,6 +17,7 @@ import { BarcodeFormat } from '@zxing/browser';
 })
 export class CustomerOrdersComponent implements OnInit, OnDestroy {
   @ViewChild(ZXingScannerComponent) scanner!: ZXingScannerComponent;
+  @ViewChild('searchInput') searchInput!: any;
   private artikelService = inject(ArtikelDataService);
   artikelData: any[] = [];
   orderItems: any[] = [];
@@ -57,7 +58,8 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   constructor(
     private router: Router,
     private authService: AuthService,
-    public globalService: GlobalService
+    public globalService: GlobalService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -187,8 +189,37 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   }
 
   clearSearch() {
+    console.log('🧹 [CLEAR-SEARCH] Starte clearSearch...');
+    console.log('🧹 [CLEAR-SEARCH] Vorher - searchTerm:', this.searchTerm);
+    console.log('🧹 [CLEAR-SEARCH] Vorher - filteredArtikels Länge:', this.filteredArtikels.length);
+    
+    // Setze searchTerm auf leeren String
     this.searchTerm = '';
+    
+    // Erstelle eine neue Referenz für filteredArtikels, damit Angular die Änderungen erkennt
     this.filteredArtikels = [];
+    
+    // Leere auch das Input-Feld direkt
+    if (this.searchInput && this.searchInput.nativeElement) {
+      this.searchInput.nativeElement.value = '';
+      console.log('🧹 [CLEAR-SEARCH] Input-Feld direkt geleert');
+    }
+    
+    // Erzwinge Angular Change Detection
+    this.cdr.detectChanges();
+    
+    // Zusätzliche Sicherheitsmaßnahme: Leere das Suchfeld nach einem kurzen Delay
+    setTimeout(() => {
+      if (this.searchTerm !== '') {
+        console.log('🔄 [CLEAR-SEARCH] Zusätzliche Sicherheitsmaßnahme: Leere Suchfeld erneut...');
+        this.searchTerm = '';
+        this.cdr.detectChanges();
+      }
+    }, 10);
+    
+    console.log('🧹 [CLEAR-SEARCH] Nachher - searchTerm:', this.searchTerm);
+    console.log('🧹 [CLEAR-SEARCH] Nachher - filteredArtikels Länge:', this.filteredArtikels.length);
+    console.log('✅ [CLEAR-SEARCH] Suchfeld erfolgreich geleert');
   }
 
   addFirstFilteredArticle() {
@@ -212,8 +243,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
         if (foundInGlobal) {
           this.addToOrder(new Event('enter'), foundInGlobal);
           // Leere das Suchfeld nach dem Hinzufügen
-          this.searchTerm = '';
-          this.filteredArtikels = [];
+          this.clearSearch();
           console.log('🧹 [ENTER] Suchfeld geleert (Fallback)');
           return;
         }
@@ -229,8 +259,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       console.log('✅ [ENTER] Einziger Artikel gefunden, füge hinzu:', singleArticle.article_text);
       this.addToOrder(new Event('enter'), singleArticle);
       // Leere das Suchfeld nach dem Hinzufügen
-      this.searchTerm = '';
-      this.filteredArtikels = [];
+      this.clearSearch();
       console.log('🧹 [ENTER] Suchfeld geleert');
       return;
     }
@@ -246,6 +275,9 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     // Füge den ersten gefundenen Artikel hinzu (Fallback)
     const firstArticle = this.filteredArtikels[0];
     this.addToOrder(new Event('enter'), firstArticle);
+    // Leere das Suchfeld nach dem Hinzufügen
+    this.clearSearch();
+    console.log('🧹 [ENTER] Suchfeld geleert (Fallback)');
   }
 
   onCodeResult(result: string) {
@@ -329,22 +361,26 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     // Speichere Aufträge im localStorage
     this.globalService.saveCustomerOrders(this.orderItems);
 
-    const button = event.target as HTMLElement;
-    button.classList.remove('clicked');
-    
-    requestAnimationFrame(() => {
-        button.classList.add('clicked');
-    });
+    // Nur Button-Animation ausführen, wenn event.target existiert (echtes Klick-Event)
+    if (event.target) {
+      const button = event.target as HTMLElement;
+      button.classList.remove('clicked');
+      
+      requestAnimationFrame(() => {
+          button.classList.add('clicked');
+      });
 
-    button.style.backgroundColor = "rgb(255, 102, 0)";
-    button.style.transform = "scale(1.1)";
-    
-    setTimeout(() => {
-      button.style.transform = "scale(1)";
-      button.style.backgroundColor = "#10b981";
-    }, 500);
+      button.style.backgroundColor = "rgb(255, 102, 0)";
+      button.style.transform = "scale(1.1)";
+      
+      setTimeout(() => {
+        button.style.transform = "scale(1)";
+        button.style.backgroundColor = "#10b981";
+      }, 500);
+    }
 
-    this.clearSearch();
+    // Das Suchfeld wird jetzt in addFirstFilteredArticle() geleert
+    // this.clearSearch();
   }
 
   removeFromOrder(index: number): void {

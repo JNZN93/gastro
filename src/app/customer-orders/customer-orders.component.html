@@ -134,7 +134,7 @@
           
           <div class="search-container">
             <div class="search-input-wrapper">
-              <input type="text" [(ngModel)]="searchTerm" (input)="filteredArtikelData()" (keydown.enter)="addFirstFilteredArticle()" placeholder="Artikel suchen..."
+              <input #searchInput type="text" [(ngModel)]="searchTerm" (input)="filteredArtikelData()" (keydown.enter)="addFirstFilteredArticle()" placeholder="Artikel suchen..."
                 class="search-input">
               <button *ngIf="searchTerm" (click)="clearSearch()" class="clear-search">
                 <span class="material-icons">close</span>
