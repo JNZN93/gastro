@@ -179,7 +179,6 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
 
   filteredArtikelData() {
     this.filteredArtikels = [];
-    this.selectedIndex = -1; // Reset selected index when filtering
     this.showDropdown = false;
     
     if (this.searchTerm) {
@@ -196,6 +195,17 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       // Show dropdown if we have results
       this.showDropdown = this.filteredArtikels.length > 0;
       
+      // Automatisch den ersten Artikel auswählen, wenn Ergebnisse vorhanden sind
+      if (this.filteredArtikels.length > 0) {
+        this.selectedIndex = 0;
+        // Kurz warten, damit Angular die DOM-Änderungen verarbeitet hat
+        setTimeout(() => {
+          this.scrollToSelectedItem();
+        }, 50);
+      } else {
+        this.selectedIndex = -1;
+      }
+      
       console.log('🔍 [FILTER] Gefilterte Artikel aktualisiert:', this.filteredArtikels.length);
       if (this.filteredArtikels.length > 0) {
         console.log('🔍 [FILTER] Beispiel Artikel:', {
@@ -205,6 +215,9 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
           different_price: this.filteredArtikels[0].different_price
         });
       }
+    } else {
+      // Wenn kein Suchbegriff vorhanden ist, Reset der Auswahl
+      this.selectedIndex = -1;
     }
   }
 
@@ -318,6 +331,10 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
 
   onSearchFocus() {
     this.showDropdown = this.filteredArtikels.length > 0;
+    // Wenn Artikel vorhanden sind aber keiner ausgewählt ist, wähle den ersten
+    if (this.filteredArtikels.length > 0 && this.selectedIndex === -1) {
+      this.selectedIndex = 0;
+    }
     if (this.selectedIndex >= 0) {
       this.scrollToSelectedItem();
     }
@@ -328,13 +345,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     this.clearSearch();
   }
 
-  // Neue Methode für das erste Auswählen eines Elements
-  onFirstSelection() {
-    if (this.selectedIndex === -1 && this.filteredArtikels.length > 0) {
-      this.selectedIndex = 0;
-      this.scrollToSelectedItem();
-    }
-  }
+
 
   addFirstFilteredArticle() {
     if (!this.globalService.selectedCustomerForOrders) {
