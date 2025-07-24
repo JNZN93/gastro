@@ -26,6 +26,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   globalArtikels: any[] = [];
   filteredArtikels: any[] = [];
   customerArticlePrices: any[] = []; // Neue Property für Kunden-Artikel-Preise
+  pendingCustomerForPriceUpdate: any = null; // Temporärer Kunde für Preis-Updates nach dem Laden der Artikel
   isVisible: boolean = true;
   isScanning = false;
   
@@ -112,6 +113,13 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
             this.globalArtikels = res;
             this.artikelData = res;
             this.isVisible = false;
+            
+            // Nach dem Laden der Artikel: Aktualisiere kundenspezifische Preise falls ein Kunde gespeichert ist
+            if (this.pendingCustomerForPriceUpdate) {
+              console.log('🔄 [INIT] Lade kundenspezifische Preise für gespeicherten Kunden:', this.pendingCustomerForPriceUpdate.customer_number);
+              this.loadCustomerArticlePrices(this.pendingCustomerForPriceUpdate.customer_number);
+              this.pendingCustomerForPriceUpdate = null; // Reset nach dem Laden
+            }
           });
         },
         error: (error) => {
@@ -154,8 +162,8 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     const savedCustomer = this.globalService.loadSelectedCustomerForOrders();
     if (savedCustomer) {
       console.log('📱 [LOAD-STORED] Gespeicherter Kunde gefunden:', savedCustomer);
-      // Lade Kunden-Artikel-Preise für den gespeicherten Kunden
-      this.loadCustomerArticlePrices(savedCustomer.customer_number);
+      // Speichere den Kunden temporär, um ihn nach dem Laden der Artikel zu verwenden
+      this.pendingCustomerForPriceUpdate = savedCustomer;
     }
 
     // Lade gespeicherte Aufträge
