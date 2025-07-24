@@ -31,6 +31,20 @@
   z-index: 99;
 }
 
+// Mobile und kleiner - flex-direction: row !important
+@media (max-width: 767px) {
+  .filter-container {
+    flex-direction: row !important;
+  }
+}
+
+// Tablet und größer - flex-direction: row !important
+@media (min-width: 768px) {
+  .filter-container {
+    flex-direction: row !important;
+  }
+}
+
 .controls {
   display: flex;
   gap: 10px;
@@ -246,6 +260,13 @@
   color: #059669;
   font-weight: 600;
   margin: 0;
+  
+  .customer-price-indicator {
+    color: #e74c3c;
+    font-size: 0.9em;
+    font-weight: 500;
+    margin-left: 8px;
+  }
 }
 
 .search-result-footer {

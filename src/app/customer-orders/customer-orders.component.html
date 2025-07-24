@@ -54,7 +54,13 @@
         <div class="search-result-body">
           <h4 class="search-result-title">{{ artikel.article_text }}</h4>
           <p class="search-result-number">Art.-Nr: {{ artikel.article_number }}</p>
-          <p class="search-result-price">Preis: €{{ artikel.sale_price }}</p>
+          <p class="search-result-price">
+            @if (artikel.different_price !== undefined) {
+              Preis: €{{ artikel.different_price }} <span class="customer-price-indicator">(Kundenpreis)</span>
+            } @else {
+              Preis: €{{ artikel.sale_price }}
+            }
+          </p>
           <div class="search-result-footer">
             <div class="input-main">
               <input type="number" [(ngModel)]="artikel.quantity" placeholder="Menge eingeben" class="quantity-input"

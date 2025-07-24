@@ -183,9 +183,16 @@ export class CustomerOrdersComponent implements OnInit {
     if (existingItem) {
       existingItem.quantity += Number(artikel.quantity);
     } else {
+      // Verwende different_price falls vorhanden, ansonsten sale_price
+      const priceToUse = artikel.different_price !== undefined ? artikel.different_price : artikel.sale_price;
+      
       this.orderItems = [
         ...this.orderItems,
-        { ...artikel, quantity: Number(artikel.quantity) },
+        { 
+          ...artikel, 
+          quantity: Number(artikel.quantity),
+          sale_price: priceToUse // Verwende den korrekten Preis
+        },
       ];
     }
 
@@ -449,7 +456,7 @@ export class CustomerOrdersComponent implements OnInit {
       // Erstelle eine Map für schnellen Zugriff auf die Kunden-Preise
       const customerPriceMap = new Map();
       this.customerArticlePrices.forEach(customerPrice => {
-        customerPriceMap.set(customerPrice.article_number, customerPrice);
+        customerPriceMap.set(customerPrice.product_id, customerPrice);
       });
       
       console.log('🗺️ [UPDATE-PRICES] Customer Price Map erstellt, Größe:', customerPriceMap.size);
@@ -464,14 +471,14 @@ export class CustomerOrdersComponent implements OnInit {
         const customerPrice = customerPriceMap.get(artikel.article_number);
         if (customerPrice) {
           const originalPrice = artikel.sale_price;
-          const newPrice = customerPrice.price;
+          const customerNetPrice = parseFloat(customerPrice.unit_price_net);
           
-          console.log(`💰 [UPDATE-PRICES] Artikel ${artikel.article_number} (${artikel.article_text}): ${originalPrice}€ → ${newPrice}€`);
+          console.log(`💰 [UPDATE-PRICES] Artikel ${artikel.article_number} (${artikel.article_text}): ${originalPrice}€ → ${customerNetPrice}€ (Kundenpreis)`);
           
           updatedCount++;
           return {
             ...artikel,
-            sale_price: newPrice, // Verwende den kundenspezifischen Preis
+            different_price: customerNetPrice, // Füge den kundenspezifischen Preis als different_price hinzu
             original_price: originalPrice // Behalte den ursprünglichen Preis
           };
         } else {
