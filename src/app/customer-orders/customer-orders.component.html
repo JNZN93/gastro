@@ -139,7 +139,7 @@
                      [(ngModel)]="searchTerm" 
                      (input)="filteredArtikelData()" 
                      (keydown)="onKeyDown($event)"
-                     (focus)="showDropdown = filteredArtikels.length > 0"
+                     (focus)="showDropdown = filteredArtikels.length > 0; if(selectedIndex >= 0) scrollToSelectedItem()"
                      placeholder="Artikel suchen..."
                      class="search-input">
               <button *ngIf="searchTerm" (click)="clearSearch()" class="clear-search">
@@ -152,7 +152,7 @@
           </div>
           
           @if (showDropdown && filteredArtikels.length > 0) {
-          <div class="articles-dropdown">
+          <div class="articles-dropdown" #articlesDropdown>
             @for (artikel of filteredArtikels; track $index) {
             <div class="article-dropdown-item" 
                  [class.selected]="selectedIndex === $index"

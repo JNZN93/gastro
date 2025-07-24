@@ -18,6 +18,7 @@ import { BarcodeFormat } from '@zxing/browser';
 export class CustomerOrdersComponent implements OnInit, OnDestroy {
   @ViewChild(ZXingScannerComponent) scanner!: ZXingScannerComponent;
   @ViewChild('searchInput') searchInput!: any;
+  @ViewChild('articlesDropdown') articlesDropdown!: any;
   private artikelService = inject(ArtikelDataService);
   artikelData: any[] = [];
   orderItems: any[] = [];
@@ -254,11 +255,23 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     switch (event.key) {
       case 'ArrowDown':
         event.preventDefault();
-        this.selectedIndex = Math.min(this.selectedIndex + 1, this.filteredArtikels.length - 1);
+        // Wenn noch kein Element ausgewählt ist, wähle das erste
+        if (this.selectedIndex === -1) {
+          this.selectedIndex = 0;
+        } else {
+          this.selectedIndex = Math.min(this.selectedIndex + 1, this.filteredArtikels.length - 1);
+        }
+        this.scrollToSelectedItem();
         break;
       case 'ArrowUp':
         event.preventDefault();
-        this.selectedIndex = Math.max(this.selectedIndex - 1, 0);
+        // Wenn noch kein Element ausgewählt ist, wähle das letzte
+        if (this.selectedIndex === -1) {
+          this.selectedIndex = this.filteredArtikels.length - 1;
+        } else {
+          this.selectedIndex = Math.max(this.selectedIndex - 1, 0);
+        }
+        this.scrollToSelectedItem();
         break;
       case 'Enter':
         event.preventDefault();
@@ -269,6 +282,25 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
         this.hideDropdown();
         break;
     }
+  }
+
+  scrollToSelectedItem() {
+    // Warte kurz, damit Angular die DOM-Änderungen verarbeitet hat
+    setTimeout(() => {
+      if (this.articlesDropdown && this.selectedIndex >= 0) {
+        const dropdownElement = this.articlesDropdown.nativeElement;
+        const selectedElement = dropdownElement.querySelector(`.article-dropdown-item:nth-child(${this.selectedIndex + 1})`);
+        
+        if (selectedElement) {
+          // Scroll zum ausgewählten Element mit sanfter Animation
+          selectedElement.scrollIntoView({
+            behavior: 'smooth',
+            block: 'nearest',
+            inline: 'nearest'
+          });
+        }
+      }
+    }, 50); // Etwas länger warten für bessere DOM-Synchronisation
   }
 
   selectArticle() {
@@ -287,6 +319,14 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   onArticleClick(artikel: any) {
     this.addToOrder(new Event('click'), artikel);
     this.clearSearch();
+  }
+
+  // Neue Methode für das erste Auswählen eines Elements
+  onFirstSelection() {
+    if (this.selectedIndex === -1 && this.filteredArtikels.length > 0) {
+      this.selectedIndex = 0;
+      this.scrollToSelectedItem();
+    }
   }
 
   addFirstFilteredArticle() {
@@ -894,7 +934,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     const apiUrl = `https://multi-mandant-ecommerce.onrender.com/api/customer-article-prices/customer/${customerNumber}`;
     
     console.log('🔗 [CUSTOMER-ARTICLE-PRICES] API URL:', apiUrl);
-    console.log('🔑 [CUSTOMER-ARTICLE-PRICES] Token vorhanden:', !!token);
+    console.log('�� [CUSTOMER-ARTICLE-PRICES] Token vorhanden:', !!token);
     
     fetch(apiUrl, {
       method: 'GET',
