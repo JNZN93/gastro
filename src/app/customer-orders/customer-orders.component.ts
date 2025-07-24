@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, ViewChild, inject } from '@angular/core';
+import { Component, OnInit, ViewChild, inject, OnDestroy } from '@angular/core';
 import { ArtikelDataService } from '../artikel-data.service';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../authentication.service';
@@ -15,7 +15,7 @@ import { BarcodeFormat } from '@zxing/browser';
   templateUrl: './customer-orders.component.html',
   styleUrl: './customer-orders.component.scss',
 })
-export class CustomerOrdersComponent implements OnInit {
+export class CustomerOrdersComponent implements OnInit, OnDestroy {
   @ViewChild(ZXingScannerComponent) scanner!: ZXingScannerComponent;
   private artikelService = inject(ArtikelDataService);
   artikelData: any[] = [];
@@ -56,6 +56,9 @@ export class CustomerOrdersComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    // Footer verstecken
+    this.hideFooter();
+    
     this.loadCustomers();
     const token = localStorage.getItem('token');
     
@@ -96,6 +99,27 @@ export class CustomerOrdersComponent implements OnInit {
       this.isVisible = false;
       console.log('Kein Token gefunden.');
       this.router.navigate(['/login']);
+    }
+  }
+
+  ngOnDestroy(): void {
+    // Footer wieder anzeigen beim Verlassen der Komponente
+    this.showFooter();
+  }
+
+  // Footer verstecken
+  private hideFooter(): void {
+    const footer = document.querySelector('app-footer');
+    if (footer) {
+      (footer as HTMLElement).style.display = 'none';
+    }
+  }
+
+  // Footer anzeigen
+  private showFooter(): void {
+    const footer = document.querySelector('app-footer');
+    if (footer) {
+      (footer as HTMLElement).style.display = 'block';
     }
   }
 
@@ -222,6 +246,17 @@ export class CustomerOrdersComponent implements OnInit {
 
   getOrderTotal(): number {
     return this.orderItems.reduce((sum, item) => sum + (item.sale_price * item.quantity), 0);
+  }
+
+  updateItemTotal(item: any): void {
+    // Stelle sicher, dass die Werte numerisch sind
+    item.quantity = Number(item.quantity) || 1;
+    item.sale_price = Number(item.sale_price) || 0;
+    
+    // Aktualisiere den different_price wenn der Preis geändert wurde
+    if (item.original_price && item.sale_price !== item.original_price) {
+      item.different_price = item.sale_price;
+    }
   }
 
   saveOrder(): void {

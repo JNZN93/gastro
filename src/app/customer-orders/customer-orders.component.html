@@ -1,133 +1,150 @@
 <div class="article-container">
 
-  <div class="filter-wrapper">
-    <div class="filter-container">
-      <div class="controls">
-        <button (click)="startScanner()" [disabled]="isScanning" class="scanner-btn">
-          <span class="material-symbols-outlined">barcode</span>
-        </button>
-      </div>
-      <div class="search-container">
-        <input type="text" [(ngModel)]="searchTerm" (input)="filteredArtikelData()" placeholder="Artikel suchen..."
-          class="search-input">
-        <button *ngIf="searchTerm" (click)="clearSearch()" class="clear-search">
-          <span class="material-icons">close</span>
-        </button>
-      </div>
-      
-      @if (globalService.selectedCustomer) {
-      <div class="selected-customer-info">
-        <span class="material-icons">person</span>
-        <span class="customer-info-text">
-          {{ globalService.selectedCustomer.customer_number }} - {{ globalService.selectedCustomer.last_name_company || 'Kein Name' }}
-        </span>
-        @if (customerArticlePrices.length > 0) {
-        <span class="customer-prices-info">
-          <span class="material-icons">euro</span>
-          Kundenspezifische Preise geladen ({{ customerArticlePrices.length }} Artikel)
-        </span>
-        }
-        <button class="clear-customer-btn" (click)="clearSelectedCustomer()">
-          <span class="material-icons">close</span>
-        </button>
-      </div>
-      }
-    </div>
-  </div>
-
   <div class="content">
-    <!-- Versteckte Artikel für die Suche -->
-    <div class="hidden-artikels" style="display: none;">
-      @for (artikel of artikelData; track $index) {
-      <div class="artikel-item">
-        {{ artikel.article_text }} - {{ artikel.article_number }}
-      </div>
-      }
-    </div>
-
-    <!-- Suchergebnisse für Artikel -->
-    @if (searchTerm && filteredArtikels.length > 0) {
-    <div class="search-results">
-      <h3>Suchergebnisse für "{{ searchTerm }}"</h3>
-      @for (artikel of filteredArtikels; track $index) {
-      <div class="search-result-card">
-        <div class="search-result-body">
-          <h4 class="search-result-title">{{ artikel.article_text }}</h4>
-          <p class="search-result-number">Art.-Nr: {{ artikel.article_number }}</p>
-          <p class="search-result-price">
-            @if (artikel.different_price !== undefined) {
-              Preis: €{{ artikel.different_price }} <span class="customer-price-indicator">(Kundenpreis)</span>
-            } @else {
-              Preis: €{{ artikel.sale_price }}
-            }
-          </p>
-          <div class="search-result-footer">
-            <div class="input-main">
-              <input type="number" [(ngModel)]="artikel.quantity" placeholder="Menge eingeben" class="quantity-input"
-                min="1">
-              <button (click)="addToOrder($event, artikel)" class="add-to-order-btn">Zum Auftrag hinzufügen</button>
+    <!-- Hauptbereich mit zwei Spalten -->
+    <div class="main-content">
+      <!-- Linke Spalte: Auftrag -->
+      <div class="order-column">
+        @if (globalService.selectedCustomer) {
+        <div class="order-section">
+          <h3>Auftrag für {{ globalService.selectedCustomer.last_name_company || globalService.selectedCustomer.customer_number }}</h3>
+          
+          @if (orderItems.length > 0) {
+          <div class="order-table-container">
+            <table class="order-table">
+              <thead>
+                <tr>
+                  <th>Pos.</th>
+                  <th>Artikel</th>
+                  <th>Art.-Nr.</th>
+                  <th>Menge</th>
+                  <th>Einzelpreis (€)</th>
+                  <th>Gesamtpreis (€)</th>
+                  <th>Aktionen</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of orderItems; track $index; let i = $index) {
+                <tr class="order-row">
+                  <td class="position">{{ i + 1 }}</td>
+                  <td class="article-name">{{ item.article_text }}</td>
+                  <td class="article-number">{{ item.article_number }}</td>
+                  <td class="quantity">
+                    <input type="number" [(ngModel)]="item.quantity" min="1" class="quantity-edit" (change)="updateItemTotal(item)">
+                  </td>
+                  <td class="unit-price">
+                    <input type="number" 
+                           [(ngModel)]="item.sale_price" 
+                           step="0.01" 
+                           min="0" 
+                           class="price-edit" 
+                           (change)="updateItemTotal(item)"
+                           [placeholder]="item.original_price || item.sale_price">
+                  </td>
+                  <td class="total-price">€{{ (item.sale_price * item.quantity).toFixed(2) }}</td>
+                  <td class="actions">
+                    <button (click)="removeFromOrder(i)" class="remove-btn" title="Entfernen">
+                      <span class="material-icons">delete</span>
+                    </button>
+                  </td>
+                </tr>
+                }
+              </tbody>
+              <tfoot>
+                <tr class="order-total-row">
+                  <td colspan="5" class="total-label"><strong>Gesamt:</strong></td>
+                  <td class="total-amount"><strong>€{{ getOrderTotal().toFixed(2) }}</strong></td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+            
+            <div class="order-actions">
+              <button (click)="saveOrder()" class="save-order-btn">
+                <span class="material-icons">save</span>
+                Auftrag speichern
+              </button>
+              <button (click)="clearOrder()" class="clear-order-btn">
+                <span class="material-icons">clear</span>
+                Auftrag löschen
+              </button>
             </div>
           </div>
+          } @else {
+          <div class="no-items">
+            <p>Noch keine Artikel im Auftrag. Suchen Sie nach Artikeln und fügen Sie sie hinzu.</p>
+          </div>
+          }
         </div>
-      </div>
-      }
-    </div>
-    }
-
-    <!-- Auftragszusammenfassung -->
-    @if (globalService.selectedCustomer) {
-    <div class="order-summary">
-      <h3>Auftrag für {{ globalService.selectedCustomer.last_name_company || globalService.selectedCustomer.customer_number }}</h3>
-      
-      @if (orderItems.length > 0) {
-      <div class="order-items">
-        @for (item of orderItems; track $index) {
-        <div class="order-item">
-          <div class="order-item-info">
-            <span class="order-item-name">{{ item.article_text }}</span>
-            <span class="order-item-number">({{ item.article_number }})</span>
-          </div>
-          <div class="order-item-controls">
-            <span class="order-item-quantity">{{ item.quantity }}x</span>
-            <span class="order-item-price">€{{ (item.sale_price * item.quantity).toFixed(2) }}</span>
-            <button (click)="removeFromOrder($index)" class="remove-item-btn">
-              <span class="material-icons">delete</span>
-            </button>
-          </div>
+        } @else {
+        <div class="no-customer-selected">
+          <h3>Auftragserstellung</h3>
+          <p>Bitte wählen Sie zuerst einen Kunden aus, um einen Auftrag zu erstellen.</p>
+          <button (click)="openCustomerModal()" class="select-customer-btn">
+            <span class="material-icons">people</span>
+            Kunde auswählen
+          </button>
         </div>
         }
-        
-        <div class="order-total">
-          <strong>Gesamt: €{{ getOrderTotal().toFixed(2) }}</strong>
-        </div>
-        
-        <div class="order-actions">
-          <button (click)="saveOrder()" class="save-order-btn">
-            <span class="material-icons">save</span>
-            Auftrag speichern
-          </button>
-          <button (click)="clearOrder()" class="clear-order-btn">
-            <span class="material-icons">clear</span>
-            Auftrag löschen
-          </button>
+      </div>
+
+      <!-- Rechte Spalte: Artikelauswahl -->
+      <div class="articles-column">
+        <div class="articles-section">
+          <h3>Artikelauswahl</h3>
+          
+          <div class="search-container">
+            <div class="search-input-wrapper">
+              <input type="text" [(ngModel)]="searchTerm" (input)="filteredArtikelData()" placeholder="Artikel suchen..."
+                class="search-input">
+              <button *ngIf="searchTerm" (click)="clearSearch()" class="clear-search">
+                <span class="material-icons">close</span>
+              </button>
+            </div>
+            <button (click)="startScanner()" [disabled]="isScanning" class="scanner-btn">
+              <span class="material-symbols-outlined">barcode</span>
+            </button>
+          </div>
+          
+          @if (searchTerm && filteredArtikels.length > 0) {
+          <div class="articles-list">
+            @for (artikel of filteredArtikels; track $index) {
+            <div class="article-list-item">
+              <div class="article-info">
+                <div class="article-details">
+                  <h4 class="article-title">{{ artikel.article_text }}</h4>
+                  <p class="article-number">Art.-Nr: {{ artikel.article_number }}</p>
+                  <p class="article-price">
+                    @if (artikel.different_price !== undefined) {
+                      <span class="customer-price">€{{ artikel.different_price }}</span>
+                      <span class="original-price">(Standard: €{{ artikel.sale_price }})</span>
+                    } @else {
+                      <span class="standard-price">€{{ artikel.sale_price }}</span>
+                    }
+                  </p>
+                </div>
+                <div class="article-actions">
+                  <input type="number" [(ngModel)]="artikel.quantity" placeholder="Menge" class="quantity-input" min="1">
+                  <button (click)="addToOrder($event, artikel)" class="add-to-order-btn">
+                    <span class="material-icons">add_shopping_cart</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+            }
+          </div>
+          } @else if (!searchTerm) {
+          <div class="no-search">
+            <p>Geben Sie einen Suchbegriff ein, um Artikel zu finden.</p>
+          </div>
+          } @else {
+          <div class="no-results">
+            <p>Keine Artikel für "{{ searchTerm }}" gefunden.</p>
+          </div>
+          }
         </div>
       </div>
-      } @else {
-      <div class="no-items">
-        <p>Noch keine Artikel im Auftrag. Suchen Sie nach Artikeln und fügen Sie sie hinzu.</p>
-      </div>
-      }
     </div>
-    } @else {
-    <div class="no-customer-selected">
-      <h3>Auftragserstellung</h3>
-      <p>Bitte wählen Sie zuerst einen Kunden aus, um einen Auftrag zu erstellen.</p>
-      <button (click)="openCustomerModal()" class="select-customer-btn">
-        <span class="material-icons">people</span>
-        Kunde auswählen
-      </button>
-    </div>
-    }
   </div>
 
 </div>
