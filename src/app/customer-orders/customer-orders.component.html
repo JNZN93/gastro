@@ -7,7 +7,44 @@
       <div class="order-column">
         @if (globalService.selectedCustomer) {
         <div class="order-section">
-          <h3>Auftrag für {{ globalService.selectedCustomer.last_name_company || globalService.selectedCustomer.customer_number }}</h3>
+          <div class="order-header">
+            <h3>Auftrag für {{ globalService.selectedCustomer.last_name_company || globalService.selectedCustomer.customer_number }}</h3>
+            <button (click)="openCustomerModal()" class="change-customer-btn">
+              <span class="material-icons">swap_horiz</span>
+              Kunde wechseln
+            </button>
+          </div>
+          
+          <!-- Kunden-Info-Box -->
+          <div class="customer-info-box">
+            <div class="customer-details">
+              <div class="customer-basic-info">
+                <h4>{{ globalService.selectedCustomer.last_name_company || globalService.selectedCustomer.customer_number }}</h4>
+                @if (globalService.selectedCustomer.name_addition) {
+                  <p class="customer-addition">{{ globalService.selectedCustomer.name_addition }}</p>
+                }
+                @if (globalService.selectedCustomer.city) {
+                  <p class="customer-location">{{ globalService.selectedCustomer.city }}</p>
+                }
+              </div>
+              <div class="customer-pricing-info">
+                @if (customerArticlePrices.length > 0) {
+                  <div class="pricing-status success">
+                    <span class="material-icons">check_circle</span>
+                    <span>{{ customerArticlePrices.length }} kundenspezifische Preise verfügbar</span>
+                  </div>
+                } @else {
+                  <div class="pricing-status standard">
+                    <span class="material-icons">info</span>
+                    <span>Standard-Preise werden verwendet</span>
+                  </div>
+                }
+              </div>
+            </div>
+            <button (click)="clearSelectedCustomer()" class="clear-customer-btn" title="Kunde entfernen">
+              <span class="material-icons">close</span>
+            </button>
+          </div>
           
           @if (orderItems.length > 0) {
           <div class="order-table-container">
@@ -95,7 +132,7 @@
           
           <div class="search-container">
             <div class="search-input-wrapper">
-              <input type="text" [(ngModel)]="searchTerm" (input)="filteredArtikelData()" placeholder="Artikel suchen..."
+              <input type="text" [(ngModel)]="searchTerm" (input)="filteredArtikelData()" (keydown.enter)="addFirstFilteredArticle()" placeholder="Artikel suchen..."
                 class="search-input">
               <button *ngIf="searchTerm" (click)="clearSearch()" class="clear-search">
                 <span class="material-icons">close</span>

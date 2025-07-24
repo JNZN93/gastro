@@ -142,6 +142,55 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     this.filteredArtikels = [];
   }
 
+  addFirstFilteredArticle() {
+    if (!this.globalService.selectedCustomer) {
+      alert('Bitte wählen Sie zuerst einen Kunden aus.');
+      return;
+    }
+
+    if (this.filteredArtikels.length === 0) {
+      // Wenn keine Artikel gefunden wurden, versuche es mit der globalen Artikelliste
+      if (this.searchTerm) {
+        const terms = this.searchTerm.toLowerCase().split(/\s+/);
+        const foundInGlobal = this.globalArtikels.find((artikel) =>
+          terms.every((term) =>
+            artikel.article_text.toLowerCase().includes(term) ||
+            artikel.article_number?.toLowerCase().includes(term) ||
+            artikel.ean?.toLowerCase().includes(term)
+          )
+        );
+        
+        if (foundInGlobal) {
+          this.addToOrder(new Event('enter'), foundInGlobal);
+          return;
+        }
+      }
+      
+      alert('Kein Artikel für "' + this.searchTerm + '" gefunden.');
+      return;
+    }
+
+    // Wenn nur ein Artikel gefunden wurde, füge ihn direkt hinzu
+    if (this.filteredArtikels.length === 1) {
+      const singleArticle = this.filteredArtikels[0];
+      console.log('✅ [ENTER] Einziger Artikel gefunden, füge hinzu:', singleArticle.article_text);
+      this.addToOrder(new Event('enter'), singleArticle);
+      return;
+    }
+
+    // Wenn mehrere Artikel gefunden wurden, zeige eine Auswahl
+    if (this.filteredArtikels.length > 1) {
+      const articleNames = this.filteredArtikels.slice(0, 5).map(a => a.article_text).join('\n');
+      const message = `Mehrere Artikel gefunden. Bitte wählen Sie einen aus:\n\n${articleNames}${this.filteredArtikels.length > 5 ? '\n... und weitere' : ''}`;
+      alert(message);
+      return;
+    }
+
+    // Füge den ersten gefundenen Artikel hinzu (Fallback)
+    const firstArticle = this.filteredArtikels[0];
+    this.addToOrder(new Event('enter'), firstArticle);
+  }
+
   onCodeResult(result: string) {
     this.playBeep();
     this.stopScanner();
