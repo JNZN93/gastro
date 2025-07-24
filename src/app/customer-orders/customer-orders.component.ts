@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, ViewChild, inject, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ViewChild, inject, OnDestroy, ChangeDetectorRef, HostListener } from '@angular/core';
 import { ArtikelDataService } from '../artikel-data.service';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../authentication.service';
@@ -27,6 +27,10 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   customerArticlePrices: any[] = []; // Neue Property für Kunden-Artikel-Preise
   isVisible: boolean = true;
   isScanning = false;
+  
+  // Neue Properties für Dropdown-Navigation
+  selectedIndex: number = -1;
+  showDropdown: boolean = false;
   
   // Customer modal properties
   isCustomerModalOpen: boolean = false;
@@ -61,6 +65,15 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     public globalService: GlobalService,
     private cdr: ChangeDetectorRef
   ) {}
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: Event) {
+    // Schließe das Dropdown, wenn außerhalb geklickt wird
+    const target = event.target as HTMLElement;
+    if (!target.closest('.search-input-wrapper') && !target.closest('.articles-dropdown')) {
+      this.hideDropdown();
+    }
+  }
 
   ngOnInit(): void {
     // Footer verstecken
@@ -165,6 +178,9 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
 
   filteredArtikelData() {
     this.filteredArtikels = [];
+    this.selectedIndex = -1; // Reset selected index when filtering
+    this.showDropdown = false;
+    
     if (this.searchTerm) {
       const terms = this.searchTerm.toLowerCase().split(/\s+/);
       // Erstelle eine neue Referenz für filteredArtikels, damit Angular die Änderungen erkennt
@@ -175,6 +191,9 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
           artikel.ean?.toLowerCase().includes(term)
         )
       )];
+      
+      // Show dropdown if we have results
+      this.showDropdown = this.filteredArtikels.length > 0;
       
       console.log('🔍 [FILTER] Gefilterte Artikel aktualisiert:', this.filteredArtikels.length);
       if (this.filteredArtikels.length > 0) {
@@ -199,6 +218,10 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     // Erstelle eine neue Referenz für filteredArtikels, damit Angular die Änderungen erkennt
     this.filteredArtikels = [];
     
+    // Hide dropdown and reset selection
+    this.showDropdown = false;
+    this.selectedIndex = -1;
+    
     // Leere auch das Input-Feld direkt
     if (this.searchInput && this.searchInput.nativeElement) {
       this.searchInput.nativeElement.value = '';
@@ -220,6 +243,50 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     console.log('🧹 [CLEAR-SEARCH] Nachher - searchTerm:', this.searchTerm);
     console.log('🧹 [CLEAR-SEARCH] Nachher - filteredArtikels Länge:', this.filteredArtikels.length);
     console.log('✅ [CLEAR-SEARCH] Suchfeld erfolgreich geleert');
+  }
+
+  // Neue Methoden für Tastatur-Navigation
+  onKeyDown(event: KeyboardEvent) {
+    if (!this.showDropdown || this.filteredArtikels.length === 0) {
+      return;
+    }
+
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault();
+        this.selectedIndex = Math.min(this.selectedIndex + 1, this.filteredArtikels.length - 1);
+        break;
+      case 'ArrowUp':
+        event.preventDefault();
+        this.selectedIndex = Math.max(this.selectedIndex - 1, 0);
+        break;
+      case 'Enter':
+        event.preventDefault();
+        this.selectArticle();
+        break;
+      case 'Escape':
+        event.preventDefault();
+        this.hideDropdown();
+        break;
+    }
+  }
+
+  selectArticle() {
+    if (this.selectedIndex >= 0 && this.selectedIndex < this.filteredArtikels.length) {
+      const selectedArticle = this.filteredArtikels[this.selectedIndex];
+      this.addToOrder(new Event('enter'), selectedArticle);
+      this.clearSearch();
+    }
+  }
+
+  hideDropdown() {
+    this.showDropdown = false;
+    this.selectedIndex = -1;
+  }
+
+  onArticleClick(artikel: any) {
+    this.addToOrder(new Event('click'), artikel);
+    this.clearSearch();
   }
 
   addFirstFilteredArticle() {
@@ -264,11 +331,14 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Wenn mehrere Artikel gefunden wurden, zeige eine Auswahl
+    // Wenn mehrere Artikel gefunden wurden, verwende die Dropdown-Navigation
     if (this.filteredArtikels.length > 1) {
-      const articleNames = this.filteredArtikels.slice(0, 5).map(a => a.article_text).join('\n');
-      const message = `Mehrere Artikel gefunden. Bitte wählen Sie einen aus:\n\n${articleNames}${this.filteredArtikels.length > 5 ? '\n... und weitere' : ''}`;
-      alert(message);
+      // Wenn kein Artikel ausgewählt ist, wähle den ersten
+      if (this.selectedIndex === -1) {
+        this.selectedIndex = 0;
+      }
+      // Verwende die selectArticle Methode
+      this.selectArticle();
       return;
     }
 

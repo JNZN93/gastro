@@ -134,8 +134,14 @@
           
           <div class="search-container">
             <div class="search-input-wrapper">
-              <input #searchInput type="text" [(ngModel)]="searchTerm" (input)="filteredArtikelData()" (keydown.enter)="addFirstFilteredArticle()" placeholder="Artikel suchen..."
-                class="search-input">
+              <input #searchInput 
+                     type="text" 
+                     [(ngModel)]="searchTerm" 
+                     (input)="filteredArtikelData()" 
+                     (keydown)="onKeyDown($event)"
+                     (focus)="showDropdown = filteredArtikels.length > 0"
+                     placeholder="Artikel suchen..."
+                     class="search-input">
               <button *ngIf="searchTerm" (click)="clearSearch()" class="clear-search">
                 <span class="material-icons">close</span>
               </button>
@@ -145,10 +151,12 @@
             </button>
           </div>
           
-          @if (searchTerm && filteredArtikels.length > 0) {
-          <div class="articles-list">
+          @if (showDropdown && filteredArtikels.length > 0) {
+          <div class="articles-dropdown">
             @for (artikel of filteredArtikels; track $index) {
-            <div class="article-list-item">
+            <div class="article-dropdown-item" 
+                 [class.selected]="selectedIndex === $index"
+                 (click)="onArticleClick(artikel)">
               <div class="article-info">
                 <div class="article-details">
                   <h4 class="article-title">{{ artikel.article_text }}</h4>
@@ -163,8 +171,8 @@
                   </p>
                 </div>
                 <div class="article-actions">
-                  <input type="number" [(ngModel)]="artikel.quantity" placeholder="Menge" class="quantity-input" min="1">
-                  <button (click)="addToOrder($event, artikel)" class="add-to-order-btn">
+                  <input type="number" [(ngModel)]="artikel.quantity" placeholder="Menge" class="quantity-input" min="1" (click)="$event.stopPropagation()">
+                  <button (click)="addToOrder($event, artikel); $event.stopPropagation()" class="add-to-order-btn">
                     <span class="material-icons">add_shopping_cart</span>
                   </button>
                 </div>
