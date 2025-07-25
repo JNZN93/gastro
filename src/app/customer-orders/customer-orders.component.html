@@ -266,9 +266,17 @@
               <td class="invoice-id">{{ customerPrice.invoice_id || '-' }}</td>
               <td class="invoice-date">{{ formatInvoiceDate(customerPrice.invoice_date) }}</td>
               <td class="action">
-                <button (click)="addArticleFromPricesModal(customerPrice)" class="add-article-btn" title="Zum Auftrag hinzufügen">
-                  <span class="material-icons">add_shopping_cart</span>
-                </button>
+                <div class="add-article-controls">
+                  <input type="number" 
+                         [(ngModel)]="customerPrice.tempQuantity" 
+                         min="1" 
+                         class="quantity-input" 
+                         placeholder="1"
+                         (keyup.enter)="addArticleFromPricesModal(customerPrice)">
+                  <button (click)="addArticleFromPricesModal(customerPrice)" class="add-article-btn" title="Zum Auftrag hinzufügen">
+                    <span class="material-icons">add_shopping_cart</span>
+                  </button>
+                </div>
               </td>
             </tr>
             }

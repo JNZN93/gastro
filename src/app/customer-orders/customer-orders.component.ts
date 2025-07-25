@@ -1058,10 +1058,13 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     }
     
     if (artikel) {
+      // Verwende die eingegebene Menge oder Standard 1
+      const quantity = customerPrice.tempQuantity && customerPrice.tempQuantity > 0 ? parseInt(customerPrice.tempQuantity) : 1;
+      
       // Erstelle einen neuen Auftrag-Artikel mit den kundenspezifischen Preisen
       const orderItem = {
         ...artikel,
-        quantity: 1,
+        quantity: quantity,
         different_price: parseFloat(customerPrice.unit_price_net),
         original_price: artikel.sale_price
       };
@@ -1076,7 +1079,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
         );
 
         if (existingItem) {
-          existingItem.quantity += 1;
+          existingItem.quantity += quantity;
         } else {
           this.orderItems.push(orderItem);
         }
@@ -1086,6 +1089,9 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       this.globalService.saveCustomerOrders(this.orderItems);
       
       console.log('✅ [ARTICLE-PRICES-MODAL] Artikel erfolgreich zum Auftrag hinzugefügt');
+      
+      // Setze die temporäre Menge zurück
+      customerPrice.tempQuantity = null;
       
       // Schließe das Modal
       this.closeArticlePricesModal();

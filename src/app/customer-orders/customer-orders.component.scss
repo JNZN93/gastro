@@ -1483,6 +1483,25 @@
       font-size: 13px;
     }
   }
+  
+  // Responsive Anpassungen für Mengen-Eingabe
+  .add-article-controls {
+    gap: 4px;
+    
+    .quantity-input {
+      width: 50px;
+      padding: 4px 6px;
+      font-size: 12px;
+    }
+    
+    .add-article-btn {
+      padding: 4px 6px;
+      
+      .material-icons {
+        font-size: 14px;
+      }
+    }
+  }
 }
 
 .price-input-container {
@@ -1497,6 +1516,53 @@
     &.custom-price {
       background-color: #fff3cd;
       border-color: #ffc107;
+    }
+  }
+}
+
+// Styles für die Mengen-Eingabe im Article Prices Modal
+.add-article-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  
+  .quantity-input {
+    width: 60px;
+    padding: 6px 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    text-align: center;
+    
+    &:focus {
+      outline: none;
+      border-color: #007bff;
+      box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+    }
+    
+    &::placeholder {
+      color: #999;
+    }
+  }
+  
+  .add-article-btn {
+    padding: 6px 8px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+    
+    &:hover {
+      background-color: #218838;
+    }
+    
+    .material-icons {
+      font-size: 16px;
     }
   }
 }
