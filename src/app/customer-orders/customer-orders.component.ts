@@ -474,13 +474,8 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       artikel.quantity = 1;
     }
 
-    const existingItem = this.orderItems.find(
-      (item) => item.article_number == artikel.article_number
-    );
-
-    if (existingItem) {
-      existingItem.quantity += Number(artikel.quantity);
-    } else {
+    // Spezielle Behandlung für PFAND-Kategorie: Immer als neue Position hinzufügen
+    if (artikel.category === 'PFAND') {
       this.orderItems = [
         ...this.orderItems,
         { 
@@ -490,6 +485,25 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
           // different_price bleibt als separates Attribut (falls vorhanden)
         },
       ];
+    } else {
+      // Normale Behandlung für alle anderen Kategorien: Summieren wenn gleiche Artikelnummer
+      const existingItem = this.orderItems.find(
+        (item) => item.article_number == artikel.article_number
+      );
+
+      if (existingItem) {
+        existingItem.quantity += Number(artikel.quantity);
+      } else {
+        this.orderItems = [
+          ...this.orderItems,
+          { 
+            ...artikel, 
+            quantity: Number(artikel.quantity)
+            // sale_price bleibt unverändert (Standard-Preis)
+            // different_price bleibt als separates Attribut (falls vorhanden)
+          },
+        ];
+      }
     }
 
     artikel.quantity = '';
@@ -989,8 +1003,21 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
         original_price: artikel.sale_price
       };
       
-      // Füge zum Auftrag hinzu
-      this.orderItems.push(orderItem);
+      // Spezielle Behandlung für PFAND-Kategorie: Immer als neue Position hinzufügen
+      if (artikel.category === 'PFAND') {
+        this.orderItems.push(orderItem);
+      } else {
+        // Normale Behandlung für alle anderen Kategorien: Summieren wenn gleiche Artikelnummer
+        const existingItem = this.orderItems.find(
+          (item) => item.article_number == artikel.article_number
+        );
+
+        if (existingItem) {
+          existingItem.quantity += 1;
+        } else {
+          this.orderItems.push(orderItem);
+        }
+      }
       
       // Speichere den Zustand
       this.globalService.saveCustomerOrders(this.orderItems);
