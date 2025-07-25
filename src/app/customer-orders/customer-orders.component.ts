@@ -1117,6 +1117,27 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
         }
       }
       
+      // Speichere die Menge vor dem Zurücksetzen für PFAND-Prüfung
+      const originalQuantity = quantity;
+      
+      // Prüfe nach dem Hinzufügen des Artikels, ob PFAND benötigt wird
+      if (artikel.custom_field_1) {
+        const pfandArtikels = this.globalService.getPfandArtikels();
+        const matchingPfand = pfandArtikels.find(pfand => pfand.article_number === artikel.custom_field_1);
+        
+        if (matchingPfand) {
+          const userConfirmed = confirm(`Möchten Sie auch das entsprechende PFAND "${matchingPfand.article_text}" hinzufügen?`);
+          if (userConfirmed) {
+            // PFAND-Artikel zum Auftrag hinzufügen (gleiche Menge wie das Produkt)
+            this.orderItems.push({ 
+              ...matchingPfand, 
+              quantity: originalQuantity
+            });
+            console.log('✅ [PFAND-ADD] PFAND-Artikel automatisch hinzugefügt:', matchingPfand.article_text, 'Menge:', originalQuantity);
+          }
+        }
+      }
+      
       // Speichere den Zustand
       this.globalService.saveCustomerOrders(this.orderItems);
       
