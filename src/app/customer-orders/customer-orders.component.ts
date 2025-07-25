@@ -47,6 +47,11 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   isArticlePricesModalOpen: boolean = false;
   articlePricesSearchTerm: string = '';
   filteredArticlePrices: any[] = [];
+  
+  // Edit mode properties
+  editingItemIndex: number = -1;
+  editingItemQuantity: number = 1;
+  
   availableDevices: MediaDeviceInfo[] = [];
   selectedDevice?: MediaDeviceInfo;
   formatsEnabled: BarcodeFormat[] = [
@@ -241,6 +246,12 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     console.log('🧹 [CLEAR-SEARCH] Vorher - searchTerm:', this.searchTerm);
     console.log('🧹 [CLEAR-SEARCH] Vorher - filteredArtikels Länge:', this.filteredArtikels.length);
     
+    // If in edit mode, cancel it when clearing search
+    if (this.editingItemIndex !== -1) {
+      this.cancelEditItem();
+      return;
+    }
+    
     // Setze searchTerm auf leeren String
     this.searchTerm = '';
     
@@ -276,6 +287,15 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
 
   // Neue Methoden für Tastatur-Navigation
   onKeyDown(event: KeyboardEvent) {
+    // Handle Escape key for edit mode
+    if (event.key === 'Escape') {
+      if (this.editingItemIndex !== -1) {
+        event.preventDefault();
+        this.cancelEditItem();
+        return;
+      }
+    }
+
     if (!this.showDropdown || this.filteredArtikels.length === 0) {
       return;
     }
@@ -335,7 +355,10 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     if (this.selectedIndex >= 0 && this.selectedIndex < this.filteredArtikels.length) {
       const selectedArticle = this.filteredArtikels[this.selectedIndex];
       this.addToOrder(new Event('enter'), selectedArticle);
-      this.clearSearch();
+      // Only clear search if not in edit mode
+      if (this.editingItemIndex === -1) {
+        this.clearSearch();
+      }
     }
   }
 
@@ -353,11 +376,19 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     if (this.selectedIndex >= 0) {
       this.scrollToSelectedItem();
     }
+    
+    // If in edit mode, ensure dropdown is shown when focusing
+    if (this.editingItemIndex !== -1 && this.searchTerm) {
+      this.showDropdown = true;
+    }
   }
 
   onArticleClick(artikel: any) {
     this.addToOrder(new Event('click'), artikel);
-    this.clearSearch();
+    // Only clear search if not in edit mode
+    if (this.editingItemIndex === -1) {
+      this.clearSearch();
+    }
   }
 
 
@@ -382,9 +413,11 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
         
         if (foundInGlobal) {
           this.addToOrder(new Event('enter'), foundInGlobal);
-          // Leere das Suchfeld nach dem Hinzufügen
-          this.clearSearch();
-          console.log('🧹 [ENTER] Suchfeld geleert (Fallback)');
+          // Leere das Suchfeld nach dem Hinzufügen nur wenn nicht im Bearbeitungsmodus
+          if (this.editingItemIndex === -1) {
+            this.clearSearch();
+            console.log('🧹 [ENTER] Suchfeld geleert (Fallback)');
+          }
           return;
         }
       }
@@ -398,9 +431,11 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       const singleArticle = this.filteredArtikels[0];
       console.log('✅ [ENTER] Einziger Artikel gefunden, füge hinzu:', singleArticle.article_text);
       this.addToOrder(new Event('enter'), singleArticle);
-      // Leere das Suchfeld nach dem Hinzufügen
-      this.clearSearch();
-      console.log('🧹 [ENTER] Suchfeld geleert');
+      // Leere das Suchfeld nach dem Hinzufügen nur wenn nicht im Bearbeitungsmodus
+      if (this.editingItemIndex === -1) {
+        this.clearSearch();
+        console.log('🧹 [ENTER] Suchfeld geleert');
+      }
       return;
     }
 
@@ -418,9 +453,11 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     // Füge den ersten gefundenen Artikel hinzu (Fallback)
     const firstArticle = this.filteredArtikels[0];
     this.addToOrder(new Event('enter'), firstArticle);
-    // Leere das Suchfeld nach dem Hinzufügen
-    this.clearSearch();
-    console.log('🧹 [ENTER] Suchfeld geleert (Fallback)');
+    // Leere das Suchfeld nach dem Hinzufügen nur wenn nicht im Bearbeitungsmodus
+    if (this.editingItemIndex === -1) {
+      this.clearSearch();
+      console.log('🧹 [ENTER] Suchfeld geleert (Fallback)');
+    }
   }
 
   onCodeResult(result: string) {
@@ -467,9 +504,65 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     audio.play().catch(err => console.error('Fehler beim Abspielen des Tons:', err));
   }
 
+  // Edit mode methods
+  startEditItem(index: number): void {
+    this.editingItemIndex = index;
+    this.editingItemQuantity = this.orderItems[index].quantity;
+    this.searchTerm = '';
+    this.filteredArtikelData();
+    
+    // Focus search input after a short delay to ensure DOM is ready
+    setTimeout(() => {
+      if (this.searchInput && this.searchInput.nativeElement) {
+        this.searchInput.nativeElement.focus();
+      }
+    }, 100);
+  }
+
+  cancelEditItem(): void {
+    this.editingItemIndex = -1;
+    this.editingItemQuantity = 1;
+    this.searchTerm = '';
+    this.filteredArtikelData();
+    this.hideDropdown();
+  }
+
+  replaceItem(newArtikel: any): void {
+    if (this.editingItemIndex === -1) {
+      return;
+    }
+
+    // Validate quantity
+    if (!newArtikel.quantity || isNaN(Number(newArtikel.quantity)) || Number(newArtikel.quantity) < 1) {
+      newArtikel.quantity = this.editingItemQuantity;
+    }
+
+    // Replace the item at the editing index
+    this.orderItems[this.editingItemIndex] = {
+      ...newArtikel,
+      quantity: Number(newArtikel.quantity)
+    };
+
+    // Reset edit mode
+    this.editingItemIndex = -1;
+    this.editingItemQuantity = 1;
+    this.searchTerm = '';
+    this.filteredArtikelData();
+    this.hideDropdown();
+
+    // Save to localStorage
+    this.globalService.saveCustomerOrders(this.orderItems);
+  }
+
   addToOrder(event: Event, artikel: any): void {
     if (!this.globalService.selectedCustomerForOrders) {
       alert('Bitte wählen Sie zuerst einen Kunden aus.');
+      return;
+    }
+
+    // Check if we're in edit mode
+    if (this.editingItemIndex !== -1) {
+      this.replaceItem(artikel);
       return;
     }
 

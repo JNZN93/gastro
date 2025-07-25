@@ -65,9 +65,22 @@
               </thead>
               <tbody>
                 @for (item of orderItems; track $index; let i = $index) {
-                <tr class="order-row">
+                <tr class="order-row" [class.editing]="editingItemIndex === i">
                   <td class="position">{{ i + 1 }}</td>
-                  <td class="article-name">{{ item.article_text }}</td>
+                  <td class="article-name">
+                    <div class="article-name-container" 
+                         [class.editing]="editingItemIndex === i"
+                         (click)="startEditItem(i)"
+                         title="Klicken zum Bearbeiten">
+                      <span class="article-text">{{ item.article_text }}</span>
+                      @if (editingItemIndex === i) {
+                        <span class="edit-indicator">
+                          <span class="material-icons">edit</span>
+                          Bearbeite...
+                        </span>
+                      }
+                    </div>
+                  </td>
                   <td class="article-number">{{ item.article_number }}</td>
                   <td class="quantity">
                     <input type="number" [(ngModel)]="item.quantity" min="1" class="quantity-edit" (change)="updateItemTotal(item)">
@@ -88,9 +101,15 @@
                   </td>
                   <td class="total-price">€{{ (getItemPrice(item) * item.quantity).toFixed(2) }}</td>
                   <td class="actions">
-                    <button (click)="confirmRemoveFromOrder(i)" class="remove-btn" title="Entfernen">
-                      <span class="material-icons">delete</span>
-                    </button>
+                    @if (editingItemIndex === i) {
+                      <button (click)="cancelEditItem()" class="cancel-edit-btn" title="Bearbeitung abbrechen">
+                        <span class="material-icons">close</span>
+                      </button>
+                    } @else {
+                      <button (click)="confirmRemoveFromOrder(i)" class="remove-btn" title="Entfernen">
+                        <span class="material-icons">delete</span>
+                      </button>
+                    }
                   </td>
                 </tr>
                 }
@@ -139,14 +158,23 @@
           <h3>Artikelauswahl</h3>
           
           <div class="search-container">
-            <div class="search-input-wrapper">
+            @if (editingItemIndex !== -1) {
+              <div class="edit-mode-indicator">
+                <span class="material-icons">edit</span>
+                <span>Bearbeite Artikel: {{ orderItems[editingItemIndex].article_text }}</span>
+                <button (click)="cancelEditItem()" class="cancel-edit-mode-btn">
+                  <span class="material-icons">close</span>
+                </button>
+              </div>
+            }
+            <div class="search-input-wrapper" [class.edit-mode]="editingItemIndex !== -1">
               <input #searchInput 
                      type="text" 
                      [(ngModel)]="searchTerm" 
                      (input)="filteredArtikelData()" 
                      (keydown)="onKeyDown($event)"
                      (focus)="onSearchFocus()"
-                     placeholder="Artikel suchen..."
+                     [placeholder]="editingItemIndex !== -1 ? 'Neuen Artikel suchen...' : 'Artikel suchen...'"
                      class="search-input">
               <button *ngIf="searchTerm" (click)="clearSearch()" class="clear-search">
                 <span class="material-icons">close</span>
@@ -180,7 +208,9 @@
                 <div class="article-actions">
                   <input type="number" [(ngModel)]="artikel.quantity" placeholder="Menge" class="quantity-input" min="1" (click)="$event.stopPropagation()">
                   <button (click)="addToOrder($event, artikel); $event.stopPropagation()" class="add-to-order-btn">
-                    <span class="material-icons">add_shopping_cart</span>
+                    <span class="material-icons">
+                      {{ editingItemIndex !== -1 ? 'swap_horiz' : 'add_shopping_cart' }}
+                    </span>
                   </button>
                 </div>
               </div>
