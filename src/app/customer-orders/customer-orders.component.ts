@@ -1073,6 +1073,15 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   loadCustomerArticlePrices(customerNumber: string) {
     console.log('🔄 [CUSTOMER-ARTICLE-PRICES] Starte API-Aufruf für Kunde:', customerNumber);
     
+    // Spezielle Behandlung für bestimmte Kunden - leeres Array zurückgeben
+    if (customerNumber === '10.022' || customerNumber === '10.003') {
+      console.log('⚠️ [CUSTOMER-ARTICLE-PRICES] Spezielle Behandlung für Kunde:', customerNumber, '- leeres Array zurückgeben');
+      this.customerArticlePrices = [];
+      console.log('💾 [CUSTOMER-ARTICLE-PRICES] Leeres Array für Kunde', customerNumber, 'gespeichert');
+      this.updateArtikelsWithCustomerPrices();
+      return;
+    }
+    
     const token = localStorage.getItem('token');
     const apiUrl = `https://multi-mandant-ecommerce.onrender.com/api/customer-article-prices/customer/${customerNumber}`;
     
