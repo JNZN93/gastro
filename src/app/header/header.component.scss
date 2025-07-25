@@ -8,16 +8,20 @@ header {
   align-items: center;
   box-sizing: border-box;
   width: 100%;
+  height: 70px;
   left: 0;
   top: 0;
-  background-color: #222222;
+  background: rgba(17, 24, 39, 0.95);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   padding-left: 24px;
   padding-right: 24px;
-  box-shadow: 0px 1px 1px -1px rgba(0, 0, 0, 0.75);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 
   img {
-    width: 78px;
-    height: 78px;
+    width: 50px;
+    height: 50px;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
   }
 }
 
@@ -30,27 +34,39 @@ header {
 
 .cart-badge {
   position: absolute;
-  background-color: rgb(255, 174, 0);
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
   color: white;
   font-size: 12px;
   font-weight: bold;
   top: 13px;
   right: 14px;
-  width: 25px; /* Stelle sicher, dass Breite und Höhe gleich sind */
+  width: 25px;
   height: 25px;
-  border-radius: 50%; /* Macht es rund */
-  display: flex; /* Zentriert die Zahl */
+  border-radius: 50%;
+  display: flex;
   align-items: center;
   justify-content: center;
   text-align: center;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.2);
 }
-
 
 .burger-button {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   cursor: pointer;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 8px;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
 
   span {
     border: 1px solid white;
@@ -60,6 +76,7 @@ header {
   img {
     width: 30px;
     height: auto;
+    filter: brightness(0) invert(1);
   }
 }
 
@@ -67,21 +84,37 @@ header {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
   color: white;
-  background-color: #222222;
-  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
   cursor: pointer;
-  transition: all 0.2s ease-in-out;
+  transition: all 0.3s ease;
   z-index: 111;
+  padding: 8px 16px;
+  backdrop-filter: blur(10px);
 
   img {
-    width: 30px;
+    width: 24px;
     height: auto;
+    filter: brightness(0) invert(1);
+  }
+
+  span {
+    font-weight: 500;
+    font-size: 0.875rem;
   }
 
   &:hover {
-    text-decoration: underline;
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    text-decoration: none;
+  }
+
+  &:active {
+    transform: translateY(0);
   }
 }
 
@@ -91,7 +124,8 @@ header {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -99,39 +133,54 @@ header {
 
   button {
     margin: 5px;
-    padding: 10px;
+    padding: 12px 20px;
     border: none;
     cursor: pointer;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
   }
 
   button:first-of-type {
-    background: green;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
     color: white;
-    border-radius: 10px;
-    transition: all 0.2s ease-in-out;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 
     &:hover {
-      background: rgb(75, 129, 75);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
     }
   }
 
   button:last-of-type {
-    background: red;
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
     color: white;
-    border-radius: 10px;
-    transition: all 0.2s ease-in-out;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 
     &:hover {
-      background: rgb(255, 70, 70);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
     }
   }
 }
 
 .modal {
-  background: white;
-  padding: 20px;
-  border-radius: 8px;
+  background: rgba(17, 24, 39, 0.95);
+  backdrop-filter: blur(20px);
+  padding: 24px;
+  border-radius: 16px;
   text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  max-width: 400px;
+  width: 90%;
+
+  p {
+    margin: 0 0 20px 0;
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: white;
+  }
 }
 
 .right-con {
@@ -143,6 +192,27 @@ header {
     width: 30px;
     height: auto;
     padding: 10px 20px;
+    filter: brightness(0) invert(1);
+  }
+}
+
+// Responsive Design
+@media only screen and (max-width: 768px) {
+  header {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .dashboard-container {
+    gap: 12px;
+  }
+
+  .logout-container {
+    padding: 6px 12px;
+    
+    span {
+      font-size: 0.8rem;
+    }
   }
 }
 
@@ -150,6 +220,22 @@ header {
   .dashboard-container {
     span {
       display: none;
+    }
+  }
+
+  .logout-container {
+    padding: 8px;
+    
+    img {
+      width: 20px;
+    }
+  }
+
+  .burger-button {
+    padding: 6px;
+    
+    img {
+      width: 24px;
     }
   }
 }
