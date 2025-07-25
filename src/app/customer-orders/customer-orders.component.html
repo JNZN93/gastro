@@ -43,7 +43,7 @@
                 }
               </div>
             </div>
-            <button (click)="clearSelectedCustomer()" class="clear-customer-btn" title="Kunde entfernen">
+            <button (click)="confirmClearSelectedCustomer()" class="clear-customer-btn" title="Kunde entfernen">
               <span class="material-icons">close</span>
             </button>
           </div>
@@ -86,7 +86,7 @@
                   </td>
                   <td class="total-price">€{{ (getItemPrice(item) * item.quantity).toFixed(2) }}</td>
                   <td class="actions">
-                    <button (click)="removeFromOrder(i)" class="remove-btn" title="Entfernen">
+                    <button (click)="confirmRemoveFromOrder(i)" class="remove-btn" title="Entfernen">
                       <span class="material-icons">delete</span>
                     </button>
                   </td>
@@ -107,7 +107,7 @@
                 <span class="material-icons">save</span>
                 Auftrag speichern
               </button>
-              <button (click)="clearOrder()" class="clear-order-btn">
+              <button (click)="confirmClearOrder()" class="clear-order-btn">
                 <span class="material-icons">clear</span>
                 Auftrag löschen
               </button>

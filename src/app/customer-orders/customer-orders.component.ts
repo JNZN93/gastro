@@ -8,10 +8,12 @@ import { GlobalService } from '../global.service';
 import { UploadLoadingComponent } from '../upload-loading/upload-loading.component';
 import { ZXingScannerComponent, ZXingScannerModule } from '@zxing/ngx-scanner';
 import { BarcodeFormat } from '@zxing/browser';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MyDialogComponent } from '../my-dialog/my-dialog.component';
 
 @Component({
   selector: 'app-customer-orders',
-  imports: [CommonModule, FormsModule, RouterModule, UploadLoadingComponent, ZXingScannerModule],
+  imports: [CommonModule, FormsModule, RouterModule, UploadLoadingComponent, ZXingScannerModule, MatDialogModule],
   templateUrl: './customer-orders.component.html',
   styleUrl: './customer-orders.component.scss',
 })
@@ -65,7 +67,8 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     private router: Router,
     private authService: AuthService,
     public globalService: GlobalService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private dialog: MatDialog
   ) {}
 
   @HostListener('document:click', ['$event'])
@@ -539,6 +542,26 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     this.globalService.saveCustomerOrders(this.orderItems);
   }
 
+  // Neue Methode für Bestätigungs-Modal beim Entfernen eines Artikels
+  confirmRemoveFromOrder(index: number): void {
+    const dialogRef = this.dialog.open(MyDialogComponent, {
+      width: '400px',
+      data: {
+        title: 'Artikel entfernen',
+        message: 'Möchten Sie diesen Artikel wirklich aus dem Auftrag entfernen?',
+        isConfirmation: true,
+        confirmLabel: 'Entfernen',
+        cancelLabel: 'Abbrechen'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result === true) {
+        this.removeFromOrder(index);
+      }
+    });
+  }
+
   getOrderTotal(): number {
     return this.orderItems.reduce((sum, item) => {
       // Verwende different_price falls vorhanden, ansonsten sale_price
@@ -725,6 +748,26 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     console.log('🎉 [CLEAR-ALL-ORDER] Alle auftragsrelevanten Daten erfolgreich geleert!');
   }
 
+  // Neue Methode für Bestätigungs-Modal beim Löschen des gesamten Auftrags
+  confirmClearOrder(): void {
+    const dialogRef = this.dialog.open(MyDialogComponent, {
+      width: '400px',
+      data: {
+        title: 'Auftrag löschen',
+        message: 'Möchten Sie wirklich den gesamten Auftrag löschen? Diese Aktion kann nicht rückgängig gemacht werden.',
+        isConfirmation: true,
+        confirmLabel: 'Löschen',
+        cancelLabel: 'Abbrechen'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result === true) {
+        this.clearOrder();
+      }
+    });
+  }
+
   // Methode zum Leeren nur des Auftrags (für andere Funktionen)
   clearOrder(): void {
     console.log('🗑️ [CLEAR-ORDER] Auftrag wird gelöscht...');
@@ -874,6 +917,26 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     // Lade Kunden-Artikel-Preise für den ausgewählten Kunden
     console.log('🔄 [SELECT-CUSTOMER] Starte loadCustomerArticlePrices für Kunde:', customer.customer_number);
     this.loadCustomerArticlePrices(customer.customer_number);
+  }
+
+  // Neue Methode für Bestätigungs-Modal beim Zurücksetzen des Kunden
+  confirmClearSelectedCustomer(): void {
+    const dialogRef = this.dialog.open(MyDialogComponent, {
+      width: '400px',
+      data: {
+        title: 'Kunde zurücksetzen',
+        message: 'Möchten Sie wirklich den ausgewählten Kunden zurücksetzen? Dies wird auch den aktuellen Auftrag löschen.',
+        isConfirmation: true,
+        confirmLabel: 'Zurücksetzen',
+        cancelLabel: 'Abbrechen'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result === true) {
+        this.clearSelectedCustomer();
+      }
+    });
   }
 
   clearSelectedCustomer() {
