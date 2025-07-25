@@ -1,113 +1,315 @@
-<div class="admin-main p-6 bg-gray-100 min-h-screen">
-    <div class="upload-section flex flex-wrap gap-3 mb-6">
-        <!-- Produkt Upload -->
-        <div class="upload-xml p-3 rounded-lg shadow-md bg-white flex-1 min-w-[280px] max-w-[320px]">
-            <label for="productXml" class="block text-sm font-semibold mb-1">Produktliste:</label>
-            <input #productFileInput type="file" id="productXml" name="productXml" accept=".xml" class="w-full border p-1 rounded text-xs mb-2" />
-            <button (click)="onProductUploadClick()" class="w-full bg-blue-600 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-700">
-                Produkte aktualisieren
-            </button>
-        </div>
+<div class="admin-dashboard">
+  <!-- Header Section -->
+  <div class="dashboard-header">
+    <div class="header-content">
+      <h1 class="dashboard-title">
+        <svg class="dashboard-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+        </svg>
+        Admin Dashboard
+      </h1>
+      <button class="upload-toggle-btn" (click)="toggleUploadModal()">
+        <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+        </svg>
+        Daten hochladen
+      </button>
+    </div>
+  </div>
 
-        <!-- Kunden Upload -->
-        <div class="upload-xml p-3 rounded-lg shadow-md bg-white flex-1 min-w-[280px] max-w-[320px]">
-            <label for="customerXml" class="block text-sm font-semibold mb-1">Kundenliste:</label>
-            <input #customerFileInput type="file" id="customerXml" name="customerXml" accept=".xml" class="w-full border p-1 rounded text-xs mb-2" />
-            <button (click)="onCustomerUploadClick()" class="w-full bg-green-600 text-white px-3 py-1.5 rounded text-sm hover:bg-green-700">
-                Kunden aktualisieren
-            </button>
-        </div>
-
-        <!-- Kunden Artikel Preise Upload -->
-        <div class="upload-xml p-3 rounded-lg shadow-md bg-white flex-1 min-w-[280px] max-w-[320px]">
-            <label for="customerArticlePricesXml" class="block text-sm font-semibold mb-1">Kunden-Artikelpreise:</label>
-            <input #customerArticlePricesFileInput type="file" id="customerArticlePricesXml" name="customerArticlePricesXml" accept=".xml" class="w-full border p-1 rounded text-xs mb-2" />
-            <button (click)="onCustomerArticlePricesUploadClick()" class="w-full bg-purple-600 text-white px-3 py-1.5 rounded text-sm hover:bg-purple-700">
-                Preise aktualisieren
-            </button>
-        </div>
+  <!-- Stats Cards -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon orders-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <h3 class="stat-number">{{ orders.length }}</h3>
+        <p class="stat-label">Gesamt Bestellungen</p>
+      </div>
     </div>
 
-    <div class="function-container flex gap-4 mb-6">
-        <button (click)="generateSelectedPdf()" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
-            Alle Bestellungen anzeigen
-        </button>
-        <button routerLink="/products" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700">
-            Zur Kundenansicht
-        </button>
-        <button routerLink="/guest-link" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700">
-            Gastzugang erstellen
-        </button>
-        <button routerLink="/image-management" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700">
-            Produktdaten
-        </button>
-        <button routerLink="/product-selection" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
-            Preisschilder erstellen
-        </button>
-        <button routerLink="/employees" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-            Mitarbeiteransicht
-        </button>
-        <button routerLink="/customer-orders" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700">
-            Aufträge erstellen
-        </button>
+    <div class="stat-card">
+      <div class="stat-icon pending-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <h3 class="stat-number">{{ getOrdersByStatus('open').length }}</h3>
+        <p class="stat-label">Offene Bestellungen</p>
+      </div>
     </div>
 
-    <div class="bg-white p-4 rounded-lg shadow-md overflow-x-auto">
-        <table class="w-full border-collapse">
-            <thead>
-                <tr class="bg-gray-200">
-                    <th class="p-2 text-left">Bestellnummer</th>
-                    <th class="p-2 text-left">Bestelldatum</th>
-                    <th class="p-2 text-left">Name</th>
-                    <th class="p-2 text-left">Firma</th>
-                    <th class="p-2 text-left">Status</th>
-                    <th class="p-2 text-left">Aktionen</th>
-                </tr>
-            </thead>
-            <tbody>
-                @for (order of orders; track order.order_id) {
-                <tr class="border-t">
-                    <td class="p-2">{{ order.order_id }}</td>
-                    <td class="p-2">{{ order.created_at | date: 'dd.MM.yyyy HH:mm' }}</td>
-                    <td class="p-2">{{ order.name }}</td>
-                    <td class="p-2">{{ order.company }}</td>
-                    <td class="p-2">
-                        <select [(ngModel)]="order.status" (change)="onStatusChange($event, order)"
-                            class="border p-2 rounded-lg w-full">
-                            <option value="open" [selected]="order.status === 'open'">Offen</option>
-                            <option value="in_progress" [selected]="order.status === 'in_progress'">In Bearbeitung</option>
-                            <option value="completed" [selected]="order.status === 'completed'">Fertig</option>
-                        </select>
-                    </td>
-                    <td class="p-2">
-                        <button (click)="generatePdf(order.company, order.shipping_address, order.payment_status, order.order_date, order.created_at, order.fulfillment_type, order.name, order.email, order.order_id, order.total_price,order.delivery_date, order.items)"
-                            class="pdf-button px-4 py-2 rounded-lg font-semibold transition duration-300">
-                            Anzeigen
-                        </button>
-                    </td>
-                </tr>
-                }
-            </tbody>
-        </table>
+    <div class="stat-card">
+      <div class="stat-icon progress-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <h3 class="stat-number">{{ getOrdersByStatus('in_progress').length }}</h3>
+        <p class="stat-label">In Bearbeitung</p>
+      </div>
     </div>
 
-    @if (showModal) {
-    <div class="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-        <div class="modal bg-white p-6 rounded-lg shadow-lg">
-            <p class="text-lg font-semibold mb-4">Möchten Sie diesen Auftrag wirklich als abgeschlossen markieren?</p>
-            <div class="flex gap-4">
-                <button (click)="confirmCompletion()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
-                    Ja, abschließen
-                </button>
-                <button (click)="cancelCompletion()" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
-                    Abbrechen
-                </button>
-            </div>
+    <div class="stat-card">
+      <div class="stat-icon completed-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <h3 class="stat-number">{{ getOrdersByStatus('completed').length }}</h3>
+        <p class="stat-label">Abgeschlossen</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="quick-actions">
+    <h2 class="section-title">Schnellzugriff</h2>
+    <div class="actions-grid">
+      <button class="action-card" (click)="generateSelectedPdf()">
+        <div class="action-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
         </div>
-    </div>
-    }
+        <span>Alle Bestellungen anzeigen</span>
+      </button>
 
-    @if (isUploading) {
-        <app-upload-loading></app-upload-loading>
-    }
+      <button class="action-card" routerLink="/products">
+        <div class="action-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+          </svg>
+        </div>
+        <span>Kundenansicht</span>
+      </button>
+
+      <button class="action-card" routerLink="/guest-link">
+        <div class="action-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+          </svg>
+        </div>
+        <span>Gastzugang erstellen</span>
+      </button>
+
+      <button class="action-card" routerLink="/image-management">
+        <div class="action-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+          </svg>
+        </div>
+        <span>Produktdaten</span>
+      </button>
+
+      <button class="action-card" routerLink="/product-selection">
+        <div class="action-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17v.01"/>
+          </svg>
+        </div>
+        <span>Preisschilder erstellen</span>
+      </button>
+
+      <button class="action-card" routerLink="/employees">
+        <div class="action-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/>
+          </svg>
+        </div>
+        <span>Mitarbeiteransicht</span>
+      </button>
+
+      <button class="action-card" routerLink="/customer-orders">
+        <div class="action-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+          </svg>
+        </div>
+        <span>Aufträge erstellen</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Orders Table -->
+  <div class="orders-section">
+    <div class="section-header">
+      <h2 class="section-title">Bestellungen</h2>
+      <div class="table-controls">
+        <div class="search-box">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+          <input type="text" placeholder="Bestellungen durchsuchen..." [(ngModel)]="searchTerm" class="search-input">
+        </div>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table class="orders-table">
+        <thead>
+          <tr>
+            <th>Bestellnummer</th>
+            <th>Datum</th>
+            <th>Kunde</th>
+            <th>Firma</th>
+            <th>Status</th>
+            <th>Aktionen</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (order of filteredOrders; track order.order_id) {
+          <tr class="order-row" [class.completed]="order.status === 'completed'">
+            <td class="order-id">{{ order.order_id }}</td>
+            <td class="order-date">{{ order.created_at | date: 'dd.MM.yyyy HH:mm' }}</td>
+            <td class="customer-name">{{ order.name }}</td>
+            <td class="company-name">{{ order.company || '-' }}</td>
+            <td class="status-cell">
+              <select [(ngModel)]="order.status" (change)="onStatusChange($event, order)" 
+                      class="status-select" [class]="'status-' + order.status">
+                <option value="open">Offen</option>
+                <option value="in_progress">In Bearbeitung</option>
+                <option value="completed">Fertig</option>
+              </select>
+            </td>
+            <td class="actions-cell">
+              <button class="view-btn" (click)="generatePdf(order.company, order.shipping_address, order.payment_status, order.order_date, order.created_at, order.fulfillment_type, order.name, order.email, order.order_id, order.total_price, order.delivery_date, order.items)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                </svg>
+                Anzeigen
+              </button>
+            </td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Upload Side Modal -->
+  <div class="side-modal-overlay" [class.active]="showUploadModal" (click)="closeUploadModal()"></div>
+  <div class="side-modal" [class.active]="showUploadModal">
+    <div class="modal-header">
+      <h2>Daten hochladen</h2>
+      <button class="close-btn" (click)="closeUploadModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="upload-sections">
+      <!-- Produkt Upload -->
+      <div class="upload-card">
+        <div class="upload-header">
+          <div class="upload-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+            </svg>
+          </div>
+          <div class="upload-info">
+            <h3>Produktliste</h3>
+            <p>XML-Datei mit Produktdaten hochladen</p>
+          </div>
+        </div>
+        <div class="upload-content">
+          <input #productFileInput type="file" id="productXml" accept=".xml" class="file-input" />
+          <label for="productXml" class="file-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+            </svg>
+            <span>Datei auswählen</span>
+          </label>
+          <button (click)="onProductUploadClick()" class="upload-btn primary">
+            Produkte aktualisieren
+          </button>
+        </div>
+      </div>
+
+      <!-- Kunden Upload -->
+      <div class="upload-card">
+        <div class="upload-header">
+          <div class="upload-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/>
+            </svg>
+          </div>
+          <div class="upload-info">
+            <h3>Kundenliste</h3>
+            <p>XML-Datei mit Kundendaten hochladen</p>
+          </div>
+        </div>
+        <div class="upload-content">
+          <input #customerFileInput type="file" id="customerXml" accept=".xml" class="file-input" />
+          <label for="customerXml" class="file-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+            </svg>
+            <span>Datei auswählen</span>
+          </label>
+          <button (click)="onCustomerUploadClick()" class="upload-btn success">
+            Kunden aktualisieren
+          </button>
+        </div>
+      </div>
+
+      <!-- Kunden Artikel Preise Upload -->
+      <div class="upload-card">
+        <div class="upload-header">
+          <div class="upload-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
+            </svg>
+          </div>
+          <div class="upload-info">
+            <h3>Kunden-Artikelpreise</h3>
+            <p>XML-Datei mit individuellen Preisen hochladen</p>
+          </div>
+        </div>
+        <div class="upload-content">
+          <input #customerArticlePricesFileInput type="file" id="customerArticlePricesXml" accept=".xml" class="file-input" />
+          <label for="customerArticlePricesXml" class="file-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+            </svg>
+            <span>Datei auswählen</span>
+          </label>
+          <button (click)="onCustomerArticlePricesUploadClick()" class="upload-btn warning">
+            Preise aktualisieren
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirmation Modal -->
+  @if (showModal) {
+  <div class="modal-overlay" (click)="cancelCompletion()">
+    <div class="confirmation-modal" (click)="$event.stopPropagation()">
+      <div class="modal-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+      </div>
+      <h3>Bestellung abschließen</h3>
+      <p>Möchten Sie diesen Auftrag wirklich als abgeschlossen markieren?</p>
+      <div class="modal-actions">
+        <button class="btn-secondary" (click)="cancelCompletion()">Abbrechen</button>
+        <button class="btn-primary" (click)="confirmCompletion()">Abschließen</button>
+      </div>
+    </div>
+  </div>
+  }
+
+  @if (isUploading) {
+    <app-upload-loading></app-upload-loading>
+  }
 </div>

@@ -21,13 +21,14 @@ export class AdminComponent implements OnInit {
   orders: any[] = [];
   xmlContent: any;
   showModal = false;
+  showUploadModal = false;
   selectedOrder: any = null;
   newStatus: string = '';
   isLoading: boolean = true;
   isVisible: boolean = true;
   isUploading: boolean = false;
+  searchTerm: string = '';
 
-  
   constructor(
     private router: Router,
     private orderService: OrderService,
@@ -41,6 +42,33 @@ export class AdminComponent implements OnInit {
     setInterval(() => {
       this.loadOrders();
     }, 1000 * 60)
+  }
+
+  // Getter für gefilterte Bestellungen
+  get filteredOrders() {
+    if (!this.searchTerm) {
+      return this.orders;
+    }
+    return this.orders.filter(order => 
+      order.order_id?.toString().includes(this.searchTerm) ||
+      order.name?.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+      order.company?.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+      order.email?.toLowerCase().includes(this.searchTerm.toLowerCase())
+    );
+  }
+
+  // Methoden für Side-Modal
+  toggleUploadModal() {
+    this.showUploadModal = !this.showUploadModal;
+  }
+
+  closeUploadModal() {
+    this.showUploadModal = false;
+  }
+
+  // Methoden für Status-Filterung
+  getOrdersByStatus(status: string) {
+    return this.orders.filter(order => order.status === status);
   }
 
   checkUserRole() {
