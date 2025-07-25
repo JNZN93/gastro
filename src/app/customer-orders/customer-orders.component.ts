@@ -114,6 +114,8 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
               this.globalService.isAdmin = true;
             }
             this.globalArtikels = res;
+            // Erstelle zusätzliches pfand-array für Artikel mit category "PFAND" (nur initial, da PFAND-Artikel statisch sind)
+            this.globalService.setPfandArtikels(this.globalArtikels);
             this.artikelData = res;
             this.isVisible = false;
             
@@ -158,6 +160,8 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       (footer as HTMLElement).style.display = 'block';
     }
   }
+
+
 
   // Lade gespeicherte Daten aus localStorage
   private loadStoredData(): void {
@@ -509,7 +513,30 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       }
     }
 
+    // Speichere die Menge vor dem Zurücksetzen für PFAND-Prüfung
+    const originalQuantity = Number(artikel.quantity);
     artikel.quantity = '';
+
+    // Prüfe nach dem Hinzufügen des Artikels, ob PFAND benötigt wird
+    if (artikel.custom_field_1) {
+      const pfandArtikels = this.globalService.getPfandArtikels();
+      const matchingPfand = pfandArtikels.find(pfand => pfand.article_number === artikel.custom_field_1);
+      
+      if (matchingPfand) {
+        const userConfirmed = confirm(`Möchten Sie auch das entsprechende PFAND "${matchingPfand.article_text}" hinzufügen?`);
+        if (userConfirmed) {
+          // PFAND-Artikel zum Auftrag hinzufügen (gleiche Menge wie das Produkt)
+          this.orderItems = [
+            ...this.orderItems,
+            { 
+              ...matchingPfand, 
+              quantity: originalQuantity
+            },
+          ];
+          console.log('✅ [PFAND-ADD] PFAND-Artikel automatisch hinzugefügt:', matchingPfand.article_text, 'Menge:', originalQuantity);
+        }
+      }
+    }
 
     // Speichere Aufträge im localStorage
     this.globalService.saveCustomerOrders(this.orderItems);

@@ -13,6 +13,9 @@ export class GlobalService {
   // Separate Variablen für verschiedene Komponenten
   public selectedCustomer: any = null; // Für employees component
   public selectedCustomerForOrders: any = null; // Für customer-orders component
+  
+  // Global verfügbares Array für PFAND-Artikel (statisch, wird nur einmal geladen)
+  public pfandArtikels: any[] = [];
 
   constructor() { }
 
@@ -71,5 +74,25 @@ export class GlobalService {
   clearAllCustomerOrdersData() {
     this.clearSelectedCustomerForOrders();
     this.clearCustomerOrders();
+  }
+
+  // ===== PFAND ARTICLES METHODS =====
+  // Methode zum Setzen der PFAND-Artikel (nur für initiale Ladung)
+  // Wird automatisch in customer-orders.component.ts beim ersten Laden der Artikel aufgerufen
+  setPfandArtikels(artikels: any[]) {
+    this.pfandArtikels = artikels.filter(artikel => artikel.category === 'PFAND');
+    console.log('🔄 [GLOBAL-PFAND] PFAND-Artikel global gesetzt:', this.pfandArtikels.length);
+  }
+
+  // Methode zum Abrufen der PFAND-Artikel
+  // Verwendung in anderen Komponenten: this.globalService.getPfandArtikels()
+  getPfandArtikels(): any[] {
+    return this.pfandArtikels;
+  }
+
+  // Methode zum Prüfen, ob PFAND-Artikel bereits geladen wurden
+  // Verwendung: if (this.globalService.hasPfandArtikels()) { ... }
+  hasPfandArtikels(): boolean {
+    return this.pfandArtikels.length > 0;
   }
 }
