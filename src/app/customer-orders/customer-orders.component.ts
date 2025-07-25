@@ -1018,17 +1018,22 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       // Wenn kein Suchbegriff, zeige alle verfügbaren Artikel-Preise an
       this.filteredArticlePrices = availableCustomerPrices;
     } else {
-      // Filtere nach Suchbegriff innerhalb der verfügbaren Artikel
-      const searchTerm = this.articlePricesSearchTerm.toLowerCase();
+      // Intelligente Suche: Teile Suchbegriff in einzelne Wörter auf
+      const terms = this.articlePricesSearchTerm.toLowerCase().split(/\s+/);
+      
       this.filteredArticlePrices = availableCustomerPrices.filter(customerPrice => {
-        // Suche in Artikel-Text und Artikel-Nummer
-        const articleText = customerPrice.article_text?.toLowerCase() || '';
-        const articleNumber = customerPrice.article_number?.toLowerCase() || '';
-        const productId = customerPrice.product_id?.toLowerCase() || '';
-        
-        return articleText.includes(searchTerm) || 
-               articleNumber.includes(searchTerm) || 
-               productId.includes(searchTerm);
+        // Suche nach jedem Suchwort in verschiedenen Feldern
+        return terms.every((term) => {
+          const articleText = customerPrice.article_text?.toLowerCase() || '';
+          const articleNumber = customerPrice.article_number?.toLowerCase() || '';
+          const productId = customerPrice.product_id?.toLowerCase() || '';
+          const ean = customerPrice.ean?.toLowerCase() || '';
+          
+          return articleText.includes(term) || 
+                 articleNumber.includes(term) || 
+                 productId.includes(term) ||
+                 ean.includes(term);
+        });
       });
     }
     
