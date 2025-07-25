@@ -652,8 +652,16 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       }, 500);
     }
 
-    // Das Suchfeld wird jetzt in addFirstFilteredArticle() geleert
-    // this.clearSearch();
+    // Leere das Suchfeld nach dem Hinzufügen
+    this.searchTerm = '';
+    this.filteredArtikelData();
+    
+    // Fokussiere zurück auf das Suchfeld
+    setTimeout(() => {
+      if (this.searchInput && this.searchInput.nativeElement) {
+        this.searchInput.nativeElement.focus();
+      }
+    }, 100);
   }
 
   removeFromOrder(index: number): void {
