@@ -237,6 +237,12 @@
     margin: 0;
     font-size: 11px;
 
+    .cost-price {
+      color: #dc3545;
+      font-weight: 600;
+      margin-right: 8px;
+    }
+
     .customer-price {
       color: #28a745;
       font-weight: 600;
@@ -601,6 +607,13 @@
       display: inline-block;
       min-width: 60px;
     }
+  }
+
+  .cost-price {
+    text-align: center;
+    color: #dc3545;
+    font-weight: 500;
+    font-size: 11px;
   }
 
   .customer-price {

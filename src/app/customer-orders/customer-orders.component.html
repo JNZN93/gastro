@@ -57,6 +57,7 @@
                   <th>Artikel</th>
                   <th>Art.-Nr.</th>
                   <th>Menge</th>
+                  <th>EK-Preis (€)</th>
                   <th>Kundenpreis (€)</th>
                   <th>Gesamtpreis (€)</th>
                   <th>Aktionen</th>
@@ -71,6 +72,7 @@
                   <td class="quantity">
                     <input type="number" [(ngModel)]="item.quantity" min="1" class="quantity-edit" (change)="updateItemTotal(item)">
                   </td>
+                  <td class="cost-price">€{{ (item.cost_price || 0).toFixed(2) }}</td>
                   <td class="customer-price">
                     <input type="number" 
                            [(ngModel)]="item.different_price" 
@@ -95,7 +97,7 @@
               </tbody>
               <tfoot>
                 <tr class="order-total-row">
-                  <td colspan="5" class="total-label"><strong>Gesamt:</strong></td>
+                  <td colspan="6" class="total-label"><strong>Gesamt:</strong></td>
                   <td class="total-amount"><strong>€{{ getOrderTotal().toFixed(2) }}</strong></td>
                   <td></td>
                 </tr>
@@ -166,11 +168,12 @@
                   <h4 class="article-title">{{ artikel.article_text }}</h4>
                   <p class="article-number">Art.-Nr: {{ artikel.article_number }}</p>
                   <p class="article-price">
+                    <span class="cost-price">EK: €{{ (artikel.cost_price || 0).toFixed(2) }}</span>
                     @if (artikel.different_price !== undefined) {
-                      <span class="customer-price">€{{ artikel.different_price }}</span>
+                      <span class="customer-price">Kundenpreis: €{{ artikel.different_price }}</span>
                       <span class="original-price">(Standard: €{{ artikel.sale_price }})</span>
                     } @else {
-                      <span class="standard-price">€{{ artikel.sale_price }}</span>
+                      <span class="standard-price">VK: €{{ artikel.sale_price }}</span>
                     }
                   </p>
                 </div>
