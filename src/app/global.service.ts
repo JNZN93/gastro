@@ -9,6 +9,7 @@ export class GlobalService {
   public totalPrice: any = 0;
   public favoriteItems: any = [];
   public isAdmin: boolean = false;
+  public userRole: string = '';
   
   // Separate Variablen für verschiedene Komponenten
   public selectedCustomer: any = null; // Für employees component
@@ -18,6 +19,37 @@ export class GlobalService {
   public pfandArtikels: any[] = [];
 
   constructor() { }
+
+  // ===== USER ROLE METHODS =====
+  // Methode zum Setzen der Benutzerrolle
+  setUserRole(role: string) {
+    this.userRole = role;
+    console.log('🔄 [GLOBAL-ROLE] Benutzerrolle gesetzt:', role);
+  }
+
+  // Methode zum Abrufen der Benutzerrolle
+  getUserRole(): string {
+    return this.userRole;
+  }
+
+  // Methode zum Prüfen, ob Benutzer SCHNELLVERKAUF-Artikel sehen darf
+  canViewSchnellverkauf(): boolean {
+    return this.userRole === 'employee' || this.userRole === 'admin';
+  }
+
+  // ===== SCHNELLVERKAUF FILTER METHODS =====
+  // Methode zum Filtern von SCHNELLVERKAUF-Artikeln basierend auf Benutzerrolle
+  filterSchnellverkaufArticles(artikels: any[]): any[] {
+    if (this.canViewSchnellverkauf()) {
+      // Employee und Admin können alle Artikel sehen
+      return artikels;
+    } else {
+      // Andere Benutzer können keine SCHNELLVERKAUF-Artikel sehen
+      const filteredArtikels = artikels.filter(artikel => artikel.category !== 'SCHNELLVERKAUF');
+      console.log('🔄 [GLOBAL-FILTER] SCHNELLVERKAUF-Artikel herausgefiltert. Ursprünglich:', artikels.length, 'Gefiltert:', filteredArtikels.length);
+      return filteredArtikels;
+    }
+  }
 
   // ===== EMPLOYEES METHODS =====
   // Methode zum Setzen des selectedCustomer (nur im Memory)

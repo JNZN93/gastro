@@ -692,6 +692,54 @@
     color: #666;
     font-size: 11px;
     width: 80px;
+    
+    .article-number-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      padding: 4px 6px;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+      
+      &:hover {
+        background-color: #f0f0f0;
+        transform: translateX(2px);
+      }
+      
+      &.editing {
+        background: linear-gradient(135deg, #ff6b35, #f7931e);
+        color: white;
+        box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
+        
+        .article-number-text {
+          font-weight: 600;
+        }
+        
+        .edit-indicator {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          font-size: 10px;
+          opacity: 0.9;
+          
+          .material-icons {
+            font-size: 12px;
+          }
+        }
+      }
+      
+      .article-number-text {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      
+      .edit-indicator {
+        display: none;
+      }
+    }
   }
 
   .quantity-edit, .price-edit {

@@ -114,12 +114,17 @@ export class EmployeesComponent implements OnInit {
     if (token) {
       this.authService.checkToken(token).subscribe({
         next: (response: any) => {
+          // Benutzerrolle im GlobalService setzen
+          this.globalService.setUserRole(response.user.role);
+          
           this.artikelService.getData().subscribe((res) => {
             if(response.user.role == 'admin') {
               this.globalService.isAdmin = true;
             }
-            this.globalArtikels = res;
-            this.artikelData = res;
+            
+            // SCHNELLVERKAUF-Artikel basierend auf Benutzerrolle filtern
+            this.globalArtikels = this.globalService.filterSchnellverkaufArticles(res);
+            this.artikelData = this.globalArtikels;
             this.isVisible = false;
             
             // Nach dem Laden der Artikel: Aktualisiere kundenspezifische Preise falls ein Kunde gespeichert ist
@@ -171,6 +176,7 @@ export class EmployeesComponent implements OnInit {
 
   
   get filteredArtikelData() {
+    // Verwende die bereits gefilterten globalArtikels (ohne SCHNELLVERKAUF für nicht-Employee/Admin)
     let filtered = this.globalArtikels;
     if (this.searchTerm) {
       const terms = this.searchTerm.toLowerCase().split(/\s+/);
@@ -257,6 +263,7 @@ export class EmployeesComponent implements OnInit {
         return
     }
     if (this.selectedCategory == "") {
+      // Verwende die bereits gefilterten globalArtikels (ohne SCHNELLVERKAUF für nicht-Employee/Admin)
       this.artikelData = this.globalArtikels;
       return;
     }
@@ -264,12 +271,14 @@ export class EmployeesComponent implements OnInit {
   }
 
   getItemsFromCategory(category:string) {
+    // Verwende die bereits gefilterten globalArtikels (ohne SCHNELLVERKAUF für nicht-Employee/Admin)
     this.artikelData = this.globalArtikels
     this.artikelData = this.artikelData.map((article)=> article).filter((article)=> article?.category == category)
   }
 
 
   get categories(): string[] {
+    // Verwende die bereits gefilterten globalArtikels (ohne SCHNELLVERKAUF für nicht-Employee/Admin)
     return [
       ...new Set(
         this.globalArtikels?.map((a) => a.category).filter((cat) => cat)

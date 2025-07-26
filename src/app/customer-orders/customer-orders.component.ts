@@ -114,14 +114,19 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     if (token) {
       this.authService.checkToken(token).subscribe({
         next: (response) => {
+          // Benutzerrolle im GlobalService setzen
+          this.globalService.setUserRole(response.user.role);
+          
           this.artikelService.getData().subscribe((res) => {
             if(response.user.role == 'admin') {
               this.globalService.isAdmin = true;
             }
-            this.globalArtikels = res;
+            
+            // SCHNELLVERKAUF-Artikel basierend auf Benutzerrolle filtern
+            this.globalArtikels = this.globalService.filterSchnellverkaufArticles(res);
             // Erstelle zusätzliches pfand-array für Artikel mit category "PFAND" (nur initial, da PFAND-Artikel statisch sind)
             this.globalService.setPfandArtikels(this.globalArtikels);
-            this.artikelData = res;
+            this.artikelData = this.globalArtikels;
             this.isVisible = false;
             
             // Nach dem Laden der Artikel: Aktualisiere kundenspezifische Preise falls ein Kunde gespeichert ist
@@ -203,6 +208,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     
     if (this.searchTerm) {
       const terms = this.searchTerm.toLowerCase().split(/\s+/);
+      // Verwende die bereits gefilterten globalArtikels (ohne SCHNELLVERKAUF für nicht-Employee/Admin)
       // Erstelle eine neue Referenz für filteredArtikels, damit Angular die Änderungen erkennt
       this.filteredArtikels = [...this.globalArtikels.filter((artikel) =>
         terms.every((term) =>

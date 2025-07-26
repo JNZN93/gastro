@@ -68,11 +68,16 @@
                 <tr class="order-row" [class.editing]="editingItemIndex === i">
                   <td class="position">{{ i + 1 }}</td>
                   <td class="article-name">
-                    <div class="article-name-container" 
+                    <div class="article-name-container">
+                      <span class="article-text">{{ item.article_text }}</span>
+                    </div>
+                  </td>
+                  <td class="article-number">
+                    <div class="article-number-container" 
                          [class.editing]="editingItemIndex === i"
                          (click)="startEditItem(i)"
                          title="Klicken zum Bearbeiten">
-                      <span class="article-text">{{ item.article_text }}</span>
+                      <span class="article-number-text">{{ item.article_number }}</span>
                       @if (editingItemIndex === i) {
                         <span class="edit-indicator">
                           <span class="material-icons">edit</span>
@@ -81,7 +86,6 @@
                       }
                     </div>
                   </td>
-                  <td class="article-number">{{ item.article_number }}</td>
                   <td class="quantity">
                     <input type="number" [(ngModel)]="item.quantity" min="1" class="quantity-edit" (change)="updateItemTotal(item)">
                   </td>

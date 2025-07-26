@@ -53,12 +53,18 @@ export class ArtikelCardComponent implements OnInit {
     if (token) {
       this.authService.checkToken(token).subscribe({
         next: (response) => {
+          // Benutzerrolle im GlobalService setzen
+          this.globalService.setUserRole(response.user.role);
+          
           this.artikelService.getData().subscribe((res) => {
             if(response.user.role == 'admin') {
               this.globalService.isAdmin = true;
             }
-            this.globalArtikels = res;
-            this.artikelData = res;
+            
+            // SCHNELLVERKAUF-Artikel basierend auf Benutzerrolle filtern
+            this.globalArtikels = this.globalService.filterSchnellverkaufArticles(res);
+            this.artikelData = this.globalArtikels;
+            
             this.collectOrderData(response);
             this.globalService.orderData = this.orderData;
             this.isVisible = false;
@@ -105,6 +111,7 @@ export class ArtikelCardComponent implements OnInit {
 
   
   filteredArtikelData() {
+    // Verwende die bereits gefilterten globalArtikels (ohne SCHNELLVERKAUF für nicht-Employee/Admin)
     this.artikelData = this.globalArtikels;
     if (this.searchTerm) {
       const terms = this.searchTerm.toLowerCase().split(/\s+/);
@@ -121,6 +128,7 @@ export class ArtikelCardComponent implements OnInit {
 
   clearSearch() {
     this.searchTerm = '';
+    // Verwende die bereits gefilterten globalArtikels (ohne SCHNELLVERKAUF für nicht-Employee/Admin)
     this.filteredArtikelData();
   }
 
@@ -186,6 +194,7 @@ export class ArtikelCardComponent implements OnInit {
         return
     }
     if (this.selectedCategory == "") {
+      // Verwende die bereits gefilterten globalArtikels (ohne SCHNELLVERKAUF für nicht-Employee/Admin)
       this.artikelData = this.globalArtikels;
       return;
     }
@@ -193,12 +202,14 @@ export class ArtikelCardComponent implements OnInit {
   }
 
   getItemsFromCategory(category:string) {
+    // Verwende die bereits gefilterten globalArtikels (ohne SCHNELLVERKAUF für nicht-Employee/Admin)
     this.artikelData = this.globalArtikels
     this.artikelData = this.artikelData.map((article)=> article).filter((article)=> article?.category == category)
   }
 
 
   get categories(): string[] {
+    // Verwende die bereits gefilterten globalArtikels (ohne SCHNELLVERKAUF für nicht-Employee/Admin)
     return [
       ...new Set(
         this.globalArtikels?.map((a) => a.category).filter((cat) => cat)
