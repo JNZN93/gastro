@@ -17,6 +17,7 @@ import { UploadLoadingComponent } from "../upload-loading/upload-loading.compone
 export class AdminComponent implements OnInit {
   @ViewChild('customerFileInput') customerFileInput!: ElementRef;
   @ViewChild('customerArticlePricesFileInput') customerArticlePricesFileInput!: ElementRef;
+  @ViewChild('articlesFileInput') articlesFileInput!: ElementRef;
   orders: any[] = [];
   xmlContent: any;
   showModal = false;
@@ -393,6 +394,51 @@ formatDate(dateString: string): string {
             console.log('Fehler beim Hochladen!', err),
               this.isUploading = false;
             alert('Fehler beim Hochladen der Kunden Artikel Preise. Bitte versuchen Sie es erneut.');
+          },
+        });
+    } else {
+      alert('Bitte eine gültige XML-Datei hochladen.');
+    }
+  }
+
+  onArticlesUploadClick() {
+    const file = this.articlesFileInput.nativeElement.files[0];
+
+    if (file && file.type === 'text/xml') {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      this.isUploading = true;
+
+      // Token aus dem localStorage holen
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        alert('Kein gültiger Token gefunden. Bitte melden Sie sich erneut an.');
+        this.isUploading = false;
+        return;
+      }
+
+      this.http
+        .post(
+          'https://multi-mandant-ecommerce.onrender.com/api/products/upload',
+          formData,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          }
+        )
+        .subscribe({
+          next: (res) => {
+            alert('Artikeldaten erfolgreich hochgeladen!'),
+              this.isUploading = false; // Upload-Loading ausblenden
+            this.isVisible = false; // Upload-Komponente ausblenden
+          },
+          error: (err) => {
+            console.log('Fehler beim Hochladen!', err),
+              this.isUploading = false;
+            alert('Fehler beim Hochladen der Artikeldaten. Bitte versuchen Sie es erneut.');
           },
         });
     } else {
