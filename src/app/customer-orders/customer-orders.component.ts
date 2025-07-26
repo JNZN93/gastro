@@ -36,7 +36,6 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   // Neue Properties für Dropdown-Navigation
   selectedIndex: number = -1;
   showDropdown: boolean = false;
-  focusedQuantityIndex: number = -1; // Index des aktuell fokussierten Mengenfelds
   
   // Customer modal properties
   isCustomerModalOpen: boolean = false;
@@ -231,16 +230,8 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       // Show dropdown if we have results
       this.showDropdown = this.filteredArtikels.length > 0;
       
-      // Automatisch den ersten Artikel auswählen, wenn Ergebnisse vorhanden sind
-      if (this.filteredArtikels.length > 0) {
-        this.selectedIndex = 0;
-        // Kurz warten, damit Angular die DOM-Änderungen verarbeitet hat
-        setTimeout(() => {
-          this.scrollToSelectedItem();
-        }, 50);
-      } else {
-        this.selectedIndex = -1;
-      }
+      // Reset selection - no automatic selection of first article
+      this.selectedIndex = -1;
       
       console.log('🔍 [FILTER] Gefilterte Artikel aktualisiert:', this.filteredArtikels.length);
       if (this.filteredArtikels.length > 0) {
@@ -312,6 +303,13 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       }
     }
 
+    // Handle Enter key when dropdown is shown but no article is selected
+    if (event.key === 'Enter' && this.showDropdown && this.filteredArtikels.length > 0 && this.selectedIndex === -1) {
+      event.preventDefault();
+      // Don't automatically select the first article - user must use arrow keys to select
+      return;
+    }
+
     if (!this.showDropdown || this.filteredArtikels.length === 0) {
       return;
     }
@@ -319,23 +317,23 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     switch (event.key) {
       case 'ArrowDown':
         event.preventDefault();
-        // Wenn noch kein Element ausgewählt ist, wähle das erste
+        // Wenn noch kein Element ausgewählt ist, wähle das erste und fokussiere Mengenfeld
         if (this.selectedIndex === -1) {
-          this.selectedIndex = 0;
+          this.focusQuantityInput(0);
         } else {
-          this.selectedIndex = Math.min(this.selectedIndex + 1, this.filteredArtikels.length - 1);
+          const nextIndex = Math.min(this.selectedIndex + 1, this.filteredArtikels.length - 1);
+          this.focusQuantityInput(nextIndex);
         }
-        this.scrollToSelectedItem();
         break;
       case 'ArrowUp':
         event.preventDefault();
-        // Wenn noch kein Element ausgewählt ist, wähle das letzte
+        // Wenn noch kein Element ausgewählt ist, wähle das letzte und fokussiere Mengenfeld
         if (this.selectedIndex === -1) {
-          this.selectedIndex = this.filteredArtikels.length - 1;
+          this.focusQuantityInput(this.filteredArtikels.length - 1);
         } else {
-          this.selectedIndex = Math.max(this.selectedIndex - 1, 0);
+          const prevIndex = Math.max(this.selectedIndex - 1, 0);
+          this.focusQuantityInput(prevIndex);
         }
-        this.scrollToSelectedItem();
         break;
       case 'Enter':
         event.preventDefault();
@@ -345,13 +343,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
         event.preventDefault();
         this.hideDropdown();
         break;
-      case 'Tab':
-        // Wenn Tab gedrückt wird und das Dropdown sichtbar ist, fokussiere das erste Mengenfeld
-        if (this.filteredArtikels.length > 0) {
-          event.preventDefault();
-          this.focusFirstQuantityInput();
-        }
-        break;
+
     }
   }
 
@@ -406,24 +398,9 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   hideDropdown() {
     this.showDropdown = false;
     this.selectedIndex = -1;
-    this.focusedQuantityIndex = -1;
   }
 
-  focusFirstQuantityInput() {
-    // Warte kurz, damit Angular die DOM-Änderungen verarbeitet hat
-    setTimeout(() => {
-      if (this.articlesDropdown) {
-        const dropdownElement = this.articlesDropdown.nativeElement;
-        const firstQuantityInput = dropdownElement.querySelector('.quantity-input') as HTMLInputElement;
-        
-        if (firstQuantityInput) {
-          firstQuantityInput.focus();
-          firstQuantityInput.select(); // Markiere den gesamten Text
-          this.focusedQuantityIndex = 0; // Setze den fokussierten Index auf das erste Element
-        }
-      }
-    }, 50);
-  }
+
 
   focusQuantityInput(index: number) {
     // Warte kurz, damit Angular die DOM-Änderungen verarbeitet hat
@@ -435,7 +412,6 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
         if (quantityInputs[index]) {
           quantityInputs[index].focus();
           quantityInputs[index].select(); // Markiere den gesamten Text
-          this.focusedQuantityIndex = index;
           this.selectedIndex = index; // Markiere auch den Artikel als ausgewählt
           this.scrollToSelectedItem(); // Scrolle zum ausgewählten Artikel
         }
