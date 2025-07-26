@@ -30,6 +30,7 @@ interface Order {
   payment_status: string;
   delivery_date: string;
   status: string;
+  role?: string; // Neues role-Attribut
   items: OrderItem[];
 }
 
@@ -112,7 +113,8 @@ export class OrderOverviewComponent implements OnInit {
       order.order_id?.toString().includes(this.searchTerm) ||
       order.name?.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
       order.company?.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-      order.email?.toLowerCase().includes(this.searchTerm.toLowerCase())
+      order.email?.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+      (order.role && order.role.toLowerCase().includes(this.searchTerm.toLowerCase()))
     );
   }
 
@@ -270,5 +272,23 @@ export class OrderOverviewComponent implements OnInit {
   getItemTotal(price: string, quantity: number): number {
     const numPrice = parseFloat(price);
     return isNaN(numPrice) ? 0 : numPrice * quantity;
+  }
+
+  isEmployee(order: Order): boolean {
+    return order.role === 'admin' || order.role === 'employee';
+  }
+
+  getCustomerDisplayName(order: Order): string {
+    if (this.isEmployee(order)) {
+      return '-'; // Keine Anzeige für admin/employee in der Kundenspalte
+    }
+    return order.name;
+  }
+
+  getEmployeeDisplayName(order: Order): string {
+    if (this.isEmployee(order)) {
+      return order.name;
+    }
+    return '-'; // Keine Anzeige für normale Kunden in der Sachbearbeiter-Spalte
   }
 } 

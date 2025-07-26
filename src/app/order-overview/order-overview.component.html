@@ -50,8 +50,9 @@
             <tr>
               <th>Bestellnummer</th>
               <th>Datum</th>
-              <th>Kunde</th>
               <th>Kundennummer</th>
+              <th>Sachbearbeiter</th>
+              <th>Kunde</th>
               <th>Firma</th>
               <th>Status</th>
               <th>Zahlungsstatus</th>
@@ -64,8 +65,9 @@
               <tr class="order-row" (click)="onOrderClick(order)">
                 <td class="order-id">{{ order.order_id }}</td>
                 <td class="order-date">{{ order.created_at | date: 'dd.MM.yyyy HH:mm' }}</td>
-                <td class="customer-name">{{ order.name }}</td>
                 <td class="customer-number">{{ order.customer_number || '-' }}</td>
+                <td class="employee-name">{{ getEmployeeDisplayName(order) }}</td>
+                <td class="customer-name">{{ getCustomerDisplayName(order) }}</td>
                 <td class="company-name">{{ order.company || '-' }}</td>
                 <td class="status-cell">
                   <span class="status-badge" [class]="getStatusClass(order.status)">
@@ -130,6 +132,20 @@
               <div class="detail-item">
                 <span class="detail-label">E-Mail:</span>
                 <span class="detail-value">{{ selectedOrder.email }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Rolle:</span>
+                <span class="detail-value">
+                  @if (selectedOrder.role) {
+                    @if (isEmployee(selectedOrder)) {
+                      <span class="role-badge employee">Sachbearbeiter</span>
+                    } @else {
+                      <span class="role-badge customer">Kunde</span>
+                    }
+                  } @else {
+                    <span class="role-badge customer">Kunde</span>
+                  }
+                </span>
               </div>
               <div class="detail-item">
                 <span class="detail-label">Kundennummer:</span>
