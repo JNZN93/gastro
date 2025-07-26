@@ -241,15 +241,22 @@
 
 <!-- Scanner Modal -->
 <div class="scanner-modal" *ngIf="isScanning">
-  <select [(ngModel)]="selectedDevice">
-    <option *ngFor="let device of availableDevices" [ngValue]="device">
-      {{ device.label }}
-    </option>
-  </select>
   <div class="scanner-content">
-    <button class="close-scanner" (click)="stopScanner()">
-      <span class="material-icons">close</span>
-    </button>
+    <div class="scanner-header">
+      <h3>Barcode Scanner</h3>
+      <button class="close-scanner" (click)="stopScanner()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+    
+    <select [(ngModel)]="selectedDevice" class="device-select">
+      <option *ngFor="let device of availableDevices" [ngValue]="device">
+        {{ device.label }}
+      </option>
+    </select>
+    
     <div class="scanner-wrapper">
       <zxing-scanner #scanner 
       [device]="selectedDevice"
