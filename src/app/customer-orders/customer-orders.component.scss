@@ -1,6 +1,6 @@
 .article-container {
   position: relative;
-  margin-top: 100px;
+  margin-top: 70px;
   width: 100%;
   height: calc(100vh - 100px); // Geändert von 100vh zu calc(100vh - 100px)
   display: flex;
@@ -932,7 +932,7 @@
 
   .order-section {
     height: auto;
-    max-height: 600px;
+    max-height: 400px;
   }
 
   .order-table-container {
@@ -946,6 +946,12 @@
     height: 100%; // Geändert zu 100% statt calc(100vh - 100px)
   }
 
+  .order-section {
+    height: auto;
+    max-height: 60vh; // Begrenzt die Höhe auf 60% der Viewport-Höhe
+    overflow-y: auto; // Ermöglicht Scrollen falls nötig
+  }
+
   .articles-section {
     padding: 12px;
   }
@@ -955,54 +961,69 @@
   }
 
   .order-header {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 6px;
-
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 8px !important;
+    
     h3 {
-      text-align: center;
-      font-size: 13px;
+      font-size: 12px !important;
+      margin: 0 !important;
+      flex: 1 !important;
+    }
+    
+    .change-customer-btn {
+      padding: 4px 6px !important;
+      font-size: 10px !important;
+      height: 24px !important;
+      white-space: nowrap !important;
+      
+      .material-icons {
+        font-size: 12px !important;
+      }
     }
   }
 
   .customer-info-box {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 6px;
-    padding: 6px;
-
+    padding: 4px 6px !important;
+    gap: 4px !important;
+    font-size: 11px !important;
+    border-radius: 4px !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    
     .customer-details {
-      gap: 4px;
+      gap: 2px !important;
+      flex: 1 !important;
     }
-
+    
     .customer-basic-info {
       h4 {
-        text-align: center;
-        font-size: 12px;
+        font-size: 11px !important;
+        margin-bottom: 2px !important;
       }
-
       .customer-addition,
       .customer-location {
-        text-align: center;
-        font-size: 10px;
+        font-size: 9px !important;
+        margin-bottom: 1px !important;
       }
     }
-
+    
     .customer-pricing-info {
       .pricing-status {
-        justify-content: center;
-        text-align: center;
-        font-size: 10px;
-        padding: 3px 5px;
+        font-size: 9px !important;
+        padding: 2px 4px !important;
       }
     }
-  }
-
-  .change-customer-btn {
-    width: 100%;
-    justify-content: center;
-    padding: 4px 6px;
-    font-size: 10px;
+    
+    .clear-customer-btn {
+      width: 20px !important;
+      height: 20px !important;
+      padding: 0 !important;
+      
+      .material-icons {
+        font-size: 12px !important;
+      }
+    }
   }
 
   .search-container {
@@ -1088,13 +1109,79 @@
   }
 
   .order-actions {
-    flex-direction: column;
-    gap: 6px;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 8px !important;
+    
+    .save-order-btn, .clear-order-btn {
+      span:not(.material-icons) {
+        display: none !important;
+      }
+    }
   }
 
   .save-order-btn, .clear-order-btn {
     padding: 6px 12px;
     font-size: 12px;
+  }
+
+  .articles-dropdown {
+    position: static;
+    box-shadow: none;
+    border-radius: 0;
+    margin-top: 0;
+    max-height: 300px;
+    width: 100%;
+    border-left: none;
+    border-right: none;
+    z-index: auto;
+  }
+
+  .no-search {
+    display: none;
+  }
+
+  .customer-info-box {
+    padding: 4px 6px !important;
+    gap: 4px !important;
+    font-size: 11px !important;
+    border-radius: 4px !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    
+    .customer-details {
+      gap: 2px !important;
+      flex: 1 !important;
+    }
+    
+    .customer-basic-info {
+      h4 {
+        font-size: 11px !important;
+        margin-bottom: 2px !important;
+      }
+      .customer-addition,
+      .customer-location {
+        font-size: 9px !important;
+        margin-bottom: 1px !important;
+      }
+    }
+    
+    .customer-pricing-info {
+      .pricing-status {
+        font-size: 9px !important;
+        padding: 2px 4px !important;
+      }
+    }
+    
+    .clear-customer-btn {
+      width: 20px !important;
+      height: 20px !important;
+      padding: 0 !important;
+      
+      .material-icons {
+        font-size: 12px !important;
+      }
+    }
   }
 }
 
