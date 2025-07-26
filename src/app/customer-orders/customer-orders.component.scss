@@ -613,6 +613,7 @@
     min-height: 28px !important;
     max-height: 28px !important;
     box-sizing: border-box;
+    cursor: grab;
 
     &:hover {
       background-color: #f8f9fa;
@@ -621,17 +622,72 @@
     &.editing {
       background: linear-gradient(135deg, #fff3e0, #ffe0b2);
       border-left: 4px solid #ff6b35;
+      cursor: default;
       
       td {
         border-bottom-color: #ffcc80;
       }
+    }
+
+    // Drag & Drop Styles
+    &.dragging {
+      opacity: 0.5;
+      cursor: grabbing;
+      background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+      border: 2px dashed #2196f3;
+      z-index: 1000;
+    }
+
+    &.drag-over {
+      background: linear-gradient(135deg, #fff8e1, #ffecb3);
+      border-top: 3px solid #ff9800;
+      position: relative;
+      
+      &::before {
+        content: '';
+        position: absolute;
+        top: -2px;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #ff9800, #ff5722);
+        border-radius: 2px;
+      }
+    }
+
+    &:active {
+      cursor: grabbing;
     }
   }
 
   .position {
     font-weight: 600;
     color: #666;
-    width: 40px;
+    width: 50px;
+    
+    .position-content {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      
+      .position-number {
+        font-weight: 600;
+        color: #666;
+      }
+      
+      .drag-handle {
+        font-size: 14px;
+        color: #999;
+        cursor: grab;
+        opacity: 0.6;
+        transition: opacity 0.2s ease;
+        
+        &:hover {
+          opacity: 1;
+          color: #666;
+        }
+      }
+    }
   }
 
   .article-name {

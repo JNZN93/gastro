@@ -65,8 +65,24 @@
               </thead>
               <tbody>
                 @for (item of orderItems; track $index; let i = $index) {
-                <tr class="order-row" [class.editing]="editingItemIndex === i">
-                  <td class="position">{{ i + 1 }}</td>
+                <tr class="order-row" 
+                    [class.editing]="editingItemIndex === i"
+                    [draggable]="editingItemIndex !== i && editingArticleNameIndex !== i"
+                    (dragstart)="onDragStart($event, i)"
+                    (dragover)="onDragOver($event)"
+                    (drop)="onDrop($event, i)"
+                    (dragenter)="onDragEnter($event)"
+                    (dragleave)="onDragLeave($event)"
+                    [class.drag-over]="dragOverIndex === i"
+                    [class.dragging]="draggedIndex === i">
+                  <td class="position">
+                    <div class="position-content">
+                      <span class="position-number">{{ i + 1 }}</span>
+                      @if (editingItemIndex !== i && editingArticleNameIndex !== i) {
+                        <span class="drag-handle material-icons">drag_indicator</span>
+                      }
+                    </div>
+                  </td>
                   <td class="article-name">
                     <div class="article-name-container" 
                          [class.editing-name]="editingArticleNameIndex === i"

@@ -56,6 +56,10 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   editingArticleNameIndex: number = -1;
   editingArticleName: string = '';
   
+  // Drag & Drop properties
+  draggedIndex: number = -1;
+  dragOverIndex: number = -1;
+  
   availableDevices: MediaDeviceInfo[] = [];
   selectedDevice?: MediaDeviceInfo;
   formatsEnabled: BarcodeFormat[] = [
@@ -592,6 +596,77 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     } else if (event.key === 'Escape') {
       this.cancelEditArticleName();
     }
+  }
+
+  // Drag & Drop Methods
+  onDragStart(event: DragEvent, index: number): void {
+    // Prevent dragging if item is being edited
+    if (this.editingItemIndex === index || this.editingArticleNameIndex === index) {
+      event.preventDefault();
+      return;
+    }
+    
+    this.draggedIndex = index;
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', index.toString());
+    }
+  }
+
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = 'move';
+    }
+  }
+
+  onDragEnter(event: DragEvent): void {
+    event.preventDefault();
+    const target = event.currentTarget as HTMLElement;
+    const row = target.closest('tr');
+    if (row) {
+      const index = Array.from(row.parentElement?.children || []).indexOf(row);
+      this.dragOverIndex = index;
+    }
+  }
+
+  onDragLeave(event: DragEvent): void {
+    const target = event.currentTarget as HTMLElement;
+    const relatedTarget = event.relatedTarget as HTMLElement;
+    
+    // Only clear if we're leaving the row entirely
+    if (!target.contains(relatedTarget)) {
+      this.dragOverIndex = -1;
+    }
+  }
+
+  onDrop(event: DragEvent, dropIndex: number): void {
+    event.preventDefault();
+    
+    if (this.draggedIndex === -1 || this.draggedIndex === dropIndex) {
+      this.draggedIndex = -1;
+      this.dragOverIndex = -1;
+      return;
+    }
+
+    // Reorder the items
+    const draggedItem = this.orderItems[this.draggedIndex];
+    const newOrderItems = [...this.orderItems];
+    
+    // Remove the dragged item
+    newOrderItems.splice(this.draggedIndex, 1);
+    
+    // Insert at the new position
+    newOrderItems.splice(dropIndex, 0, draggedItem);
+    
+    this.orderItems = newOrderItems;
+    
+    // Save the new order
+    this.globalService.saveCustomerOrders(this.orderItems);
+    
+    // Reset drag state
+    this.draggedIndex = -1;
+    this.dragOverIndex = -1;
   }
 
   addToOrder(event: Event, artikel: any): void {
