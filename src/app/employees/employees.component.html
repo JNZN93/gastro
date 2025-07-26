@@ -30,6 +30,23 @@
           <span class="material-icons">close</span>
         </button>
       </div>
+      
+      <!-- Kunden-Preis-Info (klickbar) -->
+      <div class="customer-pricing-info">
+        @if (customerArticlePrices.length > 0) {
+          <div class="pricing-status success" (click)="openArticlePricesModal()" style="cursor: pointer;">
+            <span class="material-icons">check_circle</span>
+            <span>{{ customerArticlePrices.length }} kundenspezifische Preise verfügbar</span>
+            <span class="material-icons click-hint">open_in_new</span>
+          </div>
+        } @else {
+          <div class="pricing-status standard" (click)="openArticlePricesModal()" style="cursor: pointer;">
+            <span class="material-icons">info</span>
+            <span>Standard-Preise werden verwendet</span>
+            <span class="material-icons click-hint">open_in_new</span>
+          </div>
+        }
+      </div>
       }
    
     </div>
@@ -43,6 +60,26 @@
       <div class="card-body">
         <h4 class="card-title"><b>{{ artikel.article_text }}</b></h4>
         <p class="card-price">Art.-Nr [{{ artikel.article_number }}]</p>
+        
+        <!-- Preis-Anzeige mit kundenspezifischen Preisen -->
+        <div class="price-display">
+          @if (artikel.different_price !== undefined) {
+            <div class="customer-price">
+              <span class="price-label">Kundenpreis:</span>
+              <span class="price-value customer-price-value">{{ artikel.different_price | number:'1.2-2' }}€</span>
+            </div>
+            <div class="original-price">
+              <span class="price-label">Standardpreis:</span>
+              <span class="price-value original-price-value">{{ artikel.sale_price | number:'1.2-2' }}€</span>
+            </div>
+          } @else {
+            <div class="standard-price">
+              <span class="price-label">Preis:</span>
+              <span class="price-value">{{ artikel.sale_price | number:'1.2-2' }}€</span>
+            </div>
+          }
+        </div>
+        
         <div class="card-footer">
           <div class="input-main">
             <input type="number" [(ngModel)]="artikel.quantity" placeholder="Menge eingeben" class="quantity-input"
@@ -134,6 +171,57 @@
       @if (!isLoadingCustomers && filteredCustomers.length === 0) {
       <div class="no-customers">
         <p>Keine Kunden gefunden.</p>
+      </div>
+      }
+    </div>
+  </div>
+</div>
+
+<!-- Article Prices Modal -->
+<div class="article-prices-modal" *ngIf="isArticlePricesModalOpen">
+  <div class="article-prices-modal-content">
+    <div class="article-prices-modal-header">
+      <h2>Artikel-Preise</h2>
+      <button class="close-article-prices-modal" (click)="closeArticlePricesModal()">
+        <span class="material-icons">close</span>
+      </button>
+    </div>
+    
+    <div class="article-prices-modal-body">
+      <div class="article-prices-search">
+        <input type="text" [(ngModel)]="articlePricesSearchTerm" (input)="filterArticlePrices()" placeholder="Nach Artikelbezeichnung, Art.-Nr., EAN oder Produkt-ID suchen..." class="article-prices-search-input">
+      </div>
+      
+      <div class="article-prices-table-container">
+        <table class="article-prices-table">
+          <thead>
+            <tr>
+              <th>Artikel</th>
+              <th>Art.-Nr.</th>
+              <th>Kundenpreis (€)</th>
+              <th>Rechnungs-ID</th>
+              <th>Rechnungsdatum</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (customerPrice of filteredArticlePrices; track customerPrice.product_id) {
+            <tr class="article-price-row">
+              <td class="article-name">{{ customerPrice.article_text || 'Unbekannter Artikel' }}</td>
+              <td class="article-number">{{ customerPrice.article_number || customerPrice.product_id }}</td>
+              <td class="customer-price">
+                <span class="customer-price-value">€{{ customerPrice.unit_price_net }}</span>
+              </td>
+              <td class="invoice-id">{{ customerPrice.invoice_id || '-' }}</td>
+              <td class="invoice-date">{{ formatInvoiceDate(customerPrice.invoice_date) }}</td>
+            </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      
+      @if (filteredArticlePrices.length === 0) {
+      <div class="no-article-prices">
+        <p>Keine Artikel gefunden.</p>
       </div>
       }
     </div>

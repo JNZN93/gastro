@@ -36,6 +36,16 @@ export class EmployeesComponent implements OnInit {
   filteredCustomers: any[] = [];
   customerSearchTerm: string = '';
   isLoadingCustomers: boolean = false;
+  
+  // Customer article prices properties
+  customerArticlePrices: any[] = [];
+  pendingCustomerForPriceUpdate: any = null;
+  
+  // Article prices modal properties
+  isArticlePricesModalOpen: boolean = false;
+  articlePricesSearchTerm: string = '';
+  filteredArticlePrices: any[] = [];
+  
   availableDevices: MediaDeviceInfo[] = [];
   selectedDevice?: MediaDeviceInfo;
   formatsEnabled: BarcodeFormat[] = [
@@ -98,23 +108,29 @@ export class EmployeesComponent implements OnInit {
 
     if(loadedWarenkorb) {
       this.globalService.warenkorb = JSON.parse(loadedWarenkorb);
+      this.warenkorb = this.globalService.warenkorb;
     }
 
     if (token) {
       this.authService.checkToken(token).subscribe({
-        next: (response) => {
+        next: (response: any) => {
           this.artikelService.getData().subscribe((res) => {
             if(response.user.role == 'admin') {
               this.globalService.isAdmin = true;
             }
             this.globalArtikels = res;
             this.artikelData = res;
-            this.collectOrderData(response);
-            this.globalService.orderData = this.orderData;
             this.isVisible = false;
+            
+            // Nach dem Laden der Artikel: Aktualisiere kundenspezifische Preise falls ein Kunde gespeichert ist
+            if (this.pendingCustomerForPriceUpdate) {
+              console.log('🔄 [INIT] Lade kundenspezifische Preise für gespeicherten Kunden:', this.pendingCustomerForPriceUpdate.customer_number);
+              this.loadCustomerArticlePrices(this.pendingCustomerForPriceUpdate.customer_number);
+              this.pendingCustomerForPriceUpdate = null; // Reset nach dem Laden
+            }
           });
         },
-        error: (error) => {
+        error: (error: any) => {
           this.isVisible = false;
           console.error('Token ungültig oder Fehler:', error);
           this.router.navigate(['/login']);
@@ -267,6 +283,16 @@ export class EmployeesComponent implements OnInit {
       artikel.quantity = 1; // Standardmenge setzen
     }
 
+    // Verwende den korrekten Preis (kundenspezifisch oder Standard)
+    const itemPrice = this.getItemPrice(artikel);
+    const artikelWithPrice = {
+      ...artikel,
+      quantity: Number(artikel.quantity),
+      sale_price: itemPrice, // Verwende den korrekten Preis
+      different_price: artikel.different_price, // Behalte kundenspezifischen Preis bei
+      original_price: artikel.original_price // Behalte ursprünglichen Preis bei
+    };
+
     // Überprüfen, ob der Artikel bereits im Warenkorb ist
     const existingItem = this.globalService.warenkorb.find(
       (item) => item.article_number == artikel.article_number
@@ -275,11 +301,15 @@ export class EmployeesComponent implements OnInit {
     if (existingItem) {
       // Falls der Artikel existiert, die Menge erhöhen
       existingItem.quantity += Number(artikel.quantity);
+      // Aktualisiere auch den Preis falls sich dieser geändert hat
+      existingItem.sale_price = itemPrice;
+      existingItem.different_price = artikel.different_price;
+      existingItem.original_price = artikel.original_price;
     } else {
       // Neuen Artikel hinzufügen
       this.globalService.warenkorb = [
         ...this.globalService.warenkorb,
-        { ...artikel, quantity: Number(artikel.quantity) },
+        artikelWithPrice,
       ];
     }
 
@@ -315,7 +345,10 @@ export class EmployeesComponent implements OnInit {
 
 
   getTotalPrice() {
-    this.globalService.totalPrice = this.globalService.warenkorb.reduce((summe, artikel) => summe + (artikel.sale_price * parseInt(artikel.quantity)), 0);
+    this.globalService.totalPrice = this.globalService.warenkorb.reduce((summe, artikel) => {
+      const itemPrice = artikel.different_price !== undefined ? artikel.different_price : artikel.sale_price;
+      return summe + (itemPrice * parseInt(artikel.quantity));
+    }, 0);
   }
 
 
@@ -410,12 +443,327 @@ export class EmployeesComponent implements OnInit {
   }
 
   selectCustomer(customer: any) {
+    console.log('👤 [SELECT-CUSTOMER] Kunde ausgewählt:', customer);
+    console.log('👤 [SELECT-CUSTOMER] Kundenummer:', customer.customer_number);
+    console.log('👤 [SELECT-CUSTOMER] Kundenname:', customer.last_name_company);
+    
     this.globalService.setSelectedCustomer(customer);
+    console.log('💾 [SELECT-CUSTOMER] Kunde im GlobalService und localStorage gespeichert');
+    
     this.closeCustomerModal();
-    console.log('Kunde ausgewählt:', customer);
+    console.log('🔒 [SELECT-CUSTOMER] Customer Modal geschlossen');
+    
+    // Lösche das Suchfeld beim Kundenwechsel
+    this.searchTerm = '';
+    this.filteredArtikelData();
+    console.log('🧹 [SELECT-CUSTOMER] Suchfeld geleert');
+    
+    // Lade Kunden-Artikel-Preise für den ausgewählten Kunden
+    console.log('🔄 [SELECT-CUSTOMER] Starte loadCustomerArticlePrices für Kunde:', customer.customer_number);
+    this.loadCustomerArticlePrices(customer.customer_number);
   }
 
   clearSelectedCustomer() {
+    console.log('🧹 [CLEAR-CUSTOMER] Kunde wird zurückgesetzt');
     this.globalService.clearSelectedCustomer();
+    
+    // Setze alle Artikel auf Standard-Preise zurück
+    this.resetArtikelsToStandardPrices();
+    console.log('✅ [CLEAR-CUSTOMER] Alle Artikel auf Standard-Preise zurückgesetzt');
+  }
+
+  // Neue Methode zum Laden der Kunden-Artikel-Preise
+  loadCustomerArticlePrices(customerNumber: string) {
+    console.log('🔄 [CUSTOMER-ARTICLE-PRICES] Starte API-Aufruf für Kunde:', customerNumber);
+    
+    // Spezielle Behandlung für bestimmte Kunden - leeres Array zurückgeben
+    if (customerNumber === '10.022' || customerNumber === '10.003') {
+      console.log('⚠️ [CUSTOMER-ARTICLE-PRICES] Spezielle Behandlung für Kunde:', customerNumber, '- leeres Array zurückgeben');
+      this.customerArticlePrices = [];
+      console.log('💾 [CUSTOMER-ARTICLE-PRICES] Leeres Array für Kunde', customerNumber, 'gespeichert');
+      this.updateArtikelsWithCustomerPrices();
+      return;
+    }
+    
+    const token = localStorage.getItem('token');
+    const apiUrl = `https://multi-mandant-ecommerce.onrender.com/api/customer-article-prices/customer/${customerNumber}`;
+    
+    console.log('🔗 [CUSTOMER-ARTICLE-PRICES] API URL:', apiUrl);
+    console.log('🔑 [CUSTOMER-ARTICLE-PRICES] Token vorhanden:', !!token);
+    
+    fetch(apiUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    })
+    .then(response => {
+      console.log('📡 [CUSTOMER-ARTICLE-PRICES] Response Status:', response.status);
+      console.log('📡 [CUSTOMER-ARTICLE-PRICES] Response OK:', response.ok);
+      
+      if (!response.ok) {
+        console.error('❌ [CUSTOMER-ARTICLE-PRICES] Response nicht OK:', response.status, response.statusText);
+        throw new Error(`Fehler beim Laden der Kunden-Artikel-Preise: ${response.status} ${response.statusText}`);
+      }
+      
+      console.log('✅ [CUSTOMER-ARTICLE-PRICES] Response erfolgreich, parse JSON...');
+      return response.json();
+    })
+    .then(data => {
+      console.log('📊 [CUSTOMER-ARTICLE-PRICES] Empfangene Daten:', data);
+      console.log('📊 [CUSTOMER-ARTICLE-PRICES] Anzahl Artikel-Preise:', Array.isArray(data) ? data.length : 'Kein Array');
+      
+      this.customerArticlePrices = data;
+      console.log('💾 [CUSTOMER-ARTICLE-PRICES] Daten in customerArticlePrices gespeichert');
+      
+      // Aktualisiere die Artikel mit den kundenspezifischen Preisen
+      console.log('🔄 [CUSTOMER-ARTICLE-PRICES] Starte updateArtikelsWithCustomerPrices...');
+      this.updateArtikelsWithCustomerPrices();
+    })
+    .catch(error => {
+      console.error('❌ [CUSTOMER-ARTICLE-PRICES] Fehler beim API-Aufruf:', error);
+      this.customerArticlePrices = [];
+      console.log('🔄 [CUSTOMER-ARTICLE-PRICES] customerArticlePrices zurückgesetzt');
+    });
+  }
+
+  // Methode zum Aktualisieren der Artikel mit kundenspezifischen Preisen
+  updateArtikelsWithCustomerPrices() {
+    console.log('🔄 [UPDATE-PRICES] Starte updateArtikelsWithCustomerPrices...');
+    console.log('📊 [UPDATE-PRICES] customerArticlePrices Länge:', this.customerArticlePrices.length);
+    console.log('📊 [UPDATE-PRICES] globalArtikels Länge:', this.globalArtikels.length);
+    
+    if (this.customerArticlePrices.length > 0) {
+      console.log('✅ [UPDATE-PRICES] Kundenspezifische Preise vorhanden, erstelle Map...');
+      
+      // Erstelle eine Map für schnellen Zugriff auf die Kunden-Preise
+      const customerPriceMap = new Map();
+      this.customerArticlePrices.forEach(customerPrice => {
+        // Verwende verschiedene Felder als Keys für bessere Suche
+        if (customerPrice.product_id) {
+          customerPriceMap.set(customerPrice.product_id, customerPrice);
+        }
+        if (customerPrice.article_number) {
+          customerPriceMap.set(customerPrice.article_number, customerPrice);
+        }
+        if (customerPrice.id) {
+          customerPriceMap.set(customerPrice.id.toString(), customerPrice);
+        }
+        if (customerPrice.ean) {
+          customerPriceMap.set(customerPrice.ean, customerPrice);
+        }
+      });
+      
+      console.log('🗺️ [UPDATE-PRICES] Customer Price Map erstellt, Größe:', customerPriceMap.size);
+
+      // Zähle Artikel mit kundenspezifischen Preisen
+      let updatedCount = 0;
+      let unchangedCount = 0;
+
+      // Aktualisiere die globalen Artikel mit den kundenspezifischen Preisen
+      this.globalArtikels = this.globalArtikels.map(artikel => {
+        // Erweiterte Suche: Versuche verschiedene Felder zu finden
+        let customerPrice = customerPriceMap.get(artikel.article_number);
+        
+        if (!customerPrice && artikel.product_id) {
+          customerPrice = customerPriceMap.get(artikel.product_id);
+        }
+        
+        if (!customerPrice && artikel.id) {
+          customerPrice = customerPriceMap.get(artikel.id.toString());
+        }
+        
+        if (!customerPrice && artikel.ean) {
+          customerPrice = customerPriceMap.get(artikel.ean);
+        }
+        
+        if (customerPrice) {
+          const originalPrice = artikel.sale_price;
+          const customerNetPrice = parseFloat(customerPrice.unit_price_net);
+          
+          console.log(`💰 [UPDATE-PRICES] Artikel ${artikel.article_number} (${artikel.article_text}): ${originalPrice}€ → ${customerNetPrice}€ (Kundenpreis)`);
+          
+          updatedCount++;
+          return {
+            ...artikel,
+            different_price: customerNetPrice, // Füge den kundenspezifischen Preis als different_price hinzu
+            original_price: originalPrice // Behalte den ursprünglichen Preis
+          };
+        } else {
+          unchangedCount++;
+          return {
+            ...artikel,
+            different_price: undefined, // Stelle sicher, dass keine alten kundenspezifischen Preise übrig bleiben
+            original_price: undefined
+          };
+        }
+      });
+
+      console.log('📊 [UPDATE-PRICES] Aktualisierte Artikel:', updatedCount);
+      console.log('📊 [UPDATE-PRICES] Unveränderte Artikel:', unchangedCount);
+
+      // Aktualisiere auch die artikelData
+      this.artikelData = [...this.globalArtikels];
+      console.log('💾 [UPDATE-PRICES] artikelData aktualisiert');
+      
+      // Aktualisiere die filteredData, falls bereits gefiltert wurde
+      if (this.searchTerm) {
+        console.log('🔄 [UPDATE-PRICES] Aktualisiere filteredData nach Kundenwechsel...');
+        this.filteredArtikelData();
+      }
+      
+      console.log('✅ [UPDATE-PRICES] Artikel mit kundenspezifischen Preisen erfolgreich aktualisiert');
+    } else {
+      console.log('⚠️ [UPDATE-PRICES] Keine kundenspezifischen Preise vorhanden, setze alle auf Standard-Preise zurück');
+      
+      // Setze alle Artikel auf Standard-Preise zurück
+      this.globalArtikels = this.globalArtikels.map(artikel => ({
+        ...artikel,
+        different_price: undefined,
+        original_price: undefined
+      }));
+      
+      // Aktualisiere auch die artikelData
+      this.artikelData = [...this.globalArtikels];
+      console.log('💾 [UPDATE-PRICES] artikelData auf Standard-Preise zurückgesetzt');
+      
+      // Aktualisiere auch hier die filteredData, falls bereits gefiltert wurde
+      if (this.searchTerm) {
+        console.log('🔄 [UPDATE-PRICES] Aktualisiere filteredData nach Zurücksetzen der Preise...');
+        this.filteredArtikelData();
+      }
+      
+      console.log('✅ [UPDATE-PRICES] Alle Artikel auf Standard-Preise zurückgesetzt');
+    }
+  }
+
+  // Methode zum Zurücksetzen aller Artikel auf Standard-Preise
+  private resetArtikelsToStandardPrices() {
+    console.log('🔄 [RESET-PRICES] Setze alle Artikel auf Standard-Preise zurück');
+    
+    this.globalArtikels = this.globalArtikels.map(artikel => ({
+      ...artikel,
+      different_price: undefined,
+      original_price: undefined
+    }));
+    
+    this.artikelData = [...this.globalArtikels];
+    console.log('💾 [RESET-PRICES] artikelData auf Standard-Preise zurückgesetzt');
+    
+    if (this.searchTerm) {
+      this.filteredArtikelData();
+    }
+    
+    console.log('✅ [RESET-PRICES] Alle Artikel auf Standard-Preise zurückgesetzt');
+  }
+
+  // Hilfsmethode um den korrekten Preis für ein artikel zu bekommen
+  getItemPrice(artikel: any): number {
+    return artikel.different_price !== undefined ? artikel.different_price : artikel.sale_price;
+  }
+
+  // Article Prices Modal Methoden
+  openArticlePricesModal() {
+    console.log('📋 [ARTICLE-PRICES-MODAL] Öffne Artikel-Preise-Modal...');
+    this.isArticlePricesModalOpen = true;
+    this.articlePricesSearchTerm = '';
+    this.filterArticlePrices();
+  }
+
+  closeArticlePricesModal() {
+    console.log('📋 [ARTICLE-PRICES-MODAL] Schließe Artikel-Preise-Modal...');
+    this.isArticlePricesModalOpen = false;
+    this.articlePricesSearchTerm = '';
+    this.filteredArticlePrices = [];
+  }
+
+  filterArticlePrices() {
+    console.log('🔍 [ARTICLE-PRICES-MODAL] Filtere Artikel-Preise...');
+    console.log('🔍 [ARTICLE-PRICES-MODAL] Suchbegriff:', this.articlePricesSearchTerm);
+    console.log('🔍 [ARTICLE-PRICES-MODAL] Verfügbare Artikel-Preise:', this.customerArticlePrices.length);
+    console.log('🔍 [ARTICLE-PRICES-MODAL] Globale Artikel:', this.globalArtikels.length);
+    
+    // Zuerst filtere nach Verfügbarkeit in globalArtikels
+    let availableCustomerPrices = this.customerArticlePrices.filter(customerPrice => {
+      return this.isArticleAvailableInGlobal(customerPrice);
+    });
+    
+    console.log('📊 [ARTICLE-PRICES-MODAL] Verfügbare Artikel in globalArtikels:', availableCustomerPrices.length);
+    
+    if (!this.articlePricesSearchTerm.trim()) {
+      // Wenn kein Suchbegriff, zeige alle verfügbaren Artikel-Preise an
+      this.filteredArticlePrices = availableCustomerPrices;
+    } else {
+      // Intelligente Suche: Teile Suchbegriff in einzelne Wörter auf
+      const terms = this.articlePricesSearchTerm.toLowerCase().split(/\s+/);
+      
+      this.filteredArticlePrices = availableCustomerPrices.filter(customerPrice => {
+        // Suche nach jedem Suchwort in verschiedenen Feldern
+        return terms.every((term) => {
+          const articleText = customerPrice.article_text?.toLowerCase() || '';
+          const articleNumber = customerPrice.article_number?.toLowerCase() || '';
+          const productId = customerPrice.product_id?.toLowerCase() || '';
+          const ean = customerPrice.ean?.toLowerCase() || '';
+          
+          return articleText.includes(term) || 
+                 articleNumber.includes(term) || 
+                 productId.includes(term) ||
+                 ean.includes(term);
+        });
+      });
+    }
+    
+    console.log('📊 [ARTICLE-PRICES-MODAL] Gefilterte Artikel-Preise:', this.filteredArticlePrices.length);
+  }
+
+  // Hilfsmethode zur Überprüfung der Verfügbarkeit in globalArtikels
+  private isArticleAvailableInGlobal(customerPrice: any): boolean {
+    // Suche nach verschiedenen Feldern in globalArtikels
+    const foundInGlobal = this.globalArtikels.some(globalArtikel => {
+      // 1. Suche nach product_id
+      if (customerPrice.product_id && globalArtikel.article_number == customerPrice.product_id) {
+        return true;
+      }
+      
+      // 2. Suche nach article_number
+      if (customerPrice.article_number && globalArtikel.article_number == customerPrice.article_number) {
+        return true;
+      }
+      
+      // 3. Suche nach id
+      if (customerPrice.id && globalArtikel.id == customerPrice.id) {
+        return true;
+      }
+      
+      // 4. Suche nach EAN (falls vorhanden)
+      if (customerPrice.ean && globalArtikel.ean == customerPrice.ean) {
+        return true;
+      }
+      
+      return false;
+    });
+    
+    return foundInGlobal;
+  }
+
+
+
+  // Hilfsmethode für die Datumsformatierung
+  formatInvoiceDate(dateString: string | null | undefined): string {
+    if (!dateString) return '-';
+    
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '-';
+      
+      return date.toLocaleDateString('de-DE', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+    } catch (error) {
+      return '-';
+    }
   }
 }

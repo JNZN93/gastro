@@ -36,7 +36,8 @@ export class WarenkorbComponent implements OnInit {
   }
 
   ngOnInit(): void {
-   
+    // Berechne den Gesamtpreis beim Initialisieren
+    this.getTotalPrice();
   }
 
   toggleDelivery(fulfillment_type:string) {
@@ -106,7 +107,13 @@ export class WarenkorbComponent implements OnInit {
   }
 
   getTotalPrice() {
-    this.globalService.totalPrice = this.globalService.warenkorb.reduce((summe, artikel) => summe + (artikel.sale_price * parseInt(artikel.quantity)), 0);
+    this.globalService.totalPrice = this.globalService.warenkorb.reduce((summe, artikel) => {
+      // Verwende different_price wenn ein Kunde ausgewählt ist und different_price vorhanden ist
+      const itemPrice = (this.globalService.selectedCustomer && artikel.different_price !== undefined) 
+        ? artikel.different_price 
+        : artikel.sale_price;
+      return summe + (itemPrice * parseInt(artikel.quantity));
+    }, 0);
   }
 
   reduceQuantity(artikel: any) {
