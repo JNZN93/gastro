@@ -38,7 +38,7 @@ export class ProductSelectionComponent implements OnInit {
   selectedProducts: Product[] = [];
   searchTerm: string = '';
   isLoading: boolean = false;
-  isCartExpanded: boolean = true; // Cart starts expanded by default
+  isCartExpanded: boolean = false; // Cart starts collapsed by default
   isScanning = false;
 
   // Scanner properties
