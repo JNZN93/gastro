@@ -461,26 +461,19 @@
 // Column widths
 .table th:nth-child(1),
 .table td:nth-child(1) {
-  width: 15%;
+  width: 20%;
   font-weight: 600;
   color: #1f2937;
 }
 
 .table th:nth-child(2),
 .table td:nth-child(2) {
-  width: 40%;
-  max-width: 300px;
+  width: 55%;
+  max-width: 400px;
 }
 
 .table th:nth-child(3),
 .table td:nth-child(3) {
-  width: 20%;
-  font-family: 'Courier New', monospace;
-  font-size: 0.8rem;
-}
-
-.table th:nth-child(4),
-.table td:nth-child(4) {
   width: 25%;
   min-width: 180px;
 }
@@ -687,24 +680,18 @@
 
   .table th:nth-child(1),
   .table td:nth-child(1) {
-    width: 20%;
+    width: 25%;
   }
 
   .table th:nth-child(2),
   .table td:nth-child(2) {
-    width: 30%;
-    max-width: 150px;
+    width: 45%;
+    max-width: 200px;
   }
 
   .table th:nth-child(3),
   .table td:nth-child(3) {
-    width: 15%;
-    font-size: 0.75rem;
-  }
-
-  .table th:nth-child(4),
-  .table td:nth-child(4) {
-    width: 35%;
+    width: 30%;
     min-width: 140px;
   }
 
@@ -799,24 +786,18 @@
 
   .table th:nth-child(1),
   .table td:nth-child(1) {
-    width: 25%;
+    width: 30%;
   }
 
   .table th:nth-child(2),
   .table td:nth-child(2) {
-    width: 25%;
-    max-width: 100px;
+    width: 40%;
+    max-width: 120px;
   }
 
   .table th:nth-child(3),
   .table td:nth-child(3) {
-    width: 10%;
-    font-size: 0.7rem;
-  }
-
-  .table th:nth-child(4),
-  .table td:nth-child(4) {
-    width: 40%;
+    width: 30%;
     min-width: 110px;
   }
 

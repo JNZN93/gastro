@@ -92,16 +92,14 @@
                     <tr>
                         <th>Artikelnummer</th>
                         <th>Artikelname</th>
-                        <th>EAN</th>
                         <th>Aktionen</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr *ngFor="let product of filteredProducts; trackBy: trackByProductId">
-                        <td>{{ product.article_number }}</td>
-                        <td>{{ product.article_text }}</td>
-                        <td>{{ product.ean || 'N/A' }}</td>
-                        <td>
+                                            <tr *ngFor="let product of filteredProducts; trackBy: trackByProductId">
+                            <td>{{ product.article_number }}</td>
+                            <td>{{ product.article_text }}</td>
+                            <td>
                             <div class="action-container">
                                 <button type="button"
                                         class="add-to-cart-btn-direct"
