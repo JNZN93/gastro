@@ -1,0 +1,241 @@
+<div class="order-overview-container">
+  <!-- Header Section -->
+  <div class="overview-header">
+    <div class="header-content">
+      <h1 class="overview-title">
+        <svg class="overview-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+        </svg>
+        Bestellungsübersicht
+      </h1>
+      <div class="header-stats">
+        <div class="stat-item">
+          <span class="stat-number">{{ orders.length }}</span>
+          <span class="stat-label">Gesamt Bestellungen</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search Section -->
+  <div class="search-section">
+    <div class="search-container">
+      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+      </svg>
+      <input 
+        type="text" 
+        placeholder="Bestellungen durchsuchen..." 
+        [(ngModel)]="searchTerm" 
+        class="search-input"
+      >
+    </div>
+  </div>
+
+  <!-- Orders Table -->
+  <div class="table-section">
+    @if (isLoading) {
+      <div class="loading-container">
+        <div class="loading-spinner">
+          <svg class="spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+          </svg>
+          <span>Lade Bestellungen...</span>
+        </div>
+      </div>
+    } @else {
+      <div class="table-container">
+        <table class="orders-table">
+          <thead>
+            <tr>
+              <th>Bestellnummer</th>
+              <th>Datum</th>
+              <th>Kunde</th>
+              <th>Firma</th>
+              <th>Status</th>
+              <th>Zahlungsstatus</th>
+              <th>Gesamtpreis</th>
+              <th>Aktionen</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (order of filteredOrders; track order.order_id) {
+              <tr class="order-row" (click)="onOrderClick(order)">
+                <td class="order-id">{{ order.order_id }}</td>
+                <td class="order-date">{{ order.created_at | date: 'dd.MM.yyyy HH:mm' }}</td>
+                <td class="customer-name">{{ order.name }}</td>
+                <td class="company-name">{{ order.company || '-' }}</td>
+                <td class="status-cell">
+                  <span class="status-badge" [class]="getStatusClass(order.status)">
+                    {{ getStatusText(order.status) }}
+                  </span>
+                </td>
+                <td class="payment-status">
+                  <span class="payment-badge" [class]="'payment-' + order.payment_status">
+                    {{ getPaymentStatusText(order.payment_status) }}
+                  </span>
+                </td>
+                <td class="total-price">{{ order.total_price | currency:'EUR':'symbol':'1.2-2' }}</td>
+                <td class="actions-cell">
+                  <button class="view-btn" (click)="onOrderClick(order); $event.stopPropagation()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                    </svg>
+                    Details
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      @if (filteredOrders.length === 0) {
+        <div class="no-results">
+          <svg class="no-results-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.47-.881-6.08-2.33"/>
+          </svg>
+          <h3>Keine Bestellungen gefunden</h3>
+          <p>Versuchen Sie einen anderen Suchbegriff oder laden Sie die Seite neu.</p>
+        </div>
+      }
+    }
+  </div>
+
+  <!-- Order Details Modal -->
+  @if (selectedOrder) {
+    <div class="modal-overlay" (click)="closeOrderDetails()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2>Bestelldetails #{{ selectedOrder.order_id }}</h2>
+          <button class="close-btn" (click)="closeOrderDetails()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <!-- Customer Information -->
+          <div class="detail-section">
+            <h3>Kundeninformationen</h3>
+            <div class="detail-grid">
+              <div class="detail-item">
+                <span class="detail-label">Name:</span>
+                <span class="detail-value">{{ selectedOrder.name }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">E-Mail:</span>
+                <span class="detail-value">{{ selectedOrder.email }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Firma:</span>
+                <span class="detail-value">{{ selectedOrder.company || 'Keine Angabe' }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Lieferadresse:</span>
+                <span class="detail-value">{{ selectedOrder.shipping_address || 'Keine Angabe' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Order Information -->
+          <div class="detail-section">
+            <h3>Bestellinformationen</h3>
+            <div class="detail-grid">
+              <div class="detail-item">
+                <span class="detail-label">Bestelldatum:</span>
+                <span class="detail-value">{{ selectedOrder.order_date | date: 'dd.MM.yyyy' }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Erstellt am:</span>
+                <span class="detail-value">{{ selectedOrder.created_at | date: 'dd.MM.yyyy HH:mm' }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Lieferart:</span>
+                <span class="detail-value">{{ selectedOrder.fulfillment_type === 'delivery' ? 'Lieferung' : 'Abholung' }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Liefer-/Abholdatum:</span>
+                <span class="detail-value">{{ formatDate(selectedOrder.delivery_date) }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Status:</span>
+                <span class="detail-value">
+                  <span class="status-badge" [class]="getStatusClass(selectedOrder.status)">
+                    {{ getStatusText(selectedOrder.status) }}
+                  </span>
+                </span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Zahlungsstatus:</span>
+                <span class="detail-value">
+                  <span class="payment-badge" [class]="'payment-' + selectedOrder.payment_status">
+                    {{ getPaymentStatusText(selectedOrder.payment_status) }}
+                  </span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Order Items -->
+          <div class="detail-section">
+            <h3>Bestellte Artikel ({{ selectedOrder.items.length }})</h3>
+            <div class="items-table-container">
+              <table class="items-table">
+                <thead>
+                  <tr>
+                    <th>Menge</th>
+                    <th>Artikelname</th>
+                    <th>Artikelnr.</th>
+                    <th>Preis</th>
+                    <th>Gesamt</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of selectedOrder.items; track item.product_id) {
+                    <tr>
+                      <td class="quantity">{{ item.quantity }}</td>
+                      <td class="product-name">{{ item.product_name }}</td>
+                      <td class="article-number">{{ item.product_article_number }}</td>
+                      <td class="price">
+                        @if (item.different_price) {
+                          <span class="original-price">{{ item.price | currency:'EUR':'symbol':'1.2-2' }}</span>
+                          <span class="different-price">{{ item.different_price | currency:'EUR':'symbol':'1.2-2' }}</span>
+                        } @else {
+                          {{ item.price | currency:'EUR':'symbol':'1.2-2' }}
+                        }
+                      </td>
+                      <td class="total">
+                        @if (item.different_price) {
+                          {{ (item.different_price * item.quantity) | currency:'EUR':'symbol':'1.2-2' }}
+                        } @else {
+                          {{ (item.price * item.quantity) | currency:'EUR':'symbol':'1.2-2' }}
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+            <div class="order-total">
+              <span class="total-label">Gesamtpreis:</span>
+              <span class="total-amount">{{ selectedOrder.total_price | currency:'EUR':'symbol':'1.2-2' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn-secondary" (click)="closeOrderDetails()">Schließen</button>
+          <button class="btn-primary" (click)="generatePdf(selectedOrder)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            PDF generieren
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div> 

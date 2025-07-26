@@ -15,7 +15,6 @@ import { UploadLoadingComponent } from "../upload-loading/upload-loading.compone
   styleUrl: './admin.component.scss',
 })
 export class AdminComponent implements OnInit {
-  @ViewChild('productFileInput') productFileInput!: ElementRef;
   @ViewChild('customerFileInput') customerFileInput!: ElementRef;
   @ViewChild('customerArticlePricesFileInput') customerArticlePricesFileInput!: ElementRef;
   orders: any[] = [];
@@ -309,35 +308,7 @@ formatDate(dateString: string): string {
   return `${day}.${month}.${year}`;
 }
 
-  onProductUploadClick() {
-    const file = this.productFileInput.nativeElement.files[0];
 
-    if (file && file.type === 'text/xml') {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      this.isUploading = true;
-
-      this.http
-        .post(
-          'https://multi-mandant-ecommerce.onrender.com/api/products/upload',
-          formData
-        )
-        .subscribe({
-          next: (res) => {
-            alert('Produktdatei erfolgreich hochgeladen!'),
-              this.isUploading = false; // Upload-Loading ausblenden
-            this.isVisible = false; // Upload-Komponente ausblenden
-          },
-          error: (err) => {
-            console.log('Fehler beim Hochladen!', err),
-              this.isUploading = false;
-          },
-        });
-    } else {
-      alert('Bitte eine gültige XML-Datei hochladen.');
-    }
-  }
 
   onCustomerUploadClick() {
     const file = this.customerFileInput.nativeElement.files[0];
