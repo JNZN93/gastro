@@ -3,6 +3,7 @@
   min-height: 100vh;
   padding: 0;
   margin-top: 70px;
+  padding-top: 120px; // Extra padding for fixed header
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
@@ -12,8 +13,10 @@
   backdrop-filter: blur(10px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
   padding: 1.5rem 2rem;
-  position: sticky;
-  top: 0;
+  position: fixed;
+  top: 70px;
+  left: 0;
+  right: 0;
   z-index: 100;
 }
 
@@ -990,6 +993,11 @@
 @media (max-width: 768px) {
   .dashboard-header {
     padding: 1rem;
+    top: 70px; // Ensure it stays below the main navigation
+  }
+
+  .employees-dashboard {
+    padding-top: 100px; // Adjust padding for smaller header
   }
 
   .header-content {
@@ -1209,6 +1217,15 @@
 }
 
 @media (max-width: 480px) {
+  .dashboard-header {
+    padding: 0.75rem;
+    top: 70px;
+  }
+
+  .employees-dashboard {
+    padding-top: 90px; // Adjust padding for even smaller header
+  }
+
   .dashboard-title {
     font-size: 1.5rem;
   }
