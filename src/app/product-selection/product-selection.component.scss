@@ -84,7 +84,7 @@
 }
 
 .search-input {
-  width: 80%;
+  width: 65%;
   padding: 0.875rem 1rem 0.875rem 3rem;
   border: 2px solid #e5e7eb;
   border-radius: 12px;
@@ -122,14 +122,12 @@
   padding: 1.5rem;
   border: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-  margin-top: 1.5rem;
 }
 
 .cart-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
   flex-wrap: wrap;
   gap: 1rem;
 }
@@ -144,8 +142,8 @@
 .cart-header h4 {
   color: #1f2937;
   font-weight: 600;
+  font-size: 0.7rem !important;
   margin: 0;
-  font-size: 1.125rem;
 }
 
 .cart-toggle-btn {
