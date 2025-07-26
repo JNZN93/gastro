@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
@@ -7,6 +7,8 @@ import { Router } from '@angular/router';
 import JsBarcode from 'jsbarcode';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MyDialogComponent } from '../my-dialog/my-dialog.component';
+import { ZXingScannerComponent, ZXingScannerModule } from '@zxing/ngx-scanner';
+import { BarcodeFormat } from '@zxing/browser';
 
 interface Product {
   id: number;
@@ -18,22 +20,43 @@ interface Product {
   price?: number;
   sale_price?: number;
   tax_code?: number;
+  isExpanded?: boolean;
 }
 
 @Component({
   selector: 'app-product-selection',
   standalone: true,
-  imports: [CommonModule, FormsModule, HttpClientModule, MatDialogModule],
+  imports: [CommonModule, FormsModule, HttpClientModule, MatDialogModule, ZXingScannerModule],
   templateUrl: './product-selection.component.html',
   styleUrls: ['./product-selection.component.scss']
 })
 export class ProductSelectionComponent implements OnInit {
+  @ViewChild(ZXingScannerComponent) scanner!: ZXingScannerComponent;
+  
   products: Product[] = [];
   filteredProducts: Product[] = [];
   selectedProducts: Product[] = [];
   searchTerm: string = '';
   isLoading: boolean = false;
   isCartExpanded: boolean = true; // Cart starts expanded by default
+  isScanning = false;
+
+  // Scanner properties
+  availableDevices: MediaDeviceInfo[] = [];
+  selectedDevice?: MediaDeviceInfo;
+  formatsEnabled: BarcodeFormat[] = [
+    BarcodeFormat.EAN_13,
+    BarcodeFormat.EAN_8,
+    BarcodeFormat.CODE_128,
+    BarcodeFormat.CODE_39,
+    BarcodeFormat.ITF
+  ];
+
+  videoConstraints: MediaTrackConstraints = {
+    width: { ideal: 1280 },
+    height: { ideal: 720 },
+    facingMode: { ideal: "environment" }
+  };
 
   private readonly CART_STORAGE_KEY = 'product-selection-cart';
 
@@ -471,5 +494,48 @@ export class ProductSelectionComponent implements OnInit {
     } else {
       return `Hinzugefügt (${count})`;
     }
+  }
+
+  toggleProductExpansion(product: Product): void {
+    product.isExpanded = !product.isExpanded;
+  }
+
+  openBarcodeScanner(): void {
+    this.isScanning = true;
+    navigator.mediaDevices.enumerateDevices().then(devices => {
+      const videoDevices = devices.filter(d => d.kind === 'videoinput');
+      this.availableDevices = videoDevices;
+
+      // Wähle Kamera mit "back" im Namen, aber NICHT "wide", "ultra", "tele"
+      const preferredCam = videoDevices.find(d => {
+        const name = d.label.toLowerCase();
+        return name.includes('back') &&
+               !name.includes('wide') &&
+               !name.includes('ultra') &&
+               !name.includes('tele');
+      });
+
+      // Fallback: Erste Kamera
+      this.selectedDevice = preferredCam || videoDevices[0];
+    });
+    this.scanner?.scanStart();
+  }
+
+  onCodeResult(result: any) {
+    this.playBeep();
+    this.stopScanner();
+    this.searchTerm = result.toString();
+    this.filterProducts();
+  }
+
+  stopScanner() {
+    this.isScanning = false;
+    this.scanner?.reset();
+  }
+
+  playBeep(): void {
+    const audio = new Audio('beep.mp3');
+    audio.volume = 0.5;
+    audio.play().catch(err => console.error('Fehler beim Abspielen des Tons:', err));
   }
 }

@@ -1,110 +1,146 @@
-<div class="go-back-con">
-    <img (click)="historyBack()" src="back.png" alt="back">
-</div>
+<div class="product-selection">
+    <div class="go-back-con">
+        <img (click)="historyBack()" src="back.png" alt="back">
+    </div>
 
-<div class="container">
-    <div class="card">
-        <div class="card-body">
-            <div class="header-section">
-                <h2 class="h3">Preisschilder erstellen</h2>
-                
-                <!-- Search Section -->
-                <div class="search-container">
-                    <div class="search-input-wrapper">
-                        <i class="bi bi-search"></i>
-                        <input type="text" 
-                               class="search-input" 
-                               [(ngModel)]="searchTerm"
-                               (ngModelChange)="filterProducts()"
-                               placeholder="Artikel nach Nummer, Name oder EAN suchen...">
+    <div class="container">
+        <div class="header-section">
+            
+            <!-- Search Section -->
+            <div class="search-container">
+                <div class="search-input-wrapper">
+                    <i class="bi bi-search"></i>
+                    <input type="text" 
+                           class="search-input" 
+                           [(ngModel)]="searchTerm"
+                           (ngModelChange)="filterProducts()"
+                           placeholder="Artikel nach Nummer, Name oder EAN suchen...">
+                </div>
+                <button type="button" class="btn btn-outline-primary barcode-btn" (click)="openBarcodeScanner()">
+                    <i class="bi bi-upc-scan"></i>
+                    <span class="btn-text-desktop">Barcode scannen</span>
+                    <span class="btn-text-mobile">Scanner</span>
+                </button>
+            </div>
+            
+            <!-- Cart Section -->
+            <div class="cart-section" *ngIf="selectedProducts.length > 0">
+                <div class="cart-header">
+                    <div class="cart-title-container">
+                        <h4>Etiketten ({{ selectedProducts.length }} Artikel, {{ getUniqueProductCount() }} verschiedene)</h4>
+                        <button type="button" class="btn btn-link cart-toggle-btn" (click)="toggleCart()">
+                            <i class="bi" [class.bi-chevron-up]="isCartExpanded" [class.bi-chevron-down]="!isCartExpanded"></i>
+                        </button>
+                    </div>
+                    <div class="cart-actions">
+                        <button type="button" class="btn btn-success" (click)="generatePdf()">
+                            <i class="bi bi-file-earmark-pdf"></i>
+                            <span class="btn-text-desktop">PDF generieren</span>
+                            <span class="btn-text-mobile">Standard</span>
+                        </button>
+                        <button type="button" class="btn btn-primary" (click)="generateFullPagePdf()">
+                            <i class="bi bi-file-earmark-pdf"></i>
+                            <span class="btn-text-desktop">DIN A4 PDF</span>
+                            <span class="btn-text-mobile">DIN A4</span>
+                        </button>
+                        <button type="button" class="btn btn-danger" (click)="clearCart()">
+                            <i class="bi bi-trash"></i>
+                            <span class="btn-text-desktop">Warenkorb leeren</span>
+                            <span class="btn-text-mobile"></span>
+                        </button>
                     </div>
                 </div>
                 
-                <!-- Cart Section -->
-                <div class="cart-section" *ngIf="selectedProducts.length > 0">
-                    <div class="cart-header">
-                        <div class="cart-title-container">
-                            <h4>Warenkorb ({{ selectedProducts.length }} Artikel, {{ getUniqueProductCount() }} verschiedene)</h4>
-                            <button type="button" class="btn btn-link cart-toggle-btn" (click)="toggleCart()">
-                                <i class="bi" [class.bi-chevron-up]="isCartExpanded" [class.bi-chevron-down]="!isCartExpanded"></i>
-                            </button>
-                        </div>
-                        <div class="cart-actions">
-                            <button type="button" class="btn btn-success" (click)="generatePdf()">
-                                <i class="bi bi-file-earmark-pdf"></i>
-                                PDF generieren
-                            </button>
-                            <button type="button" class="btn btn-primary" (click)="generateFullPagePdf()">
-                                <i class="bi bi-file-earmark-pdf"></i>
-                                DIN A4 PDF
-                            </button>
-                            <button type="button" class="btn btn-outline-danger" (click)="clearCart()">
-                                <i class="bi bi-trash"></i>
-                                Warenkorb leeren
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div class="cart-items" *ngIf="isCartExpanded">
-                        <div *ngFor="let product of selectedProducts; trackBy: trackByProductId" class="cart-item">
-                            <div class="cart-item-info">
-                                <div class="cart-item-name">{{ formatProductName(product) }}</div>
-                                <div class="cart-item-details">
+                <div class="cart-items" *ngIf="isCartExpanded">
+                    <div *ngFor="let product of selectedProducts; trackBy: trackByProductId" class="cart-item">
+                        <div class="cart-item-content">
+                            <div class="cart-item-main">
+                                <div class="cart-item-name" 
+                                     [class.expanded]="product.isExpanded"
+                                     (click)="toggleProductExpansion(product)">
+                                    {{ formatProductName(product) }}
+                                    <i class="bi expand-icon" 
+                                       [class.bi-chevron-down]="!product.isExpanded" 
+                                       [class.bi-chevron-up]="product.isExpanded"></i>
+                                </div>
+                                <div class="cart-item-details" *ngIf="product.isExpanded">
                                     <span class="cart-item-number">{{ product.article_number }}</span>
                                     <span class="cart-item-ean" *ngIf="product.ean">EAN: {{ product.ean }}</span>
                                 </div>
                             </div>
-                            <button type="button" class="btn btn-sm btn-outline-danger" (click)="removeFromCart(product.id)">
+                            <button type="button" class="btn btn-sm btn-outline-danger remove-btn" (click)="removeFromCart(product.id)">
                                 <i class="bi bi-x"></i>
                             </button>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Loading Spinner -->
-            <div *ngIf="isLoading" class="loading-container">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Lädt...</span>
-                </div>
-                <p>Produkte werden geladen...</p>
+        <!-- Loading Spinner -->
+        <div *ngIf="isLoading" class="loading-container">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Lädt...</span>
             </div>
+            <p>Produkte werden geladen...</p>
+        </div>
 
-            <!-- Products Table -->
-            <div class="table-responsive" *ngIf="!isLoading">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Artikelnummer</th>
-                            <th>Artikelname</th>
-                            <th>EAN</th>
-                            <th>Aktionen</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr *ngFor="let product of filteredProducts; trackBy: trackByProductId">
-                            <td>{{ product.article_number }}</td>
-                            <td>{{ product.article_text }}</td>
-                            <td>{{ product.ean || 'N/A' }}</td>
-                            <td>
-                                <div class="action-container">
-                                    <button type="button"
-                                            class="add-to-cart-btn-direct"
-                                            (click)="addToCart(product)"
-                                            [class.added-to-cart]="isProductSelected(product)">
-                                        <i class="bi bi-cart-plus"></i>
-                                        {{ getAddToCartButtonText(product) }}
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-                
-                <!-- No Results Message -->
-                <div *ngIf="filteredProducts.length === 0 && !isLoading" class="no-results">
-                    <p>Keine Produkte gefunden.</p>
-                </div>
+        <!-- Products Table -->
+        <div class="table-responsive" *ngIf="!isLoading">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Artikelnummer</th>
+                        <th>Artikelname</th>
+                        <th>EAN</th>
+                        <th>Aktionen</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let product of filteredProducts; trackBy: trackByProductId">
+                        <td>{{ product.article_number }}</td>
+                        <td>{{ product.article_text }}</td>
+                        <td>{{ product.ean || 'N/A' }}</td>
+                        <td>
+                            <div class="action-container">
+                                <button type="button"
+                                        class="add-to-cart-btn-direct"
+                                        (click)="addToCart(product)"
+                                        [class.added-to-cart]="isProductSelected(product)">
+                                    <i class="bi bi-cart-plus"></i>
+                                    {{ getAddToCartButtonText(product) }}
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <!-- No Results Message -->
+            <div *ngIf="filteredProducts.length === 0 && !isLoading" class="no-results">
+                <p>Keine Produkte gefunden.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Barcode Scanner Modal -->
+    <div *ngIf="isScanning" class="scanner-modal">
+        <div class="scanner-overlay" (click)="stopScanner()"></div>
+        <div class="scanner-container">
+            <div class="scanner-header">
+                <h3>Barcode Scanner</h3>
+                <button type="button" class="btn btn-sm btn-outline-secondary" (click)="stopScanner()">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
+            <div class="scanner-content">
+                <zxing-scanner #scanner
+                    [enable]="isScanning"
+                    [device]="selectedDevice"
+                    [formats]="formatsEnabled"
+                    [videoConstraints]="videoConstraints"
+                    (codeResult)="onCodeResult($event)">
+                </zxing-scanner>
             </div>
         </div>
     </div>
