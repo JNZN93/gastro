@@ -616,18 +616,15 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       const matchingPfand = pfandArtikels.find(pfand => pfand.article_number === artikel.custom_field_1);
       
       if (matchingPfand) {
-        const userConfirmed = confirm(`Möchten Sie auch das entsprechende PFAND "${matchingPfand.article_text}" hinzufügen?`);
-        if (userConfirmed) {
-          // PFAND-Artikel zum Auftrag hinzufügen (gleiche Menge wie das Produkt)
-          this.orderItems = [
-            ...this.orderItems,
-            { 
-              ...matchingPfand, 
-              quantity: originalQuantity
-            },
-          ];
-          console.log('✅ [PFAND-ADD] PFAND-Artikel automatisch hinzugefügt:', matchingPfand.article_text, 'Menge:', originalQuantity);
-        }
+        // PFAND-Artikel automatisch zum Auftrag hinzufügen (gleiche Menge wie das Produkt) - keine Abfrage mehr
+        this.orderItems = [
+          ...this.orderItems,
+          { 
+            ...matchingPfand, 
+            quantity: originalQuantity
+          },
+        ];
+        console.log('✅ [PFAND-ADD] PFAND-Artikel automatisch hinzugefügt:', matchingPfand.article_text, 'Menge:', originalQuantity);
       }
     }
 
@@ -1227,15 +1224,12 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
         const matchingPfand = pfandArtikels.find(pfand => pfand.article_number === artikel.custom_field_1);
         
         if (matchingPfand) {
-          const userConfirmed = confirm(`Möchten Sie auch das entsprechende PFAND "${matchingPfand.article_text}" hinzufügen?`);
-          if (userConfirmed) {
-            // PFAND-Artikel zum Auftrag hinzufügen (gleiche Menge wie das Produkt)
-            this.orderItems.push({ 
-              ...matchingPfand, 
-              quantity: originalQuantity
-            });
-            console.log('✅ [PFAND-ADD] PFAND-Artikel automatisch hinzugefügt:', matchingPfand.article_text, 'Menge:', originalQuantity);
-          }
+          // PFAND-Artikel automatisch zum Auftrag hinzufügen (gleiche Menge wie das Produkt) - keine Abfrage mehr
+          this.orderItems.push({ 
+            ...matchingPfand, 
+            quantity: originalQuantity
+          });
+          console.log('✅ [PFAND-ADD] PFAND-Artikel automatisch hinzugefügt:', matchingPfand.article_text, 'Menge:', originalQuantity);
         }
       }
       
