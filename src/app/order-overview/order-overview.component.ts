@@ -9,8 +9,8 @@ import { AuthService } from '../authentication.service';
 interface OrderItem {
   product_id: number;
   quantity: number;
-  price: number;
-  different_price: number | null;
+  price: string;
+  different_price: string | null;
   product_name: string;
   product_article_number: string;
 }
@@ -145,7 +145,7 @@ export class OrderOverviewComponent implements OnInit {
 
     doc.text('Datum: ' + orderDateFormatted, 14, 50);
     doc.text('Erstellt um: ' + createdAtFormatted, 14, 60);
-    doc.text('Kunde: ' + order.name, 14, 70);
+    doc.text('Kunde: ' + order.customer_number, 14, 70);
     doc.text('E-Mail: ' + order.email, 14, 80);
     doc.text('Lieferart: ' + (order.fulfillment_type === 'delivery' ? 'Lieferung' : 'Abholung'), 14, 100);
 
@@ -162,7 +162,8 @@ export class OrderOverviewComponent implements OnInit {
     doc.setFont('helvetica', 'bold');
     doc.text('Menge', 14, 145);
     doc.text('Artikel', 40, 145);
-    doc.text('Artikelnr.', 160, 145);
+    doc.text('Artikelnr.', 120, 145);
+    doc.text('Preis', 160, 145);
 
     // Artikel und Mengen
     doc.setFontSize(12);
@@ -178,6 +179,7 @@ export class OrderOverviewComponent implements OnInit {
       if (yPosition + lineHeight > pageHeight - bottomMargin) {
         doc.addPage();
         doc.text('Bestellnummer: ' + order.order_id, 14, 40);
+        doc.text('Kunde: ' + order.customer_number, 14, 50);
         yPosition = 60;
 
         // Tabellenüberschrift auf neuer Seite wiederholen
@@ -185,7 +187,8 @@ export class OrderOverviewComponent implements OnInit {
         doc.setFont('helvetica', 'bold');
         doc.text('Menge', 14, yPosition);
         doc.text('Artikel', 40, yPosition);
-        doc.text('Artikelnr.', 160, yPosition);
+        doc.text('Artikelnr.', 120, yPosition);
+        doc.text('Preis', 160, yPosition);
         yPosition += 10;
         
         doc.setFontSize(12);
@@ -195,7 +198,12 @@ export class OrderOverviewComponent implements OnInit {
       // Artikeldaten
       doc.text(String(product.quantity), 14, yPosition);
       doc.text(product.product_name, 40, yPosition);
-      doc.text(product.product_article_number, 160, yPosition);
+      doc.text(product.product_article_number, 120, yPosition);
+      
+      // Preis anzeigen (kundenspezifisch oder normal)
+      const displayPrice = product.different_price || product.price;
+      const priceText = parseFloat(displayPrice).toFixed(2) + ' €';
+      doc.text(priceText, 160, yPosition);
 
       yPosition += lineHeight;
     });
@@ -257,5 +265,10 @@ export class OrderOverviewComponent implements OnInit {
   formatPrice(price: string): string {
     const numPrice = parseFloat(price);
     return isNaN(numPrice) ? '0.00' : numPrice.toFixed(2);
+  }
+
+  getItemTotal(price: string, quantity: number): number {
+    const numPrice = parseFloat(price);
+    return isNaN(numPrice) ? 0 : numPrice * quantity;
   }
 } 

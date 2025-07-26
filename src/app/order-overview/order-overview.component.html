@@ -213,13 +213,13 @@
                           {{ item.price | currency:'EUR':'symbol':'1.2-2' }}
                         }
                       </td>
-                      <td class="total">
-                        @if (item.different_price) {
-                          {{ (item.different_price * item.quantity) | currency:'EUR':'symbol':'1.2-2' }}
-                        } @else {
-                          {{ (item.price * item.quantity) | currency:'EUR':'symbol':'1.2-2' }}
-                        }
-                      </td>
+                                             <td class="total">
+                         @if (item.different_price) {
+                           {{ (getItemTotal(item.different_price, item.quantity)) | currency:'EUR':'symbol':'1.2-2' }}
+                         } @else {
+                           {{ (getItemTotal(item.price, item.quantity)) | currency:'EUR':'symbol':'1.2-2' }}
+                         }
+                       </td>
                     </tr>
                   }
                 </tbody>
