@@ -5,6 +5,7 @@
   font-family: 'Poppins', sans-serif;
   background: #f8fafc;
   min-height: 100vh;
+  margin-top: 70px;
 }
 
 // Header Section
@@ -91,6 +92,7 @@
       font-size: 16px;
       background: white;
       transition: all 0.3s ease;
+      box-sizing: border-box;
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 
       &:focus {
@@ -202,6 +204,13 @@
       color: #1e293b;
     }
 
+    .customer-number {
+      font-family: 'Courier New', monospace;
+      color: #059669;
+      font-weight: 600;
+      font-size: 13px;
+    }
+
     .company-name {
       color: #64748b;
       font-size: 13px;
@@ -230,9 +239,9 @@
         color: #065f46;
       }
 
-      &.status-confirmed {
-        background: #e0e7ff;
-        color: #3730a3;
+      &.status-archived {
+        background: #f3f4f6;
+        color: #6b7280;
       }
 
       &.status-default {

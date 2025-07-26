@@ -51,6 +51,7 @@
               <th>Bestellnummer</th>
               <th>Datum</th>
               <th>Kunde</th>
+              <th>Kundennummer</th>
               <th>Firma</th>
               <th>Status</th>
               <th>Zahlungsstatus</th>
@@ -64,6 +65,7 @@
                 <td class="order-id">{{ order.order_id }}</td>
                 <td class="order-date">{{ order.created_at | date: 'dd.MM.yyyy HH:mm' }}</td>
                 <td class="customer-name">{{ order.name }}</td>
+                <td class="customer-number">{{ order.customer_number || '-' }}</td>
                 <td class="company-name">{{ order.company || '-' }}</td>
                 <td class="status-cell">
                   <span class="status-badge" [class]="getStatusClass(order.status)">
@@ -128,6 +130,10 @@
               <div class="detail-item">
                 <span class="detail-label">E-Mail:</span>
                 <span class="detail-value">{{ selectedOrder.email }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Kundennummer:</span>
+                <span class="detail-value">{{ selectedOrder.customer_number || 'Keine Angabe' }}</span>
               </div>
               <div class="detail-item">
                 <span class="detail-label">Firma:</span>

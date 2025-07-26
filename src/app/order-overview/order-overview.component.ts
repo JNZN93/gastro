@@ -21,7 +21,8 @@ interface Order {
   email: string;
   name: string;
   company: string;
-  total_price: number;
+  customer_number: string;
+  total_price: string;
   fulfillment_type: string;
   order_date: string;
   created_at: string;
@@ -203,7 +204,8 @@ export class OrderOverviewComponent implements OnInit {
     if (order.total_price) {
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
-      doc.text('Gesamtpreis: ' + order.total_price.toFixed(2) + ' €', 14, yPosition + 10);
+      const totalPrice = parseFloat(order.total_price);
+      doc.text('Gesamtpreis: ' + totalPrice.toFixed(2) + ' €', 14, yPosition + 10);
     }
 
     // PDF-Dokument öffnen
@@ -228,7 +230,7 @@ export class OrderOverviewComponent implements OnInit {
       case 'open': return 'status-open';
       case 'in_progress': return 'status-progress';
       case 'completed': return 'status-completed';
-      case 'confirmed': return 'status-confirmed';
+      case 'archived': return 'status-archived';
       default: return 'status-default';
     }
   }
@@ -238,7 +240,7 @@ export class OrderOverviewComponent implements OnInit {
       case 'open': return 'Offen';
       case 'in_progress': return 'In Bearbeitung';
       case 'completed': return 'Abgeschlossen';
-      case 'confirmed': return 'Bestätigt';
+      case 'archived': return 'Archiviert';
       default: return 'Unbekannt';
     }
   }
@@ -250,5 +252,10 @@ export class OrderOverviewComponent implements OnInit {
       case 'failed': return 'Fehlgeschlagen';
       default: return 'Unbekannt';
     }
+  }
+
+  formatPrice(price: string): string {
+    const numPrice = parseFloat(price);
+    return isNaN(numPrice) ? '0.00' : numPrice.toFixed(2);
   }
 } 
