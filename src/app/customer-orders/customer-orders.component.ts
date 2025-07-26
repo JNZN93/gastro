@@ -21,6 +21,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   @ViewChild(ZXingScannerComponent) scanner!: ZXingScannerComponent;
   @ViewChild('searchInput') searchInput!: any;
   @ViewChild('articlesDropdown') articlesDropdown!: any;
+  @ViewChild('orderTableContainer') orderTableContainer!: any;
   private artikelService = inject(ArtikelDataService);
   artikelData: any[] = [];
   orderItems: any[] = [];
@@ -371,6 +372,24 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
         }
       }
     }, 50); // Etwas länger warten für bessere DOM-Synchronisation
+  }
+
+  scrollToLastArticle() {
+    // Warte kurz, damit Angular die DOM-Änderungen verarbeitet hat
+    setTimeout(() => {
+      if (this.orderTableContainer && this.orderTableContainer.nativeElement && this.orderItems.length > 0) {
+        const container = this.orderTableContainer.nativeElement;
+        const tableBody = container.querySelector('tbody');
+        
+        if (tableBody && tableBody.children.length > 0) {
+          const lastRow = tableBody.children[tableBody.children.length - 1];
+          lastRow.scrollIntoView({
+            behavior: 'smooth',
+            block: 'end'
+          });
+        }
+      }
+    }, 100); // Etwas länger warten für bessere DOM-Synchronisation nach Artikel-Hinzufügung
   }
 
   selectArticle() {
@@ -870,6 +889,9 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
         this.searchInput.nativeElement.focus();
       }
     }, 100);
+
+    // Scrolle zur letzten Artikel-Position
+    this.scrollToLastArticle();
   }
 
   removeFromOrder(index: number): void {
@@ -1461,6 +1483,9 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       
       // Schließe das Modal
       this.closeArticlePricesModal();
+
+      // Scrolle zur letzten Artikel-Position
+      this.scrollToLastArticle();
     } else {
       console.error('❌ [ARTICLE-PRICES-MODAL] Artikel nicht in globalen Artikeln gefunden:', customerPrice);
       console.log('🔍 [ARTICLE-PRICES-MODAL] Debug: Erste 5 globale Artikel:');
