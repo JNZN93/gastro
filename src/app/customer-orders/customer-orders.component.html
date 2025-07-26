@@ -117,7 +117,7 @@
                   <td class="quantity">
                     <input type="number" [(ngModel)]="item.quantity" min="1" class="quantity-edit" (change)="updateItemTotal(item)">
                   </td>
-                  <td class="cost-price">€{{ (item.cost_price || 0).toFixed(2) }}</td>
+                  <td class="cost-price" [title]="'EK-Preis: €' + (item.cost_price || 0).toFixed(2)">€{{ (item.cost_price || 0).toFixed(2) }}</td>
                   <td class="customer-price">
                     <input type="number" 
                            [(ngModel)]="item.different_price" 
@@ -230,7 +230,7 @@
                   <h4 class="article-title">{{ artikel.article_text }}</h4>
                   <p class="article-number">Art.-Nr: {{ artikel.article_number }}</p>
                   <p class="article-price">
-                    <span class="cost-price">EK: €{{ (artikel.cost_price || 0).toFixed(2) }}</span>
+                    <span class="cost-price" [title]="'EK-Preis: €' + (artikel.cost_price || 0).toFixed(2)">EK: €{{ (artikel.cost_price || 0).toFixed(2) }}</span>
                     @if (artikel.different_price !== undefined) {
                       <span class="customer-price">Kundenpreis: €{{ artikel.different_price }}</span>
                       <span class="original-price">(Standard: €{{ artikel.sale_price }})</span>

@@ -308,6 +308,13 @@
       color: #dc3545;
       font-weight: 600;
       margin-right: 8px;
+      filter: blur(3px);
+      transition: filter 0.3s ease;
+      cursor: help;
+      
+      &:hover {
+        filter: blur(0);
+      }
     }
 
     .customer-price {
@@ -879,6 +886,13 @@
     color: #dc3545;
     font-weight: 500;
     font-size: 11px;
+    filter: blur(3px);
+    transition: filter 0.3s ease;
+    cursor: help;
+    
+    &:hover {
+      filter: blur(0);
+    }
   }
 
   .customer-price {
