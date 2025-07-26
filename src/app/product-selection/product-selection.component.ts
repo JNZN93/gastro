@@ -138,6 +138,17 @@ export class ProductSelectionComponent implements OnInit {
   addToCart(product: Product): void {
     this.selectedProducts.push(product);
     this.saveCartToLocalStorage();
+    
+    // Clear search field and set focus after adding product
+    this.searchTerm = '';
+    this.filterProducts(); // Re-filter to show all products again
+    
+    setTimeout(() => {
+      const searchInput = document.querySelector('.search-input') as HTMLInputElement;
+      if (searchInput) {
+        searchInput.focus();
+      }
+    }, 100);
   }
 
   removeFromCart(productId: number): void {
