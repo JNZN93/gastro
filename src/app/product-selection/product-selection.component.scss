@@ -146,6 +146,10 @@
   margin: 0;
 }
 
+.cart {
+  z-index: 1001 !important;
+}
+
 .cart-toggle-btn {
   background: none;
   border: none;
