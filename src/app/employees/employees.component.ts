@@ -170,24 +170,29 @@ export class EmployeesComponent implements OnInit {
   }
 
   
-  filteredArtikelData() {
-    this.artikelData = this.globalArtikels;
+  get filteredArtikelData() {
+    let filtered = this.globalArtikels;
     if (this.searchTerm) {
       const terms = this.searchTerm.toLowerCase().split(/\s+/);
-      this.artikelData = this.artikelData.filter((artikel) =>
-      terms.every((term) =>
-        artikel.article_text.toLowerCase().includes(term) ||
-        artikel.article_number?.toLowerCase().includes(term) ||
-        artikel.ean?.toLowerCase().includes(term)
-      )
-    );
+      filtered = filtered.filter((artikel) =>
+        terms.every((term) =>
+          artikel.article_text.toLowerCase().includes(term) ||
+          artikel.article_number?.toLowerCase().includes(term) ||
+          artikel.ean?.toLowerCase().includes(term)
+        )
+      );
     }
-    window.scrollTo({ top: 0});
+    return filtered;
+  }
+
+  updateFilteredData() {
+    this.artikelData = this.filteredArtikelData;
+    window.scrollTo({ top: 0 });
   }
 
   clearSearch() {
     this.searchTerm = '';
-    this.filteredArtikelData();
+    this.updateFilteredData();
   }
 
 /*FILTER BY SCANNING*/
@@ -196,7 +201,7 @@ export class EmployeesComponent implements OnInit {
     this.playBeep();
     this.stopScanner(); // optional Kamera nach Scan stoppen
     this.searchTerm = result;
-    this.filteredArtikelData();
+    this.updateFilteredData();
   }
 
   startScanner() {
@@ -455,7 +460,7 @@ export class EmployeesComponent implements OnInit {
     
     // Lösche das Suchfeld beim Kundenwechsel
     this.searchTerm = '';
-    this.filteredArtikelData();
+    this.updateFilteredData();
     console.log('🧹 [SELECT-CUSTOMER] Suchfeld geleert');
     
     // Lade Kunden-Artikel-Preise für den ausgewählten Kunden
@@ -610,7 +615,7 @@ export class EmployeesComponent implements OnInit {
       // Aktualisiere die filteredData, falls bereits gefiltert wurde
       if (this.searchTerm) {
         console.log('🔄 [UPDATE-PRICES] Aktualisiere filteredData nach Kundenwechsel...');
-        this.filteredArtikelData();
+        this.updateFilteredData();
       }
       
       console.log('✅ [UPDATE-PRICES] Artikel mit kundenspezifischen Preisen erfolgreich aktualisiert');
@@ -631,7 +636,7 @@ export class EmployeesComponent implements OnInit {
       // Aktualisiere auch hier die filteredData, falls bereits gefiltert wurde
       if (this.searchTerm) {
         console.log('🔄 [UPDATE-PRICES] Aktualisiere filteredData nach Zurücksetzen der Preise...');
-        this.filteredArtikelData();
+        this.updateFilteredData();
       }
       
       console.log('✅ [UPDATE-PRICES] Alle Artikel auf Standard-Preise zurückgesetzt');
@@ -652,7 +657,7 @@ export class EmployeesComponent implements OnInit {
     console.log('💾 [RESET-PRICES] artikelData auf Standard-Preise zurückgesetzt');
     
     if (this.searchTerm) {
-      this.filteredArtikelData();
+      this.updateFilteredData();
     }
     
     console.log('✅ [RESET-PRICES] Alle Artikel auf Standard-Preise zurückgesetzt');

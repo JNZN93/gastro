@@ -1,67 +1,96 @@
-<div class="article-container">
+<div class="employees-dashboard">
+  <!-- Header Section -->
+  <div class="dashboard-header">
+    <div class="header-content">
 
-  <div class="filter-wrapper">
-    <div class="filter-container">
-      <div class="controls">
+      <div class="header-actions">
         <button (click)="startScanner()" [disabled]="isScanning" class="scanner-btn">
-          <span class="material-symbols-outlined">barcode</span>
-  
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V6a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1zm12 0h2a1 1 0 001-1V6a1 1 0 00-1-1h-2a1 1 0 00-1 1v1a1 1 0 001 1zM5 20h2a1 1 0 001-1v-1a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1z"/>
+          </svg>
+        </button>
+        <div class="search-box">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+          <input type="text" [(ngModel)]="searchTerm" (input)="updateFilteredData()" placeholder="Artikel suchen..." class="search-input">
+          <button *ngIf="searchTerm" (click)="clearSearch()" class="clear-search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+        <button (click)="openCustomerModal()" class="customer-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/>
+          </svg>
         </button>
       </div>
-      <div class="search-container">
-        <input type="text" [(ngModel)]="searchTerm" (input)="filteredArtikelData()" placeholder="Artikel suchen..."
-          class="search-input">
-        <button *ngIf="searchTerm" (click)="clearSearch()" class="clear-search">
-          <span class="material-icons">close</span>
-        </button>
-      </div>
-      <button (click)="openCustomerModal()" class="customer-btn">
-        <span class="material-icons">people</span>
-   
-      </button>
-      
-      @if (globalService.selectedCustomer) {
-      <div class="selected-customer-info">
-        <span class="material-icons">person</span>
-        <span class="customer-info-text">
-          {{ globalService.selectedCustomer.customer_number }} - {{ globalService.selectedCustomer.last_name_company || 'Kein Name' }}
-        </span>
-        <button class="clear-customer-btn" (click)="clearSelectedCustomer()">
-          <span class="material-icons">close</span>
-        </button>
-      </div>
-      
-      <!-- Kunden-Preis-Info (klickbar) -->
-      <div class="customer-pricing-info">
-        @if (customerArticlePrices.length > 0) {
-          <div class="pricing-status success" (click)="openArticlePricesModal()" style="cursor: pointer;">
-            <span class="material-icons">check_circle</span>
-            <span>{{ customerArticlePrices.length }} kundenspezifische Preise verfügbar</span>
-            <span class="material-icons click-hint">open_in_new</span>
-          </div>
-        } @else {
-          <div class="pricing-status standard" (click)="openArticlePricesModal()" style="cursor: pointer;">
-            <span class="material-icons">info</span>
-            <span>Standard-Preise werden verwendet</span>
-            <span class="material-icons click-hint">open_in_new</span>
-          </div>
-        }
-      </div>
-      }
-   
     </div>
   </div>
 
 
 
-  <div class="content">
-    @for (artikel of artikelData; track $index) {
-    <div class="card">
-      <div class="card-body">
-        <h4 class="card-title"><b>{{ artikel.article_text }}</b></h4>
-        <p class="card-price">Art.-Nr [{{ artikel.article_number }}]</p>
+  <!-- Customer Info Section -->
+  <div class="customer-info-section">
+    @if (globalService.selectedCustomer) {
+    <div class="customer-actions-row">
+      <div class="selected-customer-info">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+        </svg>
+        <span class="customer-info-text">
+          {{ globalService.selectedCustomer.customer_number }} - {{ globalService.selectedCustomer.last_name_company || 'Kein Name' }}
+        </span>
+        <button class="clear-customer-btn" (click)="clearSelectedCustomer()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      
+      <div class="customer-pricing-info" (click)="openArticlePricesModal()">
+        @if (customerArticlePrices.length > 0) {
+          <div class="pricing-status success">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <span>{{ customerArticlePrices.length }} kundenspezifische Preise verfügbar</span>
+            <svg class="click-hint" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+            </svg>
+          </div>
+        } @else {
+          <div class="pricing-status standard">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <span>Standard-Preise werden verwendet</span>
+            <svg class="click-hint" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+            </svg>
+          </div>
+        }
+      </div>
+    </div>
+    }
+  </div>
+
+  <!-- Articles Grid -->
+  <div class="articles-section">
+    <div class="section-header">
+      <h2 class="section-title">Artikel</h2>
+      <p class="section-subtitle">{{ filteredArtikelData.length }} von {{ artikelData.length }} Artikeln</p>
+    </div>
+
+    <div class="articles-grid">
+      @for (artikel of filteredArtikelData; track $index) {
+      <div class="article-card">
+        <div class="article-header">
+          <h3 class="article-title">{{ artikel.article_text }}</h3>
+          <p class="article-number">Art.-Nr: {{ artikel.article_number }}</p>
+        </div>
         
-        <!-- Preis-Anzeige mit kundenspezifischen Preisen -->
         <div class="price-display">
           @if (artikel.different_price !== undefined) {
             <div class="customer-price">
@@ -80,20 +109,23 @@
           }
         </div>
         
-        <div class="card-footer">
-          <div class="input-main">
-            <input type="number" [(ngModel)]="artikel.quantity" placeholder="Menge eingeben" class="quantity-input"
-              min="1">
-            <button (click)="addToCart($event, artikel)" class="add-to-cart-btn">In den Warenkorb</button>
+        <div class="article-actions">
+          <div class="quantity-input-group">
+            <input type="number" [(ngModel)]="artikel.quantity" placeholder="Menge" class="quantity-input" min="1">
+            <button (click)="addToCart($event, artikel)" class="add-to-cart-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m8 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01"/>
+              </svg>
+              In den Warenkorb
+            </button>
           </div>
         </div>
       </div>
+      }
     </div>
-    }
-
-    <app-warenkorb></app-warenkorb>
   </div>
 
+  <app-warenkorb></app-warenkorb>
 </div>
 
 @if (isVisible) {
@@ -102,15 +134,22 @@
 
 <!-- Scanner Modal -->
 <div class="scanner-modal" *ngIf="isScanning">
-  <select [(ngModel)]="selectedDevice">
-  <option *ngFor="let device of availableDevices" [ngValue]="device">
-    {{ device.label }}
-  </option>
-</select>
   <div class="scanner-content">
-    <button class="close-scanner" (click)="stopScanner()">
-      <span class="material-icons">close</span>
-    </button>
+    <div class="scanner-header">
+      <h3>Barcode Scanner</h3>
+      <button class="close-scanner" (click)="stopScanner()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+    
+    <select [(ngModel)]="selectedDevice" class="device-select">
+      <option *ngFor="let device of availableDevices" [ngValue]="device">
+        {{ device.label }}
+      </option>
+    </select>
+    
     <div class="scanner-wrapper">
       <zxing-scanner #scanner 
       [device]="selectedDevice"
@@ -130,7 +169,9 @@
     <div class="customer-modal-header">
       <h2>Kundenliste</h2>
       <button class="close-customer-modal" (click)="closeCustomerModal()">
-        <span class="material-icons">close</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
       </button>
     </div>
     
@@ -153,7 +194,9 @@
           </div>
           <div class="customer-card-footer">
             <button class="select-customer-btn" (click)="selectCustomer(customer)">
-              <span class="material-icons">check</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
               Auswählen
             </button>
           </div>
@@ -183,7 +226,9 @@
     <div class="article-prices-modal-header">
       <h2>Artikel-Preise</h2>
       <button class="close-article-prices-modal" (click)="closeArticlePricesModal()">
-        <span class="material-icons">close</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
       </button>
     </div>
     
