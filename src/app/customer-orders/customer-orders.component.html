@@ -161,28 +161,30 @@
             @if (editingItemIndex !== -1) {
               <div class="edit-mode-indicator">
                 <span class="material-icons">edit</span>
-                <span>Bearbeite Artikel: {{ orderItems[editingItemIndex].article_text }}</span>
+                <span>Bearbeite: {{ orderItems[editingItemIndex].article_text }}</span>
                 <button (click)="cancelEditItem()" class="cancel-edit-mode-btn">
                   <span class="material-icons">close</span>
                 </button>
               </div>
             }
-            <div class="search-input-wrapper" [class.edit-mode]="editingItemIndex !== -1">
-              <input #searchInput 
-                     type="text" 
-                     [(ngModel)]="searchTerm" 
-                     (input)="filteredArtikelData()" 
-                     (keydown)="onKeyDown($event)"
-                     (focus)="onSearchFocus()"
-                     [placeholder]="editingItemIndex !== -1 ? 'Neuen Artikel suchen...' : 'Artikel suchen...'"
-                     class="search-input">
-              <button *ngIf="searchTerm" (click)="clearSearch()" class="clear-search">
-                <span class="material-icons">close</span>
+            <div class="search-and-scanner-container">
+              <div class="search-input-wrapper" [class.edit-mode]="editingItemIndex !== -1">
+                <input #searchInput 
+                       type="text" 
+                       [(ngModel)]="searchTerm" 
+                       (input)="filteredArtikelData()" 
+                       (keydown)="onKeyDown($event)"
+                       (focus)="onSearchFocus()"
+                       [placeholder]="editingItemIndex !== -1 ? 'Neuen Artikel suchen...' : 'Artikel suchen...'"
+                       class="search-input">
+                <button *ngIf="searchTerm" (click)="clearSearch()" class="clear-search">
+                  <span class="material-icons">close</span>
+                </button>
+              </div>
+              <button (click)="startScanner()" [disabled]="isScanning" class="scanner-btn">
+                <span class="material-symbols-outlined">barcode</span>
               </button>
             </div>
-            <button (click)="startScanner()" [disabled]="isScanning" class="scanner-btn">
-              <span class="material-symbols-outlined">barcode</span>
-            </button>
           </div>
           
           @if (showDropdown && filteredArtikels.length > 0) {

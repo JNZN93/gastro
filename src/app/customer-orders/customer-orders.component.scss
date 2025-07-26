@@ -68,11 +68,11 @@
 // Suchfeld und Barcode-Scanner nebeneinander
 .search-container {
   display: flex;
-  align-items: center;
-  gap: 6px;
+  align-items: flex-start;
+  gap: 8px;
   margin-bottom: 8px;
   width: 100%;
-  flex-direction: column;
+  flex-direction: column; // Standard: untereinander für bessere Edit-Modus Darstellung
 }
 
 // Edit mode indicator
@@ -86,11 +86,22 @@
   border-radius: 6px;
   font-size: 12px;
   font-weight: 500;
-  width: 100%;
+  width: 80%;
   box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
+  flex-shrink: 0;
+  min-width: 0; // Wichtig für Text-Überlauf
   
   .material-icons {
     font-size: 16px;
+    flex-shrink: 0;
+  }
+  
+  span:nth-child(2) {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   
   .cancel-edit-mode-btn {
@@ -102,6 +113,7 @@
     padding: 4px;
     cursor: pointer;
     transition: background-color 0.2s ease;
+    flex-shrink: 0;
     
     &:hover {
       background: rgba(255, 255, 255, 0.3);
@@ -127,6 +139,14 @@
       box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
     }
   }
+}
+
+// Container für Suchleiste und Scanner-Button
+.search-and-scanner-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
 }
 
 .search-input {
@@ -940,6 +960,39 @@
   }
 }
 
+// Responsive Styles für Desktop und Tablet
+@media (min-width: 769px) {
+  .search-container {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  
+  .edit-mode-indicator {
+    width: 80%;
+  }
+  
+  .search-and-scanner-container {
+    width: 100%;
+  }
+}
+
+// Zusätzliche Optimierung für größere Desktop-Bildschirme
+@media (min-width: 1200px) {
+  .search-container {
+    gap: 10px;
+  }
+  
+  .edit-mode-indicator {
+    font-size: 13px;
+    padding: 10px 16px;
+  }
+  
+  .search-and-scanner-container {
+    gap: 8px;
+  }
+}
+
 @media (max-width: 768px) {
   .content {
     padding: 12px;
@@ -1027,6 +1080,11 @@
   }
 
   .search-container {
+    flex-direction: column;
+    gap: 6px;
+  }
+  
+  .search-and-scanner-container {
     flex-direction: column;
     gap: 6px;
   }
