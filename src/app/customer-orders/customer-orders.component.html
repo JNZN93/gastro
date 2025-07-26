@@ -240,7 +240,14 @@
                   </p>
                 </div>
                 <div class="article-actions">
-                  <input type="number" [(ngModel)]="artikel.quantity" placeholder="Menge" class="quantity-input" min="1" (click)="$event.stopPropagation()">
+                  <input type="number" 
+                         [(ngModel)]="artikel.quantity" 
+                         placeholder="Menge" 
+                         class="quantity-input" 
+                         min="1" 
+                         (click)="$event.stopPropagation()"
+                         (keydown)="onQuantityInputKeyDown($event, $index)"
+                         (focus)="focusedQuantityIndex = $index">
                   <button (click)="addToOrder($event, artikel); $event.stopPropagation()" class="add-to-order-btn">
                     <span class="material-icons">
                       {{ editingItemIndex !== -1 ? 'swap_horiz' : 'add_shopping_cart' }}

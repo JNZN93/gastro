@@ -35,6 +35,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   // Neue Properties für Dropdown-Navigation
   selectedIndex: number = -1;
   showDropdown: boolean = false;
+  focusedQuantityIndex: number = -1; // Index des aktuell fokussierten Mengenfelds
   
   // Customer modal properties
   isCustomerModalOpen: boolean = false;
@@ -343,6 +344,13 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
         event.preventDefault();
         this.hideDropdown();
         break;
+      case 'Tab':
+        // Wenn Tab gedrückt wird und das Dropdown sichtbar ist, fokussiere das erste Mengenfeld
+        if (this.filteredArtikels.length > 0) {
+          event.preventDefault();
+          this.focusFirstQuantityInput();
+        }
+        break;
     }
   }
 
@@ -379,6 +387,94 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   hideDropdown() {
     this.showDropdown = false;
     this.selectedIndex = -1;
+    this.focusedQuantityIndex = -1;
+  }
+
+  focusFirstQuantityInput() {
+    // Warte kurz, damit Angular die DOM-Änderungen verarbeitet hat
+    setTimeout(() => {
+      if (this.articlesDropdown) {
+        const dropdownElement = this.articlesDropdown.nativeElement;
+        const firstQuantityInput = dropdownElement.querySelector('.quantity-input') as HTMLInputElement;
+        
+        if (firstQuantityInput) {
+          firstQuantityInput.focus();
+          firstQuantityInput.select(); // Markiere den gesamten Text
+          this.focusedQuantityIndex = 0; // Setze den fokussierten Index auf das erste Element
+        }
+      }
+    }, 50);
+  }
+
+  focusQuantityInput(index: number) {
+    // Warte kurz, damit Angular die DOM-Änderungen verarbeitet hat
+    setTimeout(() => {
+      if (this.articlesDropdown && index >= 0 && index < this.filteredArtikels.length) {
+        const dropdownElement = this.articlesDropdown.nativeElement;
+        const quantityInputs = dropdownElement.querySelectorAll('.quantity-input') as NodeListOf<HTMLInputElement>;
+        
+        if (quantityInputs[index]) {
+          quantityInputs[index].focus();
+          quantityInputs[index].select(); // Markiere den gesamten Text
+          this.focusedQuantityIndex = index;
+          this.selectedIndex = index; // Markiere auch den Artikel als ausgewählt
+          this.scrollToSelectedItem(); // Scrolle zum ausgewählten Artikel
+        }
+      }
+    }, 50);
+  }
+
+  onQuantityInputKeyDown(event: KeyboardEvent, index: number) {
+    if (!this.showDropdown || this.filteredArtikels.length === 0) {
+      return;
+    }
+
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault();
+        const nextIndex = Math.min(index + 1, this.filteredArtikels.length - 1);
+        this.focusQuantityInput(nextIndex);
+        break;
+      case 'ArrowUp':
+        event.preventDefault();
+        const prevIndex = Math.max(index - 1, 0);
+        this.focusQuantityInput(prevIndex);
+        break;
+      case 'Enter':
+        event.preventDefault();
+        this.addArticleFromQuantityInput(index);
+        break;
+      case 'Escape':
+        event.preventDefault();
+        this.hideDropdown();
+        break;
+    }
+  }
+
+  addArticleFromQuantityInput(index: number) {
+    if (index >= 0 && index < this.filteredArtikels.length) {
+      const artikel = this.filteredArtikels[index];
+      
+      // Konvertiere die Menge zu einer Zahl und prüfe auf gültige Werte
+      let quantity = Number(artikel.quantity);
+      
+      // Wenn keine Menge eingegeben wurde oder die Menge leer/null/ungültig ist, setze auf 1
+      if (!quantity || isNaN(quantity) || quantity <= 0) {
+        quantity = 1;
+        artikel.quantity = 1;
+      } else {
+        // Stelle sicher, dass die Menge als ganze Zahl gespeichert wird
+        artikel.quantity = Math.floor(quantity);
+      }
+      
+      // Füge den Artikel zum Auftrag hinzu
+      this.addToOrder(new Event('enter'), artikel);
+      
+      // Nur Suchfeld leeren, wenn nicht im Bearbeitungsmodus
+      if (this.editingItemIndex === -1) {
+        this.clearSearch();
+      }
+    }
   }
 
   onSearchFocus() {
