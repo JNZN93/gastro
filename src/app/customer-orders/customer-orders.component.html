@@ -68,8 +68,20 @@
                 <tr class="order-row" [class.editing]="editingItemIndex === i">
                   <td class="position">{{ i + 1 }}</td>
                   <td class="article-name">
-                    <div class="article-name-container">
-                      <span class="article-text">{{ item.article_text }}</span>
+                    <div class="article-name-container" 
+                         [class.editing-name]="editingArticleNameIndex === i"
+                         (click)="startEditArticleName(i)"
+                         title="Klicken zum Bearbeiten des Artikelnamens">
+                      @if (editingArticleNameIndex === i) {
+                        <input type="text" 
+                               [(ngModel)]="editingArticleName"
+                               (keydown)="onArticleNameKeyDown($event, i)"
+                               (blur)="saveArticleName(i)"
+                               class="article-name-edit-input"
+                               autofocus>
+                      } @else {
+                        <span class="article-text">{{ item.article_text }}</span>
+                      }
                     </div>
                   </td>
                   <td class="article-number">

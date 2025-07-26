@@ -685,6 +685,43 @@
       .edit-indicator {
         display: none;
       }
+      
+      // Article name editing styles
+      &.editing-name {
+        background: linear-gradient(135deg, #4CAF50, #45a049);
+        color: white;
+        box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+        
+        .article-name-edit-input {
+          background: transparent;
+          border: none;
+          color: white;
+          font-size: inherit;
+          font-weight: 500;
+          width: 100%;
+          outline: none;
+          
+          &::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+          }
+        }
+      }
+      
+      .article-name-edit-input {
+        background: transparent;
+        border: none;
+        color: inherit;
+        font-size: inherit;
+        font-weight: 500;
+        width: 100%;
+        outline: none;
+        padding: 0;
+        margin: 0;
+        
+        &:focus {
+          outline: none;
+        }
+      }
     }
   }
 

@@ -52,6 +52,10 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   editingItemIndex: number = -1;
   editingItemQuantity: number = 1;
   
+  // Article name editing properties
+  editingArticleNameIndex: number = -1;
+  editingArticleName: string = '';
+  
   availableDevices: MediaDeviceInfo[] = [];
   selectedDevice?: MediaDeviceInfo;
   formatsEnabled: BarcodeFormat[] = [
@@ -560,6 +564,36 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     this.globalService.saveCustomerOrders(this.orderItems);
   }
 
+  // Article name editing methods
+  startEditArticleName(index: number): void {
+    this.editingArticleNameIndex = index;
+    this.editingArticleName = this.orderItems[index].article_text;
+  }
+
+  saveArticleName(index: number): void {
+    if (this.editingArticleNameIndex === index && this.editingArticleName.trim()) {
+      this.orderItems[index].article_text = this.editingArticleName.trim();
+      this.orderItems[index].description = this.editingArticleName.trim(); // Save as description
+      
+      // Save to localStorage
+      this.globalService.saveCustomerOrders(this.orderItems);
+    }
+    this.cancelEditArticleName();
+  }
+
+  cancelEditArticleName(): void {
+    this.editingArticleNameIndex = -1;
+    this.editingArticleName = '';
+  }
+
+  onArticleNameKeyDown(event: KeyboardEvent, index: number): void {
+    if (event.key === 'Enter') {
+      this.saveArticleName(index);
+    } else if (event.key === 'Escape') {
+      this.cancelEditArticleName();
+    }
+  }
+
   addToOrder(event: Event, artikel: any): void {
     if (!this.globalService.selectedCustomerForOrders) {
       alert('Bitte wählen Sie zuerst einen Kunden aus.');
@@ -755,6 +789,13 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       alert('Bitte fügen Sie Artikel zum Auftrag hinzu.');
       return;
     }
+
+    // Ensure description is set for all items
+    this.orderItems.forEach(item => {
+      if (!item.description && item.article_text) {
+        item.description = item.article_text;
+      }
+    });
 
     // Kundendaten für den Request
     const customerData = {
