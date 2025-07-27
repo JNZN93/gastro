@@ -74,7 +74,6 @@
 .search-input-wrapper {
   position: relative;
   max-width: 500px;
-  flex: 1;
   min-width: 200px;
 }
 
@@ -84,7 +83,7 @@
 }
 
 .search-input {
-  width: 65%;
+  max-width: 350px;
   padding: 0.875rem 1rem 0.875rem 3rem;
   border: 2px solid #e5e7eb;
   border-radius: 12px;
@@ -597,12 +596,12 @@
   }
 
   .go-back-con {
-    top: 70px;
-    right: 15px;
+    top: 100px;
+    right: 20px;
     
     img {
-      width: 35px;
-      height: 35px;
+      width: 25px;
+      height: 25px;
       padding: 6px;
     }
   }
@@ -747,7 +746,6 @@
 
   .search-input-wrapper {
     max-width: 100%;
-    flex: 1;
   }
 
   .barcode-btn {
