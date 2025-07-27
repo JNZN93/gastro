@@ -647,11 +647,38 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       newArtikel.quantity = this.editingItemQuantity;
     }
 
+    // Get the original item being replaced
+    const originalItem = this.orderItems[this.editingItemIndex];
+    const originalQuantity = Number(originalItem.quantity);
+    const newQuantity = Number(newArtikel.quantity);
+
+    // Remove any existing PFAND items that were associated with the original item
+    this.removeAssociatedPfandItems(originalItem);
+
     // Replace the item at the editing index
     this.orderItems[this.editingItemIndex] = {
       ...newArtikel,
-      quantity: Number(newArtikel.quantity)
+      quantity: newQuantity
     };
+
+    // Check if the new article needs PFAND and add it automatically
+    if (newArtikel.custom_field_1) {
+      const pfandArtikels = this.globalService.getPfandArtikels();
+      const matchingPfand = pfandArtikels.find(pfand => pfand.article_number === newArtikel.custom_field_1);
+      
+      if (matchingPfand) {
+        // Insert PFAND item directly after the replaced item
+        const pfandItem = { 
+          ...matchingPfand, 
+          quantity: newQuantity
+        };
+        
+        // Insert the PFAND item at the position right after the replaced item
+        this.orderItems.splice(this.editingItemIndex + 1, 0, pfandItem);
+        
+        console.log('✅ [PFAND-REPLACE] PFAND-Artikel direkt unter dem ersetzten Artikel eingefügt:', matchingPfand.article_text, 'Menge:', newQuantity);
+      }
+    }
 
     // Reset edit mode
     this.editingItemIndex = -1;
@@ -662,6 +689,25 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
 
     // Save to localStorage
     this.globalService.saveCustomerOrders(this.orderItems);
+  }
+
+  // Helper method to remove PFAND items associated with a specific product
+  private removeAssociatedPfandItems(productItem: any): void {
+    if (!productItem.custom_field_1) {
+      return; // No PFAND associated with this product
+    }
+
+    // Find and remove PFAND items that match the custom_field_1 of the product
+    const pfandArtikels = this.globalService.getPfandArtikels();
+    const matchingPfand = pfandArtikels.find(pfand => pfand.article_number === productItem.custom_field_1);
+    
+    if (matchingPfand) {
+      // Remove PFAND items with the same article_number as the matching PFAND
+      this.orderItems = this.orderItems.filter(item => 
+        !(item.article_number === matchingPfand.article_number && item.category === 'PFAND')
+      );
+      console.log('🗑️ [PFAND-REPLACE] PFAND-Artikel entfernt für:', productItem.article_text);
+    }
   }
 
   // Article name editing methods
