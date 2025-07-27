@@ -96,10 +96,10 @@
                     </tr>
                 </thead>
                 <tbody>
-                                            <tr *ngFor="let product of filteredProducts; trackBy: trackByProductId">
-                            <td>{{ product.article_number }}</td>
-                            <td>{{ product.article_text }}</td>
-                            <td>
+                    <tr *ngFor="let product of filteredProducts; trackBy: trackByProductId">
+                        <td>{{ product.article_number }}</td>
+                        <td class="article-name-cell">{{ product.article_text }}</td>
+                        <td>
                             <div class="action-container">
                                 <button type="button"
                                         class="add-to-cart-btn-direct"
