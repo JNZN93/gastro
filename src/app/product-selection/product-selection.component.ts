@@ -190,6 +190,18 @@ export class ProductSelectionComponent implements OnInit {
     });
   }
 
+  clearSearch(): void {
+    this.searchTerm = '';
+    this.filterProducts();
+    // Focus auf das Suchfeld setzen
+    setTimeout(() => {
+      const searchInput = document.querySelector('.search-input') as HTMLInputElement;
+      if (searchInput) {
+        searchInput.focus();
+      }
+    }, 100);
+  }
+
   addToCart(product: Product): void {
     this.selectedProducts.push(product);
     this.saveCartToLocalStorage();
