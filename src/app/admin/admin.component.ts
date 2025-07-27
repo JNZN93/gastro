@@ -28,6 +28,11 @@ export class AdminComponent implements OnInit {
   isVisible: boolean = true;
   isUploading: boolean = false;
   searchTerm: string = '';
+  
+  // Properties für ausgewählte Dateien
+  selectedCustomerFile: string = '';
+  selectedCustomerArticlePricesFile: string = '';
+  selectedArticlesFile: string = '';
 
   constructor(
     private router: Router,
@@ -310,6 +315,34 @@ formatDate(dateString: string): string {
 }
 
 
+
+  // Event-Handler für Dateiauswahl
+  onCustomerFileSelected(event: any) {
+    const file = event.target.files[0];
+    if (file) {
+      this.selectedCustomerFile = file.name;
+    } else {
+      this.selectedCustomerFile = '';
+    }
+  }
+
+  onCustomerArticlePricesFileSelected(event: any) {
+    const file = event.target.files[0];
+    if (file) {
+      this.selectedCustomerArticlePricesFile = file.name;
+    } else {
+      this.selectedCustomerArticlePricesFile = '';
+    }
+  }
+
+  onArticlesFileSelected(event: any) {
+    const file = event.target.files[0];
+    if (file) {
+      this.selectedArticlesFile = file.name;
+    } else {
+      this.selectedArticlesFile = '';
+    }
+  }
 
   onCustomerUploadClick() {
     const file = this.customerFileInput.nativeElement.files[0];

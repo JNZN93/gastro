@@ -223,14 +223,14 @@
           </div>
         </div>
         <div class="upload-content">
-          <input #customerFileInput type="file" id="customerXml" accept=".xml" class="file-input" />
-          <label for="customerXml" class="file-label">
+          <input #customerFileInput type="file" id="customerXml" accept=".xml" class="file-input" (change)="onCustomerFileSelected($event)" />
+          <label for="customerXml" class="file-label" [class.file-selected]="selectedCustomerFile">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
             </svg>
-            <span>Datei auswählen</span>
+            <span>{{ selectedCustomerFile || 'Datei auswählen' }}</span>
           </label>
-          <button (click)="onCustomerUploadClick()" class="upload-btn success">
+          <button (click)="onCustomerUploadClick()" class="upload-btn success" [disabled]="!selectedCustomerFile">
             Kunden aktualisieren
           </button>
         </div>
@@ -250,14 +250,14 @@
           </div>
         </div>
         <div class="upload-content">
-          <input #customerArticlePricesFileInput type="file" id="customerArticlePricesXml" accept=".xml" class="file-input" />
-          <label for="customerArticlePricesXml" class="file-label">
+          <input #customerArticlePricesFileInput type="file" id="customerArticlePricesXml" accept=".xml" class="file-input" (change)="onCustomerArticlePricesFileSelected($event)" />
+          <label for="customerArticlePricesXml" class="file-label" [class.file-selected]="selectedCustomerArticlePricesFile">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
             </svg>
-            <span>Datei auswählen</span>
+            <span>{{ selectedCustomerArticlePricesFile || 'Datei auswählen' }}</span>
           </label>
-          <button (click)="onCustomerArticlePricesUploadClick()" class="upload-btn warning">
+          <button (click)="onCustomerArticlePricesUploadClick()" class="upload-btn warning" [disabled]="!selectedCustomerArticlePricesFile">
             Preise aktualisieren
           </button>
         </div>
@@ -277,14 +277,14 @@
           </div>
         </div>
         <div class="upload-content">
-          <input #articlesFileInput type="file" id="articlesXml" accept=".xml" class="file-input" />
-          <label for="articlesXml" class="file-label">
+          <input #articlesFileInput type="file" id="articlesXml" accept=".xml" class="file-input" (change)="onArticlesFileSelected($event)" />
+          <label for="articlesXml" class="file-label" [class.file-selected]="selectedArticlesFile">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
             </svg>
-            <span>Datei auswählen</span>
+            <span>{{ selectedArticlesFile || 'Datei auswählen' }}</span>
           </label>
-          <button (click)="onArticlesUploadClick()" class="upload-btn primary">
+          <button (click)="onArticlesUploadClick()" class="upload-btn primary" [disabled]="!selectedArticlesFile">
             Artikel aktualisieren
           </button>
         </div>
