@@ -86,7 +86,8 @@
                   </td>
                   <td class="info-column">
                     <button class="info-btn" 
-                            [title]="getArticleNotesTooltip(i)">
+                            (click)="showArticleNotes(i)"
+                            title="Artikel-Notizen anzeigen">
                       <span class="material-icons">info</span>
                     </button>
                   </td>
