@@ -86,7 +86,8 @@
                 @for (item of orderItems; track $index; let i = $index) {
                 <tr class="order-row" 
                     [class.editing]="editingItemIndex === i"
-                    [draggable]="editingItemIndex !== i && editingArticleNameIndex !== i"
+                    [class.article-bound-pfand]="item.isArticleBound && item.category === 'PFAND'"
+                    [draggable]="editingItemIndex !== i && editingArticleNameIndex !== i && !(item.isArticleBound && item.category === 'PFAND')"
                     (dragstart)="onDragStart($event, i)"
                     (dragover)="onDragOver($event)"
                     (drop)="onDrop($event, i)"
@@ -97,7 +98,7 @@
                   <td class="position">
                     <div class="position-content">
                       <span class="position-number">{{ i + 1 }}</span>
-                      @if (editingItemIndex !== i && editingArticleNameIndex !== i) {
+                      @if (editingItemIndex !== i && editingArticleNameIndex !== i && !(item.isArticleBound && item.category === 'PFAND')) {
                         <span class="drag-handle material-icons">drag_indicator</span>
                       }
                     </div>
@@ -112,8 +113,8 @@
                   <td class="article-name">
                     <div class="article-name-container" 
                          [class.editing-name]="editingArticleNameIndex === i"
-                         title="Klicken zum Bearbeiten des Artikelnamens">
-                      @if (editingArticleNameIndex === i) {
+                         [title]="item.isArticleBound && item.category === 'PFAND' ? 'Artikelgebundenes Pfand (nicht bearbeitbar)' : 'Klicken zum Bearbeiten des Artikelnamens'">
+                      @if (editingArticleNameIndex === i && !(item.isArticleBound && item.category === 'PFAND')) {
                         <input type="text" 
                                [(ngModel)]="editingArticleName"
                                (keydown)="onArticleNameKeyDown($event, i)"
@@ -122,17 +123,28 @@
                                class="article-name-edit-input"
                                #articleNameInput>
                       } @else {
-                        <span class="article-text" (click)="startEditArticleName(i)">{{ item.article_text }}</span>
+                        <span class="article-text" 
+                              [class.readonly]="item.isArticleBound && item.category === 'PFAND'"
+                              (click)="!(item.isArticleBound && item.category === 'PFAND') && startEditArticleName(i)">
+                          {{ item.article_text }}
+                          @if (item.isArticleBound && item.category === 'PFAND') {
+                            <span class="article-bound-indicator" title="Artikelgebundenes Pfand - wird automatisch mit dem Hauptartikel verwaltet">
+                              <span class="material-icons">link</span>
+                              <span class="pfand-label">PFAND</span>
+                            </span>
+                          }
+                        </span>
                       }
                     </div>
                   </td>
                   <td class="article-number">
                     <div class="article-number-container" 
                          [class.editing]="editingItemIndex === i"
-                         (click)="startEditItem(i)"
-                         title="Klicken zum Bearbeiten">
+                         [class.readonly]="item.isArticleBound && item.category === 'PFAND'"
+                         (click)="!(item.isArticleBound && item.category === 'PFAND') && startEditItem(i)"
+                         [title]="item.isArticleBound && item.category === 'PFAND' ? 'Artikelgebundenes Pfand (nicht bearbeitbar)' : 'Klicken zum Bearbeiten'">
                       <span class="article-number-text">{{ item.article_number }}</span>
-                      @if (editingItemIndex === i) {
+                      @if (editingItemIndex === i && !(item.isArticleBound && item.category === 'PFAND')) {
                         <span class="edit-indicator">
                           <span class="material-icons">edit</span>
                           Bearbeite...
@@ -141,21 +153,29 @@
                     </div>
                   </td>
                   <td class="quantity">
-                    <input type="number" [(ngModel)]="item.quantity" min="1" class="quantity-edit" (change)="updateItemTotal(item)">
+                    @if (item.isArticleBound && item.category === 'PFAND') {
+                      <span class="readonly-quantity">{{ item.quantity }}</span>
+                    } @else {
+                      <input type="number" [(ngModel)]="item.quantity" min="1" class="quantity-edit" (input)="updateItemTotal(item)" (change)="updateItemTotal(item)">
+                    }
                   </td>
                   <td class="cost-price" [title]="'EK-Preis: €' + (item.cost_price || 0).toFixed(2)">€{{ (item.cost_price || 0).toFixed(2) }}</td>
                   <td class="customer-price">
-                    <input type="number" 
-                           [(ngModel)]="item.different_price" 
-                           step="0.01" 
-                           min="0" 
-                           class="price-edit" 
-                           [class.custom-price]="item.different_price !== undefined && item.different_price !== null && item.different_price !== ''"
-                           (input)="updateItemTotal(item)"
-                           (change)="updateItemTotal(item)"
-                           (blur)="updateItemTotal(item)"
-                           [placeholder]="item.sale_price"
-                           [title]="'Standard-Preis: €' + item.sale_price">
+                    @if (item.isArticleBound && item.category === 'PFAND') {
+                      <span class="readonly-price">€{{ getItemPrice(item) }}</span>
+                    } @else {
+                      <input type="number" 
+                             [(ngModel)]="item.different_price" 
+                             step="0.01" 
+                             min="0" 
+                             class="price-edit" 
+                             [class.custom-price]="item.different_price !== undefined && item.different_price !== null && item.different_price !== ''"
+                             (input)="updateItemTotal(item)"
+                             (change)="updateItemTotal(item)"
+                             (blur)="updateItemTotal(item)"
+                             [placeholder]="item.sale_price"
+                             [title]="'Standard-Preis: €' + item.sale_price">
+                    }
                   </td>
                   <td class="total-price">€{{ (getItemPrice(item) * item.quantity).toFixed(2) }}</td>
                   <td class="actions">
@@ -164,9 +184,15 @@
                         <span class="material-icons">close</span>
                       </button>
                     } @else {
-                      <button (click)="confirmRemoveFromOrder(i)" class="remove-btn" title="Entfernen">
-                        <span class="material-icons">delete</span>
-                      </button>
+                      @if (!(item.isArticleBound && item.category === 'PFAND')) {
+                        <button (click)="confirmRemoveFromOrder(i)" class="remove-btn" title="Entfernen">
+                          <span class="material-icons">delete</span>
+                        </button>
+                      } @else {
+                        <span class="readonly-indicator" title="Artikelgebundenes Pfand kann nicht einzeln gelöscht werden">
+                          <span class="material-icons">link</span>
+                        </span>
+                      }
                     }
                   </td>
                 </tr>

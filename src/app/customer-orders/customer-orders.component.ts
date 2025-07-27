@@ -678,7 +678,8 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
         // Insert PFAND item directly after the replaced item
         const pfandItem = { 
           ...matchingPfand, 
-          quantity: newQuantity
+          quantity: newQuantity,
+          isArticleBound: true // Flag für artikelgebundene PFAND-Artikel
         };
         
         // Insert the PFAND item at the position right after the replaced item
@@ -710,11 +711,13 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     const matchingPfand = pfandArtikels.find(pfand => pfand.article_number === productItem.custom_field_1);
     
     if (matchingPfand) {
-      // Remove PFAND items with the same article_number as the matching PFAND
+      // Remove only article-bound PFAND items with the same article_number as the matching PFAND
       this.orderItems = this.orderItems.filter(item => 
-        !(item.article_number === matchingPfand.article_number && item.category === 'PFAND')
+        !(item.article_number === matchingPfand.article_number && 
+          item.category === 'PFAND' && 
+          item.isArticleBound)
       );
-      console.log('🗑️ [PFAND-REPLACE] PFAND-Artikel entfernt für:', productItem.article_text);
+      console.log('🗑️ [PFAND-REPLACE] Artikelgebundene PFAND-Artikel entfernt für:', productItem.article_text);
     }
   }
 
@@ -845,15 +848,56 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Reorder the items
     const draggedItem = this.orderItems[this.draggedIndex];
     const newOrderItems = [...this.orderItems];
     
-    // Remove the dragged item
+    // Finde artikelgebundenen PFAND-Artikel für das gezogene Element
+    let draggedPfandItem = null;
+    let draggedPfandIndex = -1;
+    
+    if (draggedItem.custom_field_1) {
+      const pfandArtikels = this.globalService.getPfandArtikels();
+      const matchingPfand = pfandArtikels.find(pfand => pfand.article_number === draggedItem.custom_field_1);
+      
+      if (matchingPfand) {
+        draggedPfandIndex = newOrderItems.findIndex((item, index) => 
+          index > this.draggedIndex &&
+          item.article_number === matchingPfand.article_number && 
+          item.category === 'PFAND' && 
+          item.isArticleBound
+        );
+        
+        if (draggedPfandIndex !== -1) {
+          draggedPfandItem = newOrderItems[draggedPfandIndex];
+        }
+      }
+    }
+    
+    // Entferne zuerst den PFAND-Artikel (von hinten nach vorne, um Indizes nicht zu verschieben)
+    if (draggedPfandItem && draggedPfandIndex > this.draggedIndex) {
+      newOrderItems.splice(draggedPfandIndex, 1);
+    }
+    
+    // Entferne dann den Hauptartikel
     newOrderItems.splice(this.draggedIndex, 1);
     
-    // Insert at the new position
-    newOrderItems.splice(dropIndex, 0, draggedItem);
+    // Berechne die neue Position basierend auf entfernten Elementen
+    let adjustedDropIndex = dropIndex;
+    if (this.draggedIndex < dropIndex) {
+      adjustedDropIndex--;
+      if (draggedPfandItem && draggedPfandIndex < dropIndex) {
+        adjustedDropIndex--;
+      }
+    }
+    
+    // Füge den Hauptartikel an der neuen Position ein
+    newOrderItems.splice(adjustedDropIndex, 0, draggedItem);
+    
+    // Füge den PFAND-Artikel direkt danach ein
+    if (draggedPfandItem) {
+      newOrderItems.splice(adjustedDropIndex + 1, 0, draggedPfandItem);
+      console.log('🔄 [DRAG-DROP] PFAND-Artikel wurde mit Hauptartikel bewegt:', draggedPfandItem.article_text);
+    }
     
     this.orderItems = newOrderItems;
     
@@ -922,20 +966,45 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     artikel.quantity = '';
 
     // Prüfe nach dem Hinzufügen des Artikels, ob PFAND benötigt wird
-    if (artikel.custom_field_1) {
+    if (artikel.custom_field_1 && artikel.category !== 'PFAND') {
       const pfandArtikels = this.globalService.getPfandArtikels();
       const matchingPfand = pfandArtikels.find(pfand => pfand.article_number === artikel.custom_field_1);
       
       if (matchingPfand) {
-        // PFAND-Artikel automatisch zum Auftrag hinzufügen (gleiche Menge wie das Produkt) - keine Abfrage mehr
-        this.orderItems = [
-          ...this.orderItems,
-          { 
+        // Prüfe, ob bereits ein artikelgebundener PFAND-Artikel für diesen Hauptartikel existiert
+        const existingPfandItem = this.orderItems.find(item => 
+          item.article_number === matchingPfand.article_number &&
+          item.category === 'PFAND' &&
+          item.isArticleBound
+        );
+        
+        if (existingPfandItem) {
+          // Aktualisiere die Menge des bestehenden PFAND-Artikels
+          existingPfandItem.quantity += originalQuantity;
+          console.log('🔄 [PFAND-UPDATE] Bestehender artikelgebundener PFAND-Artikel aktualisiert:', matchingPfand.article_text, 'Neue Menge:', existingPfandItem.quantity);
+        } else {
+          // Finde die Position des hinzugefügten Hauptartikels
+          const mainArticleIndex = this.orderItems.findIndex(item => 
+            item.article_number === artikel.article_number && 
+            item.category !== 'PFAND'
+          );
+          
+          // PFAND-Artikel direkt nach dem Hauptartikel einfügen
+          const pfandItem = { 
             ...matchingPfand, 
-            quantity: originalQuantity
-          },
-        ];
-        console.log('✅ [PFAND-ADD] PFAND-Artikel automatisch hinzugefügt:', matchingPfand.article_text, 'Menge:', originalQuantity);
+            quantity: originalQuantity,
+            isArticleBound: true // Flag für artikelgebundene PFAND-Artikel
+          };
+          
+          if (mainArticleIndex !== -1) {
+            this.orderItems.splice(mainArticleIndex + 1, 0, pfandItem);
+          } else {
+            // Fallback: Am Ende hinzufügen
+            this.orderItems.push(pfandItem);
+          }
+          
+          console.log('✅ [PFAND-ADD] PFAND-Artikel automatisch direkt unter Hauptartikel hinzugefügt:', matchingPfand.article_text, 'Menge:', originalQuantity);
+        }
       }
     }
 
@@ -976,7 +1045,17 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   }
 
   removeFromOrder(index: number): void {
+    const itemToRemove = this.orderItems[index];
+    
+    // Entferne den Artikel
     this.orderItems.splice(index, 1);
+    
+    // Entferne automatisch artikelgebundene PFAND-Artikel, wenn ein Hauptartikel gelöscht wird
+    if (itemToRemove.custom_field_1) {
+      this.removeAssociatedPfandItems(itemToRemove);
+      console.log('🗑️ [ARTICLE-DELETE] Artikelgebundene PFAND-Artikel automatisch entfernt für:', itemToRemove.article_text);
+    }
+    
     // Speichere aktualisierte Aufträge im localStorage
     this.globalService.saveCustomerOrders(this.orderItems);
   }
@@ -1039,9 +1118,19 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     console.log('💰 [UPDATE-ITEM] Aktualisiere Artikel:', item.article_text);
     console.log('💰 [UPDATE-ITEM] Vorher - different_price:', item.different_price);
     console.log('💰 [UPDATE-ITEM] Vorher - sale_price:', item.sale_price);
+    console.log('💰 [UPDATE-ITEM] Vorher - quantity:', item.quantity, 'Typ:', typeof item.quantity);
+    
+    // Speichere die ursprüngliche Menge VOR der Konvertierung
+    const originalQuantity = item.quantity;
     
     // Stelle sicher, dass die Werte numerisch sind
     item.quantity = Number(item.quantity) || 1;
+    const newQuantity = item.quantity;
+    
+    // Prüfe ob sich die Menge geändert hat (vergleiche mit ursprünglichem Wert)
+    const quantityChanged = Number(originalQuantity) !== newQuantity;
+    
+    console.log('💰 [UPDATE-ITEM] Mengen-Vergleich - original:', originalQuantity, 'neu:', newQuantity, 'verschieden:', quantityChanged);
     
     // Prüfe, ob das Preis-Feld leer ist oder ungültige Werte enthält
     if (item.different_price === '' || item.different_price === null || item.different_price === undefined) {
@@ -1062,6 +1151,13 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       }
     }
     
+    // Synchronisiere artikelgebundene PFAND-Artikel wenn sich die Menge geändert hat
+    // UND der Artikel ist NICHT selbst ein artikelgebundener PFAND-Artikel
+    if (item.custom_field_1 && !(item.isArticleBound && item.category === 'PFAND')) {
+      console.log('🔄 [UPDATE-ITEM] Starte PFAND-Synchronisation für:', item.article_text, 'quantityChanged:', quantityChanged);
+      this.syncArticleBoundPfandQuantity(item, newQuantity);
+    }
+    
     // Berechne den neuen Gesamtpreis
     const itemPrice = this.getItemPrice(item);
     const totalPrice = itemPrice * item.quantity;
@@ -1069,9 +1165,74 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     console.log('💰 [UPDATE-ITEM] Nachher - verwendeter Preis:', itemPrice);
     console.log('💰 [UPDATE-ITEM] Nachher - Gesamtpreis:', totalPrice);
     
+    // Erzwinge Angular Change Detection nach der Synchronisation
+    this.cdr.detectChanges();
+    
     // Speichere die Änderungen automatisch
     this.globalService.saveCustomerOrders(this.orderItems);
     console.log('💾 [UPDATE-ITEM] Änderungen gespeichert');
+  }
+
+  // Hilfsmethode zur Synchronisation artikelgebundener PFAND-Artikel
+  private syncArticleBoundPfandQuantity(mainItem: any, newQuantity: number): void {
+    console.log('🔄 [PFAND-SYNC] Starte Synchronisation für Hauptartikel:', mainItem.article_text);
+    console.log('🔄 [PFAND-SYNC] custom_field_1:', mainItem.custom_field_1);
+    console.log('🔄 [PFAND-SYNC] Neue Menge:', newQuantity);
+    
+    if (!mainItem.custom_field_1) {
+      console.log('⚠️ [PFAND-SYNC] Kein custom_field_1 gefunden, beende Synchronisation');
+      return;
+    }
+
+    // Finde den dazugehörigen artikelgebundenen PFAND-Artikel
+    const pfandArtikels = this.globalService.getPfandArtikels();
+    const matchingPfand = pfandArtikels.find(pfand => pfand.article_number === mainItem.custom_field_1);
+    
+    console.log('🔍 [PFAND-SYNC] Suche PFAND-Artikel mit Art.-Nr:', mainItem.custom_field_1);
+    console.log('🔍 [PFAND-SYNC] Gefundener PFAND-Artikel:', matchingPfand ? matchingPfand.article_text : 'Nicht gefunden');
+    
+    if (matchingPfand) {
+      // Suche den artikelgebundenen PFAND-Artikel in der Bestellliste
+      const pfandItem = this.orderItems.find(item => 
+        item.article_number === matchingPfand.article_number && 
+        item.category === 'PFAND' && 
+        item.isArticleBound
+      );
+      
+      console.log('🔍 [PFAND-SYNC] Suche in orderItems - Gefundener PFAND-Artikel:', pfandItem ? pfandItem.article_text : 'Nicht gefunden');
+      console.log('🔍 [PFAND-SYNC] Aktuelle orderItems PFAND-Artikel:', 
+        this.orderItems.filter(item => item.category === 'PFAND').map(item => ({
+          article_text: item.article_text,
+          article_number: item.article_number,
+          isArticleBound: item.isArticleBound,
+          quantity: item.quantity
+        }))
+      );
+      
+      if (pfandItem) {
+        const oldQuantity = pfandItem.quantity;
+        pfandItem.quantity = newQuantity;
+        console.log('✅ [PFAND-SYNC] PFAND-Menge synchronisiert:', pfandItem.article_text, 'Alt:', oldQuantity, '→ Neu:', newQuantity);
+        
+        // Erzwinge explizite Angular Change Detection für die PFAND-Änderung
+        setTimeout(() => {
+          this.cdr.detectChanges();
+        }, 0);
+      } else {
+        console.log('❌ [PFAND-SYNC] Artikelgebundener PFAND-Artikel nicht in orderItems gefunden');
+      }
+      
+      // Debug: Zeige alle PFAND-Artikel nach der Synchronisation
+      console.log('🔍 [PFAND-SYNC] Alle PFAND-Artikel nach Sync:', 
+        this.orderItems.filter(item => item.category === 'PFAND').map(item => ({
+          article_text: item.article_text,
+          quantity: item.quantity,
+          isArticleBound: item.isArticleBound
+        }))
+      );
+    } else {
+      console.log('❌ [PFAND-SYNC] Matching PFAND-Artikel nicht in globalen PFAND-Artikeln gefunden');
+    }
   }
 
   saveOrder(): void {
@@ -1587,7 +1748,8 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
           // PFAND-Artikel automatisch zum Auftrag hinzufügen (gleiche Menge wie das Produkt) - keine Abfrage mehr
           this.orderItems.push({ 
             ...matchingPfand, 
-            quantity: originalQuantity
+            quantity: originalQuantity,
+            isArticleBound: true // Flag für artikelgebundene PFAND-Artikel
           });
           console.log('✅ [PFAND-ADD] PFAND-Artikel automatisch hinzugefügt:', matchingPfand.article_text, 'Menge:', originalQuantity);
         }
