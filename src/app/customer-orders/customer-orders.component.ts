@@ -896,6 +896,27 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     });
   }
 
+  showArticleNotes(index: number): void {
+    const item = this.orderItems[index];
+    const notes = item.article_notes || item.notes || item.description || '';
+    
+    const dialogRef = this.dialog.open(MyDialogComponent, {
+      width: '500px',
+      data: {
+        title: 'Artikel-Notizen',
+        message: notes ? notes : 'Keine Notizen für diesen Artikel verfügbar.',
+        confirmLabel: 'Schließen',
+        showCancel: false
+      }
+    });
+  }
+
+  getArticleNotesTooltip(index: number): string {
+    const item = this.orderItems[index];
+    const notes = item.article_notes || item.notes || item.description || '';
+    return notes ? notes : 'Keine Notizen für diesen Artikel verfügbar.';
+  }
+
   getOrderTotal(): number {
     return this.orderItems.reduce((sum, item) => {
       // Verwende different_price falls vorhanden, ansonsten sale_price

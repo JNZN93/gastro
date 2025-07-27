@@ -54,6 +54,7 @@
               <thead>
                 <tr>
                   <th>Pos.</th>
+                  <th style="width: 30px;"></th>
                   <th>Artikel</th>
                   <th>Art.-Nr.</th>
                   <th>Menge</th>
@@ -83,10 +84,15 @@
                       }
                     </div>
                   </td>
+                  <td class="info-column">
+                    <button class="info-btn" 
+                            [title]="getArticleNotesTooltip(i)">
+                      <span class="material-icons">info</span>
+                    </button>
+                  </td>
                   <td class="article-name">
                     <div class="article-name-container" 
                          [class.editing-name]="editingArticleNameIndex === i"
-                         (click)="startEditArticleName(i)"
                          title="Klicken zum Bearbeiten des Artikelnamens">
                       @if (editingArticleNameIndex === i) {
                         <input type="text" 
@@ -96,7 +102,7 @@
                                class="article-name-edit-input"
                                autofocus>
                       } @else {
-                        <span class="article-text">{{ item.article_text }}</span>
+                        <span class="article-text" (click)="startEditArticleName(i)">{{ item.article_text }}</span>
                       }
                     </div>
                   </td>
