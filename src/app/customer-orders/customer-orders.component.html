@@ -118,8 +118,9 @@
                                [(ngModel)]="editingArticleName"
                                (keydown)="onArticleNameKeyDown($event, i)"
                                (blur)="saveArticleName(i)"
+                               (focus)="onArticleNameFocus(i)"
                                class="article-name-edit-input"
-                               autofocus>
+                               #articleNameInput>
                       } @else {
                         <span class="article-text" (click)="startEditArticleName(i)">{{ item.article_text }}</span>
                       }

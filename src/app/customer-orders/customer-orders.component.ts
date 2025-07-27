@@ -99,6 +99,14 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     }
   }
 
+  @HostListener('document:keydown', ['$event'])
+  onDocumentKeyDown(event: KeyboardEvent) {
+    // Escape-Taste beendet Artikelnamen-Bearbeitung
+    if (event.key === 'Escape' && this.editingArticleNameIndex !== -1) {
+      this.cancelEditArticleName();
+    }
+  }
+
   ngOnInit(): void {
     // Footer verstecken
     this.hideFooter();
@@ -714,6 +722,15 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   startEditArticleName(index: number): void {
     this.editingArticleNameIndex = index;
     this.editingArticleName = this.orderItems[index].article_text;
+    
+    // Explizit Fokus setzen nach dem nächsten Tick
+    setTimeout(() => {
+      const inputElement = document.querySelector('.article-name-edit-input') as HTMLInputElement;
+      if (inputElement) {
+        inputElement.focus();
+        inputElement.select(); // Markiert den gesamten Text
+      }
+    }, 10); // Kurze Verzögerung für bessere Zuverlässigkeit
   }
 
   saveArticleName(index: number): void {
@@ -732,12 +749,24 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     this.editingArticleName = '';
   }
 
+  // Zusätzliche Methode zum expliziten Abbrechen der Bearbeitung
+  forceCancelEditArticleName(): void {
+    this.editingArticleNameIndex = -1;
+    this.editingArticleName = '';
+    this.cdr.detectChanges(); // Erzwingt DOM-Update
+  }
+
   onArticleNameKeyDown(event: KeyboardEvent, index: number): void {
     if (event.key === 'Enter') {
       this.saveArticleName(index);
     } else if (event.key === 'Escape') {
       this.cancelEditArticleName();
     }
+  }
+
+  onArticleNameFocus(index: number): void {
+    // Zusätzliche Sicherheit: Fokus ist aktiv
+    console.log('Article name input focused for index:', index);
   }
 
   // Customer company name editing methods
