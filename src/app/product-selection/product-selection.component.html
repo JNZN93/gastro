@@ -133,11 +133,12 @@
             </div>
             <div class="scanner-content">
                 <zxing-scanner #scanner
-                    [enable]="isScanning"
                     [device]="selectedDevice"
-                    [formats]="formatsEnabled"
                     [videoConstraints]="videoConstraints"
-                    (codeResult)="onCodeResult($event)">
+                    [tryHarder]="true"
+                    [formats]="formatsEnabled"
+                    [torch]="true"
+                    (scanSuccess)="onCodeResult($event)">
                 </zxing-scanner>
             </div>
         </div>

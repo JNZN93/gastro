@@ -584,19 +584,28 @@ export class ProductSelectionComponent implements OnInit {
       // Fallback: Erste Kamera
       this.selectedDevice = preferredCam || videoDevices[0];
     });
-    this.scanner?.scanStart();
+    this.scanner?.scanStart(); // aktiviert Kamera
+
+    // Torch einschalten
+    if (this.scanner) {
+      this.scanner.torch = true;
+    }
   }
 
-  onCodeResult(result: any) {
+  onCodeResult(result: string) {
     this.playBeep();
     this.stopScanner();
-    this.searchTerm = result.toString();
+    this.searchTerm = result;
     this.filterProducts();
   }
 
   stopScanner() {
     this.isScanning = false;
-    this.scanner?.reset();
+    // Torch ausschalten
+    if (this.scanner) {
+      this.scanner.torch = false;
+    }
+    this.scanner?.reset(); // stoppt Kamera & löst Vorschau
   }
 
   playBeep(): void {
