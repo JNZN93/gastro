@@ -57,6 +57,11 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   editingArticleNameIndex: number = -1;
   editingArticleName: string = '';
   
+  // Customer company name editing properties
+  isEditingCompanyName: boolean = false;
+  editingCompanyName: string = '';
+  differentCompanyName: string = '';
+  
   // Drag & Drop properties
   draggedIndex: number = -1;
   dragOverIndex: number = -1;
@@ -689,6 +694,31 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     }
   }
 
+  // Customer company name editing methods
+  startEditCompanyName(): void {
+    this.isEditingCompanyName = true;
+    this.editingCompanyName = this.differentCompanyName || this.globalService.selectedCustomerForOrders.last_name_company || '';
+  }
+
+  saveCompanyName(): void {
+    this.differentCompanyName = this.editingCompanyName.trim();
+    this.isEditingCompanyName = false;
+    this.editingCompanyName = '';
+  }
+
+  cancelEditCompanyName(): void {
+    this.isEditingCompanyName = false;
+    this.editingCompanyName = '';
+  }
+
+  onCompanyNameKeyDown(event: KeyboardEvent): void {
+    if (event.key === 'Enter') {
+      this.saveCompanyName();
+    } else if (event.key === 'Escape') {
+      this.cancelEditCompanyName();
+    }
+  }
+
   // Drag & Drop Methods
   onDragStart(event: DragEvent, index: number): void {
     // Prevent dragging if item is being edited
@@ -995,6 +1025,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       customer_addition: this.globalService.selectedCustomerForOrders.name_addition,
       customer_city: this.globalService.selectedCustomerForOrders.city,
       customer_email: this.globalService.selectedCustomerForOrders.email,
+      different_company_name: this.differentCompanyName || null,
       status: 'completed'
     };
 
@@ -1069,6 +1100,11 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     
     // 3. Leere die kundenspezifischen Preise
     this.customerArticlePrices = [];
+    
+    // 4. Leere den geänderten Firmennamen
+    this.differentCompanyName = '';
+    this.isEditingCompanyName = false;
+    this.editingCompanyName = '';
     console.log('✅ [CLEAR-ALL-ORDER] Kundenspezifische Preise geleert');
     
     // 4. Setze alle Artikel auf Standard-Preise zurück
@@ -1276,6 +1312,12 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     this.clearSearch();
     console.log('🧹 [SELECT-CUSTOMER] Suchfeld und gefilterte Artikel geleert');
     
+    // Lösche den geänderten Firmennamen beim Kundenwechsel
+    this.differentCompanyName = '';
+    this.isEditingCompanyName = false;
+    this.editingCompanyName = '';
+    console.log('🧹 [SELECT-CUSTOMER] Geänderter Firmenname zurückgesetzt');
+    
     // Lade Kunden-Artikel-Preise für den ausgewählten Kunden
     console.log('🔄 [SELECT-CUSTOMER] Starte loadCustomerArticlePrices für Kunde:', customer.customer_number);
     this.loadCustomerArticlePrices(customer.customer_number);
@@ -1313,6 +1355,12 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     
     this.customerArticlePrices = []; // Lösche auch die Kunden-Artikel-Preise
     console.log('🗑️ [CLEAR-CUSTOMER] customerArticlePrices zurückgesetzt');
+    
+    // Lösche den geänderten Firmennamen
+    this.differentCompanyName = '';
+    this.isEditingCompanyName = false;
+    this.editingCompanyName = '';
+    console.log('🗑️ [CLEAR-CUSTOMER] Geänderter Firmenname zurückgesetzt');
     
     // Lösche das Suchfeld und gefilterte Artikel beim Zurücksetzen des Kunden
     this.clearSearch();

@@ -19,7 +19,25 @@
           <div class="customer-info-box">
             <div class="customer-details">
               <div class="customer-basic-info">
-                <h4>{{ globalService.selectedCustomerForOrders.last_name_company || globalService.selectedCustomerForOrders.customer_number }}</h4>
+                <div class="company-name-container" 
+                     [class.editing]="isEditingCompanyName"
+                     title="Klicken zum Bearbeiten des Firmennamens">
+                  @if (isEditingCompanyName) {
+                    <input type="text" 
+                           [(ngModel)]="editingCompanyName"
+                           (keydown)="onCompanyNameKeyDown($event)"
+                           (blur)="saveCompanyName()"
+                           class="company-name-edit-input"
+                           autofocus>
+                  } @else {
+                    <h4 (click)="startEditCompanyName()">
+                      {{ differentCompanyName || globalService.selectedCustomerForOrders.last_name_company || globalService.selectedCustomerForOrders.customer_number }}
+                      @if (differentCompanyName) {
+                        <span class="edit-indicator">(geändert)</span>
+                      }
+                    </h4>
+                  }
+                </div>
                 @if (globalService.selectedCustomerForOrders.name_addition) {
                   <p class="customer-addition">{{ globalService.selectedCustomerForOrders.name_addition }}</p>
                 }
