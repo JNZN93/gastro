@@ -730,16 +730,38 @@
       cursor: grabbing;
     }
     
-    // Artikelgebundene PFAND-Artikel Markierung
-    &.article-bound-pfand {
-      background: linear-gradient(135deg, #e8f5e8, #c8e6c9);
-      border-left: 4px solid #4caf50;
+        // Artikel-Paket Darstellung - Einfache Umrandung ohne Verschiebung
+    &.package-item {
+      // Nur leichte Hintergrundfarbe
+      background-color: rgba(33, 150, 243, 0.03);
+      
+      // Subtile linke Markierung
+      border-left: 3px solid rgba(33, 150, 243, 0.3);
       
       &:hover {
-        background: linear-gradient(135deg, #c8e6c9, #a5d6a7);
+        background-color: rgba(33, 150, 243, 0.06);
       }
-      
-             .article-bound-indicator {
+    }
+    
+    // Paket-Start (Hauptartikel) - Nur obere Umrandung
+    &.package-start {
+      border-top: 2px solid rgba(33, 150, 243, 0.5);
+      border-top-left-radius: 4px;
+      border-top-right-radius: 4px;
+      background-color: rgba(33, 150, 243, 0.06);
+    }
+    
+    // Paket-Ende (PFAND-Artikel) - Nur untere Umrandung  
+    &.package-end {
+      border-bottom: 2px solid rgba(33, 150, 243, 0.5);
+      border-bottom-left-radius: 4px;
+      border-bottom-right-radius: 4px;
+      background-color: rgba(33, 150, 243, 0.04);
+    }
+    
+         // Artikelgebundene PFAND-Artikel Markierung (einfach)
+     &.article-bound-pfand {
+       .article-bound-indicator {
          display: inline-flex;
          align-items: center;
          margin-left: 6px;
@@ -752,15 +774,16 @@
          }
          
          .pfand-label {
-           background: rgba(76, 175, 80, 0.1);
-           color: #388e3c;
+           background: rgba(76, 175, 80, 0.15);
+           color: #2e7d32;
            font-size: 10px;
-           font-weight: 600;
-           padding: 2px 6px;
-           border-radius: 12px;
+           font-weight: 700;
+           padding: 3px 8px;
+           border-radius: 14px;
            text-transform: uppercase;
-           letter-spacing: 0.5px;
-           border: 1px solid rgba(76, 175, 80, 0.3);
+           letter-spacing: 0.8px;
+           border: 1px solid rgba(76, 175, 80, 0.4);
+           box-shadow: 0 1px 3px rgba(76, 175, 80, 0.2);
          }
        }
      }

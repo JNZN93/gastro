@@ -2115,4 +2115,64 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
 
     console.log('✅ [RESET-ORDER-PRICES] Auftrag-Preise erfolgreich zurückgesetzt');
   }
+
+  // Neue Hilfsmethoden für Artikel-Paket-Darstellung
+  
+  // Prüft, ob ein Artikel der erste in einem Paket ist (Hauptartikel mit PFAND)
+  isPackageStart(index: number): boolean {
+    const currentItem = this.orderItems[index];
+    
+    // Ist ein Hauptartikel und hat einen dazugehörigen PFAND-Artikel
+    if (currentItem.custom_field_1 && !(currentItem.isArticleBound && currentItem.category === 'PFAND')) {
+      // Prüfe, ob der nächste Artikel der dazugehörige PFAND ist
+      const nextItem = this.orderItems[index + 1];
+      if (nextItem && 
+          nextItem.category === 'PFAND' && 
+          nextItem.isArticleBound &&
+          this.isPfandForArticle(currentItem, nextItem)) {
+        return true;
+      }
+    }
+    
+    return false;
+  }
+  
+  // Prüft, ob ein Artikel das Ende eines Pakets ist (PFAND-Artikel)
+  isPackageEnd(index: number): boolean {
+    const currentItem = this.orderItems[index];
+    
+    // Ist ein artikelgebundener PFAND-Artikel
+    if (currentItem.isArticleBound && currentItem.category === 'PFAND') {
+      // Prüfe, ob der vorherige Artikel der dazugehörige Hauptartikel ist
+      const prevItem = this.orderItems[index - 1];
+      if (prevItem && this.isPfandForArticle(prevItem, currentItem)) {
+        return true;
+      }
+    }
+    
+    return false;
+  }
+  
+  // Prüft, ob ein Artikel Teil eines Pakets ist
+  isPartOfPackage(index: number): boolean {
+    return this.isPackageStart(index) || this.isPackageEnd(index) || this.isPackageMiddle(index);
+  }
+  
+  // Prüft, ob ein Artikel in der Mitte eines Pakets ist (für zukünftige Erweiterungen)
+  isPackageMiddle(index: number): boolean {
+    // Für jetzt immer false, da wir nur Hauptartikel + PFAND haben
+    return false;
+  }
+  
+  // Hilfsmethode: Prüft, ob ein PFAND-Artikel zu einem Hauptartikel gehört
+  private isPfandForArticle(mainArticle: any, pfandArticle: any): boolean {
+    if (!mainArticle.custom_field_1 || !pfandArticle.isArticleBound || pfandArticle.category !== 'PFAND') {
+      return false;
+    }
+    
+    const pfandArtikels = this.globalService.getPfandArtikels();
+    const matchingPfand = pfandArtikels.find(pfand => pfand.article_number === mainArticle.custom_field_1);
+    
+    return matchingPfand && matchingPfand.article_number === pfandArticle.article_number;
+  }
 }
