@@ -187,6 +187,58 @@ export class EmployeesComponent implements OnInit {
           artikel.ean?.toLowerCase().includes(term)
         )
       );
+      
+      // Sortiere nach Prioritätsreihenfolge
+      filtered = filtered.sort((a, b) => {
+        const searchTermLower = this.searchTerm.toLowerCase();
+        
+        // Prüfe exakte Übereinstimmungen für jede Prioritätsstufe
+        const aArticleNumberExact = a.article_number?.toLowerCase() === searchTermLower;
+        const bArticleNumberExact = b.article_number?.toLowerCase() === searchTermLower;
+        const aArticleTextExact = a.article_text.toLowerCase() === searchTermLower;
+        const bArticleTextExact = b.article_text.toLowerCase() === searchTermLower;
+        const aEanExact = a.ean?.toLowerCase() === searchTermLower;
+        const bEanExact = b.ean?.toLowerCase() === searchTermLower;
+        
+        // Prüfe Teilübereinstimmungen (beginnend mit Suchbegriff)
+        const aArticleNumberStartsWith = a.article_number?.toLowerCase().startsWith(searchTermLower);
+        const bArticleNumberStartsWith = b.article_number?.toLowerCase().startsWith(searchTermLower);
+        const aArticleTextStartsWith = a.article_text.toLowerCase().startsWith(searchTermLower);
+        const bArticleTextStartsWith = b.article_text.toLowerCase().startsWith(searchTermLower);
+        const aEanStartsWith = a.ean?.toLowerCase().startsWith(searchTermLower);
+        const bEanStartsWith = b.ean?.toLowerCase().startsWith(searchTermLower);
+        
+        // Priorität 1: Exakte Übereinstimmung in article_number
+        if (aArticleNumberExact && !bArticleNumberExact) return -1;
+        if (!aArticleNumberExact && bArticleNumberExact) return 1;
+        
+        // Priorität 2: Exakte Übereinstimmung in article_text
+        if (aArticleTextExact && !bArticleTextExact) return -1;
+        if (!aArticleTextExact && bArticleTextExact) return 1;
+        
+        // Priorität 3: Exakte Übereinstimmung in ean
+        if (aEanExact && !bEanExact) return -1;
+        if (!aEanExact && bEanExact) return 1;
+        
+        // Priorität 4: Beginnt mit Suchbegriff in article_number
+        if (aArticleNumberStartsWith && !bArticleNumberStartsWith) return -1;
+        if (!aArticleNumberStartsWith && bArticleNumberStartsWith) return 1;
+        
+        // Priorität 5: Beginnt mit Suchbegriff in article_text
+        if (aArticleTextStartsWith && !bArticleTextStartsWith) return -1;
+        if (!aArticleTextStartsWith && bArticleTextStartsWith) return 1;
+        
+        // Priorität 6: Beginnt mit Suchbegriff in ean
+        if (aEanStartsWith && !bEanStartsWith) return -1;
+        if (!aEanStartsWith && bEanStartsWith) return 1;
+        
+        // Bei gleicher Priorität: zuerst nach article_number sortieren, dann nach article_text
+        const articleNumberComparison = this.compareArticleNumbers(a.article_number, b.article_number);
+        if (articleNumberComparison !== 0) {
+          return articleNumberComparison;
+        }
+        return a.article_text.localeCompare(b.article_text);
+      });
     }
     return filtered;
   }
@@ -779,5 +831,30 @@ export class EmployeesComponent implements OnInit {
     } catch (error) {
       return '-';
     }
+  }
+
+  /**
+   * Vergleicht zwei Artikelnummern intelligent (numerisch und alphabetisch)
+   * @param a Erste Artikelnummer
+   * @param b Zweite Artikelnummer
+   * @returns -1 wenn a < b, 0 wenn a = b, 1 wenn a > b
+   */
+  private compareArticleNumbers(a: string | undefined, b: string | undefined): number {
+    // Behandle undefined/null Werte
+    if (!a && !b) return 0;
+    if (!a) return 1;
+    if (!b) return -1;
+    
+    // Versuche numerischen Vergleich für reine Zahlen
+    const aNum = parseFloat(a);
+    const bNum = parseFloat(b);
+    
+    // Wenn beide Artikelnummern reine Zahlen sind, vergleiche sie numerisch
+    if (!isNaN(aNum) && !isNaN(bNum) && a.toString() === aNum.toString() && b.toString() === bNum.toString()) {
+      return aNum - bNum;
+    }
+    
+    // Ansonsten alphabetischen Vergleich
+    return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
   }
 }
