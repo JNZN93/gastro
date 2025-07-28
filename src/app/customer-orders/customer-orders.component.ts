@@ -1121,6 +1121,13 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     console.log('📝 [PRICE-INPUT] Preis-Eingabe:', item.different_price);
   }
 
+  // Neue Methode für Quantity Input-Event - nur Gesamtsumme aktualisieren, keine Validierung
+  onQuantityInput(item: any): void {
+    // Nur die Gesamtsumme aktualisieren, ohne Validierung
+    // Das verhindert, dass unvollständige Eingaben gelöscht werden
+    console.log('📝 [QUANTITY-INPUT] Menge-Eingabe:', item.quantity);
+  }
+
   // Neue Methode für Blur-Event - vollständige Validierung
   validateAndUpdatePrice(item: any): void {
     console.log('💰 [VALIDATE-PRICE] Validiere Preis für Artikel:', item.article_text);
@@ -1172,19 +1179,69 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     this.updateItemTotal(item);
   }
 
+  // Neue Methode für Quantity Blur-Event - vollständige Validierung
+  validateAndUpdateQuantity(item: any): void {
+    console.log('📦 [VALIDATE-QUANTITY] Validiere Menge für Artikel:', item.article_text);
+    console.log('📦 [VALIDATE-QUANTITY] Eingabe:', item.quantity);
+    
+    // Prüfe, ob das Quantity-Feld leer ist oder ungültige Werte enthält
+    if (item.quantity === '' || item.quantity === null || item.quantity === undefined) {
+      // Feld ist leer - setze auf 1
+      item.quantity = 1;
+      console.log('🔄 [VALIDATE-QUANTITY] Feld ist leer - setze auf 1');
+    } else {
+      // Menge wurde eingegeben - validiere und verwende sie
+      // Konvertiere String zu Number und behandle Dezimalzahlen korrekt
+      let newQuantity: number;
+      
+      if (typeof item.quantity === 'string') {
+        // Ersetze Komma durch Punkt für korrekte Zahl-Konvertierung
+        // Entferne auch alle Leerzeichen
+        const cleanQuantity = item.quantity.replace(/\s/g, '').replace(',', '.');
+        
+        // Prüfe, ob es eine gültige Dezimalzahl ist
+        if (!/^\d*\.?\d+$/.test(cleanQuantity)) {
+          console.warn('⚠️ [VALIDATE-QUANTITY] Ungültiges Format für Dezimalzahl');
+          item.quantity = 1;
+          this.updateItemTotal(item);
+          return;
+        }
+        
+        newQuantity = parseFloat(cleanQuantity);
+      } else {
+        newQuantity = Number(item.quantity);
+      }
+      
+      // Validierung: Menge muss positiv sein und mindestens 0.01
+      if (isNaN(newQuantity) || newQuantity < 0.01) {
+        console.warn('⚠️ [VALIDATE-QUANTITY] Ungültige Menge, setze auf 1');
+        item.quantity = 1;
+      } else {
+        // Runde auf 2 Dezimalstellen für Konsistenz
+        item.quantity = Math.round(newQuantity * 100) / 100;
+        console.log('✅ [VALIDATE-QUANTITY] quantity aktualisiert auf:', item.quantity);
+      }
+    }
+    
+    // Rufe updateItemTotal auf für die finale Berechnung
+    this.updateItemTotal(item);
+  }
+
   updateItemTotal(item: any): void {
     console.log('💰 [UPDATE-ITEM] Aktualisiere Artikel:', item.article_text);
     console.log('💰 [UPDATE-ITEM] Vorher - different_price:', item.different_price);
     console.log('💰 [UPDATE-ITEM] Vorher - sale_price:', item.sale_price);
+    console.log('💰 [UPDATE-ITEM] Vorher - quantity:', item.quantity);
     
-    // Stelle sicher, dass die Werte numerisch sind
-    item.quantity = Number(item.quantity) || 1;
+    // Stelle sicher, dass die Werte numerisch sind (nur für die Berechnung)
+    const quantity = Number(item.quantity) || 1;
     
     // Berechne den neuen Gesamtpreis
     const itemPrice = this.getItemPrice(item);
-    const totalPrice = itemPrice * item.quantity;
+    const totalPrice = itemPrice * quantity;
     
     console.log('💰 [UPDATE-ITEM] Nachher - verwendeter Preis:', itemPrice);
+    console.log('💰 [UPDATE-ITEM] Nachher - verwendete Menge:', quantity);
     console.log('💰 [UPDATE-ITEM] Nachher - Gesamtpreis:', totalPrice);
     
     // Speichere die Änderungen automatisch

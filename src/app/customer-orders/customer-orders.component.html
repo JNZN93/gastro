@@ -141,7 +141,14 @@
                     </div>
                   </td>
                   <td class="quantity">
-                    <input type="number" [(ngModel)]="item.quantity" min="1" class="quantity-edit" (change)="updateItemTotal(item)">
+                    <input type="number" 
+                           [(ngModel)]="item.quantity" 
+                           step="0.01" 
+                           min="0.01" 
+                           class="quantity-edit" 
+                           (input)="onQuantityInput(item)"
+                           (change)="updateItemTotal(item)"
+                           (blur)="validateAndUpdateQuantity(item)">
                   </td>
                   <td class="cost-price" [title]="'EK-Preis: €' + (item.cost_price || 0).toFixed(2)">€{{ (item.cost_price || 0).toFixed(2) }}</td>
                   <td class="customer-price">
