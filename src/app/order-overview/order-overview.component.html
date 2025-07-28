@@ -55,7 +55,6 @@
               <th>Kunde</th>
               <th>Firma</th>
               <th>Status</th>
-              <th>Zahlungsstatus</th>
               <th>Gesamtpreis</th>
               <th>Aktionen</th>
             </tr>
@@ -72,11 +71,6 @@
                 <td class="status-cell">
                   <span class="status-badge" [class]="getStatusClass(order.status)">
                     {{ getStatusText(order.status) }}
-                  </span>
-                </td>
-                <td class="payment-status">
-                  <span class="payment-badge" [class]="'payment-' + order.payment_status">
-                    {{ getPaymentStatusText(order.payment_status) }}
                   </span>
                 </td>
                 <td class="total-price">{{ order.total_price | currency:'EUR':'symbol':'1.2-2' }}</td>
