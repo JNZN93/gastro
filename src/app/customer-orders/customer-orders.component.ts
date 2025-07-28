@@ -542,6 +542,8 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       
       // Konvertiere die Menge zu einer Zahl und prüfe auf gültige Werte
       let quantity = Number(artikel.quantity);
+
+      // To-do quantity
       
       // Wenn keine Menge eingegeben wurde oder die Menge leer/null/ungültig ist, setze auf 1
       if (!quantity || isNaN(quantity) || quantity <= 0) {
