@@ -1,34 +1,17 @@
 <div class="product-catalog-dashboard">
-  <!-- Header Section -->
+  <!-- Compact Header Section -->
   <div class="dashboard-header">
     <div class="header-content">
-      <h1 class="dashboard-title">
-        <svg class="dashboard-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
-        </svg>
-        Produktkatalog
-      </h1>
-      <div class="header-actions">
-        <button (click)="startScanner()" [disabled]="isScanning" class="scanner-btn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V6a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1zm12 0h2a1 1 0 001-1V6a1 1 0 00-1-1h-2a1 1 0 00-1 1v1a1 1 0 001 1zM5 20h2a1 1 0 001-1v-1a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1z"/>
+      <div class="header-left">
+        <h1 class="dashboard-title">
+          <svg class="dashboard-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
           </svg>
-          Scanner
-        </button>
-        <button (click)="toggleLastOrders()" class="orders-btn" [class.active]="showLastOrders">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-          </svg>
-          Zuletzt eingekauft
-        </button>
+          <span class="title-text">Produktkatalog</span>
+        </h1>
       </div>
-    </div>
-  </div>
-
-  <!-- Search and Filter Section -->
-  <div class="search-filter-section">
-    <div class="search-filter-content">
-      <div class="search-container">
+      
+      <div class="header-center">
         <div class="search-box">
           <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
@@ -42,7 +25,7 @@
         </div>
       </div>
       
-      <div class="filter-container">
+      <div class="header-right">
         <select class="category-select" [(ngModel)]="selectedCategory" (change)="filterCategory($event)">
           <option value="">Alle Kategorien</option>
           <option value="FAVORITEN">⭐ Favoriten</option>
@@ -52,6 +35,21 @@
           </option>
           }
         </select>
+        
+        <div class="header-actions">
+          <button (click)="startScanner()" [disabled]="isScanning" class="scanner-btn" title="Scanner">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V6a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1zm12 0h2a1 1 0 001-1V6a1 1 0 00-1-1h-2a1 1 0 00-1 1v1a1 1 0 001 1zM5 20h2a1 1 0 001-1v-1a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1z"/>
+            </svg>
+            <span class="btn-text">Scanner</span>
+          </button>
+          <button (click)="toggleLastOrders()" class="orders-btn" [class.active]="showLastOrders" title="Zuletzt eingekauft">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            <span class="btn-text">Zuletzt</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
