@@ -127,12 +127,7 @@ export class UserManagementComponent implements OnInit {
     }
   }
 
-  // Modal-Methoden
-  openAddUserModal() {
-    this.editingUser = null;
-    this.resetFormData();
-    this.showEditModal = true;
-  }
+
 
   openEditUserModal(user: User) {
     this.editingUser = user;
@@ -149,10 +144,6 @@ export class UserManagementComponent implements OnInit {
   closeEditModal() {
     this.showEditModal = false;
     this.editingUser = null;
-    this.resetFormData();
-  }
-
-  resetFormData() {
     this.userFormData = {
       name: '',
       email: '',
@@ -164,6 +155,11 @@ export class UserManagementComponent implements OnInit {
 
   // User speichern/aktualisieren
   saveUser() {
+    if (!this.editingUser) {
+      this.showErrorMessage('Fehler', 'Kein Benutzer zum Bearbeiten ausgewählt.');
+      return;
+    }
+
     if (!this.userFormData.name || !this.userFormData.email || !this.userFormData.role) {
       this.showErrorMessage('Validierungsfehler', 'Bitte füllen Sie alle Pflichtfelder aus.');
       return;
@@ -179,39 +175,21 @@ export class UserManagementComponent implements OnInit {
       name: this.userFormData.name
     };
 
-    if (this.editingUser) {
-      // User aktualisieren
-      this.userService.updateUser(this.editingUser.id, requestBody).subscribe({
-        next: () => {
-          this.showSuccessMessage('Erfolg', 'Benutzer wurde erfolgreich aktualisiert.');
-          this.loadUsers();
-          this.closeEditModal();
-        },
-        error: (error: any) => {
-          console.error('Fehler beim Aktualisieren des Users:', error);
-          this.showErrorMessage('Fehler', 'Fehler beim Aktualisieren des Benutzers. Bitte versuchen Sie es später erneut.');
-        },
-        complete: () => {
-          this.isSaving = false;
-        }
-      });
-    } else {
-      // Neuen User erstellen
-      this.userService.createUser(requestBody).subscribe({
-        next: () => {
-          this.showSuccessMessage('Erfolg', 'Neuer Benutzer wurde erfolgreich erstellt.');
-          this.loadUsers();
-          this.closeEditModal();
-        },
-        error: (error: any) => {
-          console.error('Fehler beim Erstellen des Users:', error);
-          this.showErrorMessage('Fehler', 'Fehler beim Erstellen des Benutzers. Bitte versuchen Sie es später erneut.');
-        },
-        complete: () => {
-          this.isSaving = false;
-        }
-      });
-    }
+    // User aktualisieren
+    this.userService.updateUser(this.editingUser.id, requestBody).subscribe({
+      next: () => {
+        this.showSuccessMessage('Erfolg', 'Benutzer wurde erfolgreich aktualisiert.');
+        this.loadUsers();
+        this.closeEditModal();
+      },
+      error: (error: any) => {
+        console.error('Fehler beim Aktualisieren des Users:', error);
+        this.showErrorMessage('Fehler', 'Fehler beim Aktualisieren des Benutzers. Bitte versuchen Sie es später erneut.');
+      },
+      complete: () => {
+        this.isSaving = false;
+      }
+    });
   }
 
   // Message-Handling
