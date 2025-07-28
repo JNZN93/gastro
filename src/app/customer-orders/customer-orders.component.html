@@ -151,9 +151,9 @@
                            min="0" 
                            class="price-edit" 
                            [class.custom-price]="item.different_price !== undefined && item.different_price !== null && item.different_price !== ''"
-                           (input)="updateItemTotal(item)"
+                           (input)="onPriceInput(item)"
                            (change)="updateItemTotal(item)"
-                           (blur)="updateItemTotal(item)"
+                           (blur)="validateAndUpdatePrice(item)"
                            [placeholder]="item.sale_price"
                            [title]="'Standard-Preis: €' + item.sale_price">
                   </td>

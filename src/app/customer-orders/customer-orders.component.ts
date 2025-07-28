@@ -1114,10 +1114,17 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     return item.different_price !== undefined ? item.different_price : item.sale_price;
   }
 
-  updateItemTotal(item: any): void {
-    console.log('💰 [UPDATE-ITEM] Aktualisiere Artikel:', item.article_text);
-    console.log('💰 [UPDATE-ITEM] Vorher - different_price:', item.different_price);
-    console.log('💰 [UPDATE-ITEM] Vorher - sale_price:', item.sale_price);
+  // Neue Methode für Input-Event - nur Gesamtsumme aktualisieren, keine Validierung
+  onPriceInput(item: any): void {
+    // Nur die Gesamtsumme aktualisieren, ohne Validierung
+    // Das verhindert, dass unvollständige Eingaben gelöscht werden
+    console.log('📝 [PRICE-INPUT] Preis-Eingabe:', item.different_price);
+  }
+
+  // Neue Methode für Blur-Event - vollständige Validierung
+  validateAndUpdatePrice(item: any): void {
+    console.log('💰 [VALIDATE-PRICE] Validiere Preis für Artikel:', item.article_text);
+    console.log('💰 [VALIDATE-PRICE] Eingabe:', item.different_price);
     
     // Stelle sicher, dass die Werte numerisch sind
     item.quantity = Number(item.quantity) || 1;
@@ -1126,20 +1133,52 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     if (item.different_price === '' || item.different_price === null || item.different_price === undefined) {
       // Feld ist leer - verwende Standard-Preis
       item.different_price = undefined;
-      console.log('🔄 [UPDATE-ITEM] Feld ist leer - verwende Standard-Preis:', item.sale_price);
+      console.log('🔄 [VALIDATE-PRICE] Feld ist leer - verwende Standard-Preis:', item.sale_price);
     } else {
       // Preis wurde eingegeben - validiere und verwende ihn
-      const newPrice = Number(item.different_price);
+      // Konvertiere String zu Number und behandle Dezimalzahlen korrekt
+      let newPrice: number;
+      
+      if (typeof item.different_price === 'string') {
+        // Ersetze Komma durch Punkt für korrekte Zahl-Konvertierung
+        // Entferne auch alle Leerzeichen
+        const cleanPrice = item.different_price.replace(/\s/g, '').replace(',', '.');
+        
+        // Prüfe, ob es eine gültige Dezimalzahl ist
+        if (!/^\d*\.?\d+$/.test(cleanPrice)) {
+          console.warn('⚠️ [VALIDATE-PRICE] Ungültiges Format für Dezimalzahl');
+          item.different_price = undefined;
+          this.updateItemTotal(item);
+          return;
+        }
+        
+        newPrice = parseFloat(cleanPrice);
+      } else {
+        newPrice = Number(item.different_price);
+      }
       
       // Validierung: Preis muss positiv sein
       if (isNaN(newPrice) || newPrice < 0) {
-        console.warn('⚠️ [UPDATE-ITEM] Ungültiger Preis, setze auf Standard-Preis');
+        console.warn('⚠️ [VALIDATE-PRICE] Ungültiger Preis, setze auf Standard-Preis');
         item.different_price = undefined;
       } else {
-        item.different_price = newPrice;
-        console.log('✅ [UPDATE-ITEM] different_price aktualisiert auf:', item.different_price);
+        // Runde auf 2 Dezimalstellen für Konsistenz
+        item.different_price = Math.round(newPrice * 100) / 100;
+        console.log('✅ [VALIDATE-PRICE] different_price aktualisiert auf:', item.different_price);
       }
     }
+    
+    // Rufe updateItemTotal auf für die finale Berechnung
+    this.updateItemTotal(item);
+  }
+
+  updateItemTotal(item: any): void {
+    console.log('💰 [UPDATE-ITEM] Aktualisiere Artikel:', item.article_text);
+    console.log('💰 [UPDATE-ITEM] Vorher - different_price:', item.different_price);
+    console.log('💰 [UPDATE-ITEM] Vorher - sale_price:', item.sale_price);
+    
+    // Stelle sicher, dass die Werte numerisch sind
+    item.quantity = Number(item.quantity) || 1;
     
     // Berechne den neuen Gesamtpreis
     const itemPrice = this.getItemPrice(item);
