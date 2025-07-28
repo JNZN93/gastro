@@ -9,7 +9,7 @@ import { GuestLinkComponent } from './guest-link/guest-link.component';
 import { VerifyComponent } from './verify/verify.component';
 import { PrivacyPolicyComponent } from './privacy-policy/privacy-policy.component';
 import { ImpressComponent } from './impress/impress.component';
-import { ImageManagementComponent } from './image-management/image-management.component';
+import { ProductManagementComponent } from './product-management/product-management.component';
 import { EmployeesComponent } from './employees/employees.component';
 import { LabelManagementComponent } from './label-management/label-management.component';
 import { CustomerOrdersComponent } from './customer-orders/customer-orders.component';
@@ -26,7 +26,7 @@ export const routes: Routes = [
     { path: 'verify', component: VerifyComponent},
     { path: 'privacy', component: PrivacyPolicyComponent},
     { path: 'impress', component: ImpressComponent},
-    { path: 'image-management', component: ImageManagementComponent},
+    { path: 'product-management', component: ProductManagementComponent},
     { path: 'employees', component: EmployeesComponent },
     { path: 'label-management', component: LabelManagementComponent },
     { path: 'customer-orders', component: CustomerOrdersComponent },
