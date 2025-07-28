@@ -79,8 +79,7 @@ Erstellt einen neuen Benutzer.
   "email": "newuser@example.com",
   "customer_number": "CUST456",
   "company": "New Company",
-  "name": "New User",
-  "password": "securePassword123"
+  "name": "New User"
 }
 ```
 
@@ -122,11 +121,11 @@ Die User-Management Komponente ist über das Admin Dashboard erreichbar:
    - Name (erforderlich)
    - E-Mail (erforderlich)
    - Rolle (erforderlich)
-   - Passwort (erforderlich für neue User)
 3. Optionale Felder:
    - Firma
    - Kundennummer
 4. Klicken Sie auf "Erstellen"
+5. **Hinweis**: Passwörter werden über den Passwort-Reset-Prozess verwaltet
 
 ### 3. Benutzer bearbeiten
 1. Klicken Sie auf "Bearbeiten" bei dem gewünschten Benutzer
@@ -154,8 +153,8 @@ Die User-Management Komponente ist über das Admin Dashboard erreichbar:
 ### 🛡️ Validierung
 - Client-seitige Formularvalidierung
 - Server-seitige Datenvalidierung
-- Passwort-Stärke-Überprüfung (mindestens 6 Zeichen)
 - E-Mail-Format-Validierung
+- Passwort-Management über E-Mail-Reset-Prozess
 
 ### ⚠️ Sicherheitsabfragen
 - Bestätigungsdialog beim Löschen von Benutzern

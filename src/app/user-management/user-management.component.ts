@@ -36,8 +36,7 @@ export class UserManagementComponent implements OnInit {
     email: '',
     company: '',
     customer_number: '',
-    role: 'user',
-    password: ''
+    role: 'user'
   };
 
   constructor(
@@ -159,8 +158,7 @@ export class UserManagementComponent implements OnInit {
       email: '',
       company: '',
       customer_number: '',
-      role: 'user',
-      password: ''
+      role: 'user'
     };
   }
 
@@ -171,16 +169,6 @@ export class UserManagementComponent implements OnInit {
       return;
     }
 
-    if (!this.editingUser && !this.userFormData.password) {
-      this.showErrorMessage('Validierungsfehler', 'Passwort ist für neue Benutzer erforderlich.');
-      return;
-    }
-
-    if (this.userFormData.password && this.userFormData.password.length < 6) {
-      this.showErrorMessage('Validierungsfehler', 'Das Passwort muss mindestens 6 Zeichen lang sein.');
-      return;
-    }
-
     this.isSaving = true;
 
     const requestBody: UserFormData = {
@@ -188,8 +176,7 @@ export class UserManagementComponent implements OnInit {
       email: this.userFormData.email,
       customer_number: this.userFormData.customer_number,
       company: this.userFormData.company,
-      name: this.userFormData.name,
-      password: this.userFormData.password
+      name: this.userFormData.name
     };
 
     if (this.editingUser) {
@@ -279,6 +266,4 @@ export class UserManagementComponent implements OnInit {
       }
     });
   }
-
-
 }

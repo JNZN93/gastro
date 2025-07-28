@@ -560,9 +560,9 @@
 // Reset Password Modal
 .reset-password-modal {
   background: white;
-  border-radius: 16px;
-  padding: 2rem;
-  max-width: 400px;
+  border-radius: 12px;
+  padding: 1.5rem;
+  max-width: 320px;
   width: 90%;
   text-align: center;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
@@ -570,13 +570,54 @@
 
 .modal-icon.info {
   background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 0.75rem;
+  color: white;
+  
+  svg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+}
+
+.reset-password-modal h3 {
+  margin: 0 0 0.75rem 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.reset-password-modal p {
+  margin: 0 0 0.75rem 0;
+  color: #6b7280;
+  line-height: 1.4;
+  font-size: 0.875rem;
 }
 
 .info-text {
   color: #6b7280;
+  font-size: 0.75rem;
+  margin: 0.25rem 0 0.75rem 0;
+  line-height: 1.4;
+}
+
+.reset-password-modal .modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+.reset-password-modal .btn-primary,
+.reset-password-modal .btn-secondary {
+  padding: 0.5rem 1rem;
   font-size: 0.875rem;
-  margin: 0.5rem 0 0 0;
-  line-height: 1.5;
+  min-width: 80px;
 }
 
 

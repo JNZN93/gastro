@@ -227,19 +227,7 @@
           </select>
         </div>
 
-        @if (!editingUser) {
-        <div class="form-group">
-          <label for="password">Passwort *</label>
-          <input 
-            type="password" 
-            id="password" 
-            name="password" 
-            [(ngModel)]="userFormData.password" 
-            required 
-            class="form-input"
-            placeholder="Mindestens 6 Zeichen">
-        </div>
-        }
+
 
         <div class="form-actions">
           <button type="button" class="btn-secondary" (click)="closeEditModal()">Abbrechen</button>
@@ -269,8 +257,8 @@
         </svg>
       </div>
       <h3>Passwort zurücksetzen</h3>
-      <p>Möchten Sie wirklich das Passwort für <strong>{{ userToResetPassword?.name }}</strong> ({{ userToResetPassword?.email }}) zurücksetzen?</p>
-      <p class="info-text">Ein E-Mail mit einem Reset-Link wird an die E-Mail-Adresse des Benutzers gesendet.</p>
+      <p>Passwort für <strong>{{ userToResetPassword?.name }}</strong> zurücksetzen?</p>
+      <p class="info-text">Reset-Link wird per E-Mail gesendet.</p>
       <div class="modal-actions">
         <button class="btn-secondary" (click)="closeResetPasswordModal()">Abbrechen</button>
         <button class="btn-primary" (click)="confirmResetPassword()" [disabled]="isResettingPassword">
@@ -280,7 +268,7 @@
             </svg>
             Wird gesendet...
           } @else {
-            Passwort zurücksetzen
+            Zurücksetzen
           }
         </button>
       </div>

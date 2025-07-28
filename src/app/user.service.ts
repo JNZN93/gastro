@@ -22,7 +22,6 @@ export interface UserFormData {
   company: string;
   customer_number: string;
   role: 'admin' | 'employee' | 'user';
-  password?: string;
 }
 
 @Injectable({
