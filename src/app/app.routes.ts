@@ -14,6 +14,7 @@ import { EmployeesComponent } from './employees/employees.component';
 import { ProductSelectionComponent } from './product-selection/product-selection.component';
 import { CustomerOrdersComponent } from './customer-orders/customer-orders.component';
 import { OrderOverviewComponent } from './order-overview/order-overview.component';
+import { UserManagementComponent } from './user-management/user-management.component';
 
 export const routes: Routes = [
     { path: '', component: LoadingScreenComponent },
@@ -29,5 +30,6 @@ export const routes: Routes = [
     { path: 'employees', component: EmployeesComponent },
     { path: 'product-selection', component: ProductSelectionComponent },
     { path: 'customer-orders', component: CustomerOrdersComponent },
-    { path: 'order-overview', component: OrderOverviewComponent }
+    { path: 'order-overview', component: OrderOverviewComponent },
+    { path: 'user-management', component: UserManagementComponent }
 ];
