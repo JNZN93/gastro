@@ -10,12 +10,12 @@ import { UploadLoadingComponent } from '../upload-loading/upload-loading.compone
 import { ZXingScannerComponent, ZXingScannerModule } from '@zxing/ngx-scanner';
 
 @Component({
-  selector: 'app-artikel-card',
+  selector: 'app-product-catalog',
   imports: [CommonModule, FormsModule, RouterModule, WarenkorbComponent, UploadLoadingComponent, ZXingScannerModule],
-  templateUrl: './artikel-card.component.html',
-  styleUrl: './artikel-card.component.scss',
+  templateUrl: './product-catalog.component.html',
+  styleUrl: './product-catalog.component.scss',
 })
-export class ArtikelCardComponent implements OnInit {
+export class ProductCatalogComponent implements OnInit {
   @ViewChild(ZXingScannerComponent) scanner!: ZXingScannerComponent;
   private artikelService = inject(ArtikelDataService);
   artikelData: any[] = [];

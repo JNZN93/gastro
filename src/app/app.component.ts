@@ -1,10 +1,10 @@
 import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { ArtikelCardComponent } from "./artikel-card/artikel-card.component";
 import { HeaderComponent } from './header/header.component';
 import { LoginComponent } from "./login/login.component";
 import { GlobalService } from './global.service';
 import { FooterComponent } from "./footer/footer.component";
+import { ProductCatalogComponent } from "./product-catalog/product-catalog.component";
 
 @Component({
   selector: 'app-root',

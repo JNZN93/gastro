@@ -24,13 +24,13 @@ interface Product {
 }
 
 @Component({
-  selector: 'app-product-selection',
+  selector: 'app-label-management',
   standalone: true,
   imports: [CommonModule, FormsModule, HttpClientModule, MatDialogModule, ZXingScannerModule],
-  templateUrl: './product-selection.component.html',
-  styleUrls: ['./product-selection.component.scss']
+  templateUrl: './label-management.component.html',
+  styleUrls: ['./label-management.component.scss']
 })
-export class ProductSelectionComponent implements OnInit {
+export class LabelManagementComponent implements OnInit {
   @ViewChild(ZXingScannerComponent) scanner!: ZXingScannerComponent;
   
   products: Product[] = [];
@@ -58,7 +58,7 @@ export class ProductSelectionComponent implements OnInit {
     facingMode: { ideal: "environment" }
   };
 
-  private readonly CART_STORAGE_KEY = 'product-selection-cart';
+  private readonly CART_STORAGE_KEY = 'label-management-cart';
 
   constructor(private http: HttpClient, private router: Router, private dialog: MatDialog) {}
 
