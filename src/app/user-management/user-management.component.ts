@@ -115,6 +115,19 @@ export class UserManagementComponent implements OnInit {
     });
   }
 
+  getRoleDisplayName(role: string): string {
+    switch (role) {
+      case 'admin':
+        return 'Administrator';
+      case 'employee':
+        return 'Mitarbeiter';
+      case 'user':
+        return 'Kunde';
+      default:
+        return role;
+    }
+  }
+
   // Modal-Methoden
   openAddUserModal() {
     this.editingUser = null;

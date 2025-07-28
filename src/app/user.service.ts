@@ -8,7 +8,7 @@ export interface User {
   password?: string;
   name: string;
   company: string;
-  role: 'admin' | 'user';
+  role: 'admin' | 'employee' | 'user';
   externalCustomerId: string;
   resetPasswordToken?: string | null;
   resetPasswordExpires?: string | null;
@@ -21,7 +21,7 @@ export interface UserFormData {
   email: string;
   company: string;
   customer_number: string;
-  role: 'admin' | 'user';
+  role: 'admin' | 'employee' | 'user';
   password?: string;
 }
 

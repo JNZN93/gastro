@@ -116,6 +116,10 @@
     background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
   }
 
+  &.employee-users-icon {
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  }
+
   &.regular-users-icon {
     background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
   }
@@ -312,6 +316,11 @@
     color: #d97706;
   }
 
+  &.role-employee {
+    background: #f3e8ff;
+    color: #7c3aed;
+  }
+
   &.role-user {
     background: #dbeafe;
     color: #1d4ed8;
@@ -467,6 +476,7 @@
 .form-input, .form-select {
   width: 100%;
   padding: 0.75rem;
+  box-sizing: border-box;
   border: 1px solid #d1d5db;
   border-radius: 8px;
   font-size: 0.875rem;
