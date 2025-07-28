@@ -123,7 +123,7 @@
                 {{ getRoleDisplayName(user.role) }}
               </span>
             </td>
-            <td class="customer-number">{{ user.externalCustomerId || '-' }}</td>
+            <td class="customer-number">{{ user.customer_number || '-' }}</td>
             <td class="created-date">{{ user.created_at | date: 'dd.MM.yyyy' }}</td>
             <td class="actions-cell">
               <div class="action-buttons">

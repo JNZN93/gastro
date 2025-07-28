@@ -8,6 +8,22 @@ import { WarenkorbComponent } from '../warenkorb/warenkorb.component';
 import { GlobalService } from '../global.service';
 import { UploadLoadingComponent } from '../upload-loading/upload-loading.component';
 import { ZXingScannerComponent, ZXingScannerModule } from '@zxing/ngx-scanner';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+
+// Interface für die letzten Bestellungen
+interface CustomerArticlePrice {
+  id: number;
+  customer_id: string;
+  product_id: string;
+  invoice_id: number;
+  unit_price_net: string;
+  unit_price_gross: string;
+  vat_percentage: string;
+  invoice_date: string;
+  created_at: string;
+  updated_at: string;
+  quantity?: string; // Für die Menge im Modal
+}
 
 @Component({
   selector: 'app-product-catalog',
@@ -18,6 +34,8 @@ import { ZXingScannerComponent, ZXingScannerModule } from '@zxing/ngx-scanner';
 export class ProductCatalogComponent implements OnInit {
   @ViewChild(ZXingScannerComponent) scanner!: ZXingScannerComponent;
   private artikelService = inject(ArtikelDataService);
+  private http = inject(HttpClient);
+  
   artikelData: any[] = [];
   warenkorb: any[] = [];
   orderData: any = {};
@@ -30,6 +48,12 @@ export class ProductCatalogComponent implements OnInit {
   isTorchOn = false;
   availableDevices: MediaDeviceInfo[] = [];
   selectedDevice?: MediaDeviceInfo;
+
+  // Neue Eigenschaften für letzte Bestellungen
+  lastOrders: CustomerArticlePrice[] = [];
+  showLastOrders: boolean = false;
+  isLoadingLastOrders: boolean = false;
+  currentUserId: string = '';
 
   videoConstraints: MediaTrackConstraints = {
     width: { ideal: 1920 },
@@ -55,6 +79,7 @@ export class ProductCatalogComponent implements OnInit {
         next: (response) => {
           // Benutzerrolle im GlobalService setzen
           this.globalService.setUserRole(response.user.role);
+          this.currentUserId = response.user.id;
           
           this.artikelService.getData().subscribe((res) => {
             if(response.user.role == 'admin') {
@@ -81,6 +106,88 @@ export class ProductCatalogComponent implements OnInit {
       console.log('Kein Token gefunden.');
       this.router.navigate(['/login']);
     }
+  }
+
+  // Neue Methode zum Laden der letzten Bestellungen
+  loadLastOrders(): void {
+    if (!this.currentUserId) {
+      console.error('Keine User ID verfügbar');
+      return;
+    }
+
+    this.isLoadingLastOrders = true;
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+      console.error('Kein Token verfügbar');
+      this.isLoadingLastOrders = false;
+      return;
+    }
+
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${token}`
+    });
+
+    console.log('🔄 [LAST-ORDERS] Lade letzte Bestellungen für User:', this.currentUserId);
+
+    this.http.get<CustomerArticlePrice[]>(`https://multi-mandant-ecommerce.onrender.com/api/customer-article-prices/user`, { headers })
+      .subscribe({
+        next: (data) => {
+          console.log('✅ [LAST-ORDERS] Daten erfolgreich geladen:', data);
+          console.log('📊 [LAST-ORDERS] Anzahl Bestellungen:', Array.isArray(data) ? data.length : 'Kein Array');
+          
+          if (Array.isArray(data)) {
+            this.lastOrders = data;
+            console.log('💾 [LAST-ORDERS] Bestellungen gespeichert:', this.lastOrders.length);
+          } else {
+            console.warn('⚠️ [LAST-ORDERS] Daten sind kein Array:', data);
+            this.lastOrders = [];
+          }
+          
+          this.isLoadingLastOrders = false;
+        },
+        error: (error) => {
+          console.error('❌ [LAST-ORDERS] Fehler beim Laden der letzten Bestellungen:', error);
+          console.error('❌ [LAST-ORDERS] Fehler Details:', {
+            message: error.message,
+            status: error.status,
+            statusText: error.statusText
+          });
+          this.lastOrders = [];
+          this.isLoadingLastOrders = false;
+        }
+      });
+  }
+
+  // Methode zum Umschalten der letzten Bestellungen
+  toggleLastOrders(): void {
+    this.showLastOrders = !this.showLastOrders;
+    
+    if (this.showLastOrders && this.lastOrders.length === 0) {
+      console.log('🔄 [TOGGLE] Lade letzte Bestellungen...');
+      this.loadLastOrders();
+    } else if (this.showLastOrders) {
+      console.log('📊 [TOGGLE] Zeige', this.lastOrders.length, 'Bestellungen');
+    } else {
+      console.log('❌ [TOGGLE] Modal geschlossen');
+    }
+  }
+
+  // Methode zum Finden der Artikel-Details basierend auf product_id
+  getArticleDetails(productId: string): any {
+    return this.globalArtikels.find(artikel => artikel.article_number === productId);
+  }
+
+  // Methode zum Formatieren des Datums
+  formatDate(dateString: string): string {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('de-DE', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   }
 
   isFavorite(artikel: any): boolean {
@@ -273,6 +380,94 @@ export class ProductCatalogComponent implements OnInit {
     //Warenkorb und Endsumme speichern LocalStorage
     localStorage.setItem('warenkorb', JSON.stringify(this.globalService.warenkorb));
 }
+
+  // Methode zum Prüfen, ob ein Artikel zum Warenkorb hinzugefügt werden kann
+  canAddToCart(productId: string): boolean {
+    // Prüfe, ob der Artikel im globalArtikels Array existiert
+    const artikel = this.globalArtikels.find(art => art.article_number === productId);
+    return !!artikel;
+  }
+
+  // Methode zum Hinzufügen eines Artikels aus dem Modal zum Warenkorb
+  addToCartFromModal(event: Event, order: CustomerArticlePrice): void {
+    // Prüfe zuerst, ob der Artikel verfügbar ist
+    if (!this.canAddToCart(order.product_id)) {
+      console.warn('⚠️ [MODAL-CART] Artikel nicht verfügbar:', order.product_id);
+      return;
+    }
+
+    // Finde den entsprechenden Artikel im globalArtikels Array
+    const artikel = this.globalArtikels.find(art => art.article_number === order.product_id);
+    
+    if (!artikel) {
+      console.error('❌ [MODAL-CART] Artikel nicht gefunden:', order.product_id);
+      return;
+    }
+
+    // Erstelle eine Kopie des Artikels mit der Menge aus dem Modal
+    const artikelToAdd = {
+      ...artikel,
+      quantity: order.quantity || 1
+    };
+
+    // Sicherstellen, dass die Menge korrekt ist
+    if (
+      !artikelToAdd.quantity ||
+      isNaN(Number(artikelToAdd.quantity)) ||
+      Number(artikelToAdd.quantity) < 1
+    ) {
+      artikelToAdd.quantity = 1; // Standardmenge setzen
+    }
+
+    // Überprüfen, ob der Artikel bereits im Warenkorb ist
+    const existingItem = this.globalService.warenkorb.find(
+      (item) => item.article_number == artikelToAdd.article_number
+    );
+
+    if (existingItem) {
+      // Falls der Artikel existiert, die Menge erhöhen
+      existingItem.quantity += Number(artikelToAdd.quantity);
+      console.log('🔄 [MODAL-CART] Menge erhöht für Artikel:', artikelToAdd.article_number);
+    } else {
+      // Neuen Artikel hinzufügen
+      this.globalService.warenkorb = [
+        ...this.globalService.warenkorb,
+        { ...artikelToAdd, quantity: Number(artikelToAdd.quantity) },
+      ];
+      console.log('✅ [MODAL-CART] Neuer Artikel hinzugefügt:', artikelToAdd.article_number);
+    }
+
+    // Eingabefeld für Menge zurücksetzen
+    order.quantity = '';
+
+    const button = event.target as HTMLElement;
+
+    // Klasse entfernen, dann mit requestAnimationFrame neu hinzufügen, um die Animation zu triggern
+    button.classList.remove('clicked');
+    
+    // Animation zurücksetzen
+    requestAnimationFrame(() => {
+        button.classList.add('clicked'); // Füge die Klasse wieder hinzu
+    });
+
+    // Sofort Hintergrundfarbe ändern
+    button.style.backgroundColor = "rgb(255, 102, 0)"; // Orange
+
+    // Button vergrößern und danach wieder auf Normalgröße setzen
+    button.style.transform = "scale(1.1)";
+    
+    // Nach 500ms zurücksetzen
+    setTimeout(() => {
+      button.style.transform = "scale(1)"; // Zurück auf Ausgangsgröße
+      button.style.backgroundColor = "#10b981"; // Zurück zu Grün
+    }, 500);
+
+    this.getTotalPrice();
+    //Warenkorb und Endsumme speichern LocalStorage
+    localStorage.setItem('warenkorb', JSON.stringify(this.globalService.warenkorb));
+    
+    console.log('💾 [MODAL-CART] Warenkorb aktualisiert:', this.globalService.warenkorb.length, 'Artikel');
+  }
 
 
   getTotalPrice() {

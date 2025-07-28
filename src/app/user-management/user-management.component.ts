@@ -60,7 +60,7 @@ export class UserManagementComponent implements OnInit {
         user.name?.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
         user.email?.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
         user.company?.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        user.externalCustomerId?.toLowerCase().includes(this.searchTerm.toLowerCase())
+        user.customer_number?.toLowerCase().includes(this.searchTerm.toLowerCase())
       );
     }
 
@@ -135,7 +135,7 @@ export class UserManagementComponent implements OnInit {
       name: user.name,
       email: user.email,
       company: user.company || '',
-      customer_number: user.externalCustomerId || '',
+      customer_number: user.customer_number || '',
       role: user.role
     };
     this.showEditModal = true;

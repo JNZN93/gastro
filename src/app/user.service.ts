@@ -5,13 +5,13 @@ import { Observable } from 'rxjs';
 export interface User {
   id: number;
   email: string;
-  password?: string;
   name: string;
   company: string;
   role: 'admin' | 'employee' | 'user';
-  externalCustomerId: string;
+  customer_number: string;
   resetPasswordToken?: string | null;
   resetPasswordExpires?: string | null;
+  password?: string;
   created_at: string;
   updated_at: string;
 }
