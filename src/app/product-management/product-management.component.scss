@@ -12,6 +12,8 @@
     padding: 20px;
     margin-bottom: 20px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    position: relative;
+    z-index: 9998;
 
     .header-content {
       display: flex;
@@ -57,7 +59,7 @@
         .search-box {
           position: relative;
           flex: 1;
-          max-width: 400px;
+          max-width: 800px;
 
           .search-icon {
             position: absolute;
@@ -120,6 +122,19 @@
           display: flex;
           gap: 8px;
           align-items: center;
+          position: relative;
+          z-index: 9999;
+
+          .desktop-filter-buttons {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            
+            // Temporär für Debugging - auf mobilen Geräten ausblenden
+            @media (max-width: 768px) {
+              display: none !important;
+            }
+          }
 
           .filter-btn {
             display: flex;
@@ -152,6 +167,102 @@
               border-color: #667eea;
               color: white;
               box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            }
+          }
+
+          // Mobile Filter Dropdown
+          .mobile-filter-dropdown {
+            display: none;
+            position: relative;
+            z-index: 9999;
+            
+            // Temporär für Debugging - immer sichtbar machen
+            display: block !important;
+          }
+
+          .filter-dropdown-container {
+            position: relative;
+            z-index: 9999;
+          }
+
+          .filter-dropdown-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            background: white;
+            color: #6b7280;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            min-width: 100px;
+            position: relative;
+            z-index: 9999;
+
+            svg {
+              width: 16px;
+              height: 16px;
+            }
+
+            .dropdown-arrow {
+              margin-left: auto;
+              transition: transform 0.3s ease;
+            }
+
+            &:hover {
+              border-color: #667eea;
+              color: #667eea;
+            }
+
+            &.open .dropdown-arrow {
+              transform: rotate(180deg);
+            }
+          }
+
+          .filter-dropdown-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            z-index: 10000;
+            margin-top: 4px;
+            overflow: hidden;
+            display: block;
+
+            .dropdown-item {
+              display: block;
+              padding: 12px 16px;
+              border: none;
+              background: white;
+              color: #6b7280;
+              font-size: 14px;
+              font-weight: 500;
+              cursor: pointer;
+              transition: all 0.2s ease;
+              width: 100%;
+              text-align: left;
+
+              &:hover {
+                background: #f8fafc;
+                color: #667eea;
+              }
+
+              &.active {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+              }
+
+              &:not(:last-child) {
+                border-bottom: 1px solid #f1f5f9;
+              }
             }
           }
         }
@@ -438,21 +549,64 @@
         align-items: stretch;
         gap: 12px;
 
+        .search-box {
+          max-width: none;
+          width: 100%;
+        }
+
         .image-filter-container {
           justify-content: center;
           flex-wrap: wrap;
 
-          .filter-btn {
-            flex: 1;
-            min-width: 0;
-            justify-content: center;
-            padding: 10px 8px;
-            font-size: 12px;
+          .desktop-filter-buttons {
+            display: none !important;
+          }
 
-            svg {
-              width: 14px;
-              height: 14px;
+          .mobile-filter-dropdown {
+            display: block !important;
+            width: 100%;
+            max-width: 120px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 9999;
+          }
+
+          .filter-dropdown-btn {
+            width: 100%;
+            justify-content: space-between;
+            padding: 12px 16px;
+            font-size: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: #667eea;
+            color: white;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+
+            .dropdown-arrow {
+              transform: rotate(180deg);
             }
+
+            &:hover {
+              border-color: #5a67d8;
+              color: white;
+            }
+          }
+
+          .filter-dropdown-menu {
+            width: 100%;
+            min-width: 200px;
+            left: 50%;
+            transform: translateX(-50%);
+            position: absolute;
+            top: 100%;
+            z-index: 10000;
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            margin-top: 4px;
           }
         }
       }
@@ -570,7 +724,7 @@
               transition: all 0.3s ease;
               display: flex;
               align-items: center;
-              justify-content: center;
+              justify-content: flex-start;
               gap: 8px;
 
               svg {
@@ -594,7 +748,7 @@
               .card-file-upload-btn {
                 display: flex;
                 align-items: center;
-                justify-content: center;
+                justify-content: flex-start;
                 gap: 8px;
                 padding: 10px 12px;
                 background: white;
@@ -634,7 +788,7 @@
                 transition: all 0.2s ease;
                 display: flex;
                 align-items: center;
-                justify-content: center;
+                justify-content: flex-start;
                 gap: 6px;
 
                 svg {
@@ -662,6 +816,20 @@
 // Tablet breakpoint adjustments
 @media (min-width: 769px) and (max-width: 1024px) {
   .product-management-dashboard {
+    .dashboard-header {
+      .header-actions {
+        .search-box {
+          max-width: 700px;
+        }
+        
+        .image-filter-container {
+          .mobile-filter-dropdown {
+            max-width: 100px;
+          }
+        }
+      }
+    }
+    
     .products-section {
       .mobile-view {
         display: block;
@@ -669,6 +837,15 @@
       
       .desktop-view {
         display: none;
+      }
+      
+      // Tablet-spezifische Button-Ausrichtung
+      .card-upload-btn,
+      .card-remove-btn,
+      .card-file-upload-btn,
+      .card-confirm-upload-btn {
+        justify-content: flex-start !important;
+        text-align: left;
       }
     }
   }
@@ -884,6 +1061,7 @@
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   gap: 6px;
 
   svg {
