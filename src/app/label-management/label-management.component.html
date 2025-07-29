@@ -113,7 +113,7 @@
                                         [class.added-to-cart]="isProductSelected(product)">
                                     <i class="bi bi-cart-plus"></i>
                                     <span class="btn-text-desktop">{{ getAddToCartButtonText(product) }}</span>
-                                    <span class="btn-text-mobile"></span>
+                                    <span class="btn-text-mobile">{{ getProductCount(product) > 0 ? '(' + getProductCount(product) + ')' : '' }}</span>
                                 </button>
                             </div>
                         </td>
