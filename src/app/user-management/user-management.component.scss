@@ -354,7 +354,7 @@
   flex-wrap: wrap;
 }
 
-.edit-btn, .reset-password-btn {
+.edit-btn, .reset-password-btn, .delete-btn {
   display: flex;
   align-items: center;
   gap: 0.25rem;
@@ -392,6 +392,15 @@
 
   &:hover {
     box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+  }
+}
+
+.delete-btn {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
   }
 }
 
@@ -548,6 +557,22 @@
   }
 }
 
+.btn-danger {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+}
+
 
 
 .spinner {
@@ -605,6 +630,75 @@
   color: #6b7280;
   line-height: 1.4;
   font-size: 0.875rem;
+}
+
+// Delete User Modal
+.delete-user-modal {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+
+.modal-icon.danger {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 0.75rem;
+  color: white;
+  
+  svg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+}
+
+.delete-user-modal h3 {
+  margin: 0 0 0.75rem 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.delete-user-modal p {
+  margin: 0 0 0.75rem 0;
+  color: #6b7280;
+  line-height: 1.4;
+  font-size: 0.875rem;
+}
+
+.warning-text {
+  color: #dc2626 !important;
+  font-weight: 500;
+  background: #fef2f2;
+  padding: 0.5rem;
+  border-radius: 6px;
+  border: 1px solid #fecaca;
+}
+
+.error-text {
+  color: #dc2626;
+  font-size: 0.75rem;
+  margin: 0.25rem 0 0 0;
+}
+
+.form-input.error {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+.modal-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 1.5rem;
 }
 
 .info-text {
@@ -707,7 +801,7 @@
     max-width: 450px;
   }
 
-  .edit-btn, .reset-password-btn {
+  .edit-btn, .reset-password-btn, .delete-btn {
     width: 100px;
   }
 }

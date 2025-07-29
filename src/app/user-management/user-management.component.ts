@@ -29,6 +29,12 @@ export class UserManagementComponent implements OnInit {
   showResetPasswordModal: boolean = false;
   isResettingPassword: boolean = false;
   userToResetPassword: User | null = null;
+  
+  // Delete modal states
+  showDeleteUserModal: boolean = false;
+  isDeletingUser: boolean = false;
+  userToDelete: User | null = null;
+  confirmDeleteEmail: string = '';
 
   // Form data
   userFormData: UserFormData = {
@@ -241,6 +247,48 @@ export class UserManagementComponent implements OnInit {
       },
       complete: () => {
         this.isResettingPassword = false;
+      }
+    });
+  }
+
+  // Delete User Methods
+  openDeleteUserModal(user: User) {
+    this.userToDelete = user;
+    this.confirmDeleteEmail = '';
+    this.showDeleteUserModal = true;
+  }
+
+  closeDeleteUserModal() {
+    this.showDeleteUserModal = false;
+    this.userToDelete = null;
+    this.confirmDeleteEmail = '';
+  }
+
+  confirmDeleteUser() {
+    if (!this.userToDelete) {
+      this.showErrorMessage('Fehler', 'Kein Benutzer ausgewählt.');
+      return;
+    }
+
+    if (this.confirmDeleteEmail !== this.userToDelete.email) {
+      this.showErrorMessage('Validierungsfehler', 'E-Mail-Adresse stimmt nicht überein.');
+      return;
+    }
+
+    this.isDeletingUser = true;
+
+    this.userService.deleteUser(this.userToDelete.id).subscribe({
+      next: () => {
+        this.showSuccessMessage('Erfolg', 'Benutzer wurde erfolgreich gelöscht.');
+        this.loadUsers();
+        this.closeDeleteUserModal();
+      },
+      error: (error: any) => {
+        console.error('Fehler beim Löschen des Users:', error);
+        this.showErrorMessage('Fehler', 'Fehler beim Löschen des Benutzers. Bitte versuchen Sie es später erneut.');
+      },
+      complete: () => {
+        this.isDeletingUser = false;
       }
     });
   }

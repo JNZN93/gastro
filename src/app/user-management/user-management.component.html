@@ -139,6 +139,12 @@
                   </svg>
                   Reset
                 </button>
+                <button class="delete-btn" (click)="openDeleteUserModal(user)" title="Benutzer löschen">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                  </svg>
+                  Löschen
+                </button>
               </div>
             </td>
           </tr>
@@ -272,7 +278,53 @@
   </div>
   }
 
-
+  <!-- Delete User Confirmation Modal -->
+  @if (showDeleteUserModal) {
+  <div class="modal-overlay" (click)="closeDeleteUserModal()">
+    <div class="delete-user-modal" (click)="$event.stopPropagation()">
+      <div class="modal-icon danger">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+        </svg>
+      </div>
+      <h3>Benutzer löschen</h3>
+      <p>Möchten Sie den Benutzer <strong>{{ userToDelete?.name }}</strong> wirklich löschen?</p>
+      <p class="warning-text">Diese Aktion kann nicht rückgängig gemacht werden!</p>
+      
+      <div class="form-group">
+        <label for="confirmEmail">Bestätigen Sie die E-Mail-Adresse: <strong>{{ userToDelete?.email }}</strong></label>
+        <input 
+          type="email" 
+          id="confirmEmail" 
+          name="confirmEmail" 
+          [(ngModel)]="confirmDeleteEmail" 
+          class="form-input"
+          placeholder="E-Mail-Adresse eingeben"
+          [class.error]="confirmDeleteEmail && confirmDeleteEmail !== userToDelete?.email">
+        @if (confirmDeleteEmail && confirmDeleteEmail !== userToDelete?.email) {
+          <p class="error-text">E-Mail-Adresse stimmt nicht überein</p>
+        }
+      </div>
+      
+      <div class="modal-actions">
+        <button class="btn-secondary" (click)="closeDeleteUserModal()">Abbrechen</button>
+        <button 
+          class="btn-danger" 
+          (click)="confirmDeleteUser()" 
+          [disabled]="isDeletingUser || confirmDeleteEmail !== userToDelete?.email">
+          @if (isDeletingUser) {
+            <svg class="spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+            Wird gelöscht...
+          } @else {
+            Endgültig löschen
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+  }
 
   <!-- Success/Error Messages -->
   @if (showMessage) {

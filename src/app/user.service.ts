@@ -67,6 +67,13 @@ export class UserService {
     });
   }
 
+  // User löschen
+  deleteUser(userId: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/users/${userId}`, {
+      headers: this.getHeaders()
+    });
+  }
+
 
 
   // User nach Rolle filtern
