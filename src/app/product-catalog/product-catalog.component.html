@@ -62,11 +62,19 @@
         <!-- Product Image -->
         <div class="product-image-container">
           <img 
-            [src]="artikel.main_image_url || 'assets/placeholder-product.svg'" 
+            *ngIf="artikel.main_image_url"
+            [src]="artikel.main_image_url" 
             [alt]="artikel.article_text"
             class="product-image"
             (error)="onImageError($event)"
             loading="lazy">
+          
+          <!-- Placeholder für Produkte ohne Bild -->
+          <div *ngIf="!artikel.main_image_url" class="image-placeholder">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="placeholder-icon">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+          </div>
       
           <div class="favorite-btn" (click)="toggleFavorite($event, artikel)" [class.favorited]="isFavorite(artikel)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
