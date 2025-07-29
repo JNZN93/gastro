@@ -63,8 +63,33 @@ export class ProductManagementComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.loadProducts();
-    this.setupScanner();
+    const token = localStorage.getItem('token');
+    
+    if (token) {
+      this.authService.checkToken(token).subscribe({
+        next: (response: any) => {
+          // Benutzerrolle im GlobalService setzen
+          this.globalService.setUserRole(response.user.role);
+          
+          if(response.user.role == 'admin') {
+            this.globalService.isAdmin = true;
+          }
+          
+          this.loadProducts();
+          this.setupScanner();
+          this.isVisible = false;
+        },
+        error: (error: any) => {
+          this.isVisible = false;
+          console.error('Token ungültig oder Fehler:', error);
+          this.router.navigate(['/login']);
+        },
+      });
+    } else {
+      this.isVisible = false;
+      console.log('Kein Token gefunden.');
+      this.router.navigate(['/login']);
+    }
   }
 
   // Handle ESC key to close modal
@@ -104,6 +129,24 @@ export class ProductManagementComponent implements OnInit {
       const videoDevices = devices.filter(d => d.kind === 'videoinput');
       this.availableDevices = videoDevices;
 
+      // 🎯 Wähle Kamera mit "back" im Namen, aber NICHT "wide", "ultra", "tele"
+      console.log("videoDevices");
+      console.log(videoDevices);
+      // body mitschicken
+      const token = localStorage.getItem('token');
+      fetch('https://multi-mandant-ecommerce.onrender.com/camera', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          devices: videoDevices
+        })
+      })
+      .then(response => response.json())
+      .then(data => console.log(data));
+
       const preferredCam = videoDevices.find(d => {
         const name = d.label.toLowerCase();
         return name.includes('back') &&
@@ -112,22 +155,22 @@ export class ProductManagementComponent implements OnInit {
                !name.includes('tele');
       });
 
-      if (preferredCam) {
-        this.selectedDevice = preferredCam;
-      } else if (videoDevices.length > 0) {
-        this.selectedDevice = videoDevices[0];
-      }
+      // Fallback: Erste Kamera
+      this.selectedDevice = preferredCam || videoDevices[0];
     });
   }
 
   loadProducts(): void {
+    this.isVisible = true; // Zeige Loading-Screen während des Ladens
     this.http.get('https://multi-mandant-ecommerce.onrender.com/api/products').subscribe({
       next: (data: any) => {
         this.products = data;
         this.filteredProducts = [...this.products];
+        this.isVisible = false; // Verstecke Loading-Screen nach erfolgreichem Laden
       },
       error: (error) => {
         console.error('Fehler beim Laden der Produkte:', error);
+        this.isVisible = false; // Verstecke Loading-Screen auch bei Fehlern
       }
     });
   }
@@ -150,26 +193,54 @@ export class ProductManagementComponent implements OnInit {
     this.updateFilteredData();
   }
 
-  onCodeResult(result: string): void {
+  /*FILTER BY SCANNING*/
+
+  onCodeResult(result: string) {
     this.playBeep();
+    this.stopScanner(); // optional Kamera nach Scan stoppen
     this.searchTerm = result;
     this.updateFilteredData();
-    this.stopScanner();
   }
 
-  startScanner(): void {
+  startScanner() {
     this.isScanning = true;
-    this.isVisible = false;
+    navigator.mediaDevices.enumerateDevices().then(devices => {
+      const videoDevices = devices.filter(d => d.kind === 'videoinput');
+      this.availableDevices = videoDevices;
+
+      // 🎯 Wähle Kamera mit "back" im Namen, aber NICHT "wide", "ultra", "tele"
+      const preferredCam = videoDevices.find(d => {
+        const name = d.label.toLowerCase();
+        return name.includes('back') &&
+               !name.includes('wide') &&
+               !name.includes('ultra') &&
+               !name.includes('tele');
+      });
+
+      // Fallback: Erste Kamera
+      this.selectedDevice = preferredCam || videoDevices[0];
+    });
+    this.scanner?.scanStart(); // aktiviert Kamera
+
+    // Torch einschalten
+    if (this.scanner) {
+      this.scanner.torch = true;
+    }
   }
 
-  stopScanner(): void {
+  stopScanner() {
     this.isScanning = false;
-    this.isVisible = true;
+    // Torch ausschalten
+    if (this.scanner) {
+      this.scanner.torch = false;
+    }
+    this.scanner?.reset(); // stoppt Kamera & löst Vorschau
   }
 
   playBeep(): void {
-    const audio = new Audio('/beep.mp3');
-    audio.play().catch(e => console.log('Audio play failed:', e));
+    const audio = new Audio('beep.mp3');
+    audio.volume = 0.5;
+    audio.play().catch(err => console.error('Fehler beim Abspielen des Tons:', err));
   }
 
   toggleUploadSection(product: any): void {

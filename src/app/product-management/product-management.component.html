@@ -23,28 +23,6 @@
     </div>
   </div>
 
-  <!-- Scanner Section -->
-  @if (isScanning) {
-    <div class="scanner-section">
-      <div class="scanner-header">
-        <h3>Barcode Scanner</h3>
-        <button (click)="stopScanner()" class="close-scanner-btn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-          </svg>
-        </button>
-      </div>
-      <zxing-scanner
-        [enable]="isScanning"
-        [device]="selectedDevice"
-        [formats]="formatsEnabled"
-        [videoConstraints]="videoConstraints"
-        (scanSuccess)="onCodeResult($event)"
-        class="scanner">
-      </zxing-scanner>
-    </div>
-  }
-
   <!-- Products Section -->
   <div class="products-section">
     <div class="section-header">
@@ -119,7 +97,7 @@
                     <div class="upload-section">
                       <label class="file-upload-btn">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 002 2z"/>
                         </svg>
                         Bild auswählen
                         <input type="file" 
@@ -168,7 +146,7 @@
               } @else {
                 <div class="card-no-image">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 002 2z"/>
                   </svg>
                   <span>Kein Bild vorhanden</span>
                 </div>
@@ -210,7 +188,7 @@
                 <div class="card-upload-section">
                   <label class="card-file-upload-btn">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 002 2z"/>
                     </svg>
                     Bild auswählen
                     <input type="file" 
@@ -274,4 +252,39 @@
       </div>
     </div>
   }
+</div>
+
+@if (isVisible) {
+<app-upload-loading></app-upload-loading>
+}
+
+<!-- Scanner Modal -->
+<div class="scanner-modal" *ngIf="isScanning">
+  <div class="scanner-content">
+    <div class="scanner-header">
+      <h3>Barcode Scanner</h3>
+      <button class="close-scanner" (click)="stopScanner()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+    
+    <select [(ngModel)]="selectedDevice" class="device-select">
+      <option *ngFor="let device of availableDevices" [ngValue]="device">
+        {{ device.label }}
+      </option>
+    </select>
+    
+    <div class="scanner-wrapper">
+      <zxing-scanner #scanner 
+      [device]="selectedDevice"
+      [videoConstraints]="videoConstraints"
+      [tryHarder]="true"
+      [formats]="formatsEnabled"
+      [torch]="true"
+      (scanSuccess)="onCodeResult($event)">
+      </zxing-scanner>
+    </div>
+  </div>
 </div> 
