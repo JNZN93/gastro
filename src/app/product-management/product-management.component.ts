@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, ViewChild, inject } from '@angular/core';
+import { Component, OnInit, ViewChild, inject, HostListener } from '@angular/core';
 import { ArtikelDataService } from '../artikel-data.service';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../authentication.service';
@@ -34,6 +34,12 @@ export class ProductManagementComponent implements OnInit {
   isUploading: boolean = false;
   isUploadSectionOpen: boolean = false;
   
+  // Modal properties
+  isModalOpen: boolean = false;
+  modalImageUrl: string = '';
+  modalImageAlt: string = '';
+  modalProductId: number | null = null;
+  
   availableDevices: MediaDeviceInfo[] = [];
   selectedDevice?: MediaDeviceInfo;
   formatsEnabled: BarcodeFormat[] = [
@@ -59,6 +65,38 @@ export class ProductManagementComponent implements OnInit {
   ngOnInit(): void {
     this.loadProducts();
     this.setupScanner();
+  }
+
+  // Handle ESC key to close modal
+  @HostListener('document:keydown', ['$event'])
+  handleKeyboardEvent(event: KeyboardEvent) {
+    if (event.key === 'Escape' && this.isModalOpen) {
+      this.closeModal();
+    }
+  }
+
+  // Handle click outside modal to close
+  @HostListener('document:click', ['$event'])
+  handleClickOutside(event: Event) {
+    if (this.isModalOpen) {
+      const target = event.target as HTMLElement;
+      if (target.classList.contains('modal-overlay')) {
+        this.closeModal();
+      }
+    }
+  }
+
+  openModal(imageUrl: string, imageAlt: string, productId: number): void {
+    this.modalImageUrl = imageUrl;
+    this.modalImageAlt = imageAlt;
+    this.modalProductId = productId;
+    this.isModalOpen = true;
+    document.body.style.overflow = 'hidden'; // Prevent background scrolling
+  }
+
+  closeModal(): void {
+    this.isModalOpen = false;
+    document.body.style.overflow = ''; // Restore scrolling
   }
 
   setupScanner(): void {
@@ -170,6 +208,21 @@ export class ProductManagementComponent implements OnInit {
           error: (error) => {
             console.error('Error uploading image:', error);
             this.isUploading = false;
+          }
+        });
+    }
+  }
+
+  removeImage(productId: number): void {
+    if (confirm('Möchten Sie das Hauptbild dieses Produkts wirklich entfernen?')) {
+      this.http.delete(`https://multi-mandant-ecommerce.onrender.com/api/product-images/${productId}/images/remove-main`)
+        .subscribe({
+          next: () => {
+            console.log('Main image removed successfully');
+            this.loadProducts(); // Refresh the product list
+          },
+          error: (error) => {
+            console.error('Error removing main image:', error);
           }
         });
     }

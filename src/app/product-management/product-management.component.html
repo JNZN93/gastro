@@ -74,7 +74,8 @@
                   @if (hasImage(product)) {
                     <img [src]="product.main_image_url" 
                          [alt]="product.article_text"
-                         class="product-image">
+                         class="product-image clickable-image"
+                         (click)="openModal(product.main_image_url, product.article_text, product.id)">
                   } @else {
                     <div class="no-image-placeholder">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -92,14 +93,27 @@
                   }
                 </td>
                 <td class="actions-cell">
-                  <button type="button" 
-                          class="upload-btn"
-                          (click)="toggleUploadSection(product)">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
-                    </svg>
-                    Bild hochladen
-                  </button>
+                  <div class="action-buttons">
+                    <button type="button" 
+                            class="upload-btn"
+                            (click)="toggleUploadSection(product)">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                      </svg>
+                      Bild hochladen
+                    </button>
+                    
+                    @if (hasImage(product)) {
+                      <button type="button" 
+                              class="remove-btn"
+                              (click)="removeImage(product.id)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                        Bild entfernen
+                      </button>
+                    }
+                  </div>
                   
                   @if (selectedProduct?.id === product.id && isUploadSectionOpen) {
                     <div class="upload-section">
@@ -149,7 +163,8 @@
               @if (hasImage(product)) {
                 <img [src]="product.main_image_url" 
                      [alt]="product.article_text"
-                     class="card-product-image">
+                     class="card-product-image clickable-image"
+                     (click)="openModal(product.main_image_url, product.article_text, product.id)">
               } @else {
                 <div class="card-no-image">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -169,14 +184,27 @@
             </div>
             
             <div class="card-actions">
-              <button type="button" 
-                      class="card-upload-btn"
-                      (click)="toggleUploadSection(product)">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
-                </svg>
-                Bild hochladen
-              </button>
+              <div class="card-action-buttons">
+                <button type="button" 
+                        class="card-upload-btn"
+                        (click)="toggleUploadSection(product)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                  </svg>
+                  Bild hochladen
+                </button>
+                
+                @if (hasImage(product)) {
+                  <button type="button" 
+                          class="card-remove-btn"
+                          (click)="removeImage(product.id)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                    Bild entfernen
+                  </button>
+                }
+              </div>
               
               @if (selectedProduct?.id === product.id && isUploadSectionOpen) {
                 <div class="card-upload-section">
@@ -214,5 +242,36 @@
   <!-- Upload Loading Modal -->
   @if (isUploading) {
     <app-upload-loading></app-upload-loading>
+  }
+
+  <!-- Image Modal -->
+  @if (isModalOpen) {
+    <div class="modal-overlay" (click)="closeModal()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3 class="modal-title">{{ modalImageAlt }}</h3>
+          <div class="modal-actions">
+            @if (modalProductId) {
+              <button class="modal-remove-btn" (click)="removeImage(modalProductId); closeModal()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                </svg>
+                Bild entfernen
+              </button>
+            }
+            <button class="modal-close-btn" (click)="closeModal()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="modal-body">
+          <img [src]="modalImageUrl" 
+               [alt]="modalImageAlt"
+               class="modal-image">
+        </div>
+      </div>
+    </div>
   }
 </div> 
