@@ -112,7 +112,8 @@
                                         (click)="addToCart(product)"
                                         [class.added-to-cart]="isProductSelected(product)">
                                     <i class="bi bi-cart-plus"></i>
-                                    {{ getAddToCartButtonText(product) }}
+                                    <span class="btn-text-desktop">{{ getAddToCartButtonText(product) }}</span>
+                                    <span class="btn-text-mobile"></span>
                                 </button>
                             </div>
                         </td>

@@ -656,11 +656,23 @@
   }
 
   .table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    background: white;
+    margin-bottom: 20px;
+
     .orders-table {
       font-size: 12px;
+      min-width: 800px; // Ensure minimum width for scrolling
+      width: 100%;
 
       th, td {
         padding: 12px 8px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       .actions-cell .view-btn {
