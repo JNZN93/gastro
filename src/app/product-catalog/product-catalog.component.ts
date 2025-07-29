@@ -290,6 +290,11 @@ export class ProductCatalogComponent implements OnInit {
   audio.play().catch(err => console.error('Fehler beim Abspielen des Tons:', err));
 }
 
+  onImageError(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    img.src = '/assets/placeholder-product.svg';
+  }
+
   filterCategory(event: Event) {
     const category = (event.target as HTMLSelectElement).value; // Wert aus Event holen
     this.selectedCategory = category; // Kategorie speichern
