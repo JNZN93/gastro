@@ -1,81 +1,130 @@
 @if (isVisible) {
-<div class="cart open">
-  <button class="close-button" (click)="closeWarenkorb()">✖</button>
-  <h1>Kommissionierauftrag</h1>
+<div class="cart-overlay" (click)="closeWarenkorb()"></div>
+<div class="cart-container">
+  <!-- Header -->
+  <div class="cart-header">
+    <div class="header-content">
+      <h1 class="cart-title">
+        <svg class="cart-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m8 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01"/>
+        </svg>
+        <span>Kommissionierauftrag</span>
+      </h1>
+      <button class="close-button" (click)="closeWarenkorb()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+  </div>
 
-  @if (this.globalService.warenkorb.length > 0) {
-  @for (artikel of this.globalService.warenkorb; track artikel.id) {
-  <div class="card">
-    <div class="container">
-      <h5>{{ artikel.article_text}}</h5>
-      <h6>Art-No. [{{ artikel.article_number}}]</h6>
-      <div class="price-quantity">
-        <!--<h5>{{ artikel.sale_price }} €</h5> -->
-        <div class="menge-con">
-          <div class="quantity-buttons">
-            <button class="quantity-btn" (click)="reduceQuantity(artikel)">-</button>
-            <span class="amount">{{artikel.quantity}}</span>
-            <button class="quantity-btn plus" (click)="increaseQuantity(artikel)">+</button>
+  <!-- Cart Content -->
+  <div class="cart-content">
+    @if (this.globalService.warenkorb.length > 0) {
+    <!-- Items List -->
+    <div class="items-section">
+      @for (artikel of this.globalService.warenkorb; track artikel.id) {
+      <div class="cart-item">
+        <div class="item-content">
+          <div class="item-info">
+            <h3 class="item-title">{{ artikel.article_text }}</h3>
+            <p class="item-number">Art.-Nr: {{ artikel.article_number }}</p>
           </div>
-          <button class="remove-button" (click)="removeItem(artikel)">x</button>
+          
+          <div class="item-actions">
+            <div class="quantity-controls">
+              <button class="quantity-btn minus" (click)="reduceQuantity(artikel)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/>
+                </svg>
+              </button>
+              <span class="quantity-display">{{artikel.quantity}}</span>
+              <button class="quantity-btn plus" (click)="increaseQuantity(artikel)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+              </button>
+            </div>
+            <button class="remove-btn" (click)="removeItem(artikel)" title="Entfernen">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+      }
+    </div>
+
+    <!-- Delivery Options -->
+    <div class="delivery-section">
+      <div class="delivery-toggle">
+        <button class="toggle-btn" [class.active]="isDelivery" (click)="toggleDelivery('delivery')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"/>
+          </svg>
+          <span>Lieferung</span>
+        </button>
+        <button class="toggle-btn" [class.active]="!isDelivery" (click)="toggleDelivery('pickup')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+          </svg>
+          <span>Abholung</span>
+        </button>
+      </div>
+
+      <!-- Address Form -->
+      @if (isDelivery) {
+      <div class="form-section">
+        <h3 class="form-title">Lieferadresse</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <input [(ngModel)]="street" type="text" placeholder="Straße und Hausnummer" class="form-input">
+          </div>
+          <div class="form-group">
+            <input [(ngModel)]="zipCode" type="number" placeholder="PLZ" class="form-input">
+          </div>
+          <div class="form-group">
+            <input [(ngModel)]="city" type="text" placeholder="Stadt" class="form-input">
+          </div>
+        </div>
+      </div>
+      }
+
+      <!-- Date and Notes -->
+      <div class="form-section">
+        <h3 class="form-title">{{ isDelivery ? 'Lieferdatum' : 'Abholdatum' }}</h3>
+        <div class="form-group">
+          <input [(ngModel)]="delivery_date" type="date" class="form-input">
+        </div>
+        
+        <h3 class="form-title">Anmerkungen</h3>
+        <div class="form-group">
+          <textarea [(ngModel)]="customer_notes" placeholder="Zusätzliche Informationen..." class="form-textarea"></textarea>
         </div>
       </div>
 
+      <!-- Order Button -->
+      <div class="order-section">
+        <button class="order-button" (click)="sendOrder()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <span>Auftrag absenden</span>
+        </button>
+      </div>
     </div>
-  </div>
-  }
-  } @else {
-  <p>Dein Warenkorb ist leer.</p>
-  }
 
-  @if ( this.globalService.warenkorb.length > 0 ) {
-  <div class="button-delivery-main">
-    <button class="toggle-delivery-button" [class.active]="isDelivery" (click)="toggleDelivery('delivery')">
-      Lieferung
-    </button>
-    <button class="toggle-delivery-button" [class.active]="!isDelivery" (click)="toggleDelivery('pickup')">
-      Abholung
-    </button>
+    } @else {
+    <!-- Empty State -->
+    <div class="empty-state">
+      <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m8 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01"/>
+      </svg>
+      <h3>Dein Warenkorb ist leer</h3>
+      <p>Füge Artikel aus dem Katalog hinzu, um zu beginnen.</p>
+    </div>
+    }
   </div>
-
-  <!-- Adresseingabe nur sichtbar, wenn Lieferung gewählt wurde -->
-  @if (isDelivery) {
-  <div class="address-input">
-    <h3>Lieferadresse</h3>
-    <input [(ngModel)]="street" type="text" placeholder="Straße und Hausnummer">
-    <input [(ngModel)]="zipCode" type="number" placeholder="PLZ">
-    <input [(ngModel)]="city" type="text" placeholder="Stadt">
-    <label>
-      <h3>Lieferdatum</h3>
-      <input [(ngModel)]="delivery_date" type="date">
-    </label>
-            <label>
-      <h3>Anmerkungen</h3>
-      <textarea [(ngModel)]="customer_notes" ></textarea>
-    </label>
-  </div>
-  } @else {
-  <div class="address-input">
-    <label>
-      <h3>Abholdatum</h3>
-      <input [(ngModel)]="delivery_date" type="date">
-    </label>
-        <label>
-      <h3>Anmerkungen</h3>
-      <textarea [(ngModel)]="customer_notes" ></textarea>
-    </label>
-  </div>
-  }
-
-  <!-- <div class="total-price">
-          <h5>
-            Endsumme: {{(this.globalService.totalPrice).toFixed(2)}} €
-         </h5> 
-        </div> -->
-  <div class="order-main">
-    <button class="order-button" (click)="sendOrder()">Auftrag absenden</button>
-  </div>
-  }
-
 </div>
 }
