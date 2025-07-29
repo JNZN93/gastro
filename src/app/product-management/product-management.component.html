@@ -19,6 +19,40 @@
             </svg>
           </button>
         </div>
+        
+        <!-- Image Filter Buttons -->
+        <div class="image-filter-container">
+          <button 
+            type="button" 
+            class="filter-btn" 
+            [class.active]="imageFilter === 'all'"
+            (click)="setImageFilter('all')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
+            </svg>
+            Alle
+          </button>
+          <button 
+            type="button" 
+            class="filter-btn" 
+            [class.active]="imageFilter === 'with-image'"
+            (click)="setImageFilter('with-image')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 002 2z"/>
+            </svg>
+            Mit Bild
+          </button>
+          <button 
+            type="button" 
+            class="filter-btn" 
+            [class.active]="imageFilter === 'without-image'"
+            (click)="setImageFilter('without-image')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+            </svg>
+            Ohne Bild
+          </button>
+        </div>
       </div>
     </div>
   </div>

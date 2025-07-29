@@ -24,6 +24,7 @@ export class ProductManagementComponent implements OnInit {
   products: any[] = [];
   filteredProducts: any[] = [];
   searchTerm: string = '';
+  imageFilter: 'all' | 'with-image' | 'without-image' = 'all';
   isVisible: boolean = true;
   isScanning = false;
   isTorchOn = false;
@@ -176,20 +177,35 @@ export class ProductManagementComponent implements OnInit {
   }
 
   updateFilteredData(): void {
-    if (!this.searchTerm.trim()) {
-      this.filteredProducts = [...this.products];
-      return;
+    let filtered = [...this.products];
+
+    // Apply image filter
+    if (this.imageFilter !== 'all') {
+      filtered = filtered.filter(product => {
+        const hasImageProduct = this.hasImage(product);
+        return this.imageFilter === 'with-image' ? hasImageProduct : !hasImageProduct;
+      });
     }
 
-    const searchTermLower = this.searchTerm.toLowerCase().trim();
-    this.filteredProducts = this.products.filter(product => 
-      product.article_number?.toLowerCase().includes(searchTermLower) ||
-      product.article_text?.toLowerCase().includes(searchTermLower)
-    );
+    // Apply search filter
+    if (this.searchTerm.trim()) {
+      const searchTermLower = this.searchTerm.toLowerCase().trim();
+      filtered = filtered.filter(product => 
+        product.article_number?.toLowerCase().includes(searchTermLower) ||
+        product.article_text?.toLowerCase().includes(searchTermLower)
+      );
+    }
+
+    this.filteredProducts = filtered;
   }
 
   clearSearch(): void {
     this.searchTerm = '';
+    this.updateFilteredData();
+  }
+
+  setImageFilter(filter: 'all' | 'with-image' | 'without-image'): void {
+    this.imageFilter = filter;
     this.updateFilteredData();
   }
 

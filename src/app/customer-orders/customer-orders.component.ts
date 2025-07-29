@@ -1288,29 +1288,10 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       orderItems: this.orderItems
     };
 
-    /*
-      const completeOrder = {
-      orderData: {
-          ...this.globalService.orderData,
-          ...customerData,
-          shipping_address: newAddress ? newAddress : '',
-          fulfillment_type: this.isDelivery ? 'delivery' : 'pickup', // Hier den gewünschten Wert setzen TOGGLE
-          delivery_date: this.delivery_date,
-          customer_notes: this.customer_notes
-      },
-      orderItems: this.globalService.warenkorb
-  };
-
-  */
 
     const token = localStorage.getItem('token');
 
     console.log('💾 [SAVE-ORDER] Auftrag wird gespeichert:', completeOrder);
-    
-    // Temporär: Sofort Erfolg anzeigen (für Testzwecke)
-    alert('Auftrag erfolgreich gespeichert!');
-    this.clearAllOrderData();
-    
     
     fetch('https://multi-mandant-ecommerce.onrender.com/api/orders', {
       method: 'POST',

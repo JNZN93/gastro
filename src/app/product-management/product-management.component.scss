@@ -115,6 +115,46 @@
             }
           }
         }
+
+        .image-filter-container {
+          display: flex;
+          gap: 8px;
+          align-items: center;
+
+          .filter-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            background: white;
+            color: #6b7280;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+
+            svg {
+              width: 16px;
+              height: 16px;
+            }
+
+            &:hover {
+              border-color: #667eea;
+              color: #667eea;
+              transform: translateY(-1px);
+            }
+
+            &.active {
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              border-color: #667eea;
+              color: white;
+              box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            }
+          }
+        }
       }
     }
   }
@@ -385,6 +425,33 @@
                 opacity: 0.6;
                 cursor: not-allowed;
               }
+            }
+          }
+        }
+      }
+    }
+
+    // Mobile styles for image filter
+    @media (max-width: 768px) {
+      .header-actions {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+
+        .image-filter-container {
+          justify-content: center;
+          flex-wrap: wrap;
+
+          .filter-btn {
+            flex: 1;
+            min-width: 0;
+            justify-content: center;
+            padding: 10px 8px;
+            font-size: 12px;
+
+            svg {
+              width: 14px;
+              height: 14px;
             }
           }
         }
