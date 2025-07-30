@@ -855,7 +855,17 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   }
 
   saveCompanyName(): void {
-    this.differentCompanyName = this.editingCompanyName.trim();
+    const trimmedName = this.editingCompanyName.trim();
+    const originalName = this.globalService.selectedCustomerForOrders.last_name_company || '';
+    
+    // Nur speichern wenn der Name tatsächlich geändert wurde
+    if (trimmedName !== originalName) {
+      this.differentCompanyName = trimmedName;
+    } else {
+      // Wenn der Name gleich ist, zurücksetzen
+      this.differentCompanyName = '';
+    }
+    
     this.isEditingCompanyName = false;
     this.editingCompanyName = '';
   }
@@ -1268,19 +1278,23 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     });
 
     // Kundendaten für den Request
-    const customerData = {
+    const customerData: any = {
       customer_id: this.globalService.selectedCustomerForOrders.id,
       customer_number: this.globalService.selectedCustomerForOrders.customer_number,
       customer_name: this.globalService.selectedCustomerForOrders.last_name_company,
       customer_addition: this.globalService.selectedCustomerForOrders.name_addition,
-      customer_city: this.globalService.selectedCustomerForOrders.city,
-      customer_street: this.globalService.selectedCustomerForOrders.street,
-      customer_postal_code: this.globalService.selectedCustomerForOrders.postal_code,
-      customer_country_code: this.globalService.selectedCustomerForOrders._country_code,
       customer_email: this.globalService.selectedCustomerForOrders.email,
-      different_company_name: this.differentCompanyName || null,
       status: 'completed'
     };
+
+    // Nur Kundendaten mitsenden, wenn der Name geändert wurde
+    if (this.differentCompanyName) {
+      customerData.customer_city = this.globalService.selectedCustomerForOrders.city;
+      customerData.customer_street = this.globalService.selectedCustomerForOrders.street;
+      customerData.customer_postal_code = this.globalService.selectedCustomerForOrders.postal_code;
+      customerData.customer_country_code = this.globalService.selectedCustomerForOrders._country_code;
+      customerData.different_company_name = this.differentCompanyName;
+    }
 
     const completeOrder = {
       orderData: {
