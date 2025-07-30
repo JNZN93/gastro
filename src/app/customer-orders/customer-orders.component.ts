@@ -1274,6 +1274,9 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       customer_name: this.globalService.selectedCustomerForOrders.last_name_company,
       customer_addition: this.globalService.selectedCustomerForOrders.name_addition,
       customer_city: this.globalService.selectedCustomerForOrders.city,
+      customer_street: this.globalService.selectedCustomerForOrders.street,
+      customer_postal_code: this.globalService.selectedCustomerForOrders.postal_code,
+      customer_country_code: this.globalService.selectedCustomerForOrders._country_code,
       customer_email: this.globalService.selectedCustomerForOrders.email,
       different_company_name: this.differentCompanyName || null,
       status: 'completed'
@@ -1505,12 +1508,16 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       const normalizedCompanyName = customer.last_name_company?.toLowerCase().replace(/\s+/g, '') || '';
       const normalizedNameAddition = customer.name_addition?.toLowerCase().replace(/\s+/g, '') || '';
       const normalizedCity = customer.city?.toLowerCase().replace(/\s+/g, '') || '';
+      const normalizedStreet = customer.street?.toLowerCase().replace(/\s+/g, '') || '';
+      const normalizedPostalCode = customer.postal_code?.toLowerCase().replace(/\s+/g, '') || '';
       const normalizedEmail = customer.email?.toLowerCase().replace(/\s+/g, '') || '';
       
       const originalCustomerNumber = customer.customer_number?.toLowerCase() || '';
       const originalCompanyName = customer.last_name_company?.toLowerCase() || '';
       const originalNameAddition = customer.name_addition?.toLowerCase() || '';
       const originalCity = customer.city?.toLowerCase() || '';
+      const originalStreet = customer.street?.toLowerCase() || '';
+      const originalPostalCode = customer.postal_code?.toLowerCase() || '';
       const originalEmail = customer.email?.toLowerCase() || '';
       
       return (
@@ -1518,11 +1525,15 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
         normalizedCompanyName.includes(normalizedSearchTerm) ||
         normalizedNameAddition.includes(normalizedSearchTerm) ||
         normalizedCity.includes(normalizedSearchTerm) ||
+        normalizedStreet.includes(normalizedSearchTerm) ||
+        normalizedPostalCode.includes(normalizedSearchTerm) ||
         normalizedEmail.includes(normalizedSearchTerm) ||
         originalCustomerNumber.includes(searchTerm) ||
         originalCompanyName.includes(searchTerm) ||
         originalNameAddition.includes(searchTerm) ||
         originalCity.includes(searchTerm) ||
+        originalStreet.includes(searchTerm) ||
+        originalPostalCode.includes(searchTerm) ||
         originalEmail.includes(searchTerm)
       );
     });

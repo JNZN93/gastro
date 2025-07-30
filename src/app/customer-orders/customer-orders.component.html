@@ -41,8 +41,21 @@
                 @if (globalService.selectedCustomerForOrders.name_addition) {
                   <p class="customer-addition">{{ globalService.selectedCustomerForOrders.name_addition }}</p>
                 }
-                @if (globalService.selectedCustomerForOrders.city) {
-                  <p class="customer-location">{{ globalService.selectedCustomerForOrders.city }}</p>
+                @if (globalService.selectedCustomerForOrders.street || globalService.selectedCustomerForOrders.postal_code || globalService.selectedCustomerForOrders.city) {
+                  <p class="customer-location">
+                    @if (globalService.selectedCustomerForOrders.street) {
+                      {{ globalService.selectedCustomerForOrders.street }}
+                    }
+                    @if (globalService.selectedCustomerForOrders.postal_code || globalService.selectedCustomerForOrders.city) {
+                      <br>
+                      @if (globalService.selectedCustomerForOrders.postal_code) {
+                        {{ globalService.selectedCustomerForOrders.postal_code }}
+                      }
+                      @if (globalService.selectedCustomerForOrders.city) {
+                        {{ globalService.selectedCustomerForOrders.city }}
+                      }
+                    }
+                  </p>
                 }
               </div>
               <div class="customer-pricing-info">
@@ -430,7 +443,21 @@
           <div class="customer-card-body">
             <p class="customer-name"><strong>{{ customer.last_name_company || 'Kein Name' }}</strong></p>
             <p class="customer-addition" *ngIf="customer.name_addition">{{ customer.name_addition }}</p>
-            <p class="customer-city" *ngIf="customer.city">{{ customer.city }}</p>
+            @if (customer.street || customer.postal_code || customer.city) {
+              <p class="customer-address">
+                @if (customer.street) {
+                  {{ customer.street }}<br>
+                }
+                @if (customer.postal_code || customer.city) {
+                  @if (customer.postal_code) {
+                    {{ customer.postal_code }}
+                  }
+                  @if (customer.city) {
+                    {{ customer.city }}
+                  }
+                }
+              </p>
+            }
             <p class="customer-email" *ngIf="customer.email">{{ customer.email }}</p>
           </div>
           <div class="customer-card-footer">
