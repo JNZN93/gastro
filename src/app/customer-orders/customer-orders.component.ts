@@ -23,6 +23,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   @ViewChild('searchInput') searchInput!: any;
   @ViewChild('articlesDropdown') articlesDropdown!: any;
   @ViewChild('orderTableContainer') orderTableContainer!: any;
+  @ViewChild('eanCodeInput') eanCodeInput!: any;
   private artikelService = inject(ArtikelDataService);
   private http = inject(HttpClient);
   artikelData: any[] = [];
@@ -2287,6 +2288,13 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     this.isEanAssignmentModalOpen = true;
     this.isEanScanning = false;
     this.isAssigningEan = false;
+    
+    // Set focus on EAN input field after modal is opened
+    setTimeout(() => {
+      if (this.eanCodeInput) {
+        this.eanCodeInput.nativeElement.focus();
+      }
+    }, 100);
   }
 
   closeEanAssignmentModal(): void {
