@@ -306,6 +306,142 @@ export class ProductManagementComponent implements OnInit {
 
     // Apply search filter
     if (this.searchTerm.trim()) {
+      // Check if search term is an 8 or 13 digit EAN code
+      const isEanSearch = /^\d{8}$|^\d{13}$/.test(this.searchTerm.trim());
+      
+      if (isEanSearch) {
+        // EAN-Suche: Zuerst in lokalen Produkten suchen
+        const localEanResults = filtered.filter(product =>
+          product.ean?.toLowerCase() === this.searchTerm.toLowerCase()
+        );
+        
+        if (localEanResults.length > 0) {
+          // EAN in lokalen Produkten gefunden
+          filtered = localEanResults;
+        } else {
+          // EAN nicht in lokalen Produkten gefunden - API-Suche
+          this.searchEanInApi(this.searchTerm.trim());
+          return; // Warte auf API-Ergebnis
+        }
+      } else {
+        // Normale Text-Suche
+        const terms = this.searchTerm.toLowerCase().split(/\s+/);
+        filtered = filtered.filter(product =>
+          terms.every((term) =>
+            product.article_text?.toLowerCase().includes(term) ||
+            product.article_number?.toLowerCase().includes(term) ||
+            product.ean?.toLowerCase().includes(term)
+          )
+        );
+        
+        // Sortiere nach Prioritätsreihenfolge
+        filtered = filtered.sort((a, b) => {
+          const searchTermLower = this.searchTerm.toLowerCase();
+          
+          // Prüfe exakte Übereinstimmungen für jede Prioritätsstufe
+          const aArticleNumberExact = a.article_number?.toLowerCase() === searchTermLower;
+          const bArticleNumberExact = b.article_number?.toLowerCase() === searchTermLower;
+          const aArticleTextExact = a.article_text?.toLowerCase() === searchTermLower;
+          const bArticleTextExact = b.article_text?.toLowerCase() === searchTermLower;
+          const aEanExact = a.ean?.toLowerCase() === searchTermLower;
+          const bEanExact = b.ean?.toLowerCase() === searchTermLower;
+          
+          // Prüfe Teilübereinstimmungen (beginnend mit Suchbegriff)
+          const aArticleNumberStartsWith = a.article_number?.toLowerCase().startsWith(searchTermLower);
+          const bArticleNumberStartsWith = b.article_number?.toLowerCase().startsWith(searchTermLower);
+          const aArticleTextStartsWith = a.article_text?.toLowerCase().startsWith(searchTermLower);
+          const bArticleTextStartsWith = b.article_text?.toLowerCase().startsWith(searchTermLower);
+          const aEanStartsWith = a.ean?.toLowerCase().startsWith(searchTermLower);
+          const bEanStartsWith = b.ean?.toLowerCase().startsWith(searchTermLower);
+          
+          // Priorität 1: Exakte Übereinstimmung in article_number
+          if (aArticleNumberExact && !bArticleNumberExact) return -1;
+          if (!aArticleNumberExact && bArticleNumberExact) return 1;
+          
+          // Priorität 2: Exakte Übereinstimmung in article_text
+          if (aArticleTextExact && !bArticleTextExact) return -1;
+          if (!aArticleTextExact && bArticleTextExact) return 1;
+          
+          // Priorität 3: Exakte Übereinstimmung in ean
+          if (aEanExact && !bEanExact) return -1;
+          if (!aEanExact && bEanExact) return 1;
+          
+          // Priorität 4: Beginnt mit Suchbegriff in article_number
+          if (aArticleNumberStartsWith && !bArticleNumberStartsWith) return -1;
+          if (!aArticleNumberStartsWith && bArticleNumberStartsWith) return 1;
+          
+          // Priorität 5: Beginnt mit Suchbegriff in article_text
+          if (aArticleTextStartsWith && !bArticleTextStartsWith) return -1;
+          if (!aArticleTextStartsWith && bArticleTextStartsWith) return 1;
+          
+          // Priorität 6: Beginnt mit Suchbegriff in ean
+          if (aEanStartsWith && !bEanStartsWith) return -1;
+          if (!aEanStartsWith && bEanStartsWith) return 1;
+          
+          // Bei gleicher Priorität: zuerst nach article_number sortieren, dann nach article_text
+          const articleNumberComparison = this.compareArticleNumbers(a.article_number, b.article_number);
+          if (articleNumberComparison !== 0) {
+            return articleNumberComparison;
+          }
+          return a.article_text.localeCompare(b.article_text);
+        });
+      }
+    }
+
+    this.filteredProducts = filtered;
+  }
+
+  private searchEanInApi(eanCode: string): void {
+    const token = localStorage.getItem('token');
+    
+    this.http.get(`https://multi-mandant-ecommerce.onrender.com/api/product-eans/ean/${eanCode}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    }).subscribe({
+      next: (response: any) => {
+        if (response.success && response.data) {
+          // EAN in products_ean Tabelle gefunden
+          const foundArticleNumber = response.data.article_number;
+          
+          // Prüfe ob dieser Artikel bereits in globalArtikels (products) existiert
+          const existingProduct = this.products.find(product => 
+            product.article_number === foundArticleNumber
+          );
+          
+          if (existingProduct) {
+            // Artikel existiert bereits - zeige ihn an
+            this.filteredProducts = [existingProduct];
+          } else {
+            // Artikel existiert nicht in globalArtikels - keine Ergebnisse
+            this.filteredProducts = [];
+          }
+        } else {
+          // EAN nicht in products_ean Tabelle gefunden
+          this.filteredProducts = [];
+        }
+      },
+      error: (error: any) => {
+        console.error('Error searching EAN in API:', error);
+        // Bei Fehler: normale lokale Suche durchführen
+        this.performLocalSearch();
+      }
+    });
+  }
+
+  private performLocalSearch(): void {
+    let filtered = [...this.products];
+
+    // Apply image filter
+    if (this.imageFilter !== 'all') {
+      filtered = filtered.filter(product => {
+        const hasImageProduct = this.hasImage(product);
+        return this.imageFilter === 'with-image' ? hasImageProduct : !hasImageProduct;
+      });
+    }
+
+    // Apply search filter
+    if (this.searchTerm.trim()) {
       const terms = this.searchTerm.toLowerCase().split(/\s+/);
       filtered = filtered.filter(product =>
         terms.every((term) =>
@@ -314,58 +450,6 @@ export class ProductManagementComponent implements OnInit {
           product.ean?.toLowerCase().includes(term)
         )
       );
-      
-      // Sortiere nach Prioritätsreihenfolge
-      filtered = filtered.sort((a, b) => {
-        const searchTermLower = this.searchTerm.toLowerCase();
-        
-        // Prüfe exakte Übereinstimmungen für jede Prioritätsstufe
-        const aArticleNumberExact = a.article_number?.toLowerCase() === searchTermLower;
-        const bArticleNumberExact = b.article_number?.toLowerCase() === searchTermLower;
-        const aArticleTextExact = a.article_text?.toLowerCase() === searchTermLower;
-        const bArticleTextExact = b.article_text?.toLowerCase() === searchTermLower;
-        const aEanExact = a.ean?.toLowerCase() === searchTermLower;
-        const bEanExact = b.ean?.toLowerCase() === searchTermLower;
-        
-        // Prüfe Teilübereinstimmungen (beginnend mit Suchbegriff)
-        const aArticleNumberStartsWith = a.article_number?.toLowerCase().startsWith(searchTermLower);
-        const bArticleNumberStartsWith = b.article_number?.toLowerCase().startsWith(searchTermLower);
-        const aArticleTextStartsWith = a.article_text?.toLowerCase().startsWith(searchTermLower);
-        const bArticleTextStartsWith = b.article_text?.toLowerCase().startsWith(searchTermLower);
-        const aEanStartsWith = a.ean?.toLowerCase().startsWith(searchTermLower);
-        const bEanStartsWith = b.ean?.toLowerCase().startsWith(searchTermLower);
-        
-        // Priorität 1: Exakte Übereinstimmung in article_number
-        if (aArticleNumberExact && !bArticleNumberExact) return -1;
-        if (!aArticleNumberExact && bArticleNumberExact) return 1;
-        
-        // Priorität 2: Exakte Übereinstimmung in article_text
-        if (aArticleTextExact && !bArticleTextExact) return -1;
-        if (!aArticleTextExact && bArticleTextExact) return 1;
-        
-        // Priorität 3: Exakte Übereinstimmung in ean
-        if (aEanExact && !bEanExact) return -1;
-        if (!aEanExact && bEanExact) return 1;
-        
-        // Priorität 4: Beginnt mit Suchbegriff in article_number
-        if (aArticleNumberStartsWith && !bArticleNumberStartsWith) return -1;
-        if (!aArticleNumberStartsWith && bArticleNumberStartsWith) return 1;
-        
-        // Priorität 5: Beginnt mit Suchbegriff in article_text
-        if (aArticleTextStartsWith && !bArticleTextStartsWith) return -1;
-        if (!aArticleTextStartsWith && bArticleTextStartsWith) return 1;
-        
-        // Priorität 6: Beginnt mit Suchbegriff in ean
-        if (aEanStartsWith && !bEanStartsWith) return -1;
-        if (!aEanStartsWith && bEanStartsWith) return 1;
-        
-        // Bei gleicher Priorität: zuerst nach article_number sortieren, dann nach article_text
-        const articleNumberComparison = this.compareArticleNumbers(a.article_number, b.article_number);
-        if (articleNumberComparison !== 0) {
-          return articleNumberComparison;
-        }
-        return a.article_text.localeCompare(b.article_text);
-      });
     }
 
     this.filteredProducts = filtered;
