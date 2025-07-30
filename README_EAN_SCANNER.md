@@ -58,6 +58,8 @@ CREATE TABLE product_eans (
 
 ## 🔌 API-Endpunkte
 
+> **Wichtig**: Alle API-Endpunkte verwenden `article_number` (mit Unterstrich) anstatt `articleNumber` (camelCase) in Request Bodies und URL-Parametern.
+
 ### Öffentliche Endpunkte (Authentifizierung erforderlich)
 
 | Methode | Endpunkt | Beschreibung |
@@ -65,7 +67,7 @@ CREATE TABLE product_eans (
 | GET | `/api/product-eans` | Alle EAN-Zuordnungen abrufen |
 | GET | `/api/product-eans/:id` | EAN-Zuordnung nach ID abrufen |
 | GET | `/api/product-eans/ean/:ean` | EAN-Zuordnung nach EAN-Code abrufen |
-| GET | `/api/product-eans/article/:articleNumber` | EAN-Zuordnungen nach Artikelnummer |
+| GET | `/api/product-eans/article/:article_number` | EAN-Zuordnungen nach Artikelnummer |
 | GET | `/api/product-eans/articles/search` | Suche nach Artikeln |
 | GET | `/api/product-eans/articles/all` | Alle verfügbaren Artikelnummern |
 | GET | `/api/product-eans/products-with-eans` | Alle Produkte mit gruppierten EANs |
@@ -113,7 +115,7 @@ const response = await fetch('/api/product-eans/assign', {
         'Authorization': `Bearer ${token}`
     },
     body: JSON.stringify({
-        articleNumber: 'ART001',
+        article_number: 'ART001',
         ean: '1234567890123'
     })
 });

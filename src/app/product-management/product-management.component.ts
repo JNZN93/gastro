@@ -18,6 +18,7 @@ import { HttpClient, HttpClientModule } from '@angular/common/http';
 })
 export class ProductManagementComponent implements OnInit {
   @ViewChild(ZXingScannerComponent) scanner!: ZXingScannerComponent;
+  @ViewChild('eanScanner') eanScanner!: ZXingScannerComponent;
   private artikelService = inject(ArtikelDataService);
   private http = inject(HttpClient);
   
@@ -43,6 +44,15 @@ export class ProductManagementComponent implements OnInit {
   modalImageUrl: string = '';
   modalImageAlt: string = '';
   modalProductId: number | null = null;
+  
+  // EAN Assignment properties
+  isEanModalOpen: boolean = false;
+  eanAssignmentProduct: any = null;
+  eanCode: string = '';
+  isEanScanning: boolean = false;
+  isAssigningEan: boolean = false;
+  eanErrorMessage: string = '';
+  eanSuccessMessage: string = '';
   
   availableDevices: MediaDeviceInfo[] = [];
   selectedDevice?: MediaDeviceInfo;
@@ -102,6 +112,9 @@ export class ProductManagementComponent implements OnInit {
     if (event.key === 'Escape' && this.isModalOpen) {
       this.closeModal();
     }
+    if (event.key === 'Escape' && this.isEanModalOpen) {
+      this.closeEanModal();
+    }
   }
 
   // Handle click outside modal to close
@@ -111,6 +124,13 @@ export class ProductManagementComponent implements OnInit {
       const target = event.target as HTMLElement;
       if (target.classList.contains('modal-overlay')) {
         this.closeModal();
+      }
+    }
+    
+    if (this.isEanModalOpen) {
+      const target = event.target as HTMLElement;
+      if (target.classList.contains('ean-modal-overlay')) {
+        this.closeEanModal();
       }
     }
     
@@ -134,6 +154,92 @@ export class ProductManagementComponent implements OnInit {
   closeModal(): void {
     this.isModalOpen = false;
     document.body.style.overflow = ''; // Restore scrolling
+  }
+
+  // EAN Assignment Methods
+  openEanModal(product: any): void {
+    this.eanAssignmentProduct = product;
+    this.eanCode = '';
+    this.eanErrorMessage = '';
+    this.eanSuccessMessage = '';
+    this.isEanModalOpen = true;
+    this.isEanScanning = false;
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeEanModal(): void {
+    this.isEanModalOpen = false;
+    this.eanAssignmentProduct = null;
+    this.eanCode = '';
+    this.eanErrorMessage = '';
+    this.eanSuccessMessage = '';
+    this.isEanScanning = false;
+    document.body.style.overflow = '';
+  }
+
+  startEanScanner(): void {
+    this.isEanScanning = true;
+    this.eanCode = '';
+    this.eanErrorMessage = '';
+    this.eanSuccessMessage = '';
+  }
+
+  stopEanScanner(): void {
+    this.isEanScanning = false;
+  }
+
+  onEanCodeResult(result: string): void {
+    this.playBeep();
+    this.stopEanScanner();
+    this.eanCode = result;
+    this.eanErrorMessage = '';
+  }
+
+  assignEan(): void {
+    if (!this.eanCode.trim()) {
+      this.eanErrorMessage = 'Bitte geben Sie einen EAN-Code ein.';
+      return;
+    }
+
+    if (this.eanCode.length !== 13) {
+      this.eanErrorMessage = 'EAN-Code muss genau 13 Ziffern enthalten.';
+      return;
+    }
+
+    this.isAssigningEan = true;
+    this.eanErrorMessage = '';
+    this.eanSuccessMessage = '';
+
+    const token = localStorage.getItem('token');
+    const payload = {
+      article_number: this.eanAssignmentProduct.article_number,
+      ean: this.eanCode
+    };
+
+    this.http.post('https://multi-mandant-ecommerce.onrender.com/api/product-eans/assign', payload, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    }).subscribe({
+      next: (response: any) => {
+        this.isAssigningEan = false;
+        if (response.success) {
+          this.eanSuccessMessage = 'EAN-Code erfolgreich zugeordnet!';
+          this.loadProducts(); // Refresh products to show updated EAN
+          setTimeout(() => {
+            this.closeEanModal();
+          }, 2000);
+        } else {
+          this.eanErrorMessage = response.message || 'Fehler beim Zuordnen des EAN-Codes.';
+        }
+      },
+      error: (error: any) => {
+        this.isAssigningEan = false;
+        console.error('Error assigning EAN:', error);
+        this.eanErrorMessage = error.error?.message || 'Fehler beim Zuordnen des EAN-Codes.';
+      }
+    });
   }
 
   setupScanner(): void {

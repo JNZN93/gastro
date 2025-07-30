@@ -162,6 +162,15 @@
                       Bild hochladen
                     </button>
                     
+                    <button type="button" 
+                            class="ean-btn"
+                            (click)="openEanModal(product)">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V6a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1zm12 0h2a1 1 0 001-1V6a1 1 0 00-1-1h-2a1 1 0 00-1 1v1a1 1 0 001 1zM5 20h2a1 1 0 001-1v-1a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1z"/>
+                      </svg>
+                      EAN zuordnen
+                    </button>
+                    
                     @if (hasImage(product)) {
                       <button type="button" 
                               class="remove-btn"
@@ -253,6 +262,15 @@
                   Bild hochladen
                 </button>
                 
+                <button type="button" 
+                        class="card-ean-btn"
+                        (click)="openEanModal(product)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V6a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1zm12 0h2a1 1 0 001-1V6a1 1 0 00-1-1h-2a1 1 0 00-1 1v1a1 1 0 001 1zM5 20h2a1 1 0 001-1v-1a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1z"/>
+                  </svg>
+                  EAN zuordnen
+                </button>
+                
                 @if (hasImage(product)) {
                   <button type="button" 
                           class="card-remove-btn"
@@ -309,14 +327,6 @@
         <div class="modal-header">
           <h3 class="modal-title">{{ modalImageAlt }}</h3>
           <div class="modal-actions">
-            @if (modalProductId) {
-              <button class="modal-remove-btn" (click)="removeImage(modalProductId); closeModal()">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                </svg>
-                Bild entfernen
-              </button>
-            }
             <button class="modal-close-btn" (click)="closeModal()">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
@@ -365,6 +375,110 @@
       [torch]="true"
       (scanSuccess)="onCodeResult($event)">
       </zxing-scanner>
+    </div>
+  </div>
+</div>
+
+<!-- EAN Assignment Modal -->
+<div class="ean-modal-overlay" *ngIf="isEanModalOpen" (click)="closeEanModal()">
+  <div class="ean-modal-content" (click)="$event.stopPropagation()">
+    <div class="ean-modal-header">
+      <h3>EAN-Code zuordnen</h3>
+      <button class="ean-modal-close-btn" (click)="closeEanModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+    
+    <div class="ean-modal-body">
+      <div class="product-info">
+        <h4>{{ eanAssignmentProduct?.article_text }}</h4>
+        <p class="article-number">Artikelnummer: {{ eanAssignmentProduct?.article_number }}</p>
+      </div>
+      
+      <div class="ean-input-section">
+        <div class="input-group">
+          <label for="eanCode">EAN-Code (13 Ziffern):</label>
+          <div class="input-with-scanner">
+            <input 
+              type="text" 
+              id="eanCode"
+              [(ngModel)]="eanCode" 
+              placeholder="EAN-Code eingeben oder scannen..."
+              maxlength="13"
+              [disabled]="isAssigningEan"
+              class="ean-input">
+            <button 
+              type="button" 
+              class="scanner-toggle-btn"
+              (click)="isEanScanning ? stopEanScanner() : startEanScanner()"
+              [disabled]="isAssigningEan">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V6a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1zm12 0h2a1 1 0 001-1V6a1 1 0 00-1-1h-2a1 1 0 00-1 1v1a1 1 0 001 1zM5 20h2a1 1 0 001-1v-1a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1z"/>
+              </svg>
+              {{ isEanScanning ? 'Scanner stoppen' : 'Scanner starten' }}
+            </button>
+          </div>
+        </div>
+        
+        @if (isEanScanning) {
+          <div class="ean-scanner-section">
+            <div class="scanner-wrapper">
+              <zxing-scanner 
+                #eanScanner
+                [device]="selectedDevice"
+                [videoConstraints]="videoConstraints"
+                [tryHarder]="true"
+                [formats]="formatsEnabled"
+                [torch]="true"
+                (scanSuccess)="onEanCodeResult($event)">
+              </zxing-scanner>
+            </div>
+          </div>
+        }
+        
+        @if (eanErrorMessage) {
+          <div class="error-message">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            {{ eanErrorMessage }}
+          </div>
+        }
+        
+        @if (eanSuccessMessage) {
+          <div class="success-message">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            </svg>
+            {{ eanSuccessMessage }}
+          </div>
+        }
+      </div>
+      
+      <div class="ean-modal-actions">
+        <button 
+          type="button" 
+          class="cancel-btn"
+          (click)="closeEanModal()"
+          [disabled]="isAssigningEan">
+          Abbrechen
+        </button>
+        <button 
+          type="button" 
+          class="assign-btn"
+          (click)="assignEan()"
+          [disabled]="!eanCode.trim() || eanCode.length !== 13 || isAssigningEan">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" *ngIf="!isAssigningEan">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+          </svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" *ngIf="isAssigningEan" class="spinning">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+          </svg>
+          {{ isAssigningEan ? 'Wird zugeordnet...' : 'EAN zuordnen' }}
+        </button>
+      </div>
     </div>
   </div>
 </div> 
