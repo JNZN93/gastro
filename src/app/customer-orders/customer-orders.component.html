@@ -282,7 +282,7 @@
                  (click)="onArticleClick(artikel)">
               <div class="article-info">
                 <div class="article-details">
-                  <h4 class="article-title">{{ artikel.article_text }}</h4>
+                  <h4 class="article-title" [ngClass]="getArticleTitleClass(artikel.article_text)">{{ artikel.article_text }}</h4>
                   <p class="article-number">Art.-Nr: {{ artikel.article_number }}</p>
                   <p class="article-price">
                     <span class="cost-price" [title]="'EK-Preis: €' + (artikel.cost_price || 0).toFixed(2)">EK: €{{ (artikel.cost_price || 0).toFixed(2) }}</span>

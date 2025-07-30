@@ -292,6 +292,23 @@
     font-weight: 600;
     color: #333;
     line-height: 1.2;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+    max-width: 100%;
+    
+    // Dynamische Schriftgrößenanpassung basierend auf Textlänge
+    &.long-text {
+      font-size: 12px;
+    }
+    
+    &.very-long-text {
+      font-size: 11px;
+    }
+    
+    &.extremely-long-text {
+      font-size: 10px;
+    }
   }
 
   .article-number {

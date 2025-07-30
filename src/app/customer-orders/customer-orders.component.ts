@@ -2389,4 +2389,15 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       });
     }
   }
+
+  // Methode zur Bestimmung der CSS-Klasse basierend auf Textlänge
+  getArticleTitleClass(articleText: string): string {
+    if (!articleText) return '';
+    
+    const length = articleText.length;
+    if (length > 80) return 'extremely-long-text';
+    if (length > 60) return 'very-long-text';
+    if (length > 40) return 'long-text';
+    return '';
+  }
 }
