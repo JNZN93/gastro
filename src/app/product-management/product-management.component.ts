@@ -53,6 +53,8 @@ export class ProductManagementComponent implements OnInit {
   isAssigningEan: boolean = false;
   eanErrorMessage: string = '';
   eanSuccessMessage: string = '';
+  existingEans: Array<{id: number, ean: string}> = [];
+  isLoadingEans: boolean = false;
   
   availableDevices: MediaDeviceInfo[] = [];
   selectedDevice?: MediaDeviceInfo;
@@ -164,7 +166,12 @@ export class ProductManagementComponent implements OnInit {
     this.eanSuccessMessage = '';
     this.isEanModalOpen = true;
     this.isEanScanning = false;
+    this.existingEans = [];
+    this.isLoadingEans = true;
     document.body.style.overflow = 'hidden';
+    
+    // Load existing EANs for this product
+    this.loadExistingEans(product.article_number);
   }
 
   closeEanModal(): void {
@@ -193,6 +200,75 @@ export class ProductManagementComponent implements OnInit {
     this.stopEanScanner();
     this.eanCode = result;
     this.eanErrorMessage = '';
+  }
+
+  loadExistingEans(articleNumber: string): void {
+    const token = localStorage.getItem('token');
+    
+    this.http.get(`https://multi-mandant-ecommerce.onrender.com/api/product-eans/article/${articleNumber}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    }).subscribe({
+      next: (response: any) => {
+        this.isLoadingEans = false;
+        if (response.success && response.data) {
+          this.existingEans = response.data.map((item: any) => ({
+            id: item.id,
+            ean: item.ean
+          }));
+        } else {
+          this.existingEans = [];
+        }
+      },
+      error: (error: any) => {
+        this.isLoadingEans = false;
+        console.error('Error loading existing EANs:', error);
+        this.existingEans = [];
+      }
+    });
+  }
+
+  copyEanToClipboard(ean: string): void {
+    navigator.clipboard.writeText(ean).then(() => {
+      // Optional: Show a brief success message
+      console.log('EAN copied to clipboard:', ean);
+    }).catch(err => {
+      console.error('Failed to copy EAN to clipboard:', err);
+    });
+  }
+
+  deleteEan(eanId: number, eanCode: string): void {
+    if (!confirm(`Möchten Sie den EAN-Code "${eanCode}" wirklich löschen?`)) {
+      return;
+    }
+
+    const token = localStorage.getItem('token');
+    
+    this.http.delete(`https://multi-mandant-ecommerce.onrender.com/api/product-eans/${eanId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    }).subscribe({
+      next: (response: any) => {
+        if (response.success) {
+          // Remove the deleted EAN from the list
+          this.existingEans = this.existingEans.filter(ean => ean.id !== eanId);
+          this.eanSuccessMessage = `EAN-Code "${eanCode}" erfolgreich gelöscht!`;
+          
+          // Clear success message after 3 seconds
+          setTimeout(() => {
+            this.eanSuccessMessage = '';
+          }, 3000);
+        } else {
+          this.eanErrorMessage = response.message || 'Fehler beim Löschen des EAN-Codes.';
+        }
+      },
+      error: (error: any) => {
+        console.error('Error deleting EAN:', error);
+        this.eanErrorMessage = error.error?.message || 'Fehler beim Löschen des EAN-Codes.';
+      }
+    });
   }
 
   assignEan(): void {
@@ -227,6 +303,8 @@ export class ProductManagementComponent implements OnInit {
         if (response.success) {
           this.eanSuccessMessage = 'EAN-Code erfolgreich zugeordnet!';
           this.loadProducts(); // Refresh products to show updated EAN
+          // Reload existing EANs after successful assignment
+          this.loadExistingEans(this.eanAssignmentProduct.article_number);
           setTimeout(() => {
             this.closeEanModal();
           }, 2000);

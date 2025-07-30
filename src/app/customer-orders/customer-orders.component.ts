@@ -10,10 +10,11 @@ import { ZXingScannerComponent, ZXingScannerModule } from '@zxing/ngx-scanner';
 import { BarcodeFormat } from '@zxing/browser';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MyDialogComponent } from '../my-dialog/my-dialog.component';
+import { HttpClient, HttpClientModule } from '@angular/common/http';
 
 @Component({
   selector: 'app-customer-orders',
-  imports: [CommonModule, FormsModule, RouterModule, UploadLoadingComponent, ZXingScannerModule, MatDialogModule],
+  imports: [CommonModule, FormsModule, RouterModule, UploadLoadingComponent, ZXingScannerModule, MatDialogModule, HttpClientModule],
   templateUrl: './customer-orders.component.html',
   styleUrl: './customer-orders.component.scss',
 })
@@ -23,6 +24,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   @ViewChild('articlesDropdown') articlesDropdown!: any;
   @ViewChild('orderTableContainer') orderTableContainer!: any;
   private artikelService = inject(ArtikelDataService);
+  private http = inject(HttpClient);
   artikelData: any[] = [];
   orderItems: any[] = [];
   searchTerm: string = '';
@@ -48,6 +50,20 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   isArticlePricesModalOpen: boolean = false;
   articlePricesSearchTerm: string = '';
   filteredArticlePrices: any[] = [];
+  
+  // Notification properties for article prices modal
+  isArticlePricesNotificationVisible: boolean = false;
+  articlePricesNotificationText: string = '';
+  articlePricesNotificationTimeout: any = null;
+  
+  // EAN Assignment modal properties
+  isEanAssignmentModalOpen: boolean = false;
+  eanAssignmentItem: any = null;
+  eanCode: string = '';
+  isEanScanning: boolean = false;
+  isAssigningEan: boolean = false;
+  eanErrorMessage: string = '';
+  eanSuccessMessage: string = '';
   
   // Edit mode properties
   editingItemIndex: number = -1;
@@ -229,83 +245,107 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     this.showDropdown = false;
     
     if (this.searchTerm) {
-      const terms = this.searchTerm.toLowerCase().split(/\s+/);
+      // Check if search term is an 8 or 13 digit EAN code
+      const isEanSearch = /^\d{8}$|^\d{13}$/.test(this.searchTerm.trim());
       
-      // Filtere Artikel basierend auf Suchbegriffen
-      const filtered = this.globalArtikels.filter((artikel) =>
-        terms.every((term) =>
-          artikel.article_text.toLowerCase().includes(term) ||
-          artikel.article_number?.toLowerCase().includes(term) ||
-          artikel.ean?.toLowerCase().includes(term)
-        )
-      );
-      
-      // Sortiere nach Prioritätsreihenfolge
-      this.filteredArtikels = filtered.sort((a, b) => {
-        const searchTermLower = this.searchTerm.toLowerCase();
+      if (isEanSearch) {
+        // EAN-Suche: Zuerst in lokalen Artikeln suchen
+        const localEanResults = this.globalArtikels.filter(artikel =>
+          artikel.ean?.toLowerCase() === this.searchTerm.toLowerCase()
+        );
         
-        // Prüfe exakte Übereinstimmungen für jede Prioritätsstufe
-        const aArticleNumberExact = a.article_number?.toLowerCase() === searchTermLower;
-        const bArticleNumberExact = b.article_number?.toLowerCase() === searchTermLower;
-        const aArticleTextExact = a.article_text.toLowerCase() === searchTermLower;
-        const bArticleTextExact = b.article_text.toLowerCase() === searchTermLower;
-        const aEanExact = a.ean?.toLowerCase() === searchTermLower;
-        const bEanExact = b.ean?.toLowerCase() === searchTermLower;
-        
-        // Prüfe Teilübereinstimmungen (beginnend mit Suchbegriff)
-        const aArticleNumberStartsWith = a.article_number?.toLowerCase().startsWith(searchTermLower);
-        const bArticleNumberStartsWith = b.article_number?.toLowerCase().startsWith(searchTermLower);
-        const aArticleTextStartsWith = a.article_text.toLowerCase().startsWith(searchTermLower);
-        const bArticleTextStartsWith = b.article_text.toLowerCase().startsWith(searchTermLower);
-        const aEanStartsWith = a.ean?.toLowerCase().startsWith(searchTermLower);
-        const bEanStartsWith = b.ean?.toLowerCase().startsWith(searchTermLower);
-        
-        // Priorität 1: Exakte Übereinstimmung in article_number
-        if (aArticleNumberExact && !bArticleNumberExact) return -1;
-        if (!aArticleNumberExact && bArticleNumberExact) return 1;
-        
-        // Priorität 2: Exakte Übereinstimmung in article_text
-        if (aArticleTextExact && !bArticleTextExact) return -1;
-        if (!aArticleTextExact && bArticleTextExact) return 1;
-        
-        // Priorität 3: Exakte Übereinstimmung in ean
-        if (aEanExact && !bEanExact) return -1;
-        if (!aEanExact && bEanExact) return 1;
-        
-        // Priorität 4: Beginnt mit Suchbegriff in article_number
-        if (aArticleNumberStartsWith && !bArticleNumberStartsWith) return -1;
-        if (!aArticleNumberStartsWith && bArticleNumberStartsWith) return 1;
-        
-        // Priorität 5: Beginnt mit Suchbegriff in article_text
-        if (aArticleTextStartsWith && !bArticleTextStartsWith) return -1;
-        if (!aArticleTextStartsWith && bArticleTextStartsWith) return 1;
-        
-        // Priorität 6: Beginnt mit Suchbegriff in ean
-        if (aEanStartsWith && !bEanStartsWith) return -1;
-        if (!aEanStartsWith && bEanStartsWith) return 1;
-        
-        // Bei gleicher Priorität: zuerst nach article_number sortieren, dann nach article_text
-        const articleNumberComparison = this.compareArticleNumbers(a.article_number, b.article_number);
-        if (articleNumberComparison !== 0) {
-          return articleNumberComparison;
+        if (localEanResults.length > 0) {
+          // EAN in lokalen Artikeln gefunden
+          this.filteredArtikels = localEanResults;
+          this.showDropdown = true;
+          this.selectedIndex = -1;
+          
+          console.log('🔍 [EAN-LOCAL] EAN in lokalen Artikeln gefunden:', this.filteredArtikels.length);
+        } else {
+          // EAN nicht in lokalen Artikeln gefunden - API-Suche
+          this.searchEanInApi(this.searchTerm.trim());
+          return; // Warte auf API-Ergebnis
         }
-        return a.article_text.localeCompare(b.article_text);
-      });
-      
-      // Show dropdown if we have results
-      this.showDropdown = this.filteredArtikels.length > 0;
-      
-      // Reset selection - no automatic selection of first article
-      this.selectedIndex = -1;
-      
-      console.log('🔍 [FILTER] Gefilterte Artikel aktualisiert:', this.filteredArtikels.length);
-      if (this.filteredArtikels.length > 0) {
-        console.log('🔍 [FILTER] Beispiel Artikel:', {
-          article_text: this.filteredArtikels[0].article_text,
-          article_number: this.filteredArtikels[0].article_number,
-          sale_price: this.filteredArtikels[0].sale_price,
-          different_price: this.filteredArtikels[0].different_price
+      } else {
+        // Normale Text-Suche
+        const terms = this.searchTerm.toLowerCase().split(/\s+/);
+        
+        // Filtere Artikel basierend auf Suchbegriffen
+        const filtered = this.globalArtikels.filter((artikel) =>
+          terms.every((term) =>
+            artikel.article_text.toLowerCase().includes(term) ||
+            artikel.article_number?.toLowerCase().includes(term) ||
+            artikel.ean?.toLowerCase().includes(term)
+          )
+        );
+        
+        // Sortiere nach Prioritätsreihenfolge
+        this.filteredArtikels = filtered.sort((a, b) => {
+          const searchTermLower = this.searchTerm.toLowerCase();
+          
+          // Prüfe exakte Übereinstimmungen für jede Prioritätsstufe
+          const aArticleNumberExact = a.article_number?.toLowerCase() === searchTermLower;
+          const bArticleNumberExact = b.article_number?.toLowerCase() === searchTermLower;
+          const aArticleTextExact = a.article_text.toLowerCase() === searchTermLower;
+          const bArticleTextExact = b.article_text.toLowerCase() === searchTermLower;
+          const aEanExact = a.ean?.toLowerCase() === searchTermLower;
+          const bEanExact = b.ean?.toLowerCase() === searchTermLower;
+          
+          // Prüfe Teilübereinstimmungen (beginnend mit Suchbegriff)
+          const aArticleNumberStartsWith = a.article_number?.toLowerCase().startsWith(searchTermLower);
+          const bArticleNumberStartsWith = b.article_number?.toLowerCase().startsWith(searchTermLower);
+          const aArticleTextStartsWith = a.article_text.toLowerCase().startsWith(searchTermLower);
+          const bArticleTextStartsWith = b.article_text.toLowerCase().startsWith(searchTermLower);
+          const aEanStartsWith = a.ean?.toLowerCase().startsWith(searchTermLower);
+          const bEanStartsWith = b.ean?.toLowerCase().startsWith(searchTermLower);
+          
+          // Priorität 1: Exakte Übereinstimmung in article_number
+          if (aArticleNumberExact && !bArticleNumberExact) return -1;
+          if (!aArticleNumberExact && bArticleNumberExact) return 1;
+          
+          // Priorität 2: Exakte Übereinstimmung in article_text
+          if (aArticleTextExact && !bArticleTextExact) return -1;
+          if (!aArticleTextExact && bArticleTextExact) return 1;
+          
+          // Priorität 3: Exakte Übereinstimmung in ean
+          if (aEanExact && !bEanExact) return -1;
+          if (!aEanExact && bEanExact) return 1;
+          
+          // Priorität 4: Beginnt mit Suchbegriff in article_number
+          if (aArticleNumberStartsWith && !bArticleNumberStartsWith) return -1;
+          if (!aArticleNumberStartsWith && bArticleNumberStartsWith) return 1;
+          
+          // Priorität 5: Beginnt mit Suchbegriff in article_text
+          if (aArticleTextStartsWith && !bArticleTextStartsWith) return -1;
+          if (!aArticleTextStartsWith && bArticleTextStartsWith) return 1;
+          
+          // Priorität 6: Beginnt mit Suchbegriff in ean
+          if (aEanStartsWith && !bEanStartsWith) return -1;
+          if (!aEanStartsWith && bEanStartsWith) return 1;
+          
+          // Bei gleicher Priorität: zuerst nach article_number sortieren, dann nach article_text
+          const articleNumberComparison = this.compareArticleNumbers(a.article_number, b.article_number);
+          if (articleNumberComparison !== 0) {
+            return articleNumberComparison;
+          }
+          return a.article_text.localeCompare(b.article_text);
         });
+        
+        // Show dropdown if we have results
+        this.showDropdown = this.filteredArtikels.length > 0;
+        
+        // Reset selection - no automatic selection of first article
+        this.selectedIndex = -1;
+        
+        console.log('🔍 [FILTER] Gefilterte Artikel aktualisiert:', this.filteredArtikels.length);
+        if (this.filteredArtikels.length > 0) {
+          console.log('🔍 [FILTER] Beispiel Artikel:', {
+            article_text: this.filteredArtikels[0].article_text,
+            article_number: this.filteredArtikels[0].article_number,
+            sale_price: this.filteredArtikels[0].sale_price,
+            different_price: this.filteredArtikels[0].different_price
+          });
+        }
       }
     } else {
       // Wenn kein Suchbegriff vorhanden ist, Reset der Auswahl
@@ -336,6 +376,79 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     
     // Ansonsten alphabetischen Vergleich
     return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+  }
+
+  private searchEanInApi(eanCode: string): void {
+    const token = localStorage.getItem('token');
+    
+    this.http.get(`https://multi-mandant-ecommerce.onrender.com/api/product-eans/ean/${eanCode}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    }).subscribe({
+      next: (response: any) => {
+        if (response.success && response.data) {
+          // EAN in products_ean Tabelle gefunden
+          const foundArticleNumber = response.data.article_number;
+          
+          // Prüfe ob dieser Artikel bereits in globalArtikels existiert
+          const existingProduct = this.globalArtikels.find(artikel => 
+            artikel.article_number === foundArticleNumber
+          );
+          
+          if (existingProduct) {
+            // Artikel existiert bereits - zeige ihn an
+            this.filteredArtikels = [existingProduct];
+            this.showDropdown = true;
+            this.selectedIndex = -1;
+            
+            console.log('🔍 [EAN-API] EAN gefunden und Artikel in globalArtikels vorhanden:', existingProduct.article_text);
+          } else {
+            // Artikel existiert nicht in globalArtikels - keine Ergebnisse
+            this.filteredArtikels = [];
+            this.showDropdown = false;
+            
+            console.log('🔍 [EAN-API] EAN gefunden aber Artikel nicht in globalArtikels:', foundArticleNumber);
+          }
+        } else {
+          // EAN nicht in products_ean Tabelle gefunden
+          this.filteredArtikels = [];
+          this.showDropdown = false;
+          
+          console.log('🔍 [EAN-API] EAN nicht in products_ean Tabelle gefunden:', eanCode);
+        }
+      },
+      error: (error: any) => {
+        console.error('Error searching EAN in API:', error);
+        // Bei Fehler: normale lokale Suche durchführen
+        this.performLocalSearch();
+      }
+    });
+  }
+
+  private performLocalSearch(): void {
+    if (this.searchTerm) {
+      const terms = this.searchTerm.toLowerCase().split(/\s+/);
+      
+      // Filtere Artikel basierend auf Suchbegriffen
+      const filtered = this.globalArtikels.filter((artikel) =>
+        terms.every((term) =>
+          artikel.article_text.toLowerCase().includes(term) ||
+          artikel.article_number?.toLowerCase().includes(term) ||
+          artikel.ean?.toLowerCase().includes(term)
+        )
+      );
+      
+      this.filteredArtikels = filtered;
+      this.showDropdown = this.filteredArtikels.length > 0;
+      this.selectedIndex = -1;
+      
+      console.log('🔍 [FALLBACK] Lokale Suche durchgeführt:', this.filteredArtikels.length);
+    } else {
+      this.filteredArtikels = [];
+      this.showDropdown = false;
+      this.selectedIndex = -1;
+    }
   }
 
   clearSearch() {
@@ -1638,6 +1751,33 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     this.isArticlePricesModalOpen = false;
     this.articlePricesSearchTerm = '';
     this.filteredArticlePrices = [];
+    // Clear any active notification when closing modal
+    this.hideArticlePricesNotification();
+  }
+
+  showArticlePricesNotification(articleName: string, quantity: number) {
+    // Clear any existing timeout
+    if (this.articlePricesNotificationTimeout) {
+      clearTimeout(this.articlePricesNotificationTimeout);
+    }
+    
+    // Set notification text
+    this.articlePricesNotificationText = `${quantity}x "${articleName}" zum Auftrag hinzugefügt`;
+    this.isArticlePricesNotificationVisible = true;
+    
+    // Auto-hide after 3 seconds
+    this.articlePricesNotificationTimeout = setTimeout(() => {
+      this.hideArticlePricesNotification();
+    }, 3000);
+  }
+
+  hideArticlePricesNotification() {
+    this.isArticlePricesNotificationVisible = false;
+    this.articlePricesNotificationText = '';
+    if (this.articlePricesNotificationTimeout) {
+      clearTimeout(this.articlePricesNotificationTimeout);
+      this.articlePricesNotificationTimeout = null;
+    }
   }
 
   filterArticlePrices() {
@@ -1779,11 +1919,14 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       
       console.log('✅ [ARTICLE-PRICES-MODAL] Artikel erfolgreich zum Auftrag hinzugefügt');
       
+      // Zeige Benachrichtigung
+      this.showArticlePricesNotification(artikel.article_text || artikel.article_name || 'Unbekannter Artikel', quantity);
+      
       // Setze die temporäre Menge zurück
       customerPrice.tempQuantity = null;
       
-      // Schließe das Modal
-      this.closeArticlePricesModal();
+      // Modal bleibt offen - nicht mehr automatisch schließen
+      // this.closeArticlePricesModal();
 
       // Scrolle zur letzten Artikel-Position
       this.scrollToLastArticle();
@@ -2133,5 +2276,117 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     console.log('💾 [RESET-ORDER-PRICES] Aktualisierte Aufträge gespeichert');
 
     console.log('✅ [RESET-ORDER-PRICES] Auftrag-Preise erfolgreich zurückgesetzt');
+  }
+
+  // EAN Assignment Methods
+  openEanAssignmentModal(item: any): void {
+    this.eanAssignmentItem = item;
+    this.eanCode = '';
+    this.eanErrorMessage = '';
+    this.eanSuccessMessage = '';
+    this.isEanAssignmentModalOpen = true;
+    this.isEanScanning = false;
+    this.isAssigningEan = false;
+  }
+
+  closeEanAssignmentModal(): void {
+    this.isEanAssignmentModalOpen = false;
+    this.eanAssignmentItem = null;
+    this.eanCode = '';
+    this.eanErrorMessage = '';
+    this.eanSuccessMessage = '';
+    this.isEanScanning = false;
+    this.isAssigningEan = false;
+  }
+
+  startEanScanner(): void {
+    this.isEanScanning = true;
+    this.eanErrorMessage = '';
+    this.eanSuccessMessage = '';
+  }
+
+  stopEanScanner(): void {
+    this.isEanScanning = false;
+  }
+
+  onEanCodeResult(result: string): void {
+    this.eanCode = result;
+    this.stopEanScanner();
+    this.playBeep();
+  }
+
+  assignEan(): void {
+    if (!this.eanCode.trim()) {
+      this.eanErrorMessage = 'Bitte geben Sie einen EAN-Code ein.';
+      return;
+    }
+
+    if (!/^\d{8}$|^\d{13}$/.test(this.eanCode.trim())) {
+      this.eanErrorMessage = 'EAN-Code muss genau 8 oder 13 Ziffern enthalten.';
+      return;
+    }
+
+    this.isAssigningEan = true;
+    this.eanErrorMessage = '';
+    this.eanSuccessMessage = '';
+
+    const token = localStorage.getItem('token');
+    const payload = {
+      article_number: this.eanAssignmentItem.article_number,
+      ean: this.eanCode.trim()
+    };
+
+    this.http.post('https://multi-mandant-ecommerce.onrender.com/api/product-eans/assign', payload, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    }).subscribe({
+      next: (response: any) => {
+        this.isAssigningEan = false;
+        if (response.success) {
+          this.eanSuccessMessage = 'EAN-Code erfolgreich zugeordnet!';
+          
+          // Update the item in the order
+          this.eanAssignmentItem.ean = this.eanCode.trim();
+          
+          setTimeout(() => {
+            this.closeEanAssignmentModal();
+          }, 2000);
+        } else {
+          this.eanErrorMessage = response.message || 'Fehler beim Zuordnen des EAN-Codes.';
+        }
+      },
+      error: (error: any) => {
+        this.isAssigningEan = false;
+        console.error('Error assigning EAN:', error);
+        this.eanErrorMessage = error.error?.message || 'Fehler beim Zuordnen des EAN-Codes.';
+      }
+    });
+  }
+
+  removeEanFromItem(item: any): void {
+    if (confirm('Möchten Sie die EAN-Zuordnung für diesen Artikel wirklich entfernen?')) {
+      const token = localStorage.getItem('token');
+      
+      this.http.delete(`https://multi-mandant-ecommerce.onrender.com/api/product-eans/ean/${item.ean}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      }).subscribe({
+        next: (response: any) => {
+          if (response.success) {
+            // Remove EAN from the item
+            item.ean = undefined;
+            console.log('EAN erfolgreich entfernt');
+          } else {
+            console.error('Fehler beim Entfernen der EAN:', response.message);
+          }
+        },
+        error: (error: any) => {
+          console.error('Error removing EAN:', error);
+        }
+      });
+    }
   }
 }

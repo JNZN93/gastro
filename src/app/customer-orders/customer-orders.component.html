@@ -92,7 +92,7 @@
                   <th>EK-Preis (€)</th>
                   <th>Kundenpreis (€)</th>
                   <th>Gesamtpreis (€)</th>
-                  <th>Aktionen</th>
+                  <th colspan="2" style="text-align: center;">Aktionen</th>
                 </tr>
               </thead>
               <tbody>
@@ -178,7 +178,7 @@
                            [title]="'Standard-Preis: €' + item.sale_price">
                   </td>
                   <td class="total-price">€{{ (getItemPrice(item) * item.quantity).toFixed(2) }}</td>
-                  <td class="actions">
+                  <td class="remove-column">
                     @if (editingItemIndex === i) {
                       <button (click)="cancelEditItem()" class="cancel-edit-btn" title="Bearbeitung abbrechen">
                         <span class="material-icons">close</span>
@@ -189,14 +189,23 @@
                       </button>
                     }
                   </td>
+                  <td class="ean-column">
+                    @if (editingItemIndex !== i) {
+                      <button class="ean-assign-btn" 
+                              (click)="openEanAssignmentModal(item)"
+                              title="EAN-Code zuweisen">
+                        <span class="material-icons">qr_code_scanner</span>
+                      </button>
+                    }
+                  </td>
                 </tr>
                 }
               </tbody>
               <tfoot>
                 <tr class="order-total-row">
-                  <td colspan="6" class="total-label"><strong>Gesamt:</strong></td>
+                  <td colspan="7" class="total-label"><strong>Gesamt:</strong></td>
                   <td class="total-amount"><strong>€{{ getOrderTotal().toFixed(2) }}</strong></td>
-                  <td></td>
+                  <td colspan="2"></td>
                 </tr>
               </tfoot>
             </table>
@@ -357,6 +366,14 @@
 <!-- Article Prices Modal -->
 <div class="article-prices-modal" *ngIf="isArticlePricesModalOpen">
   <div class="article-prices-modal-content">
+    <!-- Notification -->
+    @if (isArticlePricesNotificationVisible) {
+    <div class="article-prices-notification">
+      <span class="material-icons notification-icon">check_circle</span>
+      <span class="notification-text">{{ articlePricesNotificationText }}</span>
+    </div>
+    }
+    
     <div class="article-prices-modal-header">
       <h2>Artikel-Preise</h2>
       <button class="close-article-prices-modal" (click)="closeArticlePricesModal()">
@@ -482,6 +499,92 @@
         <p>Keine Kunden gefunden.</p>
       </div>
       }
+    </div>
+  </div>
+</div>
+
+<!-- EAN Assignment Modal -->
+<div class="ean-assignment-modal" *ngIf="isEanAssignmentModalOpen">
+  <div class="ean-assignment-modal-content">
+    <div class="ean-assignment-modal-header">
+      <h2>EAN-Code zuweisen</h2>
+      <button class="close-ean-assignment-modal" (click)="closeEanAssignmentModal()">
+        <span class="material-icons">close</span>
+      </button>
+    </div>
+    
+    <div class="ean-assignment-modal-body">
+      <div class="article-info">
+        <h3>{{ eanAssignmentItem?.article_text }}</h3>
+        <p><strong>Artikelnummer:</strong> {{ eanAssignmentItem?.article_number }}</p>
+        @if (eanAssignmentItem?.ean) {
+          <p><strong>Aktuelle EAN:</strong> {{ eanAssignmentItem.ean }}</p>
+        }
+      </div>
+      
+      <div class="ean-input-section">
+        <div class="ean-input-group">
+          <label for="eanCode">EAN-Code (8 oder 13 Ziffern):</label>
+          <div class="ean-input-container">
+            <input type="text" 
+                   id="eanCode"
+                   [(ngModel)]="eanCode" 
+                   placeholder="EAN-Code eingeben oder scannen..."
+                   class="ean-input"
+                   maxlength="13"
+                   (keyup.enter)="assignEan()">
+            <button (click)="startEanScanner()" 
+                    [disabled]="isEanScanning" 
+                    class="scanner-btn"
+                    title="EAN-Code scannen">
+              <span class="material-icons">qr_code_scanner</span>
+            </button>
+          </div>
+        </div>
+        
+        @if (isEanScanning) {
+          <div class="ean-scanner-section">
+            <zxing-scanner 
+              #eanScanner
+              [enable]="isEanScanning"
+              [formats]="formatsEnabled"
+              [device]="selectedDevice"
+              (scanSuccess)="onEanCodeResult($event)">
+            </zxing-scanner>
+            <button (click)="stopEanScanner()" class="stop-scanner-btn">
+              <span class="material-icons">stop</span>
+              Scanner stoppen
+            </button>
+          </div>
+        }
+      </div>
+      
+      @if (eanErrorMessage) {
+        <div class="ean-error-message">
+          <span class="material-icons">error</span>
+          {{ eanErrorMessage }}
+        </div>
+      }
+      
+      @if (eanSuccessMessage) {
+        <div class="ean-success-message">
+          <span class="material-icons">check_circle</span>
+          {{ eanSuccessMessage }}
+        </div>
+      }
+      
+      <div class="ean-assignment-actions">
+        <button (click)="assignEan()" 
+                [disabled]="!eanCode.trim() || isAssigningEan" 
+                class="assign-ean-btn">
+          <span class="material-icons">save</span>
+          EAN zuweisen
+        </button>
+        <button (click)="closeEanAssignmentModal()" class="cancel-ean-btn">
+          <span class="material-icons">close</span>
+          Abbrechen
+        </button>
+      </div>
     </div>
   </div>
 </div>

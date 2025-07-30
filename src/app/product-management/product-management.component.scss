@@ -1361,6 +1361,134 @@
     }
   }
 
+  .existing-eans-section {
+    margin-bottom: 24px;
+    padding: 16px;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+
+    h5 {
+      margin: 0 0 16px 0;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #1f2937;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .loading-eans {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: #6b7280;
+      font-size: 0.875rem;
+
+      svg {
+        width: 16px;
+        height: 16px;
+        color: #3b82f6;
+      }
+    }
+
+    .eans-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+
+      .ean-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px;
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+
+        &:hover {
+          border-color: #10b981;
+          box-shadow: 0 2px 8px rgba(16, 185, 129, 0.1);
+        }
+
+        .ean-code {
+          font-family: 'Courier New', monospace;
+          font-size: 0.875rem;
+          font-weight: 500;
+          color: #374151;
+          letter-spacing: 1px;
+        }
+
+        .ean-actions {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .copy-ean-btn {
+          background: none;
+          border: none;
+          padding: 6px;
+          cursor: pointer;
+          border-radius: 6px;
+          color: #6b7280;
+          transition: all 0.2s ease;
+
+          &:hover {
+            background: #f3f4f6;
+            color: #10b981;
+            transform: scale(1.1);
+          }
+
+          svg {
+            width: 16px;
+            height: 16px;
+          }
+        }
+
+        .delete-ean-btn {
+          background: none;
+          border: none;
+          padding: 6px;
+          cursor: pointer;
+          border-radius: 6px;
+          color: #6b7280;
+          transition: all 0.2s ease;
+
+          &:hover {
+            background: #fef2f2;
+            color: #ef4444;
+            transform: scale(1.1);
+          }
+
+          svg {
+            width: 16px;
+            height: 16px;
+          }
+        }
+      }
+    }
+
+    .no-eans {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: #6b7280;
+      font-size: 0.875rem;
+      padding: 16px;
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+
+      svg {
+        width: 16px;
+        height: 16px;
+        color: #f59e0b;
+      }
+    }
+  }
+
   .ean-input-section {
     margin-bottom: 24px;
 
