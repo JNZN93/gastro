@@ -964,8 +964,8 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       artikel.quantity = 1;
     }
 
-    // Spezielle Behandlung für PFAND-Kategorie: Immer als neue Position hinzufügen
-    if (artikel.category === 'PFAND') {
+    // Spezielle Behandlung für PFAND und SCHNELLVERKAUF-Kategorien: Immer als neue Position hinzufügen
+    if (artikel.category === 'PFAND' || artikel.category === 'SCHNELLVERKAUF') {
       this.orderItems = [
         ...this.orderItems,
         { 
@@ -1715,8 +1715,8 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
         original_price: artikel.sale_price
       };
       
-      // Spezielle Behandlung für PFAND-Kategorie: Immer als neue Position hinzufügen
-      if (artikel.category === 'PFAND') {
+      // Spezielle Behandlung für PFAND und SCHNELLVERKAUF-Kategorien: Immer als neue Position hinzufügen
+      if (artikel.category === 'PFAND' || artikel.category === 'SCHNELLVERKAUF') {
         this.orderItems.push(orderItem);
       } else {
         // Normale Behandlung für alle anderen Kategorien: Summieren wenn gleiche Artikelnummer
