@@ -56,6 +56,9 @@ export class ProductManagementComponent implements OnInit {
   existingEans: Array<{id: number, ean: string}> = [];
   isLoadingEans: boolean = false;
   
+  // Product to search for after operation
+  productToSearchFor: any = null;
+  
   availableDevices: MediaDeviceInfo[] = [];
   selectedDevice?: MediaDeviceInfo;
   formatsEnabled: BarcodeFormat[] = [
@@ -363,6 +366,14 @@ export class ProductManagementComponent implements OnInit {
         this.products = data;
         this.filteredProducts = [...this.products];
         this.isVisible = false; // Verstecke Loading-Screen nach erfolgreichem Laden
+        
+        // Search for product if specified
+        if (this.productToSearchFor) {
+          setTimeout(() => {
+            this.searchForProduct(this.productToSearchFor);
+            this.productToSearchFor = null; // Reset after searching
+          }, 100); // Small delay to ensure DOM is updated
+        }
       },
       error: (error) => {
         console.error('Fehler beim Laden der Produkte:', error);
@@ -646,6 +657,7 @@ export class ProductManagementComponent implements OnInit {
             this.selectedImage = null;
             this.isUploadSectionOpen = false;
             this.loadProducts(); // Refresh the product list
+            this.productToSearchFor = this.selectedProduct; // Set product to search for
           },
           error: (error) => {
             console.error('Error uploading image:', error);
@@ -657,11 +669,15 @@ export class ProductManagementComponent implements OnInit {
 
   removeImage(productId: number): void {
     if (confirm('Möchten Sie das Hauptbild dieses Produkts wirklich entfernen?')) {
+      // Finde das Produkt in der aktuellen Liste
+      const productToRemove = this.products.find(p => p.id === productId);
+      
       this.http.delete(`https://multi-mandant-ecommerce.onrender.com/api/product-images/${productId}/images/remove-main`)
         .subscribe({
           next: () => {
             console.log('Main image removed successfully');
             this.loadProducts(); // Refresh the product list
+            this.productToSearchFor = productToRemove; // Set product to search for
           },
           error: (error) => {
             console.error('Error removing main image:', error);
@@ -672,6 +688,24 @@ export class ProductManagementComponent implements OnInit {
 
   hasImage(product: any): boolean {
     return product.main_image_url && product.main_image_url.trim() !== '';
+  }
+
+  /**
+   * Sucht nach einem spezifischen Produkt nach Upload/Löschung
+   * @param product Das Produkt, nach dem gesucht werden soll
+   */
+  private searchForProduct(product: any): void {
+    // Setze Suchbegriff auf Artikelnummer oder Artikeltext
+    if (product.article_number) {
+      this.searchTerm = product.article_number;
+    } else if (product.article_text) {
+      this.searchTerm = product.article_text;
+    } else if (product.ean) {
+      this.searchTerm = product.ean;
+    }
+    
+    // Aktualisiere die gefilterten Daten
+    this.updateFilteredData();
   }
 
   /**

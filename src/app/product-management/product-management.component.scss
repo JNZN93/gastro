@@ -1250,7 +1250,7 @@
   align-items: center;
   gap: 8px;
   width: 100%;
-  justify-content: center;
+  justify-content: flex-start;
   margin: 4px 0;
 
   svg {
@@ -1277,6 +1277,7 @@
   justify-content: center;
   align-items: center;
   padding: 20px;
+  box-sizing: border-box;
 }
 
 .ean-modal-content {
