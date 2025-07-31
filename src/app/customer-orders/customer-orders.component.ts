@@ -478,6 +478,8 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       this.searchInput.nativeElement.value = '';
       console.log('🧹 [CLEAR-SEARCH] Input-Feld direkt geleert');
     }
+
+    // test log for commit
     
     // Erzwinge Angular Change Detection
     this.cdr.detectChanges();
