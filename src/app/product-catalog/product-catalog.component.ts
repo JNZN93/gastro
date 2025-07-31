@@ -61,6 +61,11 @@ export class ProductCatalogComponent implements OnInit {
   selectedImageProduct: any = null;
   isImageZoomed: boolean = false;
 
+  // Eigenschaften für Toast-Benachrichtigung
+  showToast: boolean = false;
+  toastMessage: string = '';
+  toastType: 'success' | 'error' = 'success';
+
   videoConstraints: MediaTrackConstraints = {
     width: { ideal: 1920 },
     height: { ideal: 1080 }
@@ -296,6 +301,18 @@ export class ProductCatalogComponent implements OnInit {
   audio.play().catch(err => console.error('Fehler beim Abspielen des Tons:', err));
 }
 
+  // Methode zum Anzeigen der Toast-Benachrichtigung
+  showToastNotification(message: string, type: 'success' | 'error' = 'success'): void {
+    this.toastMessage = message;
+    this.toastType = type;
+    this.showToast = true;
+    
+    // Toast nach 3 Sekunden automatisch ausblenden
+    setTimeout(() => {
+      this.showToast = false;
+    }, 3000);
+  }
+
   onImageError(event: Event): void {
     const img = event.target as HTMLImageElement;
     img.src = '/assets/placeholder-product.svg';
@@ -370,6 +387,9 @@ export class ProductCatalogComponent implements OnInit {
       artikel.quantity = 1; // Standardmenge setzen
     }
 
+    // Menge für Toast-Benachrichtigung speichern (bevor sie zurückgesetzt wird)
+    const addedQuantity = Number(artikel.quantity);
+
     // Überprüfen, ob der Artikel bereits im Warenkorb ist
     const existingItem = this.globalService.warenkorb.find(
       (item) => item.article_number == artikel.article_number
@@ -414,6 +434,22 @@ export class ProductCatalogComponent implements OnInit {
     this.getTotalPrice();
     //Warenkorb und Endsumme speichern LocalStorage
     localStorage.setItem('warenkorb', JSON.stringify(this.globalService.warenkorb));
+    
+    // Toast-Benachrichtigung anzeigen
+    const totalQuantity = existingItem ? existingItem.quantity : addedQuantity;
+    
+    let message: string;
+    if (existingItem && existingItem.quantity > addedQuantity) {
+      // Artikel war bereits im Warenkorb und Menge wurde erhöht
+      message = `${addedQuantity}x "${artikel.article_text}" hinzugefügt (${totalQuantity} insgesamt im Warenkorb)`;
+    } else if (addedQuantity > 1) {
+      // Neuer Artikel mit mehreren Stück
+      message = `${addedQuantity}x "${artikel.article_text}" zum Warenkorb hinzugefügt`;
+    } else {
+      // Neuer Artikel mit 1 Stück
+      message = `"${artikel.article_text}" zum Warenkorb hinzugefügt`;
+    }
+    this.showToastNotification(message, 'success');
 }
 
   // Methode zum Prüfen, ob ein Artikel zum Warenkorb hinzugefügt werden kann
@@ -453,6 +489,9 @@ export class ProductCatalogComponent implements OnInit {
     ) {
       artikelToAdd.quantity = 1; // Standardmenge setzen
     }
+
+    // Menge für Toast-Benachrichtigung speichern
+    const addedQuantity = Number(artikelToAdd.quantity);
 
     // Überprüfen, ob der Artikel bereits im Warenkorb ist
     const existingItem = this.globalService.warenkorb.find(
@@ -500,6 +539,22 @@ export class ProductCatalogComponent implements OnInit {
     this.getTotalPrice();
     //Warenkorb und Endsumme speichern LocalStorage
     localStorage.setItem('warenkorb', JSON.stringify(this.globalService.warenkorb));
+    
+    // Toast-Benachrichtigung anzeigen
+    const totalQuantity = existingItem ? existingItem.quantity : addedQuantity;
+    
+    let message: string;
+    if (existingItem && existingItem.quantity > addedQuantity) {
+      // Artikel war bereits im Warenkorb und Menge wurde erhöht
+      message = `${addedQuantity}x "${artikelToAdd.article_text}" hinzugefügt (${totalQuantity} insgesamt im Warenkorb)`;
+    } else if (addedQuantity > 1) {
+      // Neuer Artikel mit mehreren Stück
+      message = `${addedQuantity}x "${artikelToAdd.article_text}" zum Warenkorb hinzugefügt`;
+    } else {
+      // Neuer Artikel mit 1 Stück
+      message = `"${artikelToAdd.article_text}" zum Warenkorb hinzugefügt`;
+    }
+    this.showToastNotification(message, 'success');
     
     console.log('💾 [MODAL-CART] Warenkorb aktualisiert:', this.globalService.warenkorb.length, 'Artikel');
   }

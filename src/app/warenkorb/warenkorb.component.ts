@@ -152,6 +152,33 @@ export class WarenkorbComponent implements OnInit {
     localStorage.setItem('warenkorb', JSON.stringify(this.globalService.warenkorb))
   }
 
+  clearCart() {
+    // Bestätigungsdialog anzeigen
+    const dialogRef = this.dialog.open(MyDialogComponent, {
+      data: {
+        title: 'Warenkorb leeren',
+        message: 'Möchtest du wirklich den gesamten Warenkorb leeren? Diese Aktion kann nicht rückgängig gemacht werden.',
+        isConfirmation: true,
+        confirmLabel: 'Ja, leeren',
+        cancelLabel: 'Abbrechen'
+      },
+      maxWidth: '400px',
+      minWidth: '300px',
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result === true) {
+        // Warenkorb komplett leeren
+        this.globalService.warenkorb = [];
+        this.globalService.totalPrice = 0;
+        localStorage.removeItem('warenkorb');
+        
+        // Ausgewählten Kunden löschen
+        this.globalService.clearSelectedCustomer();
+      }
+    });
+  }
+
   closeWarenkorb(){
     this.toggleService.toggle();
   }
