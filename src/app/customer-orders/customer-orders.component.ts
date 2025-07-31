@@ -1401,6 +1401,21 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
         console.log('❌ [SAVE-ORDER] Auftrag wegen EK-Preis-Warnung abgebrochen');
         return;
       }
+    } else {
+      // Allgemeine Bestätigungsabfrage für den normalen Fall
+      const orderSummary = this.orderItems.map(item => 
+        `${item.quantity}x ${item.article_text} - €${((item.different_price !== undefined ? item.different_price : item.sale_price) * item.quantity).toFixed(2)}`
+      ).join('\n');
+      
+      const totalPrice = this.getOrderTotal();
+      const customerName = this.globalService.selectedCustomerForOrders.last_name_company;
+      
+      const confirmMessage = `📋 Auftrag bestätigen\n\nKunde: ${customerName}\n\nArtikel:\n${orderSummary}\n\nGesamtpreis: €${totalPrice.toFixed(2)}\n\nMöchten Sie diesen Auftrag speichern?`;
+      
+      if (!confirm(confirmMessage)) {
+        console.log('❌ [SAVE-ORDER] Auftrag vom Benutzer abgebrochen');
+        return;
+      }
     }
 
     // Ensure description is set for all items
