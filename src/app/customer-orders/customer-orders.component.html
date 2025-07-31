@@ -500,6 +500,7 @@
         <input type="text" [(ngModel)]="articlePricesSearchTerm" (input)="filterArticlePrices()" placeholder="Nach Artikelbezeichnung, Art.-Nr., EAN oder Produkt-ID suchen..." class="article-prices-search-input">
       </div>
       
+      <!-- Desktop Tabelle -->
       <div class="article-prices-table-container">
         <table class="article-prices-table">
           <thead>
@@ -539,6 +540,59 @@
             }
           </tbody>
         </table>
+      </div>
+      
+      <!-- Mobile Karten-Ansicht für kundenspezifische Preise -->
+      <div class="article-prices-cards">
+        @for (customerPrice of filteredArticlePrices; track customerPrice.product_id) {
+        <div class="article-price-card">
+          <div class="price-card-header">
+            <div class="price-badge">
+              <span class="price-amount">€{{ customerPrice.unit_price_net }}</span>
+              <span class="price-label">Kundenpreis</span>
+            </div>
+            <div class="card-actions">
+              <button class="info-btn" title="Details anzeigen">
+                <span class="material-icons">info</span>
+              </button>
+            </div>
+          </div>
+          
+          <div class="price-card-content">
+            <div class="article-info">
+              <div class="article-name">{{ customerPrice.article_text || 'Unbekannter Artikel' }}</div>
+              <div class="article-number">{{ customerPrice.article_number || customerPrice.product_id }}</div>
+            </div>
+            
+            <div class="invoice-info">
+              <div class="invoice-row">
+                <span class="invoice-label">Rechnung:</span>
+                <span class="invoice-value">{{ customerPrice.invoice_id || '-' }}</span>
+              </div>
+              <div class="invoice-row">
+                <span class="invoice-label">Datum:</span>
+                <span class="invoice-value">{{ formatInvoiceDate(customerPrice.invoice_date) }}</span>
+              </div>
+            </div>
+            
+            <div class="add-to-order-section">
+              <div class="quantity-input-group">
+                <span class="quantity-label">Menge:</span>
+                <input type="number" 
+                       [(ngModel)]="customerPrice.tempQuantity" 
+                       min="1" 
+                       class="quantity-input" 
+                       placeholder="1"
+                       (keyup.enter)="addArticleFromPricesModal(customerPrice)">
+              </div>
+              <button (click)="addArticleFromPricesModal(customerPrice)" class="add-to-order-btn" title="Zum Auftrag hinzufügen">
+                <span class="material-icons">add_shopping_cart</span>
+                <span class="btn-text">Hinzufügen</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        }
       </div>
       
       @if (filteredArticlePrices.length === 0) {
