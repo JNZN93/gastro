@@ -591,8 +591,22 @@
                   <p>{{ customerArticlePrices.length }} Preise verfügbar</p>
                 </div>
                 
+                <!-- Suchfeld für kundenspezifische Preise -->
+                <div class="mobile-prices-search-section">
+                  <div class="prices-search-container">
+                    <input type="text" 
+                           [(ngModel)]="articlePricesSearchTerm" 
+                           (input)="filterArticlePrices()" 
+                           placeholder="Nach Artikelbezeichnung, Art.-Nr., EAN oder Produkt-ID suchen..." 
+                           class="prices-search-input">
+                    <button *ngIf="articlePricesSearchTerm" (click)="clearArticlePricesSearch()" class="clear-prices-search">
+                      <span class="material-icons">close</span>
+                    </button>
+                  </div>
+                </div>
+                
                 <div class="mobile-article-prices-cards">
-                  @for (customerPrice of customerArticlePrices; track customerPrice.product_id) {
+                  @for (customerPrice of filteredArticlePrices; track customerPrice.product_id) {
                   <div class="mobile-article-price-card">
                     <div class="price-card-header">
                       <div class="price-badge">
@@ -637,6 +651,12 @@
                   </div>
                   }
                 </div>
+                
+                @if (articlePricesSearchTerm && filteredArticlePrices.length === 0) {
+                <div class="no-prices-results">
+                  <p>Keine Artikel für "{{ articlePricesSearchTerm }}" gefunden.</p>
+                </div>
+                }
               </div>
               } @else {
               <div class="no-customer-prices">

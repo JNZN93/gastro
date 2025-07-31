@@ -1826,6 +1826,11 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     }
   }
 
+  clearArticlePricesSearch() {
+    this.articlePricesSearchTerm = '';
+    this.filterArticlePrices();
+  }
+
   filterArticlePrices() {
     console.log('🔍 [ARTICLE-PRICES-MODAL] Filtere Artikel-Preise...');
     console.log('🔍 [ARTICLE-PRICES-MODAL] Suchbegriff:', this.articlePricesSearchTerm);
@@ -2483,6 +2488,13 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     if (tab === 'prices' && !this.globalService.selectedCustomerForOrders) {
       return; // Don't allow switching to prices tab if no customer is selected
     }
+    
     this.activeTab = tab;
+    
+    // Wenn zum Preise-Tab gewechselt wird, initialisiere die gefilterten Artikel-Preise
+    if (tab === 'prices') {
+      this.articlePricesSearchTerm = '';
+      this.filterArticlePrices();
+    }
   }
 }
