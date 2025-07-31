@@ -668,8 +668,9 @@
 
             .card-product-image {
               width: 100%;
-              height: 120px;
+              height: 280px;
               object-fit: cover;
+              object-position: center;
               border-radius: 8px;
               border: 2px solid #e5e7eb;
             }
