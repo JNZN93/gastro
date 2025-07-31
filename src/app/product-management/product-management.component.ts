@@ -649,7 +649,6 @@ export class ProductManagementComponent implements OnInit, OnDestroy {
     // Erstelle ein verstecktes File Input Element
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
-    fileInput.accept = 'image/*';
     fileInput.style.display = 'none';
     
     // Event Listener für die Dateiauswahl
