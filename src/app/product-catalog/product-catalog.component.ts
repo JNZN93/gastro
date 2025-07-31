@@ -55,6 +55,12 @@ export class ProductCatalogComponent implements OnInit {
   isLoadingLastOrders: boolean = false;
   currentUserId: string = '';
 
+  // Eigenschaften für Image Modal
+  showImageModal: boolean = false;
+  selectedImageUrl: string = '';
+  selectedImageProduct: any = null;
+  isImageZoomed: boolean = false;
+
   videoConstraints: MediaTrackConstraints = {
     width: { ideal: 1920 },
     height: { ideal: 1080 }
@@ -293,6 +299,30 @@ export class ProductCatalogComponent implements OnInit {
   onImageError(event: Event): void {
     const img = event.target as HTMLImageElement;
     img.src = '/assets/placeholder-product.svg';
+  }
+
+  // Image Modal Methoden
+  openImageModal(artikel: any): void {
+    if (artikel.main_image_url) {
+      this.selectedImageUrl = artikel.main_image_url;
+      this.selectedImageProduct = artikel;
+      this.showImageModal = true;
+      // Body scroll verhindern
+      document.body.style.overflow = 'hidden';
+    }
+  }
+
+  closeImageModal(): void {
+    this.showImageModal = false;
+    this.selectedImageUrl = '';
+    this.selectedImageProduct = null;
+    this.isImageZoomed = false;
+    // Body scroll wieder erlauben
+    document.body.style.overflow = 'auto';
+  }
+
+  toggleImageZoom(): void {
+    this.isImageZoomed = !this.isImageZoomed;
   }
 
   filterCategory(event: Event) {

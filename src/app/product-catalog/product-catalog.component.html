@@ -67,6 +67,7 @@
             [alt]="artikel.article_text"
             class="product-image"
             (error)="onImageError($event)"
+            (click)="openImageModal(artikel)"
             loading="lazy">
           
           <!-- Placeholder für Produkte ohne Bild -->
@@ -233,6 +234,30 @@
 
   <!-- Warenkorb -->
   <app-warenkorb></app-warenkorb>
+
+  <!-- Image Modal für Vollbildanzeige -->
+  <div class="image-modal-overlay" *ngIf="showImageModal" (click)="closeImageModal()"></div>
+  <div class="image-modal" *ngIf="showImageModal">
+    <div class="image-modal-content">
+      <div class="image-modal-header">
+        <h3>{{ selectedImageProduct?.article_text || 'Produktbild' }}</h3>
+        <button (click)="closeImageModal()" class="close-image-modal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <div class="image-modal-body">
+        <img 
+          [src]="selectedImageUrl" 
+          [alt]="selectedImageProduct?.article_text || 'Produktbild'"
+          class="fullsize-image"
+          [class.zoomed]="isImageZoomed"
+          (click)="toggleImageZoom()"
+          (error)="onImageError($event)">
+      </div>
+    </div>
+  </div>
 
   <!-- Loading Screen -->
   @if (isVisible) {
