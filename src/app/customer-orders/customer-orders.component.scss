@@ -4180,14 +4180,10 @@
 
       .article-info {
         display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 12px;
+        flex-direction: column;
+        gap: 8px;
 
         .article-details {
-          flex: 1;
-          min-width: 0;
-
           .article-title {
             margin: 0 0 4px 0;
             font-size: 14px;
@@ -4237,13 +4233,12 @@
 
         .article-actions {
           display: flex;
-          flex-direction: column;
+          align-items: center;
           gap: 8px;
-          align-items: flex-end;
 
           .quantity-input {
-            width: 60px;
-            height: 28px;
+            flex: 1;
+            height: 32px;
             border: 1px solid #ced4da;
             border-radius: 4px;
             padding: 4px 6px;
@@ -4263,6 +4258,7 @@
             justify-content: center;
             cursor: pointer;
             transition: background 0.2s ease;
+            flex-shrink: 0;
 
             &:hover {
               background: #218838;
