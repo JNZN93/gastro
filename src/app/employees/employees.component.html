@@ -91,7 +91,7 @@
                   <th>Art.-Nr.</th>
                   <th>Menge</th>
                   <th>EK-Preis (€)</th>
-                  <th>Kundenpreis (€)</th>
+                  <th>Verkaufspreis (€)</th>
                   <th>Gesamtpreis (€)</th>
                   <th colspan="2" style="text-align: center;">Aktionen</th>
                 </tr>
@@ -166,17 +166,9 @@
                   </td>
                   <td class="cost-price" [title]="'EK-Preis: €' + (item.cost_price || 0).toFixed(2)">€{{ (item.cost_price || 0).toFixed(2) }}</td>
                   <td class="customer-price">
-                    <input type="number" 
-                           [(ngModel)]="item.different_price" 
-                           step="0.01" 
-                           min="0" 
-                           class="price-edit" 
-                           [class.custom-price]="item.different_price !== undefined && item.different_price !== null && item.different_price !== ''"
-                           (input)="onPriceInput(item)"
-                           (change)="updateItemTotal(item)"
-                           (blur)="validateAndUpdatePrice(item)"
-                           [placeholder]="item.sale_price"
-                           [title]="'Standard-Preis: €' + item.sale_price">
+                    <span class="price-display" [title]="'Standard-Preis: €' + item.sale_price">
+                      €{{ getItemPrice(item).toFixed(2) }}
+                    </span>
                   </td>
                   <td class="total-price">€{{ (getItemPrice(item) * item.quantity).toFixed(2) }}</td>
                   <td class="remove-column">
@@ -514,19 +506,9 @@
                         <span class="price-label">Standard-Preis:</span>
                         <span class="price-value standard-price">€{{ item.sale_price }}</span>
                       </div>
-                      <div class="price-row" [class.active]="item.different_price !== undefined && item.different_price !== null && item.different_price !== ''">
-                        <span class="price-label">Kundenpreis:</span>
-                        <input type="number" 
-                               [(ngModel)]="item.different_price" 
-                               step="0.01" 
-                               min="0" 
-                               class="price-edit" 
-                               [class.custom-price]="item.different_price !== undefined && item.different_price !== null && item.different_price !== ''"
-                               (input)="onPriceInput(item)"
-                               (change)="updateItemTotal(item)"
-                               (blur)="validateAndUpdatePrice(item)"
-                               [placeholder]="item.sale_price"
-                               [title]="'Standard-Preis: €' + item.sale_price">
+                      <div class="price-row">
+                        <span class="price-label">Verkaufspreis:</span>
+                        <span class="price-value customer-price">€{{ getItemPrice(item).toFixed(2) }}</span>
                       </div>
                     </div>
                     

@@ -1249,11 +1249,10 @@ export class EmployeesComponent implements OnInit, OnDestroy {
     return item.different_price !== undefined ? item.different_price : item.sale_price;
   }
 
-  // Neue Methode für Input-Event - nur Gesamtsumme aktualisieren, keine Validierung
+  // Preis-Eingabe ist in der Employees-Komponente deaktiviert
   onPriceInput(item: any): void {
-    // Nur die Gesamtsumme aktualisieren, ohne Validierung
-    // Das verhindert, dass unvollständige Eingaben gelöscht werden
-    console.log('📝 [PRICE-INPUT] Preis-Eingabe:', item.different_price);
+    // Keine Aktion - Preise können nicht manuell geändert werden
+    console.log('🚫 [PRICE-INPUT] Preis-Änderung in Employees-Komponente nicht erlaubt');
   }
 
   // Neue Methode für Quantity Input-Event - nur Gesamtsumme aktualisieren, keine Validierung
@@ -1263,55 +1262,10 @@ export class EmployeesComponent implements OnInit, OnDestroy {
     console.log('📝 [QUANTITY-INPUT] Menge-Eingabe:', item.quantity);
   }
 
-  // Neue Methode für Blur-Event - vollständige Validierung
+  // Preis-Validierung ist in der Employees-Komponente deaktiviert
   validateAndUpdatePrice(item: any): void {
-    console.log('💰 [VALIDATE-PRICE] Validiere Preis für Artikel:', item.article_text);
-    console.log('💰 [VALIDATE-PRICE] Eingabe:', item.different_price);
-    
-    // Stelle sicher, dass die Werte numerisch sind
-    item.quantity = Number(item.quantity) || 1;
-    
-    // Prüfe, ob das Preis-Feld leer ist oder ungültige Werte enthält
-    if (item.different_price === '' || item.different_price === null || item.different_price === undefined) {
-      // Feld ist leer - verwende Standard-Preis
-      item.different_price = undefined;
-      console.log('🔄 [VALIDATE-PRICE] Feld ist leer - verwende Standard-Preis:', item.sale_price);
-    } else {
-      // Preis wurde eingegeben - validiere und verwende ihn
-      // Konvertiere String zu Number und behandle Dezimalzahlen korrekt
-      let newPrice: number;
-      
-      if (typeof item.different_price === 'string') {
-        // Ersetze Komma durch Punkt für korrekte Zahl-Konvertierung
-        // Entferne auch alle Leerzeichen
-        const cleanPrice = item.different_price.replace(/\s/g, '').replace(',', '.');
-        
-        // Prüfe, ob es eine gültige Dezimalzahl ist
-        if (!/^\d*\.?\d+$/.test(cleanPrice)) {
-          console.warn('⚠️ [VALIDATE-PRICE] Ungültiges Format für Dezimalzahl');
-          item.different_price = undefined;
-          this.updateItemTotal(item);
-          return;
-        }
-        
-        newPrice = parseFloat(cleanPrice);
-      } else {
-        newPrice = Number(item.different_price);
-      }
-      
-      // Validierung: Preis muss positiv sein
-      if (isNaN(newPrice) || newPrice < 0) {
-        console.warn('⚠️ [VALIDATE-PRICE] Ungültiger Preis, setze auf Standard-Preis');
-        item.different_price = undefined;
-      } else {
-        // Runde auf 2 Dezimalstellen für Konsistenz
-        item.different_price = Math.round(newPrice * 100) / 100;
-        console.log('✅ [VALIDATE-PRICE] different_price aktualisiert auf:', item.different_price);
-      }
-    }
-    
-    // Rufe updateItemTotal auf für die finale Berechnung
-    this.updateItemTotal(item);
+    // Keine Aktion - Preise können nicht manuell geändert werden
+    console.log('🚫 [VALIDATE-PRICE] Preis-Validierung in Employees-Komponente nicht erlaubt');
   }
 
   // Neue Methode für Quantity Blur-Event - vollständige Validierung
@@ -1923,12 +1877,11 @@ export class EmployeesComponent implements OnInit, OnDestroy {
       // Verwende die eingegebene Menge oder Standard 1
       const quantity = customerPrice.tempQuantity && customerPrice.tempQuantity > 0 ? parseInt(customerPrice.tempQuantity) : 1;
       
-      // Erstelle einen neuen Auftrag-Artikel mit den kundenspezifischen Preisen
+      // Erstelle einen neuen Auftrag-Artikel mit Standard-Preisen (keine manuellen Preisänderungen in Employees-Komponente)
       const orderItem = {
         ...artikel,
-        quantity: quantity,
-        different_price: parseFloat(customerPrice.unit_price_net),
-        original_price: artikel.sale_price
+        quantity: quantity
+        // Kein different_price - verwende immer Standard-Preis
       };
       
       // Spezielle Behandlung für PFAND und SCHNELLVERKAUF-Kategorien: Immer als neue Position hinzufügen
@@ -2160,7 +2113,7 @@ export class EmployeesComponent implements OnInit, OnDestroy {
       let updatedCount = 0;
       let unchangedCount = 0;
 
-      // Aktualisiere die globalen Artikel mit den kundenspezifischen Preisen
+      // Aktualisiere die globalen Artikel mit den kundenspezifischen Preisen (nur für Anzeige)
       this.globalArtikels = this.globalArtikels.map(artikel => {
         // Erweiterte Suche: Versuche verschiedene Felder zu finden
         let customerPrice = customerPriceMap.get(artikel.article_number);
@@ -2186,7 +2139,7 @@ export class EmployeesComponent implements OnInit, OnDestroy {
           updatedCount++;
           return {
             ...artikel,
-            different_price: customerNetPrice, // Füge den kundenspezifischen Preis als different_price hinzu
+            different_price: customerNetPrice, // Füge den kundenspezifischen Preis als different_price hinzu (nur für Anzeige)
             original_price: originalPrice // Behalte den ursprünglichen Preis
           };
         } else {
@@ -2213,7 +2166,7 @@ export class EmployeesComponent implements OnInit, OnDestroy {
         this.filteredArtikelData();
       }
       
-      // Aktualisiere die Preise der Artikel im aktuellen Auftrag
+      // Aktualisiere die Preise der Artikel im aktuellen Auftrag (nur für Anzeige)
       this.updateOrderItemsPrices(customerPriceMap);
       
       console.log('✅ [UPDATE-PRICES] Artikel mit kundenspezifischen Preisen erfolgreich aktualisiert');
@@ -2278,7 +2231,7 @@ export class EmployeesComponent implements OnInit, OnDestroy {
         return {
           ...orderItem,
           // sale_price bleibt unverändert (Standard-Preis)
-          different_price: customerNetPrice, // Setze den kundenspezifischen Preis
+          different_price: customerNetPrice, // Setze den kundenspezifischen Preis (nur für Anzeige)
           original_price: originalPrice // Behalte den ursprünglichen Standard-Preis
         };
       } else {
