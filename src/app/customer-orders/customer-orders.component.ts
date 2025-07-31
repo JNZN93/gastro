@@ -21,6 +21,7 @@ import { HttpClient, HttpClientModule } from '@angular/common/http';
 export class CustomerOrdersComponent implements OnInit, OnDestroy {
   @ViewChild(ZXingScannerComponent) scanner!: ZXingScannerComponent;
   @ViewChild('searchInput') searchInput!: any;
+  @ViewChild('mobileSearchInput') mobileSearchInput!: any;
   @ViewChild('articlesDropdown') articlesDropdown!: any;
   @ViewChild('orderTableContainer') orderTableContainer!: any;
   @ViewChild('eanCodeInput') eanCodeInput!: any;
@@ -593,6 +594,31 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     }, 100); // Etwas länger warten für bessere DOM-Synchronisation nach Artikel-Hinzufügung
   }
 
+  // Hilfsmethode um den Fokus auf das Suchfeld zu setzen
+  focusSearchInput(): void {
+    // In mobile and tablet view, automatically switch to search tab
+    if (window.innerWidth <= 768) {
+      this.setActiveTab('search');
+    }
+    
+    setTimeout(() => {
+      // Verwende das korrekte Input-Feld basierend auf der Bildschirmgröße
+      const isMobile = window.innerWidth <= 768;
+      const targetInput = isMobile ? this.mobileSearchInput : this.searchInput;
+      
+      if (targetInput && targetInput.nativeElement) {
+        // Fokus setzen und explizit den Cursor in das Feld setzen
+        targetInput.nativeElement.focus();
+        targetInput.nativeElement.select(); // Selektiert den gesamten Text (falls vorhanden)
+        
+        // Zusätzlich für mobile Geräte: Click-Event simulieren für bessere Tastatur-Aktivierung
+        if (isMobile && 'ontouchstart' in window) {
+          targetInput.nativeElement.click();
+        }
+      }
+    }, 150); // Etwas länger warten für bessere mobile Kompatibilität
+  }
+
   selectArticle() {
     if (this.selectedIndex >= 0 && this.selectedIndex < this.filteredArtikels.length) {
       const selectedArticle = this.filteredArtikels[this.selectedIndex];
@@ -827,18 +853,8 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     this.searchTerm = '';
     this.filteredArtikelData();
     
-    // In mobile and tablet view, automatically switch to search tab
-    // Check if we're in mobile/tablet view (screen width <= 768px)
-    if (window.innerWidth <= 768) {
-      this.setActiveTab('search');
-    }
-    
-    // Focus search input after a short delay to ensure DOM is ready
-    setTimeout(() => {
-      if (this.searchInput && this.searchInput.nativeElement) {
-        this.searchInput.nativeElement.focus();
-      }
-    }, 100);
+    // Fokussiere auf das Suchfeld
+    this.focusSearchInput();
   }
 
   cancelEditItem(): void {
@@ -1179,11 +1195,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     this.filteredArtikelData();
     
     // Fokussiere zurück auf das Suchfeld
-    setTimeout(() => {
-      if (this.searchInput && this.searchInput.nativeElement) {
-        this.searchInput.nativeElement.focus();
-      }
-    }, 100);
+    this.focusSearchInput();
 
     // Scrolle zur letzten Artikel-Position
     this.scrollToLastArticle();
@@ -1978,6 +1990,9 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       
       // Modal bleibt offen - nicht mehr automatisch schließen
       // this.closeArticlePricesModal();
+
+      // Fokussiere zurück auf das Suchfeld
+      this.focusSearchInput();
 
       // Scrolle zur letzten Artikel-Position
       this.scrollToLastArticle();
