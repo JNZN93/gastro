@@ -83,6 +83,9 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   draggedIndex: number = -1;
   dragOverIndex: number = -1;
   
+  // Mobile Tab properties
+  activeTab: 'search' | 'order' | 'prices' = 'search';
+  
   availableDevices: MediaDeviceInfo[] = [];
   selectedDevice?: MediaDeviceInfo;
   formatsEnabled: BarcodeFormat[] = [
@@ -2465,5 +2468,13 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       input.value = limitedValue;
       this.eanCode = limitedValue;
     }
+  }
+
+  // Mobile Tab methods
+  setActiveTab(tab: 'search' | 'order' | 'prices'): void {
+    if (tab === 'prices' && !this.globalService.selectedCustomerForOrders) {
+      return; // Don't allow switching to prices tab if no customer is selected
+    }
+    this.activeTab = tab;
   }
 }
