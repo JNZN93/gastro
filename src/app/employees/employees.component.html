@@ -1,131 +1,703 @@
-<div class="employees-dashboard">
-  <!-- Header Section -->
-  <div class="dashboard-header">
-    <div class="header-content">
+<div class="article-container">
 
-      <div class="header-actions">
-        <button (click)="startScanner()" [disabled]="isScanning" class="scanner-btn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V6a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1zm12 0h2a1 1 0 001-1V6a1 1 0 00-1-1h-2a1 1 0 00-1 1v1a1 1 0 001 1zM5 20h2a1 1 0 001-1v-1a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1z"/>
-          </svg>
-        </button>
-        <div class="search-box">
-          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-          </svg>
-          <input type="text" [(ngModel)]="searchTerm" (input)="updateFilteredData()" placeholder="Artikel suchen..." class="search-input">
-          <button *ngIf="searchTerm" (click)="clearSearch()" class="clear-search">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-            </svg>
-          </button>
-        </div>
-        <button (click)="openCustomerModal()" class="customer-btn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/>
-          </svg>
-        </button>
-      </div>
-    </div>
-  </div>
-
-
-
-  <!-- Customer Info Section -->
-  <div class="customer-info-section">
-    @if (globalService.selectedCustomer) {
-    <div class="customer-actions-row">
-      <div class="selected-customer-info">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-        </svg>
-        <span class="customer-info-text">
-          {{ globalService.selectedCustomer.customer_number }} - {{ globalService.selectedCustomer.last_name_company || 'Kein Name' }}
-        </span>
-        <button class="clear-customer-btn" (click)="clearSelectedCustomer()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-          </svg>
-        </button>
-      </div>
-      
-      <div class="customer-pricing-info" (click)="openArticlePricesModal()">
-        @if (customerArticlePrices.length > 0) {
-          <div class="pricing-status success">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-            <span>{{ customerArticlePrices.length }} kundenspezifische Preise verfügbar</span>
-            <svg class="click-hint" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
-            </svg>
-          </div>
-        } @else {
-          <div class="pricing-status standard">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-            <span>Standard-Preise werden verwendet</span>
-            <svg class="click-hint" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
-            </svg>
-          </div>
-        }
-      </div>
-    </div>
-    }
-  </div>
-
-  <!-- Articles Grid -->
-  <div class="articles-section">
-    <div class="section-header">
-      <h2 class="section-title">Artikel</h2>
-      <p class="section-subtitle">{{ filteredArtikelData.length }} von {{ artikelData.length }} Artikeln</p>
-    </div>
-
-    <div class="articles-grid">
-      @for (artikel of filteredArtikelData; track $index) {
-      <div class="article-card">
-        <div class="article-header">
-          <h3 class="article-title">{{ artikel.article_text }}</h3>
-          <p class="article-number">Art.-Nr: {{ artikel.article_number }}</p>
-        </div>
-        
-        <div class="price-display">
-          @if (artikel.different_price !== undefined) {
-            <div class="customer-price">
-              <span class="price-label">Kundenpreis:</span>
-              <span class="price-value customer-price-value">{{ artikel.different_price | number:'1.2-2' }}€</span>
-            </div>
-            <div class="original-price">
-              <span class="price-label">Standardpreis:</span>
-              <span class="price-value original-price-value">{{ artikel.sale_price | number:'1.2-2' }}€</span>
-            </div>
-          } @else {
-            <div class="standard-price">
-              <span class="price-label">Preis:</span>
-              <span class="price-value">{{ artikel.sale_price | number:'1.2-2' }}€</span>
-            </div>
-          }
-        </div>
-        
-        <div class="article-actions">
-          <div class="quantity-input-group">
-            <input type="number" [(ngModel)]="artikel.quantity" placeholder="Menge" class="quantity-input" min="1">
-            <button (click)="addToCart($event, artikel)" class="add-to-cart-btn">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m8 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01"/>
-              </svg>
-              In den Warenkorb
+  <div class="content">
+    <!-- Desktop Ansicht (unverändert) -->
+    <div class="main-content desktop-view">
+      <!-- Linke Spalte: Auftrag -->
+      <div class="order-column">
+        @if (globalService.selectedCustomerForOrders) {
+        <div class="order-section">
+          <div class="order-header">
+            <h3>Auftrag für {{ globalService.selectedCustomerForOrders.last_name_company || globalService.selectedCustomerForOrders.customer_number }}</h3>
+            <button (click)="openCustomerModal()" class="change-customer-btn">
+              <span class="material-icons">swap_horiz</span>
+              Kunde wechseln
             </button>
           </div>
+          
+          <!-- Kunden-Info-Box -->
+          <div class="customer-info-box">
+            <div class="customer-details">
+              <div class="customer-basic-info">
+                <div class="company-name-container" 
+                     [class.editing]="isEditingCompanyName"
+                     title="Klicken zum Bearbeiten des Firmennamens">
+                  @if (isEditingCompanyName) {
+                    <input type="text" 
+                           [(ngModel)]="editingCompanyName"
+                           (keydown)="onCompanyNameKeyDown($event)"
+                           (blur)="saveCompanyName()"
+                           class="company-name-edit-input"
+                           autofocus>
+                  } @else {
+                    <h4 (click)="startEditCompanyName()">
+                      {{ differentCompanyName || globalService.selectedCustomerForOrders.last_name_company || globalService.selectedCustomerForOrders.customer_number }}
+                      @if (differentCompanyName) {
+                        <span class="edit-indicator">(geändert)</span>
+                      }
+                    </h4>
+                  }
+                </div>
+                @if (globalService.selectedCustomerForOrders.name_addition) {
+                  <p class="customer-addition">{{ globalService.selectedCustomerForOrders.name_addition }}</p>
+                }
+                @if (globalService.selectedCustomerForOrders.street || globalService.selectedCustomerForOrders.postal_code || globalService.selectedCustomerForOrders.city) {
+                  <p class="customer-location">
+                    @if (globalService.selectedCustomerForOrders.street) {
+                      {{ globalService.selectedCustomerForOrders.street }}
+                    }
+                    @if (globalService.selectedCustomerForOrders.postal_code || globalService.selectedCustomerForOrders.city) {
+                      <br>
+                      @if (globalService.selectedCustomerForOrders.postal_code) {
+                        {{ globalService.selectedCustomerForOrders.postal_code }}
+                      }
+                      @if (globalService.selectedCustomerForOrders.city) {
+                        {{ globalService.selectedCustomerForOrders.city }}
+                      }
+                    }
+                  </p>
+                }
+              </div>
+              <div class="customer-pricing-info">
+                @if (customerArticlePrices.length > 0) {
+                  <div class="pricing-status success" (click)="openArticlePricesModal()" style="cursor: pointer;">
+                    <span class="material-icons">check_circle</span>
+                    <span>{{ customerArticlePrices.length }} kundenspezifische Preise verfügbar</span>
+                    <span class="material-icons click-hint">open_in_new</span>
+                  </div>
+                } @else {
+                  <div class="pricing-status standard" (click)="openArticlePricesModal()" style="cursor: pointer;">
+                    <span class="material-icons">info</span>
+                    <span>Standard-Preise werden verwendet</span>
+                    <span class="material-icons click-hint">open_in_new</span>
+                  </div>
+                }
+              </div>
+            </div>
+            <button (click)="confirmClearSelectedCustomer()" class="clear-customer-btn" title="Kunde entfernen">
+              <span class="material-icons">close</span>
+            </button>
+          </div>
+          
+          @if (orderItems.length > 0) {
+          <div class="order-table-container" #orderTableContainer>
+            <!-- Desktop Tabelle -->
+            <table class="order-table">
+              <thead>
+                <tr>
+                  <th>Pos.</th>
+                  <th style="width: 30px;"></th>
+                  <th>Artikel</th>
+                  <th>Art.-Nr.</th>
+                  <th>Menge</th>
+                  <th>EK-Preis (€)</th>
+                  <th>Kundenpreis (€)</th>
+                  <th>Gesamtpreis (€)</th>
+                  <th colspan="2" style="text-align: center;">Aktionen</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of orderItems; track $index; let i = $index) {
+                <tr class="order-row" 
+                    [class.editing]="editingItemIndex === i"
+                    [draggable]="editingItemIndex !== i && editingArticleNameIndex !== i"
+                    (dragstart)="onDragStart($event, i)"
+                    (dragover)="onDragOver($event)"
+                    (drop)="onDrop($event, i)"
+                    (dragenter)="onDragEnter($event)"
+                    (dragleave)="onDragLeave($event)"
+                    [class.drag-over]="dragOverIndex === i"
+                    [class.dragging]="draggedIndex === i">
+                  <td class="position">
+                    <div class="position-content">
+                      <span class="position-number">{{ i + 1 }}</span>
+                      @if (editingItemIndex !== i && editingArticleNameIndex !== i) {
+                        <span class="drag-handle material-icons">drag_indicator</span>
+                      }
+                    </div>
+                  </td>
+                  <td class="info-column">
+                    <button class="info-btn" 
+                            (click)="showArticleNotes(i)"
+                            title="Artikel-Notizen anzeigen">
+                      <span class="material-icons">info</span>
+                    </button>
+                  </td>
+                  <td class="article-name">
+                    <div class="article-name-container" 
+                         [class.editing-name]="editingArticleNameIndex === i"
+                         title="Klicken zum Bearbeiten des Artikelnamens">
+                      @if (editingArticleNameIndex === i) {
+                        <input type="text" 
+                               [(ngModel)]="editingArticleName"
+                               (keydown)="onArticleNameKeyDown($event, i)"
+                               (blur)="saveArticleName(i)"
+                               (focus)="onArticleNameFocus(i)"
+                               class="article-name-edit-input"
+                               #articleNameInput>
+                      } @else {
+                        <span class="article-text" (click)="startEditArticleName(i)">{{ item.article_text }}</span>
+                      }
+                    </div>
+                  </td>
+                  <td class="article-number">
+                    <div class="article-number-container" 
+                         [class.editing]="editingItemIndex === i"
+                         (click)="startEditItem(i)"
+                         title="Klicken zum Bearbeiten">
+                      <span class="article-number-text">{{ item.article_number }}</span>
+                      @if (editingItemIndex === i) {
+                        <span class="edit-indicator">
+                          <span class="material-icons">edit</span>
+                          Bearbeite...
+                        </span>
+                      }
+                    </div>
+                  </td>
+                  <td class="quantity">
+                    <input type="number" 
+                           [(ngModel)]="item.quantity" 
+                           step="0.01" 
+                           min="0.01" 
+                           class="quantity-edit" 
+                           (input)="onQuantityInput(item)"
+                           (change)="updateItemTotal(item)"
+                           (blur)="validateAndUpdateQuantity(item)">
+                  </td>
+                  <td class="cost-price" [title]="'EK-Preis: €' + (item.cost_price || 0).toFixed(2)">€{{ (item.cost_price || 0).toFixed(2) }}</td>
+                  <td class="customer-price">
+                    <input type="number" 
+                           [(ngModel)]="item.different_price" 
+                           step="0.01" 
+                           min="0" 
+                           class="price-edit" 
+                           [class.custom-price]="item.different_price !== undefined && item.different_price !== null && item.different_price !== ''"
+                           (input)="onPriceInput(item)"
+                           (change)="updateItemTotal(item)"
+                           (blur)="validateAndUpdatePrice(item)"
+                           [placeholder]="item.sale_price"
+                           [title]="'Standard-Preis: €' + item.sale_price">
+                  </td>
+                  <td class="total-price">€{{ (getItemPrice(item) * item.quantity).toFixed(2) }}</td>
+                  <td class="remove-column">
+                    @if (editingItemIndex === i) {
+                      <button (click)="cancelEditItem()" class="cancel-edit-btn" title="Bearbeitung abbrechen">
+                        <span class="material-icons">close</span>
+                      </button>
+                    } @else {
+                      <button (click)="confirmRemoveFromOrder(i)" class="remove-btn" title="Entfernen">
+                        <span class="material-icons">delete</span>
+                      </button>
+                    }
+                  </td>
+                  <td class="ean-column">
+                    @if (editingItemIndex !== i) {
+                      <button class="ean-assign-btn" 
+                              (click)="openEanAssignmentModal(item)"
+                              title="EAN-Code zuweisen">
+                        <span class="material-icons">qr_code_scanner</span>
+                      </button>
+                    }
+                  </td>
+                </tr>
+                }
+              </tbody>
+              <tfoot>
+                <tr class="order-total-row">
+                  <td colspan="7" class="total-label"><strong>Gesamt:</strong></td>
+                  <td class="total-amount"><strong>€{{ getOrderTotal().toFixed(2) }}</strong></td>
+                  <td colspan="2"></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          
+          <div class="order-actions">
+            <button (click)="saveOrder()" class="save-order-btn">
+              <span class="material-icons">save</span>
+              Auftrag speichern
+            </button>
+            <button (click)="confirmClearOrder()" class="clear-order-btn">
+              <span class="material-icons">clear</span>
+              Auftrag löschen
+            </button>
+          </div>
+          } @else {
+          <div class="no-items">
+            <p>Noch keine Artikel im Auftrag. Suchen Sie nach Artikeln und fügen Sie sie hinzu.</p>
+          </div>
+          }
+        </div>
+        } @else {
+        <div class="no-customer-selected">
+          <h3>Auftragserstellung</h3>
+          <p>Bitte wählen Sie zuerst einen Kunden aus, um einen Auftrag zu erstellen.</p>
+          <button (click)="openCustomerModal()" class="select-customer-btn">
+            <span class="material-icons">people</span>
+            Kunde auswählen
+          </button>
+        </div>
+        }
+      </div>
+
+      <!-- Rechte Spalte: Artikelauswahl -->
+      <div class="articles-column">
+        <div class="articles-section">
+          <h3>Artikelauswahl</h3>
+          
+          <div class="search-container">
+            @if (editingItemIndex !== -1) {
+              <div class="edit-mode-indicator">
+                <span class="material-icons">edit</span>
+                <span>Bearbeite: {{ orderItems[editingItemIndex].article_text }}</span>
+                <button (click)="cancelEditItem()" class="cancel-edit-mode-btn">
+                  <span class="material-icons">close</span>
+                </button>
+              </div>
+            }
+            <div class="search-and-scanner-container">
+              <div class="search-input-wrapper" [class.edit-mode]="editingItemIndex !== -1">
+                <input #searchInput 
+                       type="text" 
+                       [(ngModel)]="searchTerm" 
+                       (input)="filteredArtikelData()" 
+                       (keydown)="onKeyDown($event)"
+                       (focus)="onSearchFocus()"
+                       [placeholder]="editingItemIndex !== -1 ? 'Neuen Artikel suchen...' : 'Artikel suchen...'"
+                       class="search-input">
+                <button *ngIf="searchTerm" (click)="clearSearch()" class="clear-search">
+                  <span class="material-icons">close</span>
+                </button>
+              </div>
+              <button (click)="startScanner()" [disabled]="isScanning" class="scanner-btn">
+                <span class="material-symbols-outlined">barcode</span>
+              </button>
+            </div>
+          </div>
+          
+          @if (showDropdown && filteredArtikels.length > 0) {
+          <div class="articles-dropdown" #articlesDropdown>
+            @for (artikel of filteredArtikels; track $index) {
+            <div class="article-dropdown-item" 
+                 [class.selected]="selectedIndex === $index"
+                 (click)="onArticleClick(artikel)">
+              <div class="article-info">
+                <div class="article-details">
+                  <h4 class="article-title" [ngClass]="getArticleTitleClass(artikel.article_text)">{{ artikel.article_text }}</h4>
+                  <p class="article-number">Art.-Nr: {{ artikel.article_number }}</p>
+                  <p class="article-price">
+                    <span class="cost-price" [title]="'EK-Preis: €' + (artikel.cost_price || 0).toFixed(2)">EK: €{{ (artikel.cost_price || 0).toFixed(2) }}</span>
+                    @if (artikel.different_price !== undefined) {
+                      <span class="customer-price">Kundenpreis: €{{ artikel.different_price }}</span>
+                      <span class="original-price">(Standard: €{{ artikel.sale_price }})</span>
+                    } @else {
+                      <span class="standard-price">VK: €{{ artikel.sale_price }}</span>
+                    }
+                  </p>
+                </div>
+                <div class="article-actions">
+                  <input type="number" 
+                         [(ngModel)]="artikel.quantity" 
+                         placeholder="Menge" 
+                         class="quantity-input" 
+                         min="1" 
+                         (click)="$event.stopPropagation()"
+                         (keydown)="onQuantityInputKeyDown($event, $index)">
+                  <button (click)="addToOrder($event, artikel); $event.stopPropagation()" class="add-to-order-btn">
+                    <span class="material-icons">
+                      {{ editingItemIndex !== -1 ? 'swap_horiz' : 'add_shopping_cart' }}
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </div>
+            }
+          </div>
+          } @else if (!searchTerm) {
+          <div class="no-search">
+            <p>Geben Sie einen Suchbegriff ein, um Artikel zu finden.</p>
+          </div>
+          } @else {
+          <div class="no-results">
+            <p>Keine Artikel für "{{ searchTerm }}" gefunden.</p>
+          </div>
+          }
         </div>
       </div>
+    </div>
+
+    <!-- Mobile Ansicht mit Tabs -->
+    <div class="mobile-view">
+      <!-- Kunden-Header für Mobile -->
+      @if (globalService.selectedCustomerForOrders) {
+      <div class="mobile-customer-header">
+        <div class="customer-info">
+          <h3>{{ globalService.selectedCustomerForOrders.last_name_company || globalService.selectedCustomerForOrders.customer_number }}</h3>
+          @if (globalService.selectedCustomerForOrders.name_addition) {
+            <p class="customer-addition">{{ globalService.selectedCustomerForOrders.name_addition }}</p>
+          }
+        </div>
+        <div class="customer-actions">
+          <button (click)="openCustomerModal()" class="change-customer-btn">
+            <span class="material-icons">swap_horiz</span>
+          </button>
+          <button (click)="confirmClearSelectedCustomer()" class="clear-customer-btn">
+            <span class="material-icons">close</span>
+          </button>
+        </div>
+      </div>
+      } @else {
+      <div class="mobile-no-customer">
+        <h3>Auftragserstellung</h3>
+        <button (click)="openCustomerModal()" class="select-customer-btn">
+          <span class="material-icons">people</span>
+          Kunde auswählen
+        </button>
+      </div>
       }
+
+      <!-- Mobile Tabs -->
+      <div class="mobile-tabs">
+        <!-- Tab Content -->
+        <div class="tab-content">
+          <!-- Tab 1: Artikel suchen -->
+          <div class="tab-panel" [class.active]="activeTab === 'search'">
+            <div class="mobile-search-section">
+              <div class="search-container">
+                @if (editingItemIndex !== -1) {
+                  <div class="edit-mode-indicator">
+                    <span class="material-icons">edit</span>
+                    <span>Bearbeite: {{ orderItems[editingItemIndex].article_text }}</span>
+                    <button (click)="cancelEditItem()" class="cancel-edit-mode-btn">
+                      <span class="material-icons">close</span>
+                    </button>
+                  </div>
+                }
+                <div class="search-and-scanner-container">
+                  <div class="search-input-wrapper" [class.edit-mode]="editingItemIndex !== -1">
+                    <input #mobileSearchInput 
+                           type="text" 
+                           [(ngModel)]="searchTerm" 
+                           (input)="filteredArtikelData()" 
+                           (keydown)="onKeyDown($event)"
+                           (focus)="onSearchFocus()"
+                           [placeholder]="editingItemIndex !== -1 ? 'Neuen Artikel suchen...' : 'Artikel suchen...'"
+                           class="search-input">
+                    <button *ngIf="searchTerm" (click)="clearSearch()" class="clear-search">
+                      <span class="material-icons">close</span>
+                    </button>
+                  </div>
+                  <button (click)="startScanner()" [disabled]="isScanning" class="scanner-btn">
+                    <span class="material-symbols-outlined">barcode</span>
+                  </button>
+                </div>
+              </div>
+              
+              @if (showDropdown && filteredArtikels.length > 0) {
+              <div class="mobile-articles-dropdown" #mobileArticlesDropdown>
+                @for (artikel of filteredArtikels; track $index) {
+                <div class="mobile-article-dropdown-item" 
+                     [class.selected]="selectedIndex === $index"
+                     (click)="onArticleClick(artikel)">
+                  <div class="article-info">
+                    <div class="article-details">
+                      <h4 class="article-title" [ngClass]="getArticleTitleClass(artikel.article_text)">{{ artikel.article_text }}</h4>
+                      <p class="article-number">Art.-Nr: {{ artikel.article_number }}</p>
+                      <p class="article-price">
+                        <span class="cost-price" [title]="'EK-Preis: €' + (artikel.cost_price || 0).toFixed(2)">EK: €{{ (artikel.cost_price || 0).toFixed(2) }}</span>
+                        @if (artikel.different_price !== undefined) {
+                          <span class="customer-price">Kundenpreis: €{{ artikel.different_price }}</span>
+                          <span class="original-price">(Standard: €{{ artikel.sale_price }})</span>
+                        } @else {
+                          <span class="standard-price">VK: €{{ artikel.sale_price }}</span>
+                        }
+                      </p>
+                    </div>
+                    <div class="article-actions">
+                      <input type="number" 
+                             [(ngModel)]="artikel.quantity" 
+                             placeholder="Menge" 
+                             class="quantity-input" 
+                             min="1" 
+                             (click)="$event.stopPropagation()"
+                             (keydown)="onQuantityInputKeyDown($event, $index)">
+                      <button (click)="addToOrder($event, artikel); $event.stopPropagation()" class="add-to-order-btn">
+                        <span class="material-icons">
+                          {{ editingItemIndex !== -1 ? 'swap_horiz' : 'add_shopping_cart' }}
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                }
+              </div>
+              } @else if (!searchTerm) {
+              <div class="no-search">
+                <p>Geben Sie einen Suchbegriff ein, um Artikel zu finden.</p>
+              </div>
+              } @else {
+              <div class="no-results">
+                <p>Keine Artikel für "{{ searchTerm }}" gefunden.</p>
+              </div>
+              }
+            </div>
+          </div>
+
+          <!-- Tab 2: Auftragstabelle (Kartenansicht) -->
+          <div class="tab-panel" [class.active]="activeTab === 'order'">
+            @if (globalService.selectedCustomerForOrders) {
+              @if (orderItems.length > 0) {
+              <div class="mobile-order-cards">
+                @for (item of orderItems; track $index; let i = $index) {
+                <div class="order-card" 
+                     [class.editing]="editingItemIndex === i"
+                     [draggable]="editingItemIndex !== i && editingArticleNameIndex !== i"
+                     (dragstart)="onDragStart($event, i)"
+                     (dragover)="onDragOver($event)"
+                     (drop)="onDrop($event, i)"
+                     (dragenter)="onDragEnter($event)"
+                     (dragleave)="onDragLeave($event)"
+                     [class.drag-over]="dragOverIndex === i"
+                     [class.dragging]="draggedIndex === i">
+                  <div class="card-header">
+                    <div class="position-badge">{{ i + 1 }}</div>
+                    <div class="card-actions">
+                      <button class="card-btn" 
+                              (click)="showArticleNotes(i)"
+                              title="Artikel-Notizen">
+                        <span class="material-icons">info</span>
+                      </button>
+                      <button class="card-btn" 
+                              (click)="openEanAssignmentModal(item)"
+                              title="EAN-Code zuweisen">
+                        <span class="material-icons">qr_code_scanner</span>
+                      </button>
+                      <button class="card-btn" 
+                              (click)="confirmRemoveFromOrder(i)"
+                              title="Entfernen">
+                        <span class="material-icons">delete</span>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="card-content">
+                    <!-- Artikel-Header mit Name und Nummer -->
+                    <div class="article-header">
+                      <div class="article-name" (click)="startEditArticleName(i)">
+                        @if (editingArticleNameIndex === i) {
+                          <input type="text" 
+                                 [(ngModel)]="editingArticleName"
+                                 (keydown)="onArticleNameKeyDown($event, i)"
+                                 (blur)="saveArticleName(i)"
+                                 (focus)="onArticleNameFocus(i)"
+                                 class="article-name-edit-input"
+                                 #articleNameInput>
+                        } @else {
+                          {{ item.article_text }}
+                        }
+                      </div>
+                      <div class="article-number" (click)="startEditItem(i)">
+                        @if (editingItemIndex === i) {
+                          <span class="edit-indicator">Bearbeite...</span>
+                        } @else {
+                          {{ item.article_number }}
+                        }
+                      </div>
+                    </div>
+                    
+                    <!-- Preis-Informationen -->
+                    <div class="price-info-section">
+                      <div class="price-row">
+                        <span class="price-label">EK-Preis:</span>
+                        <span class="price-value cost-price">€{{ (item.cost_price || 0).toFixed(2) }}</span>
+                      </div>
+                      <div class="price-row">
+                        <span class="price-label">Standard-Preis:</span>
+                        <span class="price-value standard-price">€{{ item.sale_price }}</span>
+                      </div>
+                      <div class="price-row" [class.active]="item.different_price !== undefined && item.different_price !== null && item.different_price !== ''">
+                        <span class="price-label">Kundenpreis:</span>
+                        <input type="number" 
+                               [(ngModel)]="item.different_price" 
+                               step="0.01" 
+                               min="0" 
+                               class="price-edit" 
+                               [class.custom-price]="item.different_price !== undefined && item.different_price !== null && item.different_price !== ''"
+                               (input)="onPriceInput(item)"
+                               (change)="updateItemTotal(item)"
+                               (blur)="validateAndUpdatePrice(item)"
+                               [placeholder]="item.sale_price"
+                               [title]="'Standard-Preis: €' + item.sale_price">
+                      </div>
+                    </div>
+                    
+                    <!-- Menge und Gesamtpreis -->
+                    <div class="quantity-total-section">
+                      <div class="quantity-section">
+                        <span class="quantity-label">Menge:</span>
+                        <input type="number" 
+                               [(ngModel)]="item.quantity" 
+                               step="0.01" 
+                               min="0.01" 
+                               class="quantity-edit" 
+                               (input)="onQuantityInput(item)"
+                               (change)="updateItemTotal(item)"
+                               (blur)="validateAndUpdateQuantity(item)">
+                      </div>
+                      <div class="total-section">
+                        <span class="total-label">Gesamt:</span>
+                        <span class="total-amount">€{{ (getItemPrice(item) * item.quantity).toFixed(2) }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                }
+                <div class="order-total-card">
+                  <div class="total-row">
+                    <span class="total-label">Auftrag Gesamt:</span>
+                    <span class="total-amount">€{{ getOrderTotal().toFixed(2) }}</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="mobile-order-actions">
+                <button (click)="saveOrder()" class="save-order-btn">
+                  <span class="material-icons">save</span>
+                  Auftrag speichern
+                </button>
+                <button (click)="confirmClearOrder()" class="clear-order-btn">
+                  <span class="material-icons">clear</span>
+                  Auftrag löschen
+                </button>
+              </div>
+              } @else {
+              <div class="no-items">
+                <p>Noch keine Artikel im Auftrag. Suchen Sie nach Artikeln und fügen Sie sie hinzu.</p>
+              </div>
+              }
+            } @else {
+              <div class="no-customer-selected">
+                <p>Bitte wählen Sie zuerst einen Kunden aus, um einen Auftrag zu erstellen.</p>
+              </div>
+            }
+          </div>
+
+          <!-- Tab 3: Kundenspezifische Preise -->
+          <div class="tab-panel" [class.active]="activeTab === 'prices'">
+            @if (globalService.selectedCustomerForOrders) {
+              @if (customerArticlePrices.length > 0) {
+              <div class="mobile-customer-prices">
+                <div class="prices-header">
+                  <h3>Kundenspezifische Preise</h3>
+                  <p>{{ customerArticlePrices.length }} Preise verfügbar</p>
+                </div>
+                
+                <!-- Suchfeld für kundenspezifische Preise -->
+                <div class="mobile-prices-search-section">
+                  <div class="prices-search-container">
+                    <input type="text" 
+                           [(ngModel)]="articlePricesSearchTerm" 
+                           (input)="filterArticlePrices()" 
+                           placeholder="Nach Artikelbezeichnung, Art.-Nr., EAN oder Produkt-ID suchen..." 
+                           class="prices-search-input">
+                    <button *ngIf="articlePricesSearchTerm" (click)="clearArticlePricesSearch()" class="clear-prices-search">
+                      <span class="material-icons">close</span>
+                    </button>
+                  </div>
+                </div>
+                
+                <div class="mobile-article-prices-cards">
+                  @for (customerPrice of filteredArticlePrices; track customerPrice.product_id) {
+                  <div class="mobile-article-price-card">
+                    <div class="price-card-header">
+                      <div class="price-badge">
+                        <span class="price-amount">€{{ customerPrice.unit_price_net }}</span>
+                        <span class="price-label">Kundenpreis</span>
+                      </div>
+                    </div>
+                    
+                    <div class="price-card-content">
+                      <div class="article-info">
+                        <div class="article-name">{{ customerPrice.article_text || 'Unbekannter Artikel' }}</div>
+                        <div class="article-number">{{ customerPrice.article_number || customerPrice.product_id }}</div>
+                      </div>
+                      
+                      <div class="invoice-info">
+                        <div class="invoice-row">
+                          <span class="invoice-label">Rechnung:</span>
+                          <span class="invoice-value">{{ customerPrice.invoice_id || '-' }}</span>
+                        </div>
+                        <div class="invoice-row">
+                          <span class="invoice-label">Datum:</span>
+                          <span class="invoice-value">{{ formatInvoiceDate(customerPrice.invoice_date) }}</span>
+                        </div>
+                      </div>
+                      
+                      <div class="add-to-order-section">
+                        <div class="quantity-input-group">
+                          <span class="quantity-label">Menge:</span>
+                          <input type="number" 
+                                 [(ngModel)]="customerPrice.tempQuantity" 
+                                 min="1" 
+                                 class="quantity-input" 
+                                 placeholder="1"
+                                 (keyup.enter)="addArticleFromPricesModal(customerPrice)">
+                        </div>
+                        <button (click)="addArticleFromPricesModal(customerPrice)" class="add-to-order-btn" title="Zum Auftrag hinzufügen">
+                          <span class="material-icons">add_shopping_cart</span>
+                          <span class="btn-text">Hinzufügen</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  }
+                </div>
+                
+                @if (articlePricesSearchTerm && filteredArticlePrices.length === 0) {
+                <div class="no-prices-results">
+                  <p>Keine Artikel für "{{ articlePricesSearchTerm }}" gefunden.</p>
+                </div>
+                }
+              </div>
+              } @else {
+              <div class="no-customer-prices">
+                <p>Keine kundenspezifischen Preise verfügbar. Standard-Preise werden verwendet.</p>
+              </div>
+              }
+            } @else {
+              <div class="no-customer-selected">
+                <p>Bitte wählen Sie zuerst einen Kunden aus, um kundenspezifische Preise anzuzeigen.</p>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Mobile Tab Bar am unteren Bildschirmrand -->
+      <div class="mobile-tab-bar">
+        <button class="tab-btn" 
+                [class.active]="activeTab === 'search'"
+                (click)="setActiveTab('search')">
+          <span class="material-icons">search</span>
+          <span class="tab-label">Artikel suchen</span>
+        </button>
+        <button class="tab-btn" 
+                [class.active]="activeTab === 'order'"
+                (click)="setActiveTab('order')">
+          <span class="material-icons">shopping_cart</span>
+          <span class="tab-label">Auftrag ({{ orderItems.length }})</span>
+        </button>
+        <button class="tab-btn" 
+                [class.active]="activeTab === 'prices'"
+                [class.disabled]="!globalService.selectedCustomerForOrders"
+                (click)="setActiveTab('prices')"
+                [disabled]="!globalService.selectedCustomerForOrders">
+          <span class="material-icons">price_check</span>
+          <span class="tab-label">Kundenpreise</span>
+        </button>
+      </div>
     </div>
   </div>
 
-  <app-warenkorb></app-warenkorb>
 </div>
 
 @if (isVisible) {
@@ -163,15 +735,140 @@
   </div>
 </div>
 
+<!-- Article Prices Modal -->
+<div class="article-prices-modal" *ngIf="isArticlePricesModalOpen">
+  <div class="article-prices-modal-content">
+    <!-- Notification -->
+    @if (isArticlePricesNotificationVisible) {
+    <div class="article-prices-notification">
+      <span class="material-icons notification-icon">check_circle</span>
+      <span class="notification-text">{{ articlePricesNotificationText }}</span>
+    </div>
+    }
+    
+    <div class="article-prices-modal-header">
+      <h2>Artikel-Preise</h2>
+      <button class="close-article-prices-modal" (click)="closeArticlePricesModal()">
+        <span class="material-icons">close</span>
+      </button>
+    </div>
+    
+    <div class="article-prices-modal-body">
+      <div class="article-prices-search">
+        <input type="text" [(ngModel)]="articlePricesSearchTerm" (input)="filterArticlePrices()" placeholder="Nach Artikelbezeichnung, Art.-Nr., EAN oder Produkt-ID suchen..." class="article-prices-search-input">
+      </div>
+      
+      <!-- Desktop Tabelle -->
+      <div class="article-prices-table-container">
+        <table class="article-prices-table">
+          <thead>
+            <tr>
+              <th>Artikel</th>
+              <th>Art.-Nr.</th>
+              <th>Kundenpreis (€)</th>
+              <th>Rechnungs-ID</th>
+              <th>Rechnungsdatum</th>
+              <th>Aktion</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (customerPrice of filteredArticlePrices; track customerPrice.product_id) {
+            <tr class="article-price-row">
+              <td class="article-name">{{ customerPrice.article_text || 'Unbekannter Artikel' }}</td>
+              <td class="article-number">{{ customerPrice.article_number || customerPrice.product_id }}</td>
+              <td class="customer-price">
+                <span class="customer-price-value">€{{ customerPrice.unit_price_net }}</span>
+              </td>
+              <td class="invoice-id">{{ customerPrice.invoice_id || '-' }}</td>
+              <td class="invoice-date">{{ formatInvoiceDate(customerPrice.invoice_date) }}</td>
+              <td class="action">
+                <div class="add-article-controls">
+                  <input type="number" 
+                         [(ngModel)]="customerPrice.tempQuantity" 
+                         min="1" 
+                         class="quantity-input" 
+                         placeholder="1"
+                         (keyup.enter)="addArticleFromPricesModal(customerPrice)">
+                  <button (click)="addArticleFromPricesModal(customerPrice)" class="add-article-btn" title="Zum Auftrag hinzufügen">
+                    <span class="material-icons">add_shopping_cart</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- Mobile Karten-Ansicht für kundenspezifische Preise -->
+      <div class="article-prices-cards">
+        @for (customerPrice of filteredArticlePrices; track customerPrice.product_id) {
+        <div class="article-price-card">
+          <div class="price-card-header">
+            <div class="price-badge">
+              <span class="price-amount">€{{ customerPrice.unit_price_net }}</span>
+              <span class="price-label">Kundenpreis</span>
+            </div>
+            <div class="card-actions">
+              <button class="info-btn" title="Details anzeigen">
+                <span class="material-icons">info</span>
+              </button>
+            </div>
+          </div>
+          
+          <div class="price-card-content">
+            <div class="article-info">
+              <div class="article-name">{{ customerPrice.article_text || 'Unbekannter Artikel' }}</div>
+              <div class="article-number">{{ customerPrice.article_number || customerPrice.product_id }}</div>
+            </div>
+            
+            <div class="invoice-info">
+              <div class="invoice-row">
+                <span class="invoice-label">Rechnung:</span>
+                <span class="invoice-value">{{ customerPrice.invoice_id || '-' }}</span>
+              </div>
+              <div class="invoice-row">
+                <span class="invoice-label">Datum:</span>
+                <span class="invoice-value">{{ formatInvoiceDate(customerPrice.invoice_date) }}</span>
+              </div>
+            </div>
+            
+            <div class="add-to-order-section">
+              <div class="quantity-input-group">
+                <span class="quantity-label">Menge:</span>
+                <input type="number" 
+                       [(ngModel)]="customerPrice.tempQuantity" 
+                       min="1" 
+                       class="quantity-input" 
+                       placeholder="1"
+                       (keyup.enter)="addArticleFromPricesModal(customerPrice)">
+              </div>
+              <button (click)="addArticleFromPricesModal(customerPrice)" class="add-to-order-btn" title="Zum Auftrag hinzufügen">
+                <span class="material-icons">add_shopping_cart</span>
+                <span class="btn-text">Hinzufügen</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        }
+      </div>
+      
+      @if (filteredArticlePrices.length === 0) {
+      <div class="no-article-prices">
+        <p>Keine Artikel gefunden.</p>
+      </div>
+      }
+    </div>
+  </div>
+</div>
+
 <!-- Customer Modal -->
 <div class="customer-modal" *ngIf="isCustomerModalOpen">
   <div class="customer-modal-content">
     <div class="customer-modal-header">
       <h2>Kundenliste</h2>
       <button class="close-customer-modal" (click)="closeCustomerModal()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-        </svg>
+        <span class="material-icons">close</span>
       </button>
     </div>
     
@@ -189,14 +886,25 @@
           <div class="customer-card-body">
             <p class="customer-name"><strong>{{ customer.last_name_company || 'Kein Name' }}</strong></p>
             <p class="customer-addition" *ngIf="customer.name_addition">{{ customer.name_addition }}</p>
-            <p class="customer-city" *ngIf="customer.city">{{ customer.city }}</p>
-            <p class="customer-email" *ngIf="customer.email">{{ customer.email }}</p>
+            @if (customer.street || customer.postal_code || customer.city) {
+              <p class="customer-address">
+                @if (customer.street) {
+                  {{ customer.street }}<br>
+                }
+                @if (customer.postal_code || customer.city) {
+                  @if (customer.postal_code) {
+                    {{ customer.postal_code }}
+                  }
+                  @if (customer.city) {
+                    {{ customer.city }}
+                  }
+                }
+              </p>
+            }
           </div>
           <div class="customer-card-footer">
             <button class="select-customer-btn" (click)="selectCustomer(customer)">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-              </svg>
+              <span class="material-icons">check</span>
               Auswählen
             </button>
           </div>
@@ -220,55 +928,90 @@
   </div>
 </div>
 
-<!-- Article Prices Modal -->
-<div class="article-prices-modal" *ngIf="isArticlePricesModalOpen">
-  <div class="article-prices-modal-content">
-    <div class="article-prices-modal-header">
-      <h2>Artikel-Preise</h2>
-      <button class="close-article-prices-modal" (click)="closeArticlePricesModal()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-        </svg>
+<!-- EAN Assignment Modal -->
+<div class="ean-assignment-modal" *ngIf="isEanAssignmentModalOpen">
+  <div class="ean-assignment-modal-content">
+    <div class="ean-assignment-modal-header">
+      <h2>EAN-Code zuweisen</h2>
+      <button class="close-ean-assignment-modal" (click)="closeEanAssignmentModal()">
+        <span class="material-icons">close</span>
       </button>
     </div>
     
-    <div class="article-prices-modal-body">
-      <div class="article-prices-search">
-        <input type="text" [(ngModel)]="articlePricesSearchTerm" (input)="filterArticlePrices()" placeholder="Nach Artikelbezeichnung, Art.-Nr., EAN oder Produkt-ID suchen..." class="article-prices-search-input">
+    <div class="ean-assignment-modal-body">
+      <div class="article-info">
+        <h3>{{ eanAssignmentItem?.article_text }}</h3>
+        <p><strong>Artikelnummer:</strong> {{ eanAssignmentItem?.article_number }}</p>
+        @if (eanAssignmentItem?.ean) {
+          <p><strong>Aktuelle EAN:</strong> {{ eanAssignmentItem.ean }}</p>
+        }
       </div>
       
-      <div class="article-prices-table-container">
-        <table class="article-prices-table">
-          <thead>
-            <tr>
-              <th>Artikel</th>
-              <th>Art.-Nr.</th>
-              <th>Kundenpreis (€)</th>
-              <th>Rechnungs-ID</th>
-              <th>Rechnungsdatum</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (customerPrice of filteredArticlePrices; track customerPrice.product_id) {
-            <tr class="article-price-row">
-              <td class="article-name">{{ customerPrice.article_text || 'Unbekannter Artikel' }}</td>
-              <td class="article-number">{{ customerPrice.article_number || customerPrice.product_id }}</td>
-              <td class="customer-price">
-                <span class="customer-price-value">€{{ customerPrice.unit_price_net }}</span>
-              </td>
-              <td class="invoice-id">{{ customerPrice.invoice_id || '-' }}</td>
-              <td class="invoice-date">{{ formatInvoiceDate(customerPrice.invoice_date) }}</td>
-            </tr>
-            }
-          </tbody>
-        </table>
+      <div class="ean-input-section">
+        <div class="ean-input-group">
+          <label for="eanCode">EAN-Code (8 oder 13 Ziffern):</label>
+          <div class="ean-input-container">
+            <input type="text" 
+                   id="eanCode"
+                   #eanCodeInput
+                   [(ngModel)]="eanCode" 
+                   placeholder="EAN-Code eingeben oder scannen..."
+                   class="ean-input"
+                   maxlength="13"
+                   (input)="onEanInput($event)"
+                   (keyup.enter)="assignEan()">
+            <button (click)="startEanScanner()" 
+                    [disabled]="isEanScanning" 
+                    class="scanner-btn"
+                    title="EAN-Code scannen">
+              <span class="material-icons">qr_code_scanner</span>
+            </button>
+          </div>
+        </div>
+        
+        @if (isEanScanning) {
+          <div class="ean-scanner-section">
+            <zxing-scanner 
+              #eanScanner
+              [enable]="isEanScanning"
+              [formats]="formatsEnabled"
+              [device]="selectedDevice"
+              (scanSuccess)="onEanCodeResult($event)">
+            </zxing-scanner>
+            <button (click)="stopEanScanner()" class="stop-scanner-btn">
+              <span class="material-icons">stop</span>
+              Scanner stoppen
+            </button>
+          </div>
+        }
       </div>
       
-      @if (filteredArticlePrices.length === 0) {
-      <div class="no-article-prices">
-        <p>Keine Artikel gefunden.</p>
-      </div>
+      @if (eanErrorMessage) {
+        <div class="ean-error-message">
+          <span class="material-icons">error</span>
+          {{ eanErrorMessage }}
+        </div>
       }
+      
+      @if (eanSuccessMessage) {
+        <div class="ean-success-message">
+          <span class="material-icons">check_circle</span>
+          {{ eanSuccessMessage }}
+        </div>
+      }
+      
+      <div class="ean-assignment-actions">
+        <button (click)="assignEan()" 
+                [disabled]="!eanCode.trim() || !isValidEanCode(eanCode) || isAssigningEan" 
+                class="assign-ean-btn">
+          <span class="material-icons">save</span>
+          EAN zuweisen
+        </button>
+        <button (click)="closeEanAssignmentModal()" class="cancel-ean-btn">
+          <span class="material-icons">close</span>
+          Abbrechen
+        </button>
+      </div>
     </div>
   </div>
 </div>
