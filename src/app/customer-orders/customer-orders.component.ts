@@ -827,6 +827,12 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     this.searchTerm = '';
     this.filteredArtikelData();
     
+    // In mobile and tablet view, automatically switch to search tab
+    // Check if we're in mobile/tablet view (screen width <= 768px)
+    if (window.innerWidth <= 768) {
+      this.setActiveTab('search');
+    }
+    
     // Focus search input after a short delay to ensure DOM is ready
     setTimeout(() => {
       if (this.searchInput && this.searchInput.nativeElement) {
