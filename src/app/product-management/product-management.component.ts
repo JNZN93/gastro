@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, ViewChild, inject, HostListener } from '@angular/core';
+import { Component, OnInit, ViewChild, inject, HostListener, OnDestroy } from '@angular/core';
 import { ArtikelDataService } from '../artikel-data.service';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../authentication.service';
@@ -16,7 +16,7 @@ import { HttpClient, HttpClientModule } from '@angular/common/http';
   templateUrl: './product-management.component.html',
   styleUrl: './product-management.component.scss',
 })
-export class ProductManagementComponent implements OnInit {
+export class ProductManagementComponent implements OnInit, OnDestroy {
   @ViewChild(ZXingScannerComponent) scanner!: ZXingScannerComponent;
   @ViewChild('eanScanner') eanScanner!: ZXingScannerComponent;
   private artikelService = inject(ArtikelDataService);
@@ -36,6 +36,7 @@ export class ProductManagementComponent implements OnInit {
   // Image upload properties
   selectedProduct: any = null;
   selectedImage: File | null = null;
+  selectedImagePreviewUrl: string | null = null;
   isUploading: boolean = false;
   isUploadSectionOpen: boolean = false;
   
@@ -109,6 +110,10 @@ export class ProductManagementComponent implements OnInit {
       console.log('Kein Token gefunden.');
       this.router.navigate(['/login']);
     }
+  }
+
+  ngOnDestroy(): void {
+    this.clearImagePreview();
   }
 
   // Handle ESC key to close modal
@@ -628,17 +633,30 @@ export class ProductManagementComponent implements OnInit {
   toggleUploadSection(product: any): void {
     if (this.selectedProduct?.id === product.id) {
       this.isUploadSectionOpen = !this.isUploadSectionOpen;
+      if (!this.isUploadSectionOpen) {
+        this.selectedImage = null;
+        this.clearImagePreview();
+      }
     } else {
       this.selectedProduct = product;
       this.isUploadSectionOpen = true;
+      this.selectedImage = null;
+      this.clearImagePreview();
     }
-    this.selectedImage = null;
   }
 
   onImageSelect(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
       this.selectedImage = input.files[0];
+      this.selectedImagePreviewUrl = URL.createObjectURL(this.selectedImage);
+    }
+  }
+
+  private clearImagePreview(): void {
+    if (this.selectedImagePreviewUrl) {
+      URL.revokeObjectURL(this.selectedImagePreviewUrl);
+      this.selectedImagePreviewUrl = null;
     }
   }
 
@@ -655,6 +673,7 @@ export class ProductManagementComponent implements OnInit {
             console.log('Image uploaded successfully:', response);
             this.isUploading = false;
             this.selectedImage = null;
+            this.clearImagePreview();
             this.isUploadSectionOpen = false;
             this.loadProducts(); // Refresh the product list
             this.productToSearchFor = this.selectedProduct; // Set product to search for
