@@ -1384,6 +1384,25 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // Prüfe auf Verkaufspreise unter EK-Preis
+    const itemsBelowCost = this.orderItems.filter(item => {
+      const sellingPrice = item.different_price !== undefined ? item.different_price : item.sale_price;
+      return item.cost_price && sellingPrice < item.cost_price;
+    });
+
+    if (itemsBelowCost.length > 0) {
+      const itemNames = itemsBelowCost.map(item => 
+        `${item.article_text} (VK: €${(item.different_price !== undefined ? item.different_price : item.sale_price).toFixed(2)} < EK: €${item.cost_price.toFixed(2)})`
+      ).join('\n');
+      
+      const confirmMessage = `⚠️ WARNUNG: Folgende Artikel werden unter dem Einkaufspreis verkauft:\n\n${itemNames}\n\nMöchten Sie den Auftrag trotzdem speichern?`;
+      
+      if (!confirm(confirmMessage)) {
+        console.log('❌ [SAVE-ORDER] Auftrag wegen EK-Preis-Warnung abgebrochen');
+        return;
+      }
+    }
+
     // Ensure description is set for all items
     this.orderItems.forEach(item => {
       if (!item.description && item.article_text) {
