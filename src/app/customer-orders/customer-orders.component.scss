@@ -4058,6 +4058,7 @@
   height: calc(100vh - 260px); // Reduziert für Tab-Bar Platz
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
 
   .tab-content {
     flex: 1;
@@ -4071,7 +4072,6 @@
       width: 100%;
       height: 100%;
       overflow-y: auto;
-      padding: 16px;
       opacity: 0;
       visibility: hidden;
       transition: opacity 0.3s ease, visibility 0.3s ease;
@@ -4689,7 +4689,7 @@
   }
 }
 
-// Mobile responsive styles
+// Mobile responsive styles (bis 768px)
 @media (max-width: 768px) {
   .desktop-view {
     display: none !important;
@@ -4702,6 +4702,91 @@
   .content {
     padding: 8px;
     gap: 8px;
+  }
+}
+
+// Tablet responsive styles (769px - 1023px) - Mobile Ansicht mit Tabs
+@media (min-width: 769px) and (max-width: 1023px) {
+  .desktop-view {
+    display: none !important;
+  }
+
+  .mobile-view {
+    display: block !important;
+  }
+
+  .content {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  // Tablet-spezifische Anpassungen für bessere Darstellung
+  .mobile-tabs {
+    height: calc(100vh - 280px); // Etwas mehr Platz für Tablet
+    
+    .tab-content {
+      .tab-panel {
+        padding: 20px; // Mehr Padding für Tablet
+      }
+    }
+  }
+
+  .mobile-tab-bar {
+    .tab-btn {
+      padding: 12px 8px;
+      min-height: 60px; // Größere Tabs für Tablet
+
+      .material-icons {
+        font-size: 20px;
+      }
+
+      .tab-label {
+        font-size: 12px;
+      }
+    }
+  }
+
+  .mobile-customer-header {
+    padding: 16px;
+
+    .customer-info {
+      h3 {
+        font-size: 18px;
+      }
+
+      .customer-addition {
+        font-size: 14px;
+      }
+    }
+
+    .customer-actions {
+      .change-customer-btn,
+      .clear-customer-btn {
+        width: 36px;
+        height: 36px;
+
+        .material-icons {
+          font-size: 18px;
+        }
+      }
+    }
+  }
+}
+
+// Desktop responsive styles (ab 1024px) - Desktop Ansicht mit zwei Spalten
+@media (min-width: 1024px) {
+  .desktop-view {
+    display: block !important;
+  }
+
+  .mobile-view {
+    display: none !important;
+  }
+
+  .main-content {
+    display: grid !important;
+    grid-template-columns: 1fr 280px !important;
+    gap: 16px !important;
   }
 }
 
