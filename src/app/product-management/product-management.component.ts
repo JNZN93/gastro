@@ -645,6 +645,37 @@ export class ProductManagementComponent implements OnInit, OnDestroy {
     }
   }
 
+  selectImageDirectly(product: any): void {
+    // Erstelle ein verstecktes File Input Element
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*';
+    fileInput.style.display = 'none';
+    
+    // Event Listener für die Dateiauswahl
+    fileInput.addEventListener('change', (event) => {
+      const target = event.target as HTMLInputElement;
+      if (target.files && target.files.length > 0) {
+        this.selectedProduct = product;
+        this.selectedImage = target.files[0];
+        this.selectedImagePreviewUrl = URL.createObjectURL(this.selectedImage);
+        this.isUploadSectionOpen = true; // Zeige Upload-Sektion mit Button
+      }
+      // Entferne das temporäre Input Element
+      document.body.removeChild(fileInput);
+    });
+    
+    // Füge das Input Element zum DOM hinzu und triggere den Klick
+    document.body.appendChild(fileInput);
+    fileInput.click();
+  }
+
+  removeSelectedImage(): void {
+    this.selectedImage = null;
+    this.clearImagePreview();
+    this.isUploadSectionOpen = false;
+  }
+
   onImageSelect(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
