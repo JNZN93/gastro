@@ -2408,4 +2408,28 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     if (length > 40) return 'long-text';
     return '';
   }
+
+  // Methode zur Validierung von EAN-Codes (8 oder 13 Ziffern)
+  isValidEanCode(eanCode: string): boolean {
+    if (!eanCode || !eanCode.trim()) return false;
+    return /^\d{8}$|^\d{13}$/.test(eanCode.trim());
+  }
+
+  // Methode um nur Zahlen in EAN-Eingabefeld zu erlauben
+  onEanInput(event: any): void {
+    const input = event.target;
+    const value = input.value;
+    
+    // Entferne alle nicht-numerischen Zeichen
+    const numericValue = value.replace(/[^0-9]/g, '');
+    
+    // Begrenze auf maximal 13 Ziffern
+    const limitedValue = numericValue.slice(0, 13);
+    
+    // Aktualisiere den Wert nur wenn er sich geändert hat
+    if (value !== limitedValue) {
+      input.value = limitedValue;
+      this.eanCode = limitedValue;
+    }
+  }
 }

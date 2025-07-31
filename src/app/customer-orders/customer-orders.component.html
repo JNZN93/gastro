@@ -532,6 +532,7 @@
                    placeholder="EAN-Code eingeben oder scannen..."
                    class="ean-input"
                    maxlength="13"
+                   (input)="onEanInput($event)"
                    (keyup.enter)="assignEan()">
             <button (click)="startEanScanner()" 
                     [disabled]="isEanScanning" 
@@ -575,7 +576,7 @@
       
       <div class="ean-assignment-actions">
         <button (click)="assignEan()" 
-                [disabled]="!eanCode.trim() || isAssigningEan" 
+                [disabled]="!eanCode.trim() || !isValidEanCode(eanCode) || isAssigningEan" 
                 class="assign-ean-btn">
           <span class="material-icons">save</span>
           EAN zuweisen

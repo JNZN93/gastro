@@ -280,8 +280,8 @@ export class ProductManagementComponent implements OnInit {
       return;
     }
 
-    if (this.eanCode.length !== 13) {
-      this.eanErrorMessage = 'EAN-Code muss genau 13 Ziffern enthalten.';
+    if (this.eanCode.length !== 8 && this.eanCode.length !== 13) {
+      this.eanErrorMessage = 'EAN-Code muss 8 oder 13 Ziffern enthalten.';
       return;
     }
 
@@ -731,5 +731,23 @@ export class ProductManagementComponent implements OnInit {
     
     // Ansonsten alphabetischen Vergleich
     return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+  }
+
+  // Methode um nur Zahlen in EAN-Eingabefeld zu erlauben
+  onEanInput(event: any): void {
+    const input = event.target;
+    const value = input.value;
+    
+    // Entferne alle nicht-numerischen Zeichen
+    const numericValue = value.replace(/[^0-9]/g, '');
+    
+    // Begrenze auf maximal 13 Ziffern
+    const limitedValue = numericValue.slice(0, 13);
+    
+    // Aktualisiere den Wert nur wenn er sich geändert hat
+    if (value !== limitedValue) {
+      input.value = limitedValue;
+      this.eanCode = limitedValue;
+    }
   }
 } 

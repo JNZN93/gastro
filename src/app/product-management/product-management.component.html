@@ -447,7 +447,7 @@
       
       <div class="ean-input-section">
         <div class="input-group">
-          <label for="eanCode">EAN-Code (13 Ziffern):</label>
+          <label for="eanCode">EAN-Code (8 oder 13 Ziffern):</label>
           <div class="input-with-scanner">
             <input 
               type="text" 
@@ -455,6 +455,7 @@
               [(ngModel)]="eanCode" 
               placeholder="EAN-Code eingeben oder scannen..."
               maxlength="13"
+              (input)="onEanInput($event)"
               [disabled]="isAssigningEan"
               class="ean-input">
             <button 
@@ -517,7 +518,7 @@
           type="button" 
           class="assign-btn"
           (click)="assignEan()"
-          [disabled]="!eanCode.trim() || eanCode.length !== 13 || isAssigningEan">
+          [disabled]="!eanCode.trim() || (eanCode.length !== 8 && eanCode.length !== 13) || isAssigningEan">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" *ngIf="!isAssigningEan">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
           </svg>
