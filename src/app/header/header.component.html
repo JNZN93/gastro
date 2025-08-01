@@ -1,26 +1,8 @@
 <header>
     <a routerLink="/" ><img src="logo.png" alt="logo"></a>
 
-    <!-- Für eingeloggte Benutzer -->
-    @if(globalService.isUserLoggedIn && !shouldHideElement()){
-        <div class="dashboard-container">
-            <div (click)="openModal()" class="logout-container">
-                <img src="logout.png" alt="">
-                <span>Abmelden</span>
-            </div>
-            @if (this.globalService.isAdmin) {
-                @if (!shouldHideElementAdmin()) {
-                    <div class="logout-container" (click)="navigateToAdmin()">
-                        <img src="dashboard.png" alt="">
-                        <span>Dashboard</span>
-                    </div>
-                }
-            }
-        </div>
-    }
-
     <!-- Für nicht eingeloggte Benutzer -->
-    @if(!globalService.isUserLoggedIn && !shouldHideElement()) {
+    @if(globalService.isUserLoggedIn === false && !shouldHideElement()) {
         <div class="login-container">
             <div (click)="openLoginModal()" class="login-button">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -32,16 +14,58 @@
         </div>
     }
 
-    <!-- Warenkorb nur für eingeloggte Benutzer -->
-    @if (globalService.isUserLoggedIn && !shouldHideElementAdmin() && !shouldHideElement()) {
-    <div class="burger-button" (click)="toggleWarenkorb()">
-        <img src="shoppingcart.png" alt="">
-        @if (this.globalService.warenkorb.length > 0) {
-            <div class="cart-badge">{{ this.globalService.warenkorb.length }}</div>
-        }
-    </div>
+    <!-- Warenkorb und Hamburger Menu für eingeloggte Benutzer -->
+    @if (globalService.isUserLoggedIn === true && !shouldHideElement()) {
+        <div class="user-actions">
+            <!-- Warenkorb nur wenn nicht auf Admin-Seite -->
+            @if (!shouldHideElementAdmin()) {
+                <div class="burger-button" (click)="toggleWarenkorb()">
+                    <img src="shoppingcart.png" alt="">
+                    @if (this.globalService.warenkorb.length > 0) {
+                        <div class="cart-badge">{{ this.globalService.warenkorb.length }}</div>
+                    }
+                </div>
+            }
+            
+            <!-- Hamburger Menu Button -->
+            <div class="hamburger-menu" (click)="toggleSideModal()">
+                <div class="hamburger-icon">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        </div>
     }
 </header>
+
+<!-- Side Modal für Dashboard und Abmelden -->
+@if (showSideModal && globalService.isUserLoggedIn === true) {
+<div class="side-modal-overlay" (click)="closeSideModal()">
+    <div class="side-modal" (click)="$event.stopPropagation()">
+        <div class="side-modal-header">
+            <h3>Menü</h3>
+            <button class="close-side-modal" (click)="closeSideModal()">×</button>
+        </div>
+        
+        <div class="side-modal-content">
+            @if (this.globalService.isAdmin) {
+                @if (!shouldHideElementAdmin()) {
+                    <div class="side-modal-item" (click)="navigateToAdmin(); closeSideModal()">
+                        <img src="dashboard.png" alt="">
+                        <span>Dashboard</span>
+                    </div>
+                }
+            }
+            
+            <div class="side-modal-item" (click)="openModal(); closeSideModal()">
+                <img src="logout.png" alt="">
+                <span>Abmelden</span>
+            </div>
+        </div>
+    </div>
+</div>
+}
 
 @if (showModal) {
 <div class="modal-overlay">

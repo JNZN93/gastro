@@ -17,6 +17,7 @@ import { CommonModule } from '@angular/common';
 export class HeaderComponent {
   showModal = false;
   showLoginModal = false;
+  showSideModal = false;
   isLoginMode = true;
   errorMessage: string | null = null;
   
@@ -213,5 +214,20 @@ export class HeaderComponent {
   navigateToAdmin() {
     this.globalService.clearSelectedCustomer();
     this.router.navigate(['/admin']);
+  }
+
+  // Side Modal Methods
+  toggleSideModal() {
+    this.showSideModal = !this.showSideModal;
+    if (this.showSideModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'auto';
+    }
+  }
+
+  closeSideModal() {
+    this.showSideModal = false;
+    document.body.style.overflow = 'auto';
   }
 }
