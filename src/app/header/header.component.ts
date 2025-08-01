@@ -195,8 +195,7 @@ export class HeaderComponent {
     this.globalService.clearSelectedCustomer();
     this.globalService.setUserLoggedIn(false);
     this.showModal = false;
-    this.router.navigate(['/products'])
-    window.location.reload();
+    this.router.navigate(['/products']);
   }
 
   goBack() {
