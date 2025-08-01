@@ -15,6 +15,8 @@ import { LabelManagementComponent } from './label-management/label-management.co
 import { CustomerOrdersComponent } from './customer-orders/customer-orders.component';
 import { OrderOverviewComponent } from './order-overview/order-overview.component';
 import { UserManagementComponent } from './user-management/user-management.component';
+import { AuthGuard } from './auth.guard';
+import { AdminAuthGuard } from './admin-auth.guard';
 
 export const routes: Routes = [
     { path: '', component: ProductCatalogComponent },
@@ -27,10 +29,10 @@ export const routes: Routes = [
     { path: 'verify', component: VerifyComponent},
     { path: 'privacy', component: PrivacyPolicyComponent},
     { path: 'impress', component: ImpressComponent},
-    { path: 'product-management', component: ProductManagementComponent},
-    { path: 'employees', component: EmployeesComponent },
-    { path: 'label-management', component: LabelManagementComponent },
-    { path: 'customer-orders', component: CustomerOrdersComponent },
-    { path: 'order-overview', component: OrderOverviewComponent },
+    { path: 'product-management', component: ProductManagementComponent, canActivate: [AuthGuard] },
+    { path: 'employees', component: EmployeesComponent, canActivate: [AuthGuard] },
+    { path: 'label-management', component: LabelManagementComponent, canActivate: [AuthGuard] },
+    { path: 'customer-orders', component: CustomerOrdersComponent, canActivate: [AdminAuthGuard] },
+    { path: 'order-overview', component: OrderOverviewComponent, canActivate: [AuthGuard] },
     { path: 'user-management', component: UserManagementComponent }
 ];

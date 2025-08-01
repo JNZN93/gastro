@@ -34,4 +34,13 @@ export class OrderService {
 
     return this.http.put(this.apiUrlOrder + '/' + orderId, {status}, { headers });
   }
+
+  deleteOrder(orderId: number, token: string | null): Observable<any> {
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    });
+
+    return this.http.delete(this.apiUrlOrder + '/' + orderId, { headers });
+  }
 }

@@ -5,6 +5,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { jsPDF } from 'jspdf';
 import { Router } from '@angular/router';
 import { AuthService } from '../authentication.service';
+import { OrderService } from '../order.service';
 
 interface OrderItem {
   product_id: number;
@@ -50,11 +51,17 @@ export class OrderOverviewComponent implements OnInit {
   selectedOrder: Order | null = null;
   isLoading = false;
   searchTerm = '';
+  showDeleteModal = false;
+  orderToDelete: Order | null = null;
+  isDeleting = false;
+  deleteConfirmationText = '';
+  showConfirmationError = false;
 
   constructor(
     private http: HttpClient,
     private router: Router,
-    private authService: AuthService
+    private authService: AuthService,
+    private orderService: OrderService
   ) {}
 
   ngOnInit(): void {
@@ -290,5 +297,56 @@ export class OrderOverviewComponent implements OnInit {
       return order.name;
     }
     return '-'; // Keine Anzeige für normale Kunden in der Sachbearbeiter-Spalte
+  }
+
+  deleteOrder(order: Order) {
+    this.orderToDelete = order;
+    this.showDeleteModal = true;
+    this.deleteConfirmationText = '';
+    this.showConfirmationError = false;
+  }
+
+  cancelDelete() {
+    this.showDeleteModal = false;
+    this.orderToDelete = null;
+    this.isDeleting = false;
+    this.deleteConfirmationText = '';
+    this.showConfirmationError = false;
+  }
+
+  isConfirmationValid(): boolean {
+    return this.deleteConfirmationText === this.orderToDelete?.order_id?.toString();
+  }
+
+  confirmDelete() {
+    if (!this.orderToDelete) return;
+
+    // Überprüfe, ob die Bestätigung korrekt ist
+    if (!this.isConfirmationValid()) {
+      this.showConfirmationError = true;
+      return;
+    }
+
+    this.isDeleting = true;
+    this.showConfirmationError = false;
+    const token = localStorage.getItem('token');
+
+    this.orderService.deleteOrder(this.orderToDelete.order_id, token).subscribe({
+      next: (response) => {
+        console.log('Bestellung erfolgreich gelöscht:', response);
+        // Bestellung aus der lokalen Liste entfernen
+        this.orders = this.orders.filter(order => order.order_id !== this.orderToDelete!.order_id);
+        this.showDeleteModal = false;
+        this.orderToDelete = null;
+        this.isDeleting = false;
+        this.deleteConfirmationText = '';
+        this.showConfirmationError = false;
+      },
+      error: (error) => {
+        console.error('Fehler beim Löschen der Bestellung:', error);
+        this.isDeleting = false;
+        // Hier könnte man eine Fehlermeldung anzeigen
+      }
+    });
   }
 } 
