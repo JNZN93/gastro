@@ -158,7 +158,6 @@
                     <input type="number" 
                            [(ngModel)]="item.quantity" 
                            step="0.001" 
-                           min="0.001" 
                            class="quantity-edit" 
                            (input)="onQuantityInput(item)"
                            (change)="updateItemTotal(item)"
@@ -169,7 +168,6 @@
                     <input type="number" 
                            [(ngModel)]="item.different_price" 
                            step="0.01" 
-                           min="0" 
                            class="price-edit" 
                            [class.custom-price]="item.different_price !== undefined && item.different_price !== null && item.different_price !== ''"
                            (input)="onPriceInput(item)"
@@ -296,13 +294,12 @@
                   </p>
                 </div>
                 <div class="article-actions">
-                  <input type="number" 
-                         [(ngModel)]="artikel.quantity" 
-                         placeholder="Menge" 
-                         class="quantity-input" 
-                         min="1" 
-                         (click)="$event.stopPropagation()"
-                         (keydown)="onQuantityInputKeyDown($event, $index)">
+                                        <input type="number" 
+                             [(ngModel)]="artikel.quantity" 
+                             placeholder="Menge" 
+                             class="quantity-input" 
+                             (click)="$event.stopPropagation()"
+                             (keydown)="onQuantityInputKeyDown($event, $index)">
                   <button (click)="addToOrder($event, artikel); $event.stopPropagation()" class="add-to-order-btn">
                     <span class="material-icons">
                       {{ editingItemIndex !== -1 ? 'swap_horiz' : 'add_shopping_cart' }}
@@ -418,7 +415,6 @@
                              [(ngModel)]="artikel.quantity" 
                              placeholder="Menge" 
                              class="quantity-input" 
-                             min="1" 
                              (click)="$event.stopPropagation()"
                              (keydown)="onQuantityInputKeyDown($event, $index)">
                       <button (click)="addToOrder($event, artikel); $event.stopPropagation()" class="add-to-order-btn">
@@ -519,7 +515,6 @@
                         <input type="number" 
                                [(ngModel)]="item.different_price" 
                                step="0.01" 
-                               min="0" 
                                class="price-edit" 
                                [class.custom-price]="item.different_price !== undefined && item.different_price !== null && item.different_price !== ''"
                                (input)="onPriceInput(item)"
@@ -537,7 +532,6 @@
                         <input type="number" 
                                [(ngModel)]="item.quantity" 
                                step="0.001" 
-                               min="0.001" 
                                class="quantity-edit" 
                                (input)="onQuantityInput(item)"
                                (change)="updateItemTotal(item)"
@@ -637,7 +631,7 @@
                           <span class="quantity-label">Menge:</span>
                           <input type="number" 
                                  [(ngModel)]="customerPrice.tempQuantity" 
-                                 min="1" 
+                                 step="0.001" 
                                  class="quantity-input" 
                                  placeholder="1"
                                  (keyup.enter)="addArticleFromPricesModal(customerPrice)">
@@ -785,7 +779,7 @@
                 <div class="add-article-controls">
                   <input type="number" 
                          [(ngModel)]="customerPrice.tempQuantity" 
-                         min="1" 
+                         step="0.001" 
                          class="quantity-input" 
                          placeholder="1"
                          (keyup.enter)="addArticleFromPricesModal(customerPrice)">
@@ -836,12 +830,11 @@
             <div class="add-to-order-section">
               <div class="quantity-input-group">
                 <span class="quantity-label">Menge:</span>
-                <input type="number" 
-                       [(ngModel)]="customerPrice.tempQuantity" 
-                       min="1" 
-                       class="quantity-input" 
-                       placeholder="1"
-                       (keyup.enter)="addArticleFromPricesModal(customerPrice)">
+                              <input type="number" 
+                     [(ngModel)]="customerPrice.tempQuantity" 
+                     class="quantity-input" 
+                     placeholder="1"
+                     (keyup.enter)="addArticleFromPricesModal(customerPrice)">
               </div>
               <button (click)="addArticleFromPricesModal(customerPrice)" class="add-to-order-btn" title="Zum Auftrag hinzufügen">
                 <span class="material-icons">add_shopping_cart</span>
