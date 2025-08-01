@@ -11,6 +11,7 @@ export class GlobalService {
   public favoriteItems: any = [];
   public isAdmin: boolean = false;
   public userRole: string = '';
+  public userName: string = '';
   public isUserLoggedIn: boolean = false;
   
   // Separate Variablen für verschiedene Komponenten
@@ -37,7 +38,8 @@ export class GlobalService {
           console.log('🔄 [GLOBAL-VALIDATE] Token gültig:', response);
           this.isUserLoggedIn = true;
           this.userRole = response.user.role;
-          console.log('🔄 [GLOBAL-VALIDATE] Login-Status gesetzt:', this.isUserLoggedIn, 'Rolle:', this.userRole);
+          this.userName = response.user.name || response.user.email || 'Benutzer';
+          console.log('🔄 [GLOBAL-VALIDATE] Login-Status gesetzt:', this.isUserLoggedIn, 'Rolle:', this.userRole, 'Name:', this.userName);
         },
         error: (error) => {
           console.error('🔄 [GLOBAL-VALIDATE] Token ungültig:', error);
@@ -54,6 +56,7 @@ export class GlobalService {
   private clearLoginData() {
     this.isUserLoggedIn = false;
     this.userRole = '';
+    this.userName = '';
     localStorage.removeItem('token');
     console.log('🔄 [GLOBAL-CLEAR] Login-Daten gelöscht');
   }
@@ -70,6 +73,12 @@ export class GlobalService {
     console.log('🔄 [GLOBAL-ROLE] Benutzerrolle gesetzt:', role);
   }
 
+  // Methode zum Setzen des Benutzernamens
+  setUserName(name: string) {
+    this.userName = name;
+    console.log('🔄 [GLOBAL-USERNAME] Benutzername gesetzt:', name);
+  }
+
   // Methode zum Setzen des Login-Status
   setUserLoggedIn(isLoggedIn: boolean) {
     this.isUserLoggedIn = isLoggedIn;
@@ -79,6 +88,11 @@ export class GlobalService {
   // Methode zum Abrufen der Benutzerrolle
   getUserRole(): string {
     return this.userRole;
+  }
+
+  // Methode zum Abrufen des Benutzernamens
+  getUserName(): string {
+    return this.userName;
   }
 
   // Methode zum Prüfen, ob Benutzer SCHNELLVERKAUF-Artikel sehen darf

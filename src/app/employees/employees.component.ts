@@ -157,8 +157,9 @@ export class EmployeesComponent implements OnInit, OnDestroy {
     if (token) {
       this.authService.checkToken(token).subscribe({
         next: (response) => {
-          // Benutzerrolle im GlobalService setzen
+          // Benutzerrolle und Name im GlobalService setzen
           this.globalService.setUserRole(response.user.role);
+          this.globalService.setUserName(response.user.name || response.user.email || 'Benutzer');
           
           this.artikelService.getData().subscribe((res) => {
             if(response.user.role == 'admin') {

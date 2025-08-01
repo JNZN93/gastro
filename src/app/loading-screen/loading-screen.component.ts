@@ -21,8 +21,9 @@ export class LoadingScreenComponent implements OnInit {
       this.authService.checkToken(token).subscribe({
         next: (response) => {
           console.log('Token gültig:', response);
-          // Benutzerrolle im GlobalService setzen
+          // Benutzerrolle und Name im GlobalService setzen
           this.globalService.setUserRole(response.user.role);
+          this.globalService.setUserName(response.user.name || response.user.email || 'Benutzer');
           
           // selectedCustomer bei Navigation löschen
           this.globalService.clearSelectedCustomer();

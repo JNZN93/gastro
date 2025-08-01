@@ -88,8 +88,9 @@ export class ProductManagementComponent implements OnInit, OnDestroy {
     if (token) {
       this.authService.checkToken(token).subscribe({
         next: (response: any) => {
-          // Benutzerrolle im GlobalService setzen
+          // Benutzerrolle und Name im GlobalService setzen
           this.globalService.setUserRole(response.user.role);
+          this.globalService.setUserName(response.user.name || response.user.email || 'Benutzer');
           
           if(response.user.role == 'admin') {
             this.globalService.isAdmin = true;
