@@ -96,7 +96,7 @@ export class HeaderComponent {
           localStorage.setItem("token", response.token);
           console.log('Login erfolgreich:', response);
           
-          // Benutzerrolle im GlobalService setzen
+          // Benutzerrolle im GlobalService setzen (wird automatisch in localStorage gespeichert)
           this.globalService.setUserRole(response.role);
           this.globalService.setUserLoggedIn(true);
           
@@ -195,6 +195,7 @@ export class HeaderComponent {
     localStorage.removeItem('warenkorb');
     this.globalService.clearSelectedCustomer();
     this.globalService.setUserLoggedIn(false);
+    this.globalService.setUserRole('');
     this.showModal = false;
     this.router.navigate(['/products']);
   }

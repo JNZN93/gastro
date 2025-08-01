@@ -35,8 +35,9 @@ export class LoginComponent {
           localStorage.setItem("token", response.token);
           console.log('Login erfolgreich:', response);
           
-          // Benutzerrolle im GlobalService setzen
+          // Benutzerrolle im GlobalService setzen (wird automatisch in localStorage gespeichert)
           this.globalService.setUserRole(response.role);
+          this.globalService.setUserLoggedIn(true);
           
           // selectedCustomer bei Login löschen
           this.globalService.clearSelectedCustomer();

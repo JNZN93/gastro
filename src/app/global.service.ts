@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { AuthService } from './authentication.service';
 
 @Injectable({
   providedIn: 'root'
@@ -19,7 +20,48 @@ export class GlobalService {
   // Global verfügbares Array für PFAND-Artikel (statisch, wird nur einmal geladen)
   public pfandArtikels: any[] = [];
 
-  constructor() { }
+  constructor(private authService: AuthService) { 
+    // Beim Start der Anwendung Token-Validierung durchführen
+    this.validateTokenOnStart();
+  }
+
+  // ===== TOKEN VALIDATION METHODS =====
+  // Methode zur Token-Validierung beim Start der Anwendung
+  private validateTokenOnStart() {
+    const token = localStorage.getItem('token');
+    
+    if (token) {
+      console.log('🔄 [GLOBAL-VALIDATE] Token gefunden, validiere...');
+      this.authService.checkToken(token).subscribe({
+        next: (response) => {
+          console.log('🔄 [GLOBAL-VALIDATE] Token gültig:', response);
+          this.isUserLoggedIn = true;
+          this.userRole = response.user.role;
+          console.log('🔄 [GLOBAL-VALIDATE] Login-Status gesetzt:', this.isUserLoggedIn, 'Rolle:', this.userRole);
+        },
+        error: (error) => {
+          console.error('🔄 [GLOBAL-VALIDATE] Token ungültig:', error);
+          this.clearLoginData();
+        }
+      });
+    } else {
+      console.log('🔄 [GLOBAL-VALIDATE] Kein Token gefunden');
+      this.clearLoginData();
+    }
+  }
+
+  // Methode zum Löschen aller Login-Daten
+  private clearLoginData() {
+    this.isUserLoggedIn = false;
+    this.userRole = '';
+    localStorage.removeItem('token');
+    console.log('🔄 [GLOBAL-CLEAR] Login-Daten gelöscht');
+  }
+
+  // Öffentliche Methode zur manuellen Token-Validierung
+  public validateToken() {
+    this.validateTokenOnStart();
+  }
 
   // ===== USER ROLE METHODS =====
   // Methode zum Setzen der Benutzerrolle
