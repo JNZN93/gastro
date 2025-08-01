@@ -1313,13 +1313,13 @@ export class EmployeesComponent implements OnInit, OnDestroy {
         newQuantity = Number(item.quantity);
       }
       
-      // Validierung: Menge muss positiv sein und mindestens 0.01
-      if (isNaN(newQuantity) || newQuantity < 0.01) {
+      // Validierung: Menge muss positiv sein und mindestens 0.001
+      if (isNaN(newQuantity) || newQuantity < 0.001) {
         console.warn('⚠️ [VALIDATE-QUANTITY] Ungültige Menge, setze auf 1');
         item.quantity = 1;
       } else {
-        // Runde auf 2 Dezimalstellen für Konsistenz
-        item.quantity = Math.round(newQuantity * 100) / 100;
+        // Runde auf 3 Dezimalstellen für Konsistenz
+        item.quantity = Math.round(newQuantity * 1000) / 1000;
         console.log('✅ [VALIDATE-QUANTITY] quantity aktualisiert auf:', item.quantity);
       }
     }
