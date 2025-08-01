@@ -10,6 +10,7 @@ export class GlobalService {
   public favoriteItems: any = [];
   public isAdmin: boolean = false;
   public userRole: string = '';
+  public isUserLoggedIn: boolean = false;
   
   // Separate Variablen für verschiedene Komponenten
   public selectedCustomer: any = null; // Für employees component
@@ -25,6 +26,12 @@ export class GlobalService {
   setUserRole(role: string) {
     this.userRole = role;
     console.log('🔄 [GLOBAL-ROLE] Benutzerrolle gesetzt:', role);
+  }
+
+  // Methode zum Setzen des Login-Status
+  setUserLoggedIn(isLoggedIn: boolean) {
+    this.isUserLoggedIn = isLoggedIn;
+    console.log('🔄 [GLOBAL-LOGIN] Login-Status gesetzt:', isLoggedIn);
   }
 
   // Methode zum Abrufen der Benutzerrolle

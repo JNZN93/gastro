@@ -74,7 +74,7 @@ export class ProductCatalogComponent implements OnInit {
   constructor(
     private router: Router,
     private authService: AuthService,
-    private globalService: GlobalService
+    public globalService: GlobalService
   ) {}
 
   ngOnInit(): void {
@@ -86,10 +86,12 @@ export class ProductCatalogComponent implements OnInit {
     }
 
     if (token) {
+      // Benutzer ist angemeldet - normale Funktionalität
       this.authService.checkToken(token).subscribe({
         next: (response) => {
           // Benutzerrolle im GlobalService setzen
           this.globalService.setUserRole(response.user.role);
+          this.globalService.setUserLoggedIn(true);
           this.currentUserId = response.user.id;
           
           this.artikelService.getData().subscribe((res) => {
@@ -107,16 +109,27 @@ export class ProductCatalogComponent implements OnInit {
           });
         },
         error: (error) => {
-          this.isVisible = false;
-          console.error('Token ungültig oder Fehler:', error);
-          this.router.navigate(['/login']);
+          // Token ungültig - als Gast behandeln
+          this.loadAsGuest();
         },
       });
     } else {
-      this.isVisible = false;
-      console.log('Kein Token gefunden.');
-      this.router.navigate(['/login']);
+      // Kein Token - als Gast laden
+      this.loadAsGuest();
     }
+  }
+
+  loadAsGuest(): void {
+    console.log('Lade als Gast...');
+    this.globalService.setUserLoggedIn(false);
+    this.globalService.isAdmin = false;
+    
+    this.artikelService.getData().subscribe((res) => {
+      // Für Gäste nur normale Artikel anzeigen (keine SCHNELLVERKAUF)
+      this.globalArtikels = res.filter((artikel: any) => artikel.category !== 'SCHNELLVERKAUF');
+      this.artikelData = this.globalArtikels;
+      this.isVisible = false;
+    });
   }
 
   // Neue Methode zum Laden der letzten Bestellungen
@@ -420,7 +433,7 @@ export class ProductCatalogComponent implements OnInit {
     });
 
     // Sofort Hintergrundfarbe ändern
-    button.style.backgroundColor = "rgb(255, 102, 0)"; // Orange
+    button.style.backgroundColor = "#10b981"; // Grün statt Orange
 
     // Button vergrößern und danach wieder auf Normalgröße setzen
     button.style.transform = "scale(1.1)";
@@ -525,7 +538,7 @@ export class ProductCatalogComponent implements OnInit {
     });
 
     // Sofort Hintergrundfarbe ändern
-    button.style.backgroundColor = "rgb(255, 102, 0)"; // Orange
+    button.style.backgroundColor = "#10b981"; // Grün statt Orange
 
     // Button vergrößern und danach wieder auf Normalgröße setzen
     button.style.transform = "scale(1.1)";
@@ -568,5 +581,11 @@ export class ProductCatalogComponent implements OnInit {
   collectOrderData(response: any) {
     this.orderData.user_id = response.user.id;
     this.orderData.email = response.user.email;
+  }
+
+  openLoginPrompt() {
+    // Dispatch custom event to trigger header login modal
+    const event = new CustomEvent('openLoginModal');
+    window.dispatchEvent(event);
   }
 }

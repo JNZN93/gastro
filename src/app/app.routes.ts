@@ -17,7 +17,8 @@ import { OrderOverviewComponent } from './order-overview/order-overview.componen
 import { UserManagementComponent } from './user-management/user-management.component';
 
 export const routes: Routes = [
-    { path: '', component: LoadingScreenComponent },
+    { path: '', component: ProductCatalogComponent },
+    { path: 'loading', component: LoadingScreenComponent },
     { path: 'login', component: LoginComponent },
     { path: 'products', component: ProductCatalogComponent },
     { path: 'registration', component: RegistrationComponent },
