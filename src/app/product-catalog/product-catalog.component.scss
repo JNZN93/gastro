@@ -41,13 +41,13 @@
   
   // Mobile Optimierung - kleinere Höhe
   @media (max-width: 768px) {
-    min-height: 70vh;
+    min-height: 60vh;
     padding: 2rem 1rem;
     margin: -60px -1rem 1rem -1rem;
   }
   
   @media (max-width: 480px) {
-    min-height: 60vh;
+    min-height: 50vh;
     padding: 1.5rem 0.75rem;
   }
 }
@@ -63,6 +63,15 @@
   background-position: center;
   background-repeat: no-repeat;
   z-index: 0;
+  
+  // Mobile Optimierung - kleinere Bildgröße
+  @media (max-width: 768px) {
+    background-image: url('https://images.unsplash.com/photo-1553413077-190dd305871c?ixlib=rb-4.0.3&auto=format&fit=crop&w=768&q=70');
+  }
+  
+  @media (max-width: 480px) {
+    background-image: url('https://images.unsplash.com/photo-1553413077-190dd305871c?ixlib=rb-4.0.3&auto=format&fit=crop&w=480&q=60');
+  }
 }
 
 
@@ -3770,6 +3779,17 @@
   .section-title {
     font-size: clamp(1.125rem, 4vw, 1.25rem);
   }
+  
+  // Kritische CSS für schnelleres Rendering
+  .hero-section {
+    contain: layout style paint;
+    will-change: auto;
+  }
+  
+  // Reduzierte Komplexität für bessere Performance
+  .hero-background {
+    will-change: auto;
+  }
 }
 
 @media (max-width: 480px) {
@@ -3862,6 +3882,18 @@
 @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
   .hero-background {
     background-image: url('https://images.unsplash.com/photo-1553413077-190dd305871c?ixlib=rb-4.0.3&auto=format&fit=crop&w=2560&q=80');
+  }
+  
+  @media (max-width: 768px) {
+    .hero-background {
+      background-image: url('https://images.unsplash.com/photo-1553413077-190dd305871c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1536&q=70');
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .hero-background {
+      background-image: url('https://images.unsplash.com/photo-1553413077-190dd305871c?ixlib=rb-4.0.3&auto=format&fit=crop&w=960&q=60');
+    }
   }
 }
 
