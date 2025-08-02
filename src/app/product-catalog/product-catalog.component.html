@@ -113,11 +113,52 @@
     </div>
   </div>
 
+  <!-- New Arrivals Section - nur anzeigen wenn nicht gesucht wird -->
+  <div class="new-arrivals-section" *ngIf="!isSearching">
+    <div class="section-header">
+      <h2 class="section-title">🆕 Neu eingetroffene Artikel</h2>
+      <p class="section-subtitle">Frische Ware - direkt für Sie verfügbar</p>
+    </div>
+    <div class="new-arrivals-grid">
+      @for (artikel of getNewArrivals(); track $index) {
+      <div class="new-arrival-card">
+        <div class="new-arrival-image-container">
+          <img 
+            *ngIf="artikel.main_image_url"
+            [src]="artikel.main_image_url" 
+            [alt]="artikel.article_text"
+            class="new-arrival-image"
+            (error)="onImageError($event)"
+            loading="lazy">
+          <div *ngIf="!artikel.main_image_url" class="new-arrival-placeholder">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+          </div>
+          <div class="new-arrival-badge">Neu</div>
+        </div>
+        <div class="new-arrival-content">
+          <h3 class="new-arrival-title">{{ artikel.article_text }}</h3>
+          <p class="new-arrival-number">Art.-Nr: {{ artikel.article_number }}</p>
+          @if(globalService.isUserLoggedIn) {
+          <button (click)="addToCart($event, artikel)" class="new-arrival-add-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m8 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01"/>
+            </svg>
+            Zum Warenkorb
+          </button>
+          }
+        </div>
+      </div>
+      }
+    </div>
+  </div>
+
   <!-- Featured Products Section - nur anzeigen wenn nicht gesucht wird -->
   <div class="featured-section" *ngIf="!isSearching">
     <div class="section-header">
-      <h2 class="section-title">Empfohlene Produkte</h2>
-      <p class="section-subtitle">Großhandel für Gastronomie - B2B & B2C</p>
+      <h2 class="section-title">🔥 Angebote</h2>
+      <p class="section-subtitle">Sonderpreise - Nur für kurze Zeit verfügbar</p>
     </div>
     <div class="featured-grid">
       @for (artikel of getFeaturedProducts(); track $index) {
@@ -135,7 +176,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
             </svg>
           </div>
-          <div class="featured-badge">Empfohlen</div>
+          <div class="featured-badge">Angebot</div>
         </div>
         <div class="featured-content">
           <h3 class="featured-title">{{ artikel.article_text }}</h3>
