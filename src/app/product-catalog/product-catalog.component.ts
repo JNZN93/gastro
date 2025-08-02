@@ -871,4 +871,86 @@ export class ProductCatalogComponent implements OnInit {
     // Hier könnte später eine Logik hinzugefügt werden, um wirklich neue Artikel zu filtern
     return productsWithImages.slice(0, 4);
   }
+
+  getBestsellerProducts(): any[] {
+    // Filtere Produkte mit Bildern (main_image_url)
+    const productsWithImages = this.artikelData.filter(artikel => 
+      artikel.main_image_url && 
+      artikel.main_image_url.trim() !== '' && 
+      artikel.main_image_url !== 'null' &&
+      artikel.main_image_url !== 'undefined'
+    );
+    
+    // Zeige die ersten 6 Produkte mit Bildern als "Bestseller"
+    // Hier könnte später eine Logik basierend auf Verkaufszahlen hinzugefügt werden
+    return productsWithImages.slice(0, 6);
+  }
+
+  getQuickOrderProducts(): any[] {
+    // Filtere Produkte mit Bildern (main_image_url)
+    const productsWithImages = this.artikelData.filter(artikel => 
+      artikel.main_image_url && 
+      artikel.main_image_url.trim() !== '' && 
+      artikel.main_image_url !== 'null' &&
+      artikel.main_image_url !== 'undefined'
+    );
+    
+    // Zeige die ersten 4 Produkte mit Bildern als "Schnellbestellung"
+    // Hier könnte später eine Logik basierend auf häufig gekauften Artikeln hinzugefügt werden
+    return productsWithImages.slice(0, 4);
+  }
+
+  quickAddToCart(event: Event, artikel: any, quantity: number): void {
+    event.stopPropagation();
+    
+    const artikelToAdd = {
+      ...artikel,
+      quantity: quantity.toString()
+    };
+
+    // Überprüfen, ob der Artikel bereits im Warenkorb ist
+    const existingItem = this.globalService.warenkorb.find(
+      (item) => item.article_number == artikelToAdd.article_number
+    );
+
+    if (existingItem) {
+      // Falls der Artikel existiert, die Menge erhöhen
+      existingItem.quantity += quantity;
+      console.log('🔄 [QUICK-CART] Menge erhöht für Artikel:', artikelToAdd.article_number);
+    } else {
+      // Neuen Artikel hinzufügen
+      this.globalService.warenkorb = [
+        ...this.globalService.warenkorb,
+        { ...artikelToAdd, quantity: quantity },
+      ];
+      console.log('✅ [QUICK-CART] Neuer Artikel hinzugefügt:', artikelToAdd.article_number);
+    }
+
+    this.getTotalPrice();
+    localStorage.setItem('warenkorb', JSON.stringify(this.globalService.warenkorb));
+    
+    // Toast-Benachrichtigung anzeigen
+    const totalQuantity = existingItem ? existingItem.quantity : quantity;
+    let message: string;
+    if (existingItem && existingItem.quantity > quantity) {
+      message = `${quantity}x "${artikelToAdd.article_text}" hinzugefügt (${totalQuantity} insgesamt im Warenkorb)`;
+    } else if (quantity > 1) {
+      message = `${quantity}x "${artikelToAdd.article_text}" zum Warenkorb hinzugefügt`;
+    } else {
+      message = `"${artikelToAdd.article_text}" zum Warenkorb hinzugefügt`;
+    }
+    this.showToastNotification(message, 'success');
+  }
+
+  scrollToCategories(): void {
+    const categoriesSection = document.querySelector('.categories-section');
+    if (categoriesSection) {
+      categoriesSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  }
+
+  scrollToContact(): void {
+    // Scroll to bottom of page for contact info
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+  }
 }
