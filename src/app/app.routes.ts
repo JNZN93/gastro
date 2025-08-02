@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { ProductCatalogComponent } from './product-catalog/product-catalog.component';
+// import { ProductCatalogComponent } from './product-catalog/product-catalog.component';
 import { LoginComponent } from './login/login.component';
 import { RegistrationComponent } from './registration/registration.component';
 import { HeaderComponent } from './header/header.component';
@@ -20,10 +20,16 @@ import { AuthGuard } from './auth.guard';
 import { AdminAuthGuard } from './admin-auth.guard';
 
 export const routes: Routes = [
-    { path: '', component: ProductCatalogComponent },
+    { 
+        path: '', 
+        loadComponent: () => import('./product-catalog/product-catalog.component').then(m => m.ProductCatalogComponent)
+    },
     { path: 'loading', component: LoadingScreenComponent },
     { path: 'login', component: LoginComponent },
-    { path: 'products', component: ProductCatalogComponent },
+    { 
+        path: 'products', 
+        loadComponent: () => import('./product-catalog/product-catalog.component').then(m => m.ProductCatalogComponent)
+    },
     { path: 'registration', component: RegistrationComponent },
     { path: 'admin', component: AdminComponent},
     { path: 'guest-link', component: GuestLinkComponent},

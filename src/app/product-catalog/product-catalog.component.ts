@@ -66,9 +66,6 @@ export class ProductCatalogComponent implements OnInit {
   toastMessage: string = '';
   toastType: 'success' | 'error' = 'success';
 
-  // Parallax-Eigenschaften
-  parallaxOffset: number = 0;
-
   videoConstraints: MediaTrackConstraints = {
     width: { ideal: 1920 },
     height: { ideal: 1080 }
@@ -80,27 +77,11 @@ export class ProductCatalogComponent implements OnInit {
     public globalService: GlobalService
   ) {}
 
-  @HostListener('window:scroll', ['$event'])
-  onWindowScroll() {
-    const scrollPosition = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
-    this.parallaxOffset = scrollPosition * 0.5; // Parallax-Geschwindigkeit
-    console.log('Scroll position:', scrollPosition, 'Parallax offset:', this.parallaxOffset); // Debug
-  }
-
-  // Alternative Methode für bessere Browser-Kompatibilität
-  @HostListener('document:scroll', ['$event'])
-  onDocumentScroll() {
-    const scrollPosition = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
-    this.parallaxOffset = scrollPosition * 0.5;
-    
-    // Direkter DOM-Zugriff als Fallback
-    const heroBackground = document.querySelector('.hero-background') as HTMLElement;
-    if (heroBackground) {
-      heroBackground.style.transform = `translateY(${this.parallaxOffset}px)`;
-    }
-  }
-
   ngOnInit(): void {
+    // Performance Monitoring für Lazy Loading
+    const startTime = performance.now();
+    console.log('ProductCatalogComponent: Lazy Loading gestartet');
+    
     const token = localStorage.getItem('token');
     const loadedWarenkorb = localStorage.getItem('warenkorb')
 
@@ -137,6 +118,10 @@ export class ProductCatalogComponent implements OnInit {
             this.collectOrderData(response);
             this.globalService.orderData = this.orderData;
             this.isVisible = false;
+            
+            // Performance Monitoring beenden
+            const endTime = performance.now();
+            console.log(`ProductCatalogComponent: Lazy Loading abgeschlossen in ${(endTime - startTime).toFixed(2)}ms`);
           });
         },
         error: (error) => {
@@ -155,6 +140,9 @@ export class ProductCatalogComponent implements OnInit {
     this.globalService.setUserLoggedIn(false);
     this.globalService.isAdmin = false;
     
+    // Performance Monitoring für Gast-Modus
+    const startTime = performance.now();
+    
     this.artikelService.getData().subscribe((res) => {
       // Für Gäste nur normale Artikel anzeigen (keine SCHNELLVERKAUF und keine PFAND)
       this.globalArtikels = res.filter((artikel: any) => artikel.category !== 'SCHNELLVERKAUF' && artikel.category !== 'PFAND');
@@ -166,6 +154,10 @@ export class ProductCatalogComponent implements OnInit {
       this.logArticleCategories('Gast');
       
       this.isVisible = false;
+      
+      // Performance Monitoring beenden für Gast-Modus
+      const endTime = performance.now();
+      console.log(`ProductCatalogComponent: Gast-Modus Lazy Loading abgeschlossen in ${(endTime - startTime).toFixed(2)}ms`);
     });
   }
 
