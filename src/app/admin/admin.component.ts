@@ -46,9 +46,6 @@ export class AdminComponent implements OnInit {
   ngOnInit(): void {
     this.checkUserRole();
     this.loadOrders();
-    setInterval(() => {
-      this.loadOrders();
-    }, 1000 * 60)
   }
 
   // Getter für gefilterte Bestellungen
