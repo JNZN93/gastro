@@ -1796,8 +1796,34 @@
 }
 
 @media (max-width: 768px) {
+  .dashboard-header {
+    padding: 1rem;
+  }
+
+  .header-content {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+  }
+
+  .header-left {
+    text-align: center;
+  }
+
   .dashboard-title {
     font-size: 1.5rem;
+    justify-content: center;
+  }
+
+  .header-center {
+    order: 2;
+    margin: 0;
+    max-width: none;
+  }
+
+  .header-right {
+    order: 3;
+    justify-content: center;
   }
 
   .header-actions {
@@ -1914,6 +1940,54 @@
 @media (max-width: 480px) {
   .dashboard-header {
     padding: 0.75rem 1rem;
+  }
+
+  .header-content {
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: stretch;
+  }
+
+  .header-left {
+    text-align: center;
+  }
+
+  .dashboard-title {
+    font-size: 1.25rem;
+    justify-content: center;
+  }
+
+  .header-center {
+    order: 2;
+    margin: 0;
+    max-width: none;
+  }
+
+  .header-right {
+    order: 3;
+    justify-content: center;
+  }
+
+  .header-actions {
+    flex-direction: row;
+    gap: 0.5rem;
+    justify-content: center;
+  }
+
+  .scanner-btn, .orders-btn {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+    min-width: 80px;
+    max-width: 100px;
+
+    svg {
+      width: 1rem;
+      height: 1rem;
+    }
+
+    .btn-text {
+      font-size: 0.75rem;
+    }
   }
 
   .products-section {

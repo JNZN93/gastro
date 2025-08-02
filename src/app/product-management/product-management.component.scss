@@ -1909,6 +1909,32 @@
 
 // Responsive styles for EAN modal
 @media (max-width: 768px) {
+  .dashboard-header {
+    padding: 1rem;
+  }
+
+  .header-content {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+  }
+
+  .header-actions {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+  }
+
+  .search-box {
+    order: 2;
+    max-width: none;
+  }
+
+  .scanner-btn {
+    order: 1;
+    align-self: center;
+  }
+
   .ean-modal-content {
     margin: 10px;
     max-height: calc(100vh - 20px);
@@ -1944,5 +1970,34 @@
         justify-content: center;
       }
     }
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-header {
+    padding: 0.75rem;
+  }
+
+  .header-content {
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: stretch;
+  }
+
+  .header-actions {
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: stretch;
+  }
+
+  .search-box {
+    order: 2;
+    max-width: none;
+  }
+
+  .scanner-btn {
+    order: 1;
+    align-self: center;
+    padding: 10px;
   }
 } 

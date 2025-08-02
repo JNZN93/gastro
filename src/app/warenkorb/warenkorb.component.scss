@@ -818,6 +818,17 @@ h4, h5 {
         overflow-y: auto; /* Sicherstellen, dass der Inhalt scrollt */
         box-sizing: border-box;
     }
+
+    .header-content {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: center;
+        text-align: center;
+    }
+
+    .cart-title {
+        font-size: 1.25rem;
+    }
   }
 
   @media only screen and (max-width: 756px) {
@@ -838,6 +849,17 @@ h4, h5 {
     }
     .order-main {
         max-width: 300px;
+    }
+
+    .header-content {
+        flex-direction: column;
+        gap: 0.75rem;
+        align-items: center;
+        text-align: center;
+    }
+
+    .cart-title {
+        font-size: 1.125rem;
     }
     
   }
