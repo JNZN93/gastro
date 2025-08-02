@@ -94,7 +94,8 @@ export class AdminComponent implements OnInit {
   }
 
   loadOrders() {
-    this.orderService.getAllOrders().subscribe({
+    const token = localStorage.getItem('token');
+    this.orderService.getAllOrders(token).subscribe({
       next: (response) => {
         this.orders = response.orders;
       },

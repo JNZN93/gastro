@@ -129,7 +129,7 @@ header {
       cursor: pointer;
       padding: 10px 20px;
       border-radius: 8px;
-      background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+      background: transparent;
       color: white;
       transition: all 0.2s;
       border: none;
@@ -138,10 +138,11 @@ header {
       white-space: nowrap;
       box-sizing: border-box;
       line-height: 1;
+      box-shadow: 0px 0px 5px 1px gray;
 
       &:hover {
         transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3);
+        box-shadow: 0px 0px 8px 2px gray;
       }
 
       svg {

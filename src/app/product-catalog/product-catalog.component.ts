@@ -353,12 +353,16 @@ export class ProductCatalogComponent implements OnInit {
 
   // Image Modal Methoden
   openImageModal(artikel: any): void {
+    console.log('openImageModal called with:', artikel);
+    console.log('artikel.main_image_url:', artikel.main_image_url);
     if (artikel.main_image_url) {
       this.selectedImageUrl = artikel.main_image_url;
       this.selectedImageProduct = artikel;
       this.showImageModal = true;
       // Body scroll verhindern
       document.body.style.overflow = 'hidden';
+    } else {
+      console.log('No main_image_url found for this article');
     }
   }
 

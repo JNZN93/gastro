@@ -53,6 +53,8 @@
             [src]="artikel.main_image_url" 
             [alt]="artikel.article_text"
             class="product-image"
+            (click)="openImageModal(artikel)"
+            (error)="onImageError($event)"
             loading="lazy">
           
           <!-- Placeholder für Produkte ohne Bild -->
@@ -88,7 +90,7 @@
               
               <!-- Für nicht angemeldete Benutzer -->
               @else {
-                <button (click)="goBack()" class="login-to-order-btn">
+                <button (click)="goBack()" class="login-prompt-btn">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                   </svg>
@@ -122,8 +124,45 @@
   <app-warenkorb></app-warenkorb>
   }
 
+  <!-- Image Modal für Vollbildanzeige -->
+  <div class="image-modal-overlay" *ngIf="showImageModal" (click)="closeImageModal()"></div>
+  <div class="image-modal" *ngIf="showImageModal">
+    <div class="image-modal-content">
+      <div class="image-modal-header">
+        <h3>{{ selectedImageProduct?.article_text || 'Produktbild' }}</h3>
+        <button (click)="closeImageModal()" class="close-image-modal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <div class="image-modal-body">
+        <img 
+          [src]="selectedImageUrl" 
+          [alt]="selectedImageProduct?.article_text || 'Produktbild'"
+          class="fullsize-image"
+          [class.zoomed]="isImageZoomed"
+          (click)="toggleImageZoom()"
+          (error)="onImageError($event)">
+      </div>
+    </div>
+  </div>
+
   <!-- Loading Screen -->
   @if (isVisible) {
   <app-upload-loading></app-upload-loading>
   }
+
+  <!-- Toast Benachrichtigung -->
+  <div class="toast-notification" *ngIf="showToast" [class.success]="toastType === 'success'" [class.error]="toastType === 'error'">
+    <div class="toast-content">
+      <svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" *ngIf="toastType === 'success'">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+      </svg>
+      <svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" *ngIf="toastType === 'error'">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+      <span class="toast-message">{{ toastMessage }}</span>
+    </div>
+  </div>
 </div>

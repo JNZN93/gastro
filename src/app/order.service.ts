@@ -21,9 +21,13 @@ export class OrderService {
     return this.http.post(this.apiUrlOrder, orderData, { headers });
   }
 
-  getAllOrders(): Observable<any>  {
+  getAllOrders(token: string | null): Observable<any>  {
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    });
 
-      return this.http.get<any>(this.apiUrlAllOrders);
+    return this.http.get<any>(this.apiUrlAllOrders, { headers });
   }
 
   updateStatus(orderId: any, status: any, token: string | null): Observable<any> {

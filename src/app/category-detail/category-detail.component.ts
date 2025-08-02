@@ -28,6 +28,17 @@ export class CategoryDetailComponent implements OnInit {
   searchTerm: string = '';
   filteredData: any[] = [];
 
+  // Eigenschaften für Image Modal
+  showImageModal: boolean = false;
+  selectedImageUrl: string = '';
+  selectedImageProduct: any = null;
+  isImageZoomed: boolean = false;
+
+  // Eigenschaften für Toast-Benachrichtigung
+  showToast: boolean = false;
+  toastMessage: string = '';
+  toastType: 'success' | 'error' = 'success';
+
   constructor(
     private authService: AuthService,
     public globalService: GlobalService
@@ -168,8 +179,14 @@ export class CategoryDetailComponent implements OnInit {
   }
 
   showToastNotification(message: string, type: 'success' | 'error' = 'success'): void {
-    // Toast-Benachrichtigung implementieren
-    console.log(`Toast: ${message}`);
+    this.toastMessage = message;
+    this.toastType = type;
+    this.showToast = true;
+    
+    // Toast nach 3 Sekunden automatisch ausblenden
+    setTimeout(() => {
+      this.showToast = false;
+    }, 3000);
   }
 
   // Favoriten-Methoden
@@ -190,5 +207,39 @@ export class CategoryDetailComponent implements OnInit {
     }
     
     localStorage.setItem('favoriteItems', JSON.stringify(favorites));
+  }
+
+  // Image Modal Methoden
+  openImageModal(artikel: any): void {
+    console.log('openImageModal called with:', artikel);
+    console.log('artikel.main_image_url:', artikel.main_image_url);
+    if (artikel.main_image_url) {
+      this.selectedImageUrl = artikel.main_image_url;
+      this.selectedImageProduct = artikel;
+      this.showImageModal = true;
+      // Body scroll verhindern
+      document.body.style.overflow = 'hidden';
+    } else {
+      console.log('No main_image_url found for this article');
+    }
+  }
+
+  closeImageModal(): void {
+    this.showImageModal = false;
+    this.selectedImageUrl = '';
+    this.selectedImageProduct = null;
+    this.isImageZoomed = false;
+    // Body scroll wieder erlauben
+    document.body.style.overflow = 'auto';
+  }
+
+  toggleImageZoom(): void {
+    this.isImageZoomed = !this.isImageZoomed;
+  }
+
+  onImageError(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    // Fallback auf Standard-Bild
+    img.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60';
   }
 }

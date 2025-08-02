@@ -64,11 +64,11 @@
   .dashboard-icon {
     width: 32px;
     height: 32px;
-    color: #3498db;
+    color: #10b981;
   }
   
   .title-text {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -142,7 +142,7 @@
 }
 
 .product-count {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
   padding: 8px 16px;
   border-radius: 20px;
@@ -174,7 +174,7 @@
   &:hover {
     transform: translateY(-5px);
     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
-    border-color: rgba(229, 62, 62, 0.2);
+    border-color: rgba(16, 185, 129, 0.2);
   }
 }
 
@@ -191,10 +191,11 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(135deg, rgba(229, 62, 62, 0.1) 0%, rgba(197, 48, 48, 0.1) 100%);
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%);
     opacity: 0;
     transition: opacity 0.3s ease;
     z-index: 1;
+    pointer-events: none;
   }
   
   .product-card:hover &::before {
@@ -206,10 +207,16 @@
     height: 100%;
     object-fit: cover;
     transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 0;
+    cursor: pointer;
+    z-index: 2;
     
     .product-card:hover & {
       transform: scale(1.05);
+    }
+
+    &:hover {
+      transform: scale(1.02);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
   }
   
@@ -241,7 +248,7 @@
     justify-content: center;
     cursor: pointer;
     transition: all 0.3s ease;
-    z-index: 2;
+    z-index: 3;
     
     &:hover {
       background: white;
@@ -278,7 +285,7 @@
   transition: color 0.3s ease;
   
   .product-card:hover & {
-    color: #e53e3e;
+    color: #10b981;
   }
 }
 
@@ -306,8 +313,8 @@
       background: rgba(248, 250, 252, 0.8);
       
       &:focus {
-        border-color: #e53e3e;
-        box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.1);
+        border-color: #10b981;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
       }
       
       &::placeholder {
@@ -321,7 +328,7 @@
       justify-content: center;
       gap: 6px;
       padding: 8px 12px;
-      background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
       color: white;
       border: none;
       border-radius: 8px;
@@ -332,7 +339,7 @@
       
       &:hover {
         transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(229, 62, 62, 0.3);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
       }
       
       svg {
@@ -347,18 +354,47 @@
       justify-content: center;
       gap: 6px;
       padding: 8px 12px;
-      background: rgba(248, 250, 252, 0.8);
-      color: #4a5568;
-      border: 1px solid rgba(226, 232, 240, 0.8);
+      background: transparent;
+      color: white;
+      border: none;
       border-radius: 8px;
       font-weight: 600;
       font-size: 0.875rem;
       cursor: pointer;
       transition: all 0.3s ease;
+      box-shadow: 0px 0px 5px 1px gray;
       
       &:hover {
-        background: rgba(237, 242, 247, 0.8);
-        border-color: rgba(203, 213, 224, 0.8);
+        background: transparent;
+        box-shadow: 0px 0px 8px 2px gray;
+      }
+      
+      svg {
+        width: 16px;
+        height: 16px;
+      }
+    }
+
+    .login-prompt-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 12px;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+      
+      &:hover {
+        background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3);
       }
       
       svg {
@@ -402,7 +438,7 @@
     align-items: center;
     gap: 8px;
     padding: 14px 24px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
     color: white;
     border: none;
     border-radius: 12px;
@@ -412,7 +448,7 @@
     
     &:hover {
       transform: translateY(-2px);
-      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+      box-shadow: 0 10px 20px rgba(16, 185, 129, 0.3);
     }
   }
 }
@@ -464,5 +500,298 @@
   
   .product-number {
     font-size: 0.75rem;
+  }
+}
+
+// Image Modal Styles
+.image-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.image-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1001;
+  width: 95vw;
+  height: 95vh;
+  max-width: 1400px;
+  max-height: 90vh;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  animation: modalFadeIn 0.3s ease-out;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+.image-modal-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.image-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+
+  h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1a202c;
+    font-family: 'Poppins', sans-serif;
+  }
+}
+
+.close-image-modal {
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  svg {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  &:hover {
+    background: rgba(226, 232, 240, 0.8);
+    color: #1a202c;
+    transform: scale(1.1);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+.image-modal-body {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: #f8fafc;
+  overflow: auto;
+  min-height: 0;
+}
+
+.fullsize-image {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  transition: transform 0.3s ease;
+  cursor: zoom-in;
+
+  &:hover {
+    transform: scale(1.05);
+  }
+
+  &.zoomed {
+    transform: scale(1.5);
+    cursor: zoom-out;
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  &.zoomed:hover {
+    transform: scale(1.6);
+  }
+}
+
+// Toast Benachrichtigung Styles
+.toast-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  max-width: 400px;
+  min-width: 300px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e5e7eb;
+  animation: slideInRight 0.3s ease-out;
+  overflow: hidden;
+
+  &.success {
+    border-left: 4px solid #10b981;
+    
+    .toast-icon {
+      color: #10b981;
+    }
+  }
+
+  &.error {
+    border-left: 4px solid #ef4444;
+    
+    .toast-icon {
+      color: #ef4444;
+    }
+  }
+}
+
+.toast-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+}
+
+.toast-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.toast-message {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  line-height: 1.4;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+// Responsive Design für Image Modal
+@media (max-width: 768px) {
+  .image-modal-overlay {
+    padding: 0.5rem;
+  }
+
+  .image-modal {
+    width: 95vw;
+    height: 85vh;
+    max-width: none;
+    max-height: none;
+  }
+
+  .image-modal-header {
+    padding: 1rem 1.5rem;
+
+    h3 {
+      font-size: 1.125rem;
+    }
+  }
+
+  .image-modal-body {
+    padding: 0.5rem;
+  }
+
+  .close-image-modal {
+    svg {
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+  }
+
+  .toast-notification {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+    max-width: none;
+    min-width: auto;
+  }
+
+  .toast-content {
+    padding: 14px 16px;
+  }
+
+  .toast-message {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .image-modal-overlay {
+    padding: 0.25rem;
+  }
+
+  .image-modal {
+    width: 98vw;
+    height: 80vh;
+    border-radius: 8px;
+  }
+
+  .image-modal-header {
+    padding: 0.75rem 1rem;
+
+    h3 {
+      font-size: 1rem;
+    }
+  }
+
+  .image-modal-body {
+    padding: 0.25rem;
+  }
+
+  .fullsize-image {
+    border-radius: 4px;
+  }
+
+  .toast-notification {
+    top: 5px;
+    right: 5px;
+    left: 5px;
+    border-radius: 8px;
+  }
+
+  .toast-content {
+    padding: 12px 14px;
+    gap: 10px;
+  }
+
+  .toast-icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  .toast-message {
+    font-size: 12px;
   }
 }
