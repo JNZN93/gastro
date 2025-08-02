@@ -31,18 +31,17 @@
         </div>
       </div>
       
-      <div class="header-right">
-        <div class="header-actions">
-          <div class="product-count">
-            {{ filteredData.length }} Produkte
-          </div>
-        </div>
-      </div>
+
     </div>
   </div>
 
   <!-- Products Section -->
   <div class="products-section">
+    <!-- Product Count Display -->
+    <div class="product-count-display">
+      <span class="product-count-text">{{ filteredData.length }} Produkte in "{{ categoryName }}"</span>
+    </div>
+    
     <div class="products-grid">
       @for (artikel of filteredData; track $index) {
       <div class="product-card">
