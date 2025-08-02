@@ -56,6 +56,11 @@ export class OrderOverviewComponent implements OnInit {
   isDeleting = false;
   deleteConfirmationText = '';
   showConfirmationError = false;
+  showDeleteAllModal = false;
+  isDeletingAll = false;
+  deleteAllConfirmationText = '';
+  showDeleteAllConfirmationError = false;
+  userRole: string = '';
 
   constructor(
     private http: HttpClient,
@@ -72,8 +77,11 @@ export class OrderOverviewComponent implements OnInit {
   checkUserRole() {
     this.authService.checkToken(localStorage.getItem('token')).subscribe({
       next: (response) => {
-        if (response?.user?.role !== 'admin') {
+        // Erlaube Zugriff für Admin und Employee
+        if (response?.user?.role !== 'admin' && response?.user?.role !== 'employee') {
           this.router.navigate(['/login']);
+        } else {
+          this.userRole = response.user.role;
         }
       },
       error: (error) => {
@@ -285,6 +293,10 @@ export class OrderOverviewComponent implements OnInit {
     return order.role === 'admin' || order.role === 'employee';
   }
 
+  isAdmin(): boolean {
+    return this.userRole === 'admin';
+  }
+
   getCustomerDisplayName(order: Order): string {
     if (this.isEmployee(order)) {
       return '-'; // Keine Anzeige für admin/employee in der Kundenspalte
@@ -345,6 +357,52 @@ export class OrderOverviewComponent implements OnInit {
       error: (error) => {
         console.error('Fehler beim Löschen der Bestellung:', error);
         this.isDeleting = false;
+        // Hier könnte man eine Fehlermeldung anzeigen
+      }
+    });
+  }
+
+  deleteAllOrders() {
+    this.showDeleteAllModal = true;
+    this.deleteAllConfirmationText = '';
+    this.showDeleteAllConfirmationError = false;
+  }
+
+  cancelDeleteAll() {
+    this.showDeleteAllModal = false;
+    this.isDeletingAll = false;
+    this.deleteAllConfirmationText = '';
+    this.showDeleteAllConfirmationError = false;
+  }
+
+  isDeleteAllConfirmationValid(): boolean {
+    return this.deleteAllConfirmationText === 'ALLE LÖSCHEN';
+  }
+
+  confirmDeleteAll() {
+    // Überprüfe, ob die Bestätigung korrekt ist
+    if (!this.isDeleteAllConfirmationValid()) {
+      this.showDeleteAllConfirmationError = true;
+      return;
+    }
+
+    this.isDeletingAll = true;
+    this.showDeleteAllConfirmationError = false;
+    const token = localStorage.getItem('token');
+
+    this.orderService.deleteAllOrders(token).subscribe({
+      next: (response) => {
+        console.log('Alle Bestellungen erfolgreich gelöscht:', response);
+        // Alle Bestellungen aus der lokalen Liste entfernen
+        this.orders = [];
+        this.showDeleteAllModal = false;
+        this.isDeletingAll = false;
+        this.deleteAllConfirmationText = '';
+        this.showDeleteAllConfirmationError = false;
+      },
+      error: (error) => {
+        console.error('Fehler beim Löschen aller Bestellungen:', error);
+        this.isDeletingAll = false;
         // Hier könnte man eine Fehlermeldung anzeigen
       }
     });

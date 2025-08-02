@@ -7,6 +7,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../authentication.service';
 import { UploadLoadingComponent } from "../upload-loading/upload-loading.component";
+import { GlobalService } from '../global.service';
 
 @Component({
   selector: 'app-admin',
@@ -38,7 +39,8 @@ export class AdminComponent implements OnInit {
     private router: Router,
     private orderService: OrderService,
     private http: HttpClient,
-    private authService: AuthService
+    private authService: AuthService,
+    public globalService: GlobalService
   ) { }
 
   ngOnInit(): void {
@@ -79,9 +81,14 @@ export class AdminComponent implements OnInit {
   checkUserRole() {
     this.authService.checkToken(localStorage.getItem('token')).subscribe({
       next: (response) => {
-        if (response?.user?.role !== 'admin') {
+        // Employee und Admin haben Zugriff auf das Dashboard
+        if (response?.user?.role !== 'admin' && response?.user?.role !== 'employee') {
           this.router.navigate(['/login']);
         }
+        // Benutzerrolle im GlobalService setzen
+        this.globalService.setUserRole(response.user.role);
+        this.globalService.setUserName(response.user.name || response.user.email || 'Benutzer');
+        this.globalService.setUserLoggedIn(true);
       },
       error: (error) => {
         console.error(error);
@@ -450,5 +457,36 @@ formatDate(dateString: string): string {
     }
     this.showModal = false;
     this.selectedOrder = null;
+  }
+
+  // ===== PERMISSION METHODS =====
+  // Methode zum Prüfen, ob Benutzer Admin ist
+  isAdmin(): boolean {
+    return this.globalService.getUserRole() === 'admin';
+  }
+
+  // Methode zum Prüfen, ob Benutzer Employee ist
+  isEmployee(): boolean {
+    return this.globalService.getUserRole() === 'employee';
+  }
+
+  // Methode zum Prüfen, ob Benutzer Gastzugang erstellen darf
+  canCreateGuestLink(): boolean {
+    return this.isAdmin();
+  }
+
+  // Methode zum Prüfen, ob Benutzer Aufträge erstellen darf
+  canCreateOrders(): boolean {
+    return this.isAdmin();
+  }
+
+  // Methode zum Prüfen, ob Benutzer User Management nutzen darf
+  canManageUsers(): boolean {
+    return this.isAdmin();
+  }
+
+  // Methode zum Prüfen, ob Benutzer Daten hochladen darf
+  canUploadData(): boolean {
+    return this.isAdmin();
   }
 }

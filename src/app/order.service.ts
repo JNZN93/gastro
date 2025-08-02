@@ -47,4 +47,13 @@ export class OrderService {
 
     return this.http.delete(this.apiUrlOrder + '/' + orderId, { headers });
   }
+
+  deleteAllOrders(token: string | null): Observable<any> {
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    });
+
+    return this.http.delete(this.apiUrlOrder + '/all', { headers });
+  }
 }

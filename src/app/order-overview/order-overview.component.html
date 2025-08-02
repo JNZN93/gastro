@@ -14,6 +14,16 @@
           <span class="stat-label">Gesamt Bestellungen</span>
         </div>
       </div>
+      <div class="header-actions">
+        @if (isAdmin()) {
+          <button class="delete-all-btn" (click)="deleteAllOrders()" [disabled]="orders.length === 0">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+            </svg>
+            Alle löschen
+          </button>
+        }
+      </div>
     </div>
   </div>
 
@@ -158,6 +168,63 @@
               Wird gelöscht...
             } @else {
               Bestellung löschen
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Delete All Orders Confirmation Modal -->
+  @if (showDeleteAllModal) {
+    <div class="modal-overlay" (click)="cancelDeleteAll()">
+      <div class="delete-modal-content" (click)="$event.stopPropagation()">
+        <div class="delete-modal-header">
+          <h2>Alle Bestellungen löschen</h2>
+          <button class="close-btn" (click)="cancelDeleteAll()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+        
+        <div class="delete-modal-body">
+          <div class="warning-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+            </svg>
+          </div>
+          
+          <h3>WARNUNG: Kritische Aktion!</h3>
+          <p>Sie sind dabei, <strong>alle {{ orders.length }} Bestellungen</strong> unwiderruflich zu löschen.</p>
+          <p class="warning-text">Diese Aktion kann nicht rückgängig gemacht werden und betrifft alle Bestellungen im System.</p>
+          
+          <div class="confirmation-input">
+            <label for="deleteAllConfirmation">Geben Sie <strong>ALLE LÖSCHEN</strong> ein, um die Löschung aller Bestellungen zu bestätigen:</label>
+            <input 
+              type="text" 
+              id="deleteAllConfirmation"
+              [(ngModel)]="deleteAllConfirmationText" 
+              placeholder="ALLE LÖSCHEN eingeben..."
+              class="confirmation-input-field"
+              [class.error]="showDeleteAllConfirmationError"
+            >
+            @if (showDeleteAllConfirmationError) {
+              <span class="error-message">Bestätigungstext stimmt nicht überein</span>
+            }
+          </div>
+        </div>
+        
+        <div class="delete-modal-footer">
+          <button class="btn-secondary" (click)="cancelDeleteAll()">Abbrechen</button>
+          <button class="btn-danger" (click)="confirmDeleteAll()" [disabled]="isDeletingAll || !isDeleteAllConfirmationValid()">
+            @if (isDeletingAll) {
+              <svg class="spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+              </svg>
+              Werden gelöscht...
+            } @else {
+              Alle Bestellungen löschen
             }
           </button>
         </div>

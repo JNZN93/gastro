@@ -31,7 +31,7 @@ export const routes: Routes = [
         loadComponent: () => import('./product-catalog/product-catalog.component').then(m => m.ProductCatalogComponent)
     },
     { path: 'registration', component: RegistrationComponent },
-    { path: 'admin', component: AdminComponent},
+    { path: 'admin', component: AdminComponent, canActivate: [AuthGuard]},
     { path: 'guest-link', component: GuestLinkComponent},
     { path: 'verify', component: VerifyComponent},
     { path: 'privacy', component: PrivacyPolicyComponent},

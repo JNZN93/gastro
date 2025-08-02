@@ -63,7 +63,7 @@
         </div>
         
         <div class="side-modal-content">
-            @if (this.globalService.isAdmin) {
+            @if (this.globalService.isAdmin || this.globalService.getUserRole() === 'employee') {
                 @if (!shouldHideElementAdmin()) {
                     <div class="side-modal-item" (click)="navigateToAdmin(); closeSideModal()">
                         <img src="dashboard.png" alt="">

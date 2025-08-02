@@ -99,6 +99,9 @@ export class ProductCatalogComponent implements OnInit {
           this.globalService.setUserLoggedIn(true);
           this.currentUserId = response.user.id;
           
+          // Keine automatische Weiterleitung für Employee-Benutzer - sie bleiben auf der Produktkatalog-Seite
+          // Employee-Benutzer können über das seitliche Menü zum Dashboard navigieren
+          
           this.artikelService.getData().subscribe((res) => {
             if(response.user.role == 'admin') {
               this.globalService.isAdmin = true;
