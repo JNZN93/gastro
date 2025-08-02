@@ -690,11 +690,11 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       let quantity = Number(artikel.quantity);
 
       // Wenn keine Menge eingegeben wurde oder die Menge leer/null/ungültig ist, setze auf 1
-      if (!quantity || isNaN(quantity) || quantity <= 0) {
+      if (!quantity || isNaN(quantity)) {
         quantity = 1;
         artikel.quantity = 1;
       } else {
-        // Übernehme die Menge exakt wie eingegeben, ohne Rundung
+        // Übernehme die Menge exakt wie eingegeben, ohne Rundung (auch negative Zahlen)
         artikel.quantity = quantity;
       }
       
@@ -1108,8 +1108,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
 
     if (
       !artikel.quantity ||
-      isNaN(Number(artikel.quantity)) ||
-      Number(artikel.quantity) < 1
+      isNaN(Number(artikel.quantity))
     ) {
       artikel.quantity = 1;
     }
