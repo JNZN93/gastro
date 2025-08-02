@@ -1347,8 +1347,8 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
         // Entferne auch alle Leerzeichen
         const cleanQuantity = item.quantity.replace(/\s/g, '').replace(',', '.');
         
-        // Prüfe, ob es eine gültige Dezimalzahl ist
-        if (!/^\d*\.?\d+$/.test(cleanQuantity)) {
+        // Prüfe, ob es eine gültige Dezimalzahl ist (erlaubt jetzt auch negative Zahlen)
+        if (!/^-?\d*\.?\d+$/.test(cleanQuantity)) {
           console.warn('⚠️ [VALIDATE-QUANTITY] Ungültiges Format für Dezimalzahl');
           item.quantity = 1;
           this.updateItemTotal(item);
@@ -1360,8 +1360,8 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
         newQuantity = Number(item.quantity);
       }
       
-      // Validierung: Menge muss positiv sein und mindestens 0.001
-      if (isNaN(newQuantity) || newQuantity < 0.001) {
+      // Validierung: Menge darf nicht NaN sein, aber negative Zahlen sind jetzt erlaubt
+      if (isNaN(newQuantity)) {
         console.warn('⚠️ [VALIDATE-QUANTITY] Ungültige Menge, setze auf 1');
         item.quantity = 1;
       } else {
