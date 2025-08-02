@@ -297,6 +297,11 @@
 .product-content {
   padding: 15px 10px;
   text-align: center;
+  min-height: 160px; /* Ensure consistent card height */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden; /* Prevent content from overflowing */
 }
 
 .product-title {
@@ -306,11 +311,38 @@
   color: #1a202c;
   line-height: 1.4;
   transition: color 0.3s ease;
-  white-space: nowrap;
+  white-space: normal;
   overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
-  padding: 0 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0 8px;
+  min-height: 4.2rem; /* 3 lines * 1.4 line-height */
+  max-height: 4.2rem; /* Ensure consistent height */
+  text-align: center;
+  word-wrap: break-word;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  
+  /* Fallback for browsers that don't support -webkit-line-clamp */
+  @supports not (-webkit-line-clamp: 3) {
+    position: relative;
+    max-height: 4.2rem;
+    
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 40px;
+      height: 1.4em;
+      background: linear-gradient(to right, transparent, white);
+      pointer-events: none;
+    }
+  }
   
   .product-card:hover & {
     color: #10b981;
@@ -541,15 +573,24 @@
   
   .product-content {
     padding: 12px 8px;
+    min-height: 140px; /* Ensure consistent card height for tablets */
   }
   
   .product-title {
     font-size: 0.9rem;
-    white-space: nowrap;
+    white-space: normal;
     overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
-    padding: 0 2px;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0 6px;
+    min-height: 3.8rem; /* 3 lines * 1.4 line-height for smaller font */
+    text-align: center;
+    word-wrap: break-word;
+    word-break: break-word;
+    hyphens: auto;
   }
   
   .product-number {
@@ -636,15 +677,24 @@
   
   .product-content {
     padding: 8px 6px;
+    min-height: 130px; /* Ensure consistent card height for mobile */
   }
   
   .product-title {
     font-size: 0.8rem;
-    white-space: nowrap;
+    white-space: normal;
     overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
-    padding: 0 2px;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0 4px;
+    min-height: 3.4rem; /* 3 lines * 1.4 line-height for smaller font */
+    text-align: center;
+    word-wrap: break-word;
+    word-break: break-word;
+    hyphens: auto;
   }
   
   .product-number {
@@ -747,10 +797,24 @@
   
   .product-content {
     padding: 6px 4px;
+    min-height: 120px; /* Ensure consistent card height for small mobile */
   }
   
   .product-title {
     font-size: 0.75rem;
+    white-space: normal;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0 4px;
+    min-height: 3.2rem; /* 3 lines * 1.4 line-height for smaller font */
+    text-align: center;
+    word-wrap: break-word;
+    word-break: break-word;
+    hyphens: auto;
   }
   
   .product-number {
