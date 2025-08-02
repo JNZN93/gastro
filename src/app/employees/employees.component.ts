@@ -692,12 +692,12 @@ export class EmployeesComponent implements OnInit, OnDestroy {
       // To-do quantity
       
       // Wenn keine Menge eingegeben wurde oder die Menge leer/null/ungültig ist, setze auf 1
-      if (!quantity || isNaN(quantity) || quantity <= 0) {
+      if (!quantity || isNaN(quantity)) {
         quantity = 1;
         artikel.quantity = 1;
       } else {
-        // Stelle sicher, dass die Menge als ganze Zahl gespeichert wird
-        artikel.quantity = Math.floor(quantity);
+        // Übernehme die Menge exakt wie eingegeben, ohne Rundung (auch negative Zahlen)
+        artikel.quantity = quantity;
       }
       
       // Füge den Artikel zum Auftrag hinzu
@@ -1110,8 +1110,7 @@ export class EmployeesComponent implements OnInit, OnDestroy {
 
     if (
       !artikel.quantity ||
-      isNaN(Number(artikel.quantity)) ||
-      Number(artikel.quantity) < 1
+      isNaN(Number(artikel.quantity))
     ) {
       artikel.quantity = 1;
     }
@@ -1301,8 +1300,8 @@ export class EmployeesComponent implements OnInit, OnDestroy {
         // Entferne auch alle Leerzeichen
         const cleanQuantity = item.quantity.replace(/\s/g, '').replace(',', '.');
         
-        // Prüfe, ob es eine gültige Dezimalzahl ist
-        if (!/^\d*\.?\d+$/.test(cleanQuantity)) {
+        // Prüfe, ob es eine gültige Dezimalzahl ist (erlaubt jetzt auch negative Zahlen)
+        if (!/^-?\d*\.?\d+$/.test(cleanQuantity)) {
           console.warn('⚠️ [VALIDATE-QUANTITY] Ungültiges Format für Dezimalzahl');
           item.quantity = 1;
           this.updateItemTotal(item);
@@ -1314,13 +1313,13 @@ export class EmployeesComponent implements OnInit, OnDestroy {
         newQuantity = Number(item.quantity);
       }
       
-      // Validierung: Menge muss positiv sein und mindestens 0.001
-      if (isNaN(newQuantity) || newQuantity < 0.001) {
+      // Validierung: Menge darf nicht NaN sein, aber negative Zahlen sind jetzt erlaubt
+      if (isNaN(newQuantity)) {
         console.warn('⚠️ [VALIDATE-QUANTITY] Ungültige Menge, setze auf 1');
         item.quantity = 1;
       } else {
-        // Runde auf 3 Dezimalstellen für Konsistenz
-        item.quantity = Math.round(newQuantity * 1000) / 1000;
+        // Übernehme die Menge exakt wie eingegeben, ohne Rundung
+        item.quantity = newQuantity;
         console.log('✅ [VALIDATE-QUANTITY] quantity aktualisiert auf:', item.quantity);
       }
     }
