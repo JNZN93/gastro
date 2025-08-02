@@ -1,5 +1,5 @@
 <div class="product-catalog-dashboard">
-  <!-- Clean Header Section -->
+  <!-- Header Section -->
   <div class="dashboard-header">
     <div class="header-content">
       <div class="header-left">
@@ -26,16 +26,6 @@
       </div>
       
       <div class="header-right">
-        <select class="category-select" [(ngModel)]="selectedCategory" (change)="filterCategory($event)">
-          <option value="">Alle Kategorien</option>
-          <option value="FAVORITEN">⭐ Favoriten</option>
-          @for (category of categories; track category) {
-          <option [value]="category">
-            {{ category }}
-          </option>
-          }
-        </select>
-        
         <div class="header-actions">
           <button (click)="startScanner()" [disabled]="isScanning" class="scanner-btn" title="Scanner">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -56,8 +46,41 @@
     </div>
   </div>
 
-  <!-- Products Grid -->
+  <!-- Categories Section -->
+  <div class="categories-section">
+    <h2 class="section-title">Kategorien</h2>
+    <div class="category-grid">
+      <!-- Alle Kategorien -->
+      <div class="category-card" (click)="showAllCategories()" [class.active]="selectedCategory === ''">
+        <div class="category-img">
+          <img src="https://images.unsplash.com/photo-1542838132-92c53300491e?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60" alt="Alle Produkte" class="category-image">
+        </div>
+        <div class="category-name">Alle Produkte</div>
+      </div>
+      
+      <!-- Favoriten -->
+      <div class="category-card" (click)="selectCategory('FAVORITEN')" [class.active]="selectedCategory === 'FAVORITEN'">
+        <div class="category-img">
+          <img src="https://images.unsplash.com/photo-1511690743698-d9d85f2fbf38?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60" alt="Favoriten" class="category-image">
+        </div>
+        <div class="category-name">⭐ Favoriten</div>
+      </div>
+      
+      <!-- Dynamische Kategorien -->
+      @for (category of categories; track category) {
+      <div class="category-card" (click)="selectCategory(category)" [class.active]="selectedCategory === category">
+        <div class="category-img">
+          <img [src]="getCategoryImage(category)" [alt]="category" class="category-image" (error)="onCategoryImageError($event, category)">
+        </div>
+        <div class="category-name">{{ category }}</div>
+      </div>
+      }
+    </div>
+  </div>
+
+  <!-- Products Section -->
   <div class="products-section">
+    <h2 class="section-title">Produkte</h2>
     <div class="products-grid">
       @for (artikel of artikelData; track $index) {
       <div class="product-card">

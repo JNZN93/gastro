@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FrischeFrucht - Obstgroßhandel</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4CAF50;
+            --primary-dark: #388E3C;
+            --secondary: #FFC107;
+            --dark: #333;
+            --light: #f9f9f9;
+            --white: #fff;
+            --gray: #757575;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+
+        body {
+            background-color: var(--light);
+            color: var(--dark);
+            line-height: 1.6;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+
+        /* Header */
+        header {
+            background-color: var(--white);
+            box-shadow: var(--box-shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-icon {
+            color: var(--primary);
+            font-size: 1.8rem;
+        }
+
+        .logo-text h1 {
+            color: var(--primary);
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .logo-text p {
+            color: var(--gray);
+            font-size: 0.8rem;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .delivery-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--dark);
+            font-size: 0.9rem;
+        }
+
+        .cart-btn {
+            background-color: var(--primary);
+            color: var(--white);
+            border: none;
+            border-radius: 50%;
+            width: 42px;
+            height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+            transition: var(--transition);
+        }
+
+        .cart-btn:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        #cart-count {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background-color: var(--secondary);
+            color: var(--dark);
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+
+        /* Navigation */
+        nav {
+            background-color: var(--primary);
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }
+
+        .nav-links::-webkit-scrollbar {
+            height: 5px;
+        }
+
+        .nav-links::-webkit-scrollbar-thumb {
+            background-color: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+        }
+
+        .nav-links li a {
+            color: var(--white);
+            text-decoration: none;
+            padding: 15px 20px;
+            display: block;
+            white-space: nowrap;
+            transition: var(--transition);
+            font-size: 0.9rem;
+        }
+
+        .nav-links li a:hover, 
+        .nav-links li a.active {
+            background-color: var(--primary-dark);
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), 
+                        url('https://images.unsplash.com/photo-1619566636858-adf3ef46400b?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80') no-repeat center center/cover;
+            height: 300px;
+            display: flex;
+            align-items: center;
+            margin: 20px 0;
+            border-radius: var(--border-radius);
+            color: var(--white);
+        }
+
+        .hero-content {
+            padding: 0 40px;
+            max-width: 60%;
+        }
+
+        .hero h2 {
+            font-size: 2rem;
+            margin-bottom: 15px;
+        }
+
+        .hero p {
+            margin-bottom: 20px;
+            font-size: 1rem;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: var(--transition);
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background-color: var(--secondary);
+            color: var(--dark);
+        }
+
+        .btn-primary:hover {
+            background-color: #FFB300;
+            transform: translateY(-2px);
+        }
+
+        /* Categories */
+        .categories {
+            margin: 30px 0;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: var(--dark);
+            position: relative;
+            padding-bottom: 10px;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 60px;
+            height: 3px;
+            background-color: var(--primary);
+        }
+
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 20px;
+        }
+
+        .category-card {
+            background-color: var(--white);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--box-shadow);
+            transition: var(--transition);
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .category-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .category-img {
+            height: 120px;
+            overflow: hidden;
+        }
+
+        .category-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: var(--transition);
+        }
+
+        .category-card:hover .category-img img {
+            transform: scale(1.05);
+        }
+
+        .category-name {
+            padding: 15px 10px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        /* Products */
+        .products {
+            margin: 40px 0;
+        }
+
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 25px;
+        }
+
+        .product-card {
+            background-color: var(--white);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--box-shadow);
+            transition: var(--transition);
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .product-img {
+            height: 180px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .product-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: var(--transition);
+        }
+
+        .product-card:hover .product-img img {
+            transform: scale(1.05);
+        }
+
+        .product-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: var(--secondary);
+            color: var(--dark);
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+
+        .product-content {
+            padding: 15px;
+        }
+
+        .product-title {
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+            color: var(--dark);
+        }
+
+        .product-origin {
+            color: var(--gray);
+            font-size: 0.8rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .product-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .product-price {
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: var(--primary);
+        }
+
+        .product-price span {
+            font-size: 0.9rem;
+            color: var(--gray);
+            font-weight: normal;
+        }
+
+        .add-to-cart {
+            background-color: var(--primary);
+            color: var(--white);
+            border: none;
+            border-radius: var(--border-radius);
+            padding: 8px 15px;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 0.9rem;
+        }
+
+        .add-to-cart:hover {
+            background-color: var(--primary-dark);
+        }
+
+        /* Cart Overlay */
+        .cart-overlay {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 200;
+            display: none;
+            justify-content: flex-end;
+        }
+
+        .cart-container {
+            background-color: var(--white);
+            width: 100%;
+            max-width: 400px;
+            height: 100%;
+            overflow-y: auto;
+            padding: 20px;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        }
+
+        .cart-overlay.active {
+            display: flex;
+        }
+
+        .cart-overlay.active .cart-container {
+            transform: translateX(0);
+        }
+
+        .cart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .cart-title {
+            font-size: 1.3rem;
+            color: var(--dark);
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--gray);
+            transition: var(--transition);
+        }
+
+        .close-btn:hover {
+            color: var(--primary);
+        }
+
+        .cart-items {
+            margin-bottom: 20px;
+        }
+
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .cart-item-info {
+            flex: 1;
+        }
+
+        .cart-item-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .cart-item-meta {
+            display: flex;
+            gap: 10px;
+            font-size: 0.8rem;
+            color: var(--gray);
+        }
+
+        .cart-item-price {
+            color: var(--primary);
+            font-weight: bold;
+        }
+
+        .cart-item-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .quantity-btn {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            border: 1px solid #ddd;
+            background: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+
+        .quantity-btn:hover {
+            background-color: #f0f0f0;
+        }
+
+        .cart-item-quantity {
+            width: 30px;
+            text-align: center;
+        }
+
+        .remove-item {
+            background: none;
+            border: none;
+            color: var(--gray);
+            cursor: pointer;
+            transition: var(--transition);
+            margin-left: 10px;
+        }
+
+        .remove-item:hover {
+            color: var(--primary);
+        }
+
+        .cart-empty {
+            text-align: center;
+            padding: 40px 0;
+            color: var(--gray);
+        }
+
+        .cart-summary {
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .summary-row.total {
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin: 20px 0;
+        }
+
+        .checkout-btn {
+            width: 100%;
+            padding: 12px;
+            font-size: 1rem;
+            background-color: var(--primary);
+            color: var(--white);
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: var(--transition);
+            font-weight: 600;
+        }
+
+        .checkout-btn:hover {
+            background-color: var(--primary-dark);
+        }
+
+        /* Footer */
+        footer {
+            background-color: var(--dark);
+            color: var(--white);
+            padding: 40px 0 20px;
+            margin-top: 40px;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .footer-section h4 {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: var(--white);
+        }
+
+        .footer-section p, 
+        .footer-section a {
+            margin-bottom: 10px;
+            color: var(--light);
+            font-size: 0.9rem;
+            display: block;
+            text-decoration: none;
+        }
+
+        .footer-section a:hover {
+            color: var(--secondary);
+        }
+
+        .footer-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.9rem;
+        }
+
+        .social-links {
+            display: flex;
+            gap: 15px;
+        }
+
+        .social-links a {
+            color: var(--white);
+            transition: var(--transition);
+            font-size: 1.1rem;
+        }
+
+        .social-links a:hover {
+            color: var(--secondary);
+        }
+
+        /* Notification */
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--primary);
+            color: var(--white);
+            padding: 12px 25px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 1000;
+            font-size: 0.9rem;
+        }
+
+        .notification.show {
+            opacity: 1;
+        }
+
+        /* Responsive Styles */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .logo {
+                justify-content: center;
+            }
+
+            .hero {
+                height: 250px;
+            }
+
+            .hero-content {
+                max-width: 100%;
+                padding: 0 20px;
+                text-align: center;
+            }
+
+            .hero h2 {
+                font-size: 1.8rem;
+            }
+
+            .category-grid {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            }
+
+            .product-grid {
+                grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            }
+
+            .cart-container {
+                max-width: 100%;
+            }
+
+            .footer-bottom {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hero {
+                height: 200px;
+            }
+
+            .hero h2 {
+                font-size: 1.5rem;
+            }
+
+            .hero p {
+                font-size: 0.9rem;
+            }
+
+            .category-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .product-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <div class="logo-icon">
+                        <i class="fas fa-apple-alt"></i>
+                    </div>
+                    <div class="logo-text">
+                        <h1>FrischeFrucht</h1>
+                        <p>Obstgroßhandel für Gastronomie</p>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <div class="delivery-info">
+                        <i class="fas fa-truck"></i>
+                        <span>Tägliche Lieferung</span>
+                    </div>
+                    <button id="cart-toggle" class="cart-btn">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span id="cart-count">0</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <nav>
+        <div class="container">
+            <ul class="nav-links">
+                <li><a href="#" class="active">Alle Produkte</a></li>
+                <li><a href="#">Früchte</a></li>
+                <li><a href="#">Beeren</a></li>
+                <li><a href="#">Exoten</a></li>
+                <li><a href="#">Zitrusfrüchte</a></li>
+                <li><a href="#">Bio-Produkte</a></li>
+                <li><a href="#">Angebote</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="container">
+        <section class="hero">
+            <div class="hero-content">
+                <h2>Frische Früchte für Ihre Küche</h2>
+                <p>Premium-Obst direkt vom Erzeuger - täglich frisch geliefert</p>
+                <button class="btn btn-primary">Jetzt bestellen</button>
+            </div>
+        </section>
+
+        <section class="categories">
+            <h2 class="section-title">Kategorien</h2>
+            <div class="category-grid">
+                <div class="category-card">
+                    <div class="category-img">
+                        <img src="https://images.unsplash.com/photo-1550258987-190a2d41a8ba?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60" alt="Früchte">
+                    </div>
+                    <div class="category-name">Früchte</div>
+                </div>
+                <div class="category-card">
+                    <div class="category-img">
+                        <img src="https://images.unsplash.com/photo-1481349518771-20055b2a7b24?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60" alt="Beeren">
+                    </div>
+                    <div class="category-name">Beeren</div>
+                </div>
+                <div class="category-card">
+                    <div class="category-img">
+                        <img src="https://images.unsplash.com/photo-1559181567-c3190ca9959b?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60" alt="Exoten">
+                    </div>
+                    <div class="category-name">Exoten</div>
+                </div>
+                <div class="category-card">
+                    <div class="category-img">
+                        <img src="https://images.unsplash.com/photo-1611080626919-7cf5a9dbab5b?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60" alt="Zitrusfrüchte">
+                    </div>
+                    <div class="category-name">Zitrusfrüchte</div>
+                </div>
+                <div class="category-card">
+                    <div class="category-img">
+                        <img src="https://images.unsplash.com/photo-1573246123716-6b1782bfc499?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60" alt="Bio">
+                    </div>
+                    <div class="category-name">Bio</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="products">
+            <h2 class="section-title">Beliebte Produkte</h2>
+            <div class="product-grid" id="product-grid">
+                <!-- Products will be loaded here by JavaScript -->
+            </div>
+        </section>
+    </main>
+
+    <div class="cart-overlay" id="cart-overlay">
+        <div class="cart-container">
+            <div class="cart-header">
+                <h3 class="cart-title">Warenkorb</h3>
+                <button id="close-cart" class="close-btn">&times;</button>
+            </div>
+            <div class="cart-items" id="cart-items">
+                <!-- Cart items will be loaded here by JavaScript -->
+            </div>
+            <div class="cart-summary">
+                <div class="summary-row">
+                    <span>Zwischensumme:</span>
+                    <span id="subtotal">€0.00</span>
+                </div>
+                <div class="summary-row">
+                    <span>Lieferkosten:</span>
+                    <span id="delivery-fee">€0.00</span>
+                </div>
+                <div class="summary-row total">
+                    <span>Gesamt:</span>
+                    <span id="total">€0.00</span>
+                </div>
+                <button class="checkout-btn">Bestellung aufgeben</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>FrischeFrucht</h4>
+                    <p>Ihr zuverlässiger Obstgroßhandel für die Gastronomie. Frische und Qualität seit 1995.</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Kontakt</h4>
+                    <p>Fruchtstraße 123<br>10115 Berlin</p>
+                    <a href="tel:+49301234567">+49 30 1234567</a>
+                    <a href="mailto:info@frischefrucht.de">info@frischefrucht.de</a>
+                </div>
+                <div class="footer-section">
+                    <h4>Öffnungszeiten</h4>
+                    <p>Mo-Fr: 6:00 - 18:00<br>Sa: 6:00 - 14:00<br>So: Geschlossen</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2023 FrischeFrucht GmbH. Alle Rechte vorbehalten.</p>
+                <div class="social-links">
+                    <a href="#"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                    <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Product data
+            const products = [
+                {
+                    id: 1,
+                    name: "Äpfel Gala",
+                    category: "Früchte",
+                    origin: "Italien",
+                    price: 1.99,
+                    unit: "kg",
+                    image: "https://images.unsplash.com/photo-1568702846914-96b305d2aaeb?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60",
+                    isOrganic: false,
+                    isNew: false
+                },
+                {
+                    id: 2,
+                    name: "Bio Bananen",
+                    category: "Früchte",
+                    origin: "Ecuador",
+                    price: 2.49,
+                    unit: "kg",
+                    image: "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60",
+                    isOrganic: true,
+                    isNew: true
+                },
+                {
+                    id: 3,
+                    name: "Erdbeeren",
+                    category: "Beeren",
+                    origin: "Spanien",
+                    price: 4.99,
+                    unit: "500g",
+                    image: "https://images.unsplash.com/photo-1464965911861-746a04b4bca6?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60",
+                    isOrganic: false,
+                    isNew: false
+                },
+                {
+                    id: 4,
+                    name: "Avocados",
+                    category: "Exoten",
+                    origin: "Peru",
+                    price: 1.79,
+                    unit: "Stück",
+                    image: "https://images.unsplash.com/photo-1594282486552-72a1184e6fcf?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60",
+                    isOrganic: false,
+                    isNew: false
+                },
+                {
+                    id: 5,
+                    name: "Bio Orangen",
+                    category: "Zitrusfrüchte",
+                    origin: "Spanien",
+                    price: 2.99,
+                    unit: "kg",
+                    image: "https://images.unsplash.com/photo-1557800634-7bf3c7305595?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60",
+                    isOrganic: true,
+                    isNew: false
+                },
+                {
+                    id: 6,
+                    name: "Mango",
+                    category: "Exoten",
+                    origin: "Brasilien",
+                    price: 2.49,
+                    unit: "Stück",
+                    image: "https://images.unsplash.com/photo-1603569283847-aa295f0d016a?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60",
+                    isOrganic: false,
+                    isNew: true
+                },
+                {
+                    id: 7,
+                    name: "Blaubeeren",
+                    category: "Beeren",
+                    origin: "Deutschland",
+                    price: 6.99,
+                    unit: "500g",
+                    image: "https://images.unsplash.com/photo-1498557850523-fd3d118b962e?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60",
+                    isOrganic: false,
+                    isNew: false
+                },
+                {
+                    id: 8,
+                    name: "Bio Trauben",
+                    category: "Früchte",
+                    origin: "Italien",
+                    price: 5.49,
+                    unit: "kg",
+                    image: "https://images.unsplash.com/photo-1604977046806-7c6afbdd7c3c?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60",
+                    isOrganic: true,
+                    isNew: false
+                }
+            ];
+
+            // Cart functionality
+            let cart = JSON.parse(localStorage.getItem('cart')) || [];
+            const cartOverlay = document.getElementById('cart-overlay');
+            const cartToggle = document.getElementById('cart-toggle');
+            const closeCart = document.getElementById('close-cart');
+            const cartItemsContainer = document.getElementById('cart-items');
+            const productGrid = document.getElementById('product-grid');
+            const cartCount = document.getElementById('cart-count');
+            const subtotalElement = document.getElementById('subtotal');
+            const totalElement = document.getElementById('total');
+            const deliveryFeeElement = document.getElementById('delivery-fee');
+            const deliveryFee = 0; // Free delivery for wholesale
+
+            // Initialize the app
+            function init() {
+                renderProducts();
+                updateCart();
+                setupEventListeners();
+            }
+
+            // Render products
+            function renderProducts() {
+                productGrid.innerHTML = products.map(product => `
+                    <div class="product-card">
+                        <div class="product-img">
+                            <img src="${product.image}" alt="${product.name}">
+                            ${product.isNew ? '<span class="product-badge">Neu</span>' : ''}
+                            ${product.isOrganic ? '<span class="product-badge">Bio</span>' : ''}
+                        </div>
+                        <div class="product-content">
+                            <h3 class="product-title">${product.name}</h3>
+                            <div class="product-origin">
+                                <i class="fas fa-globe-europe"></i>
+                                <span>${product.origin}</span>
+                            </div>
+                            <div class="product-footer">
+                                <div class="product-price">
+                                    €${product.price.toFixed(2)} <span>/${product.unit}</span>
+                                </div>
+                                <button class="add-to-cart" data-id="${product.id}">
+                                    <i class="fas fa-cart-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // Setup event listeners
+            function setupEventListeners() {
+                // Cart toggle
+                cartToggle.addEventListener('click', toggleCart);
+                closeCart.addEventListener('click', toggleCart);
+
+                // Add to cart buttons
+                document.addEventListener('click', function(e) {
+                    if (e.target.classList.contains('add-to-cart') || 
+                        e.target.closest('.add-to-cart')) {
+                        const btn = e.target.classList.contains('add-to-cart') ? 
+                                    e.target : e.target.closest('.add-to-cart');
+                        const itemId = parseInt(btn.getAttribute('data-id'));
+                        addToCart(itemId);
+                    }
+
+                    // Remove item from cart
+                    if (e.target.classList.contains('remove-item')) {
+                        const itemId = parseInt(e.target.getAttribute('data-id'));
+                        removeFromCart(itemId);
+                    }
+
+                    // Increase quantity
+                    if (e.target.classList.contains('increase-quantity')) {
+                        const itemId = parseInt(e.target.getAttribute('data-id'));
+                        changeQuantity(itemId, 1);
+                    }
+
+                    // Decrease quantity
+                    if (e.target.classList.contains('decrease-quantity')) {
+                        const itemId = parseInt(e.target.getAttribute('data-id'));
+                        changeQuantity(itemId, -1);
+                    }
+                });
+            }
+
+            // Toggle cart visibility
+            function toggleCart() {
+                cartOverlay.classList.toggle('active');
+                document.body.style.overflow = cartOverlay.classList.contains('active') ? 'hidden' : 'auto';
+            }
+
+            // Add item to cart
+            function addToCart(itemId) {
+                const product = products.find(p => p.id === itemId);
+                const existingItem = cart.find(i => i.id === itemId);
+
+                if (existingItem) {
+                    existingItem.quantity += 1;
+                } else {
+                    cart.push({
+                        ...product,
+                        quantity: 1
+                    });
+                }
+
+                updateCart();
+                showNotification(`${product.name} wurde zum Warenkorb hinzugefügt`);
+            }
+
+            // Remove item from cart
+            function removeFromCart(itemId) {
+                cart = cart.filter(item => item.id !== itemId);
+                updateCart();
+            }
+
+            // Change item quantity
+            function changeQuantity(itemId, change) {
+                const item = cart.find(item => item.id === itemId);
+                
+                if (item) {
+                    item.quantity += change;
+                    
+                    if (item.quantity <= 0) {
+                        removeFromCart(itemId);
+                    } else {
+                        updateCart();
+                    }
+                }
+            }
+
+            // Update cart UI
+            function updateCart() {
+                // Save to localStorage
+                localStorage.setItem('cart', JSON.stringify(cart));
+
+                // Update cart count
+                const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+                cartCount.textContent = totalItems;
+
+                // Render cart items
+                if (cart.length === 0) {
+                    cartItemsContainer.innerHTML = `
+                        <div class="cart-empty">
+                            <i class="fas fa-shopping-basket" style="font-size: 2rem; margin-bottom: 15px;"></i>
+                            <p>Ihr Warenkorb ist leer</p>
+                        </div>
+                    `;
+                } else {
+                    cartItemsContainer.innerHTML = cart.map(item => `
+                        <div class="cart-item">
+                            <div class="cart-item-info">
+                                <h4 class="cart-item-name">${item.name}</h4>
+                                <div class="cart-item-meta">
+                                    <span class="cart-item-price">€${item.price.toFixed(2)}/${item.unit}</span>
+                                </div>
+                            </div>
+                            <div class="cart-item-actions">
+                                <button class="quantity-btn decrease-quantity" data-id="${item.id}">-</button>
+                                <span class="cart-item-quantity">${item.quantity}</span>
+                                <button class="quantity-btn increase-quantity" data-id="${item.id}">+</button>
+                                <button class="remove-item" data-id="${item.id}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+
+                // Update totals
+                const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                const total = subtotal + deliveryFee;
+
+                subtotalElement.textContent = `€${subtotal.toFixed(2)}`;
+                deliveryFeeElement.textContent = deliveryFee === 0 ? 'Kostenlos' : `€${deliveryFee.toFixed(2)}`;
+                totalElement.textContent = `€${total.toFixed(2)}`;
+            }
+
+            // Show notification
+            function showNotification(message) {
+                const notification = document.createElement('div');
+                notification.className = 'notification';
+                notification.innerHTML = `<span>${message}</span>`;
+                document.body.appendChild(notification);
+
+                setTimeout(() => {
+                    notification.classList.add('show');
+                }, 10);
+
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                    setTimeout(() => {
+                        document.body.removeChild(notification);
+                    }, 300);
+                }, 3000);
+            }
+
+            // Initialize the app
+            init();
+        });
+    </script>
+</body>
+</html>

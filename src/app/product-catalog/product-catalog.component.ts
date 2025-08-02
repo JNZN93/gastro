@@ -102,7 +102,12 @@ export class ProductCatalogComponent implements OnInit {
             
             // SCHNELLVERKAUF-Artikel basierend auf Benutzerrolle filtern
             this.globalArtikels = this.globalService.filterSchnellverkaufArticles(res);
+            // Erstelle zusätzliches pfand-array für Artikel mit category "PFAND" (nur initial, da PFAND-Artikel statisch sind)
+            this.globalService.setPfandArtikels(this.globalArtikels);
             this.artikelData = this.globalArtikels;
+            
+            // Log Artikel-Kategorien für angemeldete Benutzer
+            this.logArticleCategories('Angemeldeter Benutzer');
             
             this.collectOrderData(response);
             this.globalService.orderData = this.orderData;
@@ -128,7 +133,13 @@ export class ProductCatalogComponent implements OnInit {
     this.artikelService.getData().subscribe((res) => {
       // Für Gäste nur normale Artikel anzeigen (keine SCHNELLVERKAUF)
       this.globalArtikels = res.filter((artikel: any) => artikel.category !== 'SCHNELLVERKAUF');
+      // Erstelle zusätzliches pfand-array für Artikel mit category "PFAND" (nur initial, da PFAND-Artikel statisch sind)
+      this.globalService.setPfandArtikels(this.globalArtikels);
       this.artikelData = this.globalArtikels;
+      
+      // Log Artikel-Kategorien für Gäste
+      this.logArticleCategories('Gast');
+      
       this.isVisible = false;
     });
   }
@@ -332,6 +343,14 @@ export class ProductCatalogComponent implements OnInit {
     img.src = '/assets/placeholder-product.svg';
   }
 
+  onCategoryImageError(event: Event, category: string): void {
+    const img = event.target as HTMLImageElement;
+    console.error(`❌ [BILD-FEHLER] Kategorie "${category}" - Bild konnte nicht geladen werden:`, img.src);
+    
+    // Fallback auf Standard-Bild
+    img.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60';
+  }
+
   // Image Modal Methoden
   openImageModal(artikel: any): void {
     if (artikel.main_image_url) {
@@ -374,6 +393,192 @@ export class ProductCatalogComponent implements OnInit {
     this.getItemsFromCategory(category);
   }
 
+  // Neue Methode für Kategorie-Auswahl über Karten
+  selectCategory(category: string) {
+    this.selectedCategory = category;
+    // Seite nach oben scrollen
+    window.scrollTo({ top: 0});
+
+    if (category === "FAVORITEN") {
+        this.artikelData = JSON.parse(localStorage.getItem('favoriteItems') || '[]');
+        return;
+    }
+    if (category === "") {
+      // Verwende die bereits gefilterten globalArtikels (ohne SCHNELLVERKAUF für nicht-Employee/Admin)
+      this.artikelData = this.globalArtikels;
+      return;
+    }
+    this.getItemsFromCategory(category);
+  }
+
+  // Methode um alle Kategorien anzuzeigen
+  showAllCategories() {
+    this.selectedCategory = "";
+    this.artikelData = this.globalArtikels;
+    window.scrollTo({ top: 0});
+  }
+
+  // Methode um passende Stock-Bilder für Kategorien zu erhalten
+  getCategoryImage(category: string): string {
+    const categoryImages: { [key: string]: string } = {
+      // Favoriten - Herz/Stern Symbol in Essen
+      'FAVORITEN': 'https://images.unsplash.com/photo-1511690743698-d9d85f2fbf38?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60',
+      
+      // === DEINE ECHTEN KATEGORIEN === //
+      
+      // PFAND - Pfandflaschen und Mehrwegbehälter
+      'PFAND': 'https://c7.alamy.com/comp/JFBEJ5/lemonade-crates-stacked-blue-JFBEJ5.jpg',
+      
+      // LEBENSMITTEL - Allgemeine Lebensmittel
+      'LEBENSMITTEL': 'https://images.unsplash.com/photo-1542838132-92c53300491e?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60',
+      
+      // VERPACKUNGEN - Verpackungsmaterial
+      'VERPACKUNGEN': 'https://img.freepik.com/premium-photo/non-plastic-boxes-food-delivery-white-background_186260-1466.jpg?ga=GA1.1.551023853.1754094495&semt=ais_hybrid&w=740&q=80',
+      
+      // TIEFKÜHL - Tiefkühlprodukte
+      'TIEFKÜHL': '/tiefkühl.jpg',
+      
+      // DROGERIE - Drogerieartikel und Kosmetik
+      'DROGERIE': 'https://images.unsplash.com/photo-1556228720-195a672e8a03?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60',
+      
+      // GETRÄNKE - Verschiedene Getränke
+      'GETRÄNKE': '/getränke.jpg',
+      
+      // GEWÜRZ - Gewürze und Kräuter
+      'GEWÜRZ': '/gewürz.jpg',
+      
+      // ALKOHOLISCHE GETRÄNKE - Alkohol
+      'ALKOHOLISCHE GETRÄNKE': '/alkohol.jpg',
+      
+      // KONSERVEN - Konservendosen
+      'KONSERVEN': '/konserven.jpg',
+      
+      // ENTSORGUNG - Müllbeutel und Entsorgung
+      'ENTSORGUNG': 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60',
+      
+      // GEMÜSE - Frisches Gemüse
+      'GEMÜSE': 'https://images.unsplash.com/photo-1540420773420-3366772f4999?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60',
+      
+      // HYGIENEARTIKEL - Hygiene und Körperpflege
+      'HYGIENEARTIKEL': '/hygiene.jpg',
+      
+      // KRÄUTER - Frische Kräuter
+      'KRÄUTER': '/kräuter.jpg',
+      
+      // OBST - Frisches Obst
+      'OBST': 'https://images.unsplash.com/photo-1619566636858-adf3ef46400b?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60',
+      
+      // PARFÜM - Parfüm und Düfte
+      'PARFÜM': 'https://images.unsplash.com/photo-1541643600914-78b084683601?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60',
+      
+      // KÜCHENBEDARF - Küchenutensilien
+      'KÜCHENBEDARF': 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60',
+      
+      // FOLIEN - Verpackungsfolien
+      'FOLIEN': '/folien.jpg',
+      
+      // MOLKEREIPRODUKTE - Milchprodukte
+      'MOLKEREIPRODUKTE': 'https://images.unsplash.com/photo-1563636619-e9143da7973b?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60',
+      
+      // PUTZMITTEL - Reinigungsmittel
+      'PUTZMITTEL': 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60',
+      
+      // BROT & BACKWAREN - Brot und Backprodukte
+      'BROT & BACKWAREN': '/brot.jpg'
+    };
+
+    // Standard-Bild für unbekannte Kategorien - Allgemeine Lebensmittel
+    const defaultImage = 'https://images.unsplash.com/photo-1542838132-92c53300491e?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60';
+    
+    // Bereinige die Kategorie von Leerzeichen und normalisiere sie
+    const categoryKey = category.trim().toUpperCase();
+    console.log(`🔍 [BILD] Original Kategorie: "${category}"`);
+    console.log(`🔍 [BILD] Normalisierte Kategorie: "${categoryKey}"`);
+    console.log(`🔍 [BILD] Kategorie Länge: ${categoryKey.length}`);
+    console.log(`🔍 [BILD] Verfügbare Kategorie Länge: ${categoryImages['ALKOHOLISCHE GETRÄNKE'] ? 'ALKOHOLISCHE GETRÄNKE'.length : 'NICHT GEFUNDEN'}`);
+    
+    // Versuche direkten Zugriff
+    let foundImage = categoryImages[categoryKey];
+    
+    // Falls nicht gefunden, versuche alternative Schreibweisen
+    if (!foundImage) {
+      console.log(`🔄 [BILD] Versuche alternative Schreibweisen für "${categoryKey}"`);
+      
+      // Versuche ohne Leerzeichen
+      const noSpaces = categoryKey.replace(/\s+/g, '');
+      foundImage = categoryImages[noSpaces];
+      if (foundImage) {
+        console.log(`✅ [BILD] Gefunden mit "noSpaces": ${noSpaces}`);
+      }
+      
+      // Versuche mit Unterstrich
+      if (!foundImage) {
+        const withUnderscore = categoryKey.replace(/\s+/g, '_');
+        foundImage = categoryImages[withUnderscore];
+        if (foundImage) {
+          console.log(`✅ [BILD] Gefunden mit "withUnderscore": ${withUnderscore}`);
+        }
+      }
+      
+      // Versuche exakte Suche in allen verfügbaren Kategorien
+      if (!foundImage) {
+        const availableCategories = Object.keys(categoryImages);
+        const exactMatch = availableCategories.find(cat => cat.trim() === categoryKey.trim());
+        if (exactMatch) {
+          foundImage = categoryImages[exactMatch];
+          console.log(`✅ [BILD] Exakte Übereinstimmung gefunden: "${exactMatch}"`);
+        }
+      }
+      
+      // Versuche partielle Übereinstimmung
+      if (!foundImage) {
+        const availableCategories = Object.keys(categoryImages);
+        const partialMatch = availableCategories.find(cat => 
+          cat.includes('ALKOHOL') && categoryKey.includes('ALKOHOL') ||
+          cat.includes('BROT') && categoryKey.includes('BROT')
+        );
+        if (partialMatch) {
+          foundImage = categoryImages[partialMatch];
+          console.log(`✅ [BILD] Partielle Übereinstimmung gefunden: "${partialMatch}"`);
+        }
+      }
+    }
+    
+    if (foundImage) {
+      console.log(`🖼️ [BILD] Kategorie "${category}" -> Bild gefunden: ${foundImage}`);
+    } else {
+      console.log(`⚠️ [BILD] Kategorie "${category}" -> KEIN spezifisches Bild, verwende Standard-Bild`);
+      console.log(`🔍 [BILD] Gesuchte Kategorie: "${category}"`);
+      console.log(`🔍 [BILD] Verfügbare Kategorien:`, Object.keys(categoryImages));
+    }
+    
+    return foundImage || defaultImage;
+  }
+
+  // Methode zum Loggen der Artikel-Kategorien
+  logArticleCategories(userType: string): void {
+    console.log(`📊 [ARTIKEL-KATEGORIEN] Benutzertyp: ${userType}`);
+    console.log(`📊 [ARTIKEL-KATEGORIEN] Gesamtzahl Artikel: ${this.globalArtikels.length}`);
+    
+    // Zähle Artikel pro Kategorie
+    const categoryCount: { [key: string]: number } = {};
+    this.globalArtikels.forEach(artikel => {
+      if (artikel.category) {
+        categoryCount[artikel.category] = (categoryCount[artikel.category] || 0) + 1;
+      }
+    });
+    
+    console.log('📊 [ARTIKEL-KATEGORIEN] Artikel pro Kategorie:', categoryCount);
+    
+    // Zeige auch einige Beispiel-Artikel
+    const sampleArticles = this.globalArtikels.slice(0, 5).map(artikel => ({
+      name: artikel.article_text,
+      category: artikel.category,
+      number: artikel.article_number
+    }));
+    console.log('📊 [ARTIKEL-KATEGORIEN] Beispiel-Artikel:', sampleArticles);
+  }
+
   getItemsFromCategory(category:string) {
     // Verwende die bereits gefilterten globalArtikels (ohne SCHNELLVERKAUF für nicht-Employee/Admin)
     this.artikelData = this.globalArtikels
@@ -383,11 +588,22 @@ export class ProductCatalogComponent implements OnInit {
 
   get categories(): string[] {
     // Verwende die bereits gefilterten globalArtikels (ohne SCHNELLVERKAUF für nicht-Employee/Admin)
-    return [
+    const uniqueCategories = [
       ...new Set(
         this.globalArtikels?.map((a) => a.category).filter((cat) => cat)
       ),
     ];
+    
+    // Log alle gefundenen Kategorien
+    console.log('🏷️ [KATEGORIEN] Gefundene Kategorien:', uniqueCategories);
+    console.log('🏷️ [KATEGORIEN] Anzahl Kategorien:', uniqueCategories.length);
+    console.log('🏷️ [KATEGORIEN] PFAND in Kategorien:', uniqueCategories.includes('PFAND'));
+    console.log('🏷️ [KATEGORIEN] ALKOHOLISCHE GETRÄNKE in Kategorien:', uniqueCategories.includes('ALKOHOLISCHE GETRÄNKE'));
+    console.log('🏷️ [KATEGORIEN] Alle Kategorien mit "ALKOHOL":', uniqueCategories.filter(cat => cat.includes('ALKOHOL')));
+    console.log('🏷️ [KATEGORIEN] Alle Kategorien mit "GETRÄNKE":', uniqueCategories.filter(cat => cat.includes('GETRÄNKE')));
+    console.log('🏷️ [KATEGORIEN] Alle Artikel mit Kategorien:', this.globalArtikels?.map(a => ({ article_number: a.article_number, category: a.category })));
+    
+    return uniqueCategories;
   }
 
   addToCart(event: Event, artikel: any): void {
