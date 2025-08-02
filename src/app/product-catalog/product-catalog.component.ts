@@ -125,6 +125,8 @@ export class ProductCatalogComponent implements OnInit {
             
             // SCHNELLVERKAUF-Artikel basierend auf Benutzerrolle filtern
             this.globalArtikels = this.globalService.filterSchnellverkaufArticles(res);
+            // PFAND-Artikel aus der Hauptliste filtern
+            this.globalArtikels = this.globalArtikels.filter((artikel: any) => artikel.category !== 'PFAND');
             // Erstelle zusätzliches pfand-array für Artikel mit category "PFAND" (nur initial, da PFAND-Artikel statisch sind)
             this.globalService.setPfandArtikels(this.globalArtikels);
             this.artikelData = this.globalArtikels;
@@ -154,8 +156,8 @@ export class ProductCatalogComponent implements OnInit {
     this.globalService.isAdmin = false;
     
     this.artikelService.getData().subscribe((res) => {
-      // Für Gäste nur normale Artikel anzeigen (keine SCHNELLVERKAUF)
-      this.globalArtikels = res.filter((artikel: any) => artikel.category !== 'SCHNELLVERKAUF');
+      // Für Gäste nur normale Artikel anzeigen (keine SCHNELLVERKAUF und keine PFAND)
+      this.globalArtikels = res.filter((artikel: any) => artikel.category !== 'SCHNELLVERKAUF' && artikel.category !== 'PFAND');
       // Erstelle zusätzliches pfand-array für Artikel mit category "PFAND" (nur initial, da PFAND-Artikel statisch sind)
       this.globalService.setPfandArtikels(this.globalArtikels);
       this.artikelData = this.globalArtikels;
@@ -626,7 +628,7 @@ export class ProductCatalogComponent implements OnInit {
     // Verwende die bereits gefilterten globalArtikels (ohne SCHNELLVERKAUF für nicht-Employee/Admin)
     const uniqueCategories = [
       ...new Set(
-        this.globalArtikels?.map((a) => a.category).filter((cat) => cat)
+        this.globalArtikels?.map((a) => a.category).filter((cat) => cat && cat !== 'PFAND')
       ),
     ];
     
