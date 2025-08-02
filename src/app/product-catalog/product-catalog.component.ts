@@ -125,8 +125,8 @@ export class ProductCatalogComponent implements OnInit {
             
             // SCHNELLVERKAUF-Artikel basierend auf Benutzerrolle filtern
             this.globalArtikels = this.globalService.filterSchnellverkaufArticles(res);
-            // PFAND-Artikel aus der Hauptliste filtern
-            this.globalArtikels = this.globalArtikels.filter((artikel: any) => artikel.category !== 'PFAND');
+            // PFAND und SCHNELLVERKAUF-Artikel aus der Hauptliste filtern
+            this.globalArtikels = this.globalArtikels.filter((artikel: any) => artikel.category !== 'PFAND' && artikel.category !== 'SCHNELLVERKAUF');
             // Erstelle zusätzliches pfand-array für Artikel mit category "PFAND" (nur initial, da PFAND-Artikel statisch sind)
             this.globalService.setPfandArtikels(this.globalArtikels);
             this.artikelData = this.globalArtikels;
@@ -625,10 +625,10 @@ export class ProductCatalogComponent implements OnInit {
 
 
   get categories(): string[] {
-    // Verwende die bereits gefilterten globalArtikels (ohne SCHNELLVERKAUF für nicht-Employee/Admin)
+    // Verwende die bereits gefilterten globalArtikels (ohne SCHNELLVERKAUF und PFAND)
     const uniqueCategories = [
       ...new Set(
-        this.globalArtikels?.map((a) => a.category).filter((cat) => cat && cat !== 'PFAND')
+        this.globalArtikels?.map((a) => a.category).filter((cat) => cat && cat !== 'PFAND' && cat !== 'SCHNELLVERKAUF')
       ),
     ];
     
@@ -636,6 +636,7 @@ export class ProductCatalogComponent implements OnInit {
     console.log('🏷️ [KATEGORIEN] Gefundene Kategorien:', uniqueCategories);
     console.log('🏷️ [KATEGORIEN] Anzahl Kategorien:', uniqueCategories.length);
     console.log('🏷️ [KATEGORIEN] PFAND in Kategorien:', uniqueCategories.includes('PFAND'));
+    console.log('🏷️ [KATEGORIEN] SCHNELLVERKAUF in Kategorien:', uniqueCategories.includes('SCHNELLVERKAUF'));
     console.log('🏷️ [KATEGORIEN] ALKOHOLISCHE GETRÄNKE in Kategorien:', uniqueCategories.includes('ALKOHOLISCHE GETRÄNKE'));
     console.log('🏷️ [KATEGORIEN] Alle Kategorien mit "ALKOHOL":', uniqueCategories.filter(cat => cat.includes('ALKOHOL')));
     console.log('🏷️ [KATEGORIEN] Alle Kategorien mit "GETRÄNKE":', uniqueCategories.filter(cat => cat.includes('GETRÄNKE')));
