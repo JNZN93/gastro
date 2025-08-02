@@ -11,10 +11,10 @@
 // Hero Section für Gastronomie
 .hero-section {
   padding: 4rem 2rem;
-  margin-bottom: 2rem;
+  margin: -70px -2rem 2rem -2rem;
   position: relative;
   overflow: hidden;
-  min-height: 600px;
+  min-height: 100vh;
   display: flex;
   align-items: center;
 }
@@ -25,7 +25,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-image: url('/gastro-hero.webp');
+  background-image: url('https://media.gettyimages.com/id/1413067011/de/video/lagerversandkarton-und-online-shopping-pakete-in-einem-lieferservice-center-organisierter.jpg?s=640x640&k=20&c=CX4w9RGpN7S0u-oIGd8222D_nM_4opbVFj4ba8nGyfE=');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -72,6 +72,7 @@
   position: relative;
   z-index: 3;
   text-align: center;
+  padding: 50px;
 }
 
 .hero-text {
@@ -156,6 +157,7 @@
   transition: all 0.3s ease;
   border: none;
   text-decoration: none;
+  box-sizing: border-box;
   
   svg {
     width: 1.25rem;
