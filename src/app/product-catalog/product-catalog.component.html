@@ -1,4 +1,39 @@
 <div class="product-catalog-dashboard">
+  <!-- Hero Section für Gastronomie -->
+  <div class="hero-section">
+    <div class="hero-content">
+      <div class="hero-text">
+        <h1 class="hero-title">Professioneller Gastronomie-Bedarf</h1>
+        <p class="hero-subtitle">Qualitätsprodukte für Ihre Küche - von Zutaten bis Equipment</p>
+        <div class="hero-features">
+          <div class="feature-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            </svg>
+            <span>Premium Qualität</span>
+          </div>
+          <div class="feature-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <span>Schnelle Lieferung</span>
+          </div>
+          <div class="feature-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+            </svg>
+            <span>Professioneller Service</span>
+          </div>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <div class="hero-image-container">
+          <img src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Gastronomie Equipment" class="hero-image">
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Header Section -->
   <div class="dashboard-header">
     <div class="header-content">
@@ -46,9 +81,53 @@
     </div>
   </div>
 
+  <!-- Featured Products Section -->
+  <div class="featured-section">
+    <div class="section-header">
+      <h2 class="section-title">Empfohlene Produkte</h2>
+      <p class="section-subtitle">Unsere beliebtesten Artikel für Ihre Küche</p>
+    </div>
+    <div class="featured-grid">
+      @for (artikel of getFeaturedProducts(); track $index) {
+      <div class="featured-card">
+        <div class="featured-image-container">
+          <img 
+            *ngIf="artikel.main_image_url"
+            [src]="artikel.main_image_url" 
+            [alt]="artikel.article_text"
+            class="featured-image"
+            (error)="onImageError($event)"
+            loading="lazy">
+          <div *ngIf="!artikel.main_image_url" class="featured-placeholder">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+          </div>
+          <div class="featured-badge">Empfohlen</div>
+        </div>
+        <div class="featured-content">
+          <h3 class="featured-title">{{ artikel.article_text }}</h3>
+          <p class="featured-number">Art.-Nr: {{ artikel.article_number }}</p>
+          @if(globalService.isUserLoggedIn) {
+          <button (click)="addToCart($event, artikel)" class="featured-add-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m8 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01"/>
+            </svg>
+            Zum Warenkorb
+          </button>
+          }
+        </div>
+      </div>
+      }
+    </div>
+  </div>
+
   <!-- Categories Section -->
   <div class="categories-section">
-    <h2 class="section-title">Kategorien</h2>
+    <div class="section-header">
+      <h2 class="section-title">Produktkategorien</h2>
+      <p class="section-subtitle">Entdecken Sie unsere umfangreiche Auswahl</p>
+    </div>
     <div class="category-grid">
       <!-- Alle Kategorien -->
       <div class="category-card" (click)="showAllCategories()" [class.active]="selectedCategory === ''">
@@ -80,7 +159,10 @@
 
   <!-- Products Section -->
   <div class="products-section">
-    <h2 class="section-title">Produkte</h2>
+    <div class="section-header">
+      <h2 class="section-title">Alle Produkte</h2>
+      <p class="section-subtitle">Entdecken Sie unsere komplette Produktpalette</p>
+    </div>
     <div class="products-grid">
       @for (artikel of artikelData; track $index) {
       <div class="product-card">
@@ -140,6 +222,44 @@
         </div>
       </div>
       }
+    </div>
+  </div>
+
+  <!-- Call to Action Section -->
+  <div class="cta-section">
+    <div class="cta-content">
+      <div class="cta-text">
+        <h2 class="cta-title">Bereit für Ihre nächste Bestellung?</h2>
+        <p class="cta-subtitle">Entdecken Sie unsere umfangreiche Auswahl an Gastronomie-Produkten und profitieren Sie von professionellem Service.</p>
+        <div class="cta-buttons">
+          @if(globalService.isUserLoggedIn) {
+          <button class="cta-primary-btn" (click)="showAllCategories()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+            </svg>
+            Alle Produkte anzeigen
+          </button>
+          } @else {
+          <button class="cta-primary-btn" (click)="openLoginPrompt()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+            </svg>
+            Jetzt anmelden
+          </button>
+          }
+          <button class="cta-secondary-btn" (click)="startScanner()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V6a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1zm12 0h2a1 1 0 001-1V6a1 1 0 00-1-1h-2a1 1 0 00-1 1v1a1 1 0 001 1zM5 20h2a1 1 0 001-1v-1a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1z"/>
+            </svg>
+            Barcode Scanner
+          </button>
+        </div>
+      </div>
+      <div class="cta-visual">
+        <div class="cta-image-container">
+          <img src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Gastronomie Service" class="cta-image">
+        </div>
+      </div>
     </div>
   </div>
 

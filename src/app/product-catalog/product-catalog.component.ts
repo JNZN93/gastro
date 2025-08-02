@@ -809,4 +809,10 @@ export class ProductCatalogComponent implements OnInit {
     const event = new CustomEvent('openLoginModal');
     window.dispatchEvent(event);
   }
+
+  getFeaturedProducts(): any[] {
+    // Zeige die ersten 6 Produkte als "empfohlene Produkte"
+    // In einer echten Anwendung würden hier Algorithmen für Empfehlungen verwendet
+    return this.artikelData.slice(0, 6);
+  }
 }
