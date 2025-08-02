@@ -30,8 +30,7 @@ export class ProductManagementComponent implements OnInit, OnDestroy {
   isScanning = false;
   isTorchOn = false;
   
-  // Mobile filter dropdown properties
-  isFilterDropdownOpen: boolean = false;
+
   
   // Image upload properties
   selectedProduct: any = null;
@@ -145,13 +144,7 @@ export class ProductManagementComponent implements OnInit, OnDestroy {
       }
     }
     
-    // Close filter dropdown when clicking outside
-    if (this.isFilterDropdownOpen) {
-      const target = event.target as HTMLElement;
-      if (!target.closest('.filter-dropdown-container')) {
-        this.closeFilterDropdown();
-      }
-    }
+
   }
 
   openModal(imageUrl: string, imageAlt: string, productId: number): void {
@@ -560,26 +553,7 @@ export class ProductManagementComponent implements OnInit, OnDestroy {
     this.updateFilteredData();
   }
 
-  toggleFilterDropdown(): void {
-    this.isFilterDropdownOpen = !this.isFilterDropdownOpen;
-  }
 
-  closeFilterDropdown(): void {
-    this.isFilterDropdownOpen = false;
-  }
-
-  getFilterLabel(): string {
-    switch (this.imageFilter) {
-      case 'all':
-        return 'Alle';
-      case 'with-image':
-        return 'Mit Bild';
-      case 'without-image':
-        return 'Ohne Bild';
-      default:
-        return 'Alle';
-    }
-  }
 
   /*FILTER BY SCANNING*/
 
