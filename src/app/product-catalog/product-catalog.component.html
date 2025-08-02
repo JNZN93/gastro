@@ -1,36 +1,33 @@
 <div class="product-catalog-dashboard">
   <!-- Hero Section für Gastronomie -->
-  <div class="hero-section">
+  <div class="hero-section" [style.--parallax-offset]="parallaxOffset + 'px'">
+    <div class="hero-background"></div>
     <div class="hero-content">
       <div class="hero-text">
-        <h1 class="hero-title">Professioneller Gastronomie-Bedarf</h1>
-        <p class="hero-subtitle">Qualitätsprodukte für Ihre Küche - von Zutaten bis Equipment</p>
+        <h1 class="hero-title">Gastro Depot Worms</h1>
+        <p class="hero-subtitle">Ihr Großhandel für Gastronomie - B2B & B2C Lösungen</p>
         <div class="hero-features">
           <div class="feature-item">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
             </svg>
-            <span>Premium Qualität</span>
+            <span>Großhandelspreise</span>
           </div>
           <div class="feature-item">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
-            <span>Schnelle Lieferung</span>
+            <span>B2B & B2C</span>
           </div>
           <div class="feature-item">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
             </svg>
-            <span>Professioneller Service</span>
+            <span>Gastronomie-Spezialist</span>
           </div>
         </div>
       </div>
-      <div class="hero-visual">
-        <div class="hero-image-container">
-          <img src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Gastronomie Equipment" class="hero-image">
-        </div>
-      </div>
+      <!-- Hero Visual Section entfernt, da das Bild jetzt als Hintergrund verwendet wird -->
     </div>
   </div>
 
@@ -42,7 +39,7 @@
           <svg class="dashboard-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
           </svg>
-          <span class="title-text">Produktkatalog</span>
+          <span class="title-text">Gastro Depot Worms</span>
         </h1>
       </div>
       
@@ -81,11 +78,46 @@
     </div>
   </div>
 
-  <!-- Featured Products Section -->
-  <div class="featured-section">
+  <!-- Categories Section - nur anzeigen wenn nicht gesucht wird -->
+  <div class="categories-section" *ngIf="!isSearching">
+    <div class="section-header">
+      <h2 class="section-title">Produktkategorien</h2>
+      <p class="section-subtitle">Entdecken Sie unsere umfangreiche Auswahl</p>
+    </div>
+    <div class="category-grid">
+      <!-- Alle Kategorien -->
+      <div class="category-card" (click)="showAllCategories()" [class.active]="selectedCategory === ''">
+        <div class="category-img">
+          <img src="https://images.unsplash.com/photo-1542838132-92c53300491e?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60" alt="Alle Produkte" class="category-image">
+        </div>
+        <div class="category-name">Alle Produkte</div>
+      </div>
+      
+      <!-- Favoriten -->
+      <div class="category-card" (click)="selectCategory('FAVORITEN')" [class.active]="selectedCategory === 'FAVORITEN'">
+        <div class="category-img">
+          <img src="https://images.unsplash.com/photo-1511690743698-d9d85f2fbf38?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60" alt="Favoriten" class="category-image">
+        </div>
+        <div class="category-name">⭐ Favoriten</div>
+      </div>
+      
+      <!-- Dynamische Kategorien -->
+      @for (category of categories; track category) {
+      <div class="category-card" [routerLink]="['/category', category]" [class.active]="selectedCategory === category">
+        <div class="category-img">
+          <img [src]="getCategoryImage(category)" [alt]="category" class="category-image" (error)="onCategoryImageError($event, category)">
+        </div>
+        <div class="category-name">{{ category }}</div>
+      </div>
+      }
+    </div>
+  </div>
+
+  <!-- Featured Products Section - nur anzeigen wenn nicht gesucht wird -->
+  <div class="featured-section" *ngIf="!isSearching">
     <div class="section-header">
       <h2 class="section-title">Empfohlene Produkte</h2>
-      <p class="section-subtitle">Unsere beliebtesten Artikel für Ihre Küche</p>
+      <p class="section-subtitle">Großhandel für Gastronomie - B2B & B2C</p>
     </div>
     <div class="featured-grid">
       @for (artikel of getFeaturedProducts(); track $index) {
@@ -122,46 +154,25 @@
     </div>
   </div>
 
-  <!-- Categories Section -->
-  <div class="categories-section">
-    <div class="section-header">
-      <h2 class="section-title">Produktkategorien</h2>
-      <p class="section-subtitle">Entdecken Sie unsere umfangreiche Auswahl</p>
-    </div>
-    <div class="category-grid">
-      <!-- Alle Kategorien -->
-      <div class="category-card" (click)="showAllCategories()" [class.active]="selectedCategory === ''">
-        <div class="category-img">
-          <img src="https://images.unsplash.com/photo-1542838132-92c53300491e?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60" alt="Alle Produkte" class="category-image">
-        </div>
-        <div class="category-name">Alle Produkte</div>
-      </div>
-      
-      <!-- Favoriten -->
-      <div class="category-card" (click)="selectCategory('FAVORITEN')" [class.active]="selectedCategory === 'FAVORITEN'">
-        <div class="category-img">
-          <img src="https://images.unsplash.com/photo-1511690743698-d9d85f2fbf38?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60" alt="Favoriten" class="category-image">
-        </div>
-        <div class="category-name">⭐ Favoriten</div>
-      </div>
-      
-      <!-- Dynamische Kategorien -->
-      @for (category of categories; track category) {
-      <div class="category-card" [routerLink]="['/category', category]" [class.active]="selectedCategory === category">
-        <div class="category-img">
-          <img [src]="getCategoryImage(category)" [alt]="category" class="category-image" (error)="onCategoryImageError($event, category)">
-        </div>
-        <div class="category-name">{{ category }}</div>
-      </div>
-      }
-    </div>
-  </div>
+
 
   <!-- Products Section -->
   <div class="products-section">
     <div class="section-header">
-      <h2 class="section-title">Alle Produkte</h2>
-      <p class="section-subtitle">Entdecken Sie unsere komplette Produktpalette</p>
+      <h2 class="section-title">
+        @if(isSearching) {
+          Suchergebnisse für "{{ searchTerm }}"
+        } @else {
+          Alle Produkte
+        }
+      </h2>
+      <p class="section-subtitle">
+        @if(isSearching) {
+          {{ artikelData.length }} Artikel gefunden
+        } @else {
+          Entdecken Sie unsere komplette Produktpalette
+        }
+      </p>
     </div>
     <div class="products-grid">
       @for (artikel of artikelData; track $index) {

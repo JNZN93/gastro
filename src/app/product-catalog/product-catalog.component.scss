@@ -10,11 +10,28 @@
 
 // Hero Section für Gastronomie
 .hero-section {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   padding: 4rem 2rem;
   margin-bottom: 2rem;
   position: relative;
   overflow: hidden;
+  min-height: 500px;
+  display: flex;
+  align-items: center;
+}
+
+.hero-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url('/gastro-hero.webp');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: 0;
+  will-change: transform;
+  transform: translateY(var(--parallax-offset, 0px));
 }
 
 .hero-section::before {
@@ -24,19 +41,19 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="75" cy="75" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="50" cy="10" r="0.5" fill="rgba(255,255,255,0.1)"/><circle cx="10" cy="60" r="0.5" fill="rgba(255,255,255,0.1)"/><circle cx="90" cy="40" r="0.5" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
-  opacity: 0.3;
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0.4) 100%);
+  z-index: 2;
 }
 
 .hero-content {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   max-width: 1400px;
   margin: 0 auto;
   position: relative;
-  z-index: 2;
-  gap: 4rem;
+  z-index: 3;
+  text-align: center;
 }
 
 .hero-text {
@@ -64,6 +81,7 @@
   display: flex;
   gap: 2rem;
   flex-wrap: wrap;
+  justify-content: center;
 }
 
 .feature-item {
@@ -80,24 +98,7 @@
   }
 }
 
-.hero-visual {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-}
-
-.hero-image-container {
-  position: relative;
-  border-radius: 20px;
-  overflow: hidden;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-  transform: perspective(1000px) rotateY(-5deg);
-  transition: transform 0.3s ease;
-}
-
-.hero-image-container:hover {
-  transform: perspective(1000px) rotateY(0deg);
-}
+/* Hero Visual Section entfernt, da das Bild jetzt als Hintergrund verwendet wird */
 
 .hero-image {
   width: 400px;
@@ -909,12 +910,12 @@
   
   @media (max-width: 768px) {
     padding: 2rem 1.5rem;
-    margin-top: 1.5rem;
+    margin-top: 50px;
   }
   
   @media (max-width: 640px) {
     padding: 1.5rem 1rem;
-    margin-top: 1rem;
+    margin-top: 50px;
   }
 }
 
@@ -1917,7 +1918,7 @@
 
   .products-section {
     padding: 1rem;
-    margin-top: 200px;
+    margin-top: 50px;
   }
 
   .products-grid {

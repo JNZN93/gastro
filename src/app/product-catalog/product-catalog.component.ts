@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, ViewChild, inject } from '@angular/core';
+import { Component, OnInit, ViewChild, inject, HostListener } from '@angular/core';
 import { ArtikelDataService } from '../artikel-data.service';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../authentication.service';
@@ -66,6 +66,9 @@ export class ProductCatalogComponent implements OnInit {
   toastMessage: string = '';
   toastType: 'success' | 'error' = 'success';
 
+  // Parallax-Eigenschaften
+  parallaxOffset: number = 0;
+
   videoConstraints: MediaTrackConstraints = {
     width: { ideal: 1920 },
     height: { ideal: 1080 }
@@ -76,6 +79,26 @@ export class ProductCatalogComponent implements OnInit {
     private authService: AuthService,
     public globalService: GlobalService
   ) {}
+
+  @HostListener('window:scroll', ['$event'])
+  onWindowScroll() {
+    const scrollPosition = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+    this.parallaxOffset = scrollPosition * 0.5; // Parallax-Geschwindigkeit
+    console.log('Scroll position:', scrollPosition, 'Parallax offset:', this.parallaxOffset); // Debug
+  }
+
+  // Alternative Methode für bessere Browser-Kompatibilität
+  @HostListener('document:scroll', ['$event'])
+  onDocumentScroll() {
+    const scrollPosition = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+    this.parallaxOffset = scrollPosition * 0.5;
+    
+    // Direkter DOM-Zugriff als Fallback
+    const heroBackground = document.querySelector('.hero-background') as HTMLElement;
+    if (heroBackground) {
+      heroBackground.style.transform = `translateY(${this.parallaxOffset}px)`;
+    }
+  }
 
   ngOnInit(): void {
     const token = localStorage.getItem('token');
@@ -256,7 +279,11 @@ export class ProductCatalogComponent implements OnInit {
   filteredArtikelData() {
     // Verwende die bereits gefilterten globalArtikels (ohne SCHNELLVERKAUF für nicht-Employee/Admin)
     this.artikelData = this.globalArtikels;
+    
     if (this.searchTerm) {
+      // Bei Suche: Kategorieauswahl zurücksetzen, damit durch alle Produkte gesucht wird
+      this.selectedCategory = '';
+      
       const terms = this.searchTerm.toLowerCase().split(/\s+/);
       this.artikelData = this.artikelData.filter((artikel) =>
       terms.every((term) =>
@@ -267,6 +294,11 @@ export class ProductCatalogComponent implements OnInit {
     );
     }
     window.scrollTo({ top: 0});
+  }
+
+  // Getter für Suchmodus
+  get isSearching(): boolean {
+    return !!(this.searchTerm && this.searchTerm.trim().length > 0);
   }
 
   clearSearch() {
@@ -811,8 +843,15 @@ export class ProductCatalogComponent implements OnInit {
   }
 
   getFeaturedProducts(): any[] {
-    // Zeige die ersten 6 Produkte als "empfohlene Produkte"
-    // In einer echten Anwendung würden hier Algorithmen für Empfehlungen verwendet
-    return this.artikelData.slice(0, 6);
+    // Filtere Produkte mit Bildern (main_image_url)
+    const productsWithImages = this.artikelData.filter(artikel => 
+      artikel.main_image_url && 
+      artikel.main_image_url.trim() !== '' && 
+      artikel.main_image_url !== 'null' &&
+      artikel.main_image_url !== 'undefined'
+    );
+    
+    // Zeige die ersten 6 Produkte mit Bildern als "empfohlene Produkte"
+    return productsWithImages.slice(0, 6);
   }
 }
