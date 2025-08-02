@@ -15,6 +15,7 @@ import { LabelManagementComponent } from './label-management/label-management.co
 import { CustomerOrdersComponent } from './customer-orders/customer-orders.component';
 import { OrderOverviewComponent } from './order-overview/order-overview.component';
 import { UserManagementComponent } from './user-management/user-management.component';
+import { CategoryDetailComponent } from './category-detail/category-detail.component';
 import { AuthGuard } from './auth.guard';
 import { AdminAuthGuard } from './admin-auth.guard';
 
@@ -34,5 +35,6 @@ export const routes: Routes = [
     { path: 'label-management', component: LabelManagementComponent, canActivate: [AuthGuard] },
     { path: 'customer-orders', component: CustomerOrdersComponent, canActivate: [AdminAuthGuard] },
     { path: 'order-overview', component: OrderOverviewComponent, canActivate: [AuthGuard] },
-    { path: 'user-management', component: UserManagementComponent }
+    { path: 'user-management', component: UserManagementComponent },
+    { path: 'category/:categoryName', component: CategoryDetailComponent }
 ];

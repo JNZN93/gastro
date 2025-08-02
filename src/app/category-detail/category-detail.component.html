@@ -1,0 +1,129 @@
+<div class="category-detail-dashboard">
+  <!-- Header Section -->
+  <div class="dashboard-header">
+    <div class="header-content">
+      <div class="header-left">
+        <button (click)="goBack()" class="back-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+          </svg>
+          Zurück
+        </button>
+        <h1 class="dashboard-title">
+          <svg class="dashboard-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+          </svg>
+          <span class="title-text">{{ categoryName }}</span>
+        </h1>
+      </div>
+      
+      <div class="header-center">
+        <div class="search-box">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+          <input type="text" [(ngModel)]="searchTerm" (input)="filteredArtikelData()" placeholder="Artikel suchen..." class="search-input">
+          <button *ngIf="searchTerm" (click)="clearSearch()" class="clear-search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      
+      <div class="header-right">
+        <div class="header-actions">
+          <div class="product-count">
+            {{ filteredData.length }} Produkte
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Products Section -->
+  <div class="products-section">
+    <div class="products-grid">
+      @for (artikel of filteredData; track $index) {
+      <div class="product-card">
+        <!-- Product Image -->
+        <div class="product-image-container">
+          <img 
+            *ngIf="artikel.main_image_url"
+            [src]="artikel.main_image_url" 
+            [alt]="artikel.article_text"
+            class="product-image"
+            loading="lazy">
+          
+          <!-- Placeholder für Produkte ohne Bild -->
+          <div *ngIf="!artikel.main_image_url" class="image-placeholder">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="placeholder-icon">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+          </div>
+      
+          <div class="favorite-btn" (click)="toggleFavorite($event, artikel)" [class.favorited]="isFavorite(artikel)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+            </svg>
+          </div>
+        </div>
+        
+        <div class="product-content">
+          <h3 class="product-title">{{ artikel.article_text }}</h3>
+          <p class="product-number">Art.-Nr: {{ artikel.article_number }}</p>
+          
+          <div class="product-actions">
+            <div class="quantity-input-group">
+              <!-- Für angemeldete Benutzer -->
+              @if(globalService.isUserLoggedIn) {
+                <input type="number" [(ngModel)]="artikel.quantity" placeholder="Menge" class="quantity-input" min="1">
+                <button (click)="addToCart($event, artikel)" class="add-to-cart-btn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m8 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01"/>
+                  </svg>
+                  Hinzufügen
+                </button>
+              }
+              
+              <!-- Für nicht angemeldete Benutzer -->
+              @else {
+                <button (click)="goBack()" class="login-to-order-btn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                  </svg>
+                  Anmelden um zu bestellen
+                </button>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+      }
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  @if (filteredData.length === 0 && !isVisible) {
+  <div class="empty-state">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="empty-icon">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+    </svg>
+    <h3>Keine Produkte gefunden</h3>
+    <p>In der Kategorie "{{ categoryName }}" wurden keine Produkte gefunden.</p>
+    <button (click)="goBack()" class="back-to-categories-btn">
+      Zurück zu allen Kategorien
+    </button>
+  </div>
+  }
+
+  <!-- Warenkorb -->
+  @if(globalService.isUserLoggedIn) {
+  <app-warenkorb></app-warenkorb>
+  }
+
+  <!-- Loading Screen -->
+  @if (isVisible) {
+  <app-upload-loading></app-upload-loading>
+  }
+</div>

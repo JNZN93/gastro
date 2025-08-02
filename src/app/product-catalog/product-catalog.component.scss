@@ -322,6 +322,8 @@
   text-align: center;
   cursor: pointer;
   position: relative;
+  text-decoration: none;
+  display: block;
 
   &:hover {
     transform: translateY(-5px);
