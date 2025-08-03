@@ -4094,7 +4094,7 @@
   border-top: 1px solid #dee2e6;
   display: flex;
   z-index: 1000;
-  padding-bottom: env(safe-area-inset-bottom); // Für iPhone mit Home Indicator
+  padding-bottom: 0; // Entfernt den Abstand für alle Geräte
 
   .tab-btn {
     flex: 1;
