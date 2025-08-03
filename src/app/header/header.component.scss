@@ -33,6 +33,7 @@ header {
     align-items: center;
     gap: 10px;
     flex-shrink: 0;
+    margin-left: auto; // Ensure it's pushed to the right
   }
 
   // Hamburger Menu Styles
@@ -118,7 +119,7 @@ header {
   .login-container {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     flex-shrink: 0;
 
     .login-button {
