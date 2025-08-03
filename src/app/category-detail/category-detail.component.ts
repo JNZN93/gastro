@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, ViewChild, OnDestroy, HostListener } from '@angular/core';
+import { Component, OnInit, inject, ViewChild, OnDestroy, HostListener, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ArtikelDataService } from '../artikel-data.service';
 import { FormsModule } from '@angular/forms';
@@ -22,6 +22,7 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
   private http = inject(HttpClient);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private cdr = inject(ChangeDetectorRef);
   
   categoryName: string = '';
   artikelData: any[] = [];
@@ -29,6 +30,15 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
   isVisible: boolean = true;
   searchTerm: string = '';
   filteredData: any[] = [];
+
+  // Performance-Optimierungen
+  private scrollTimeout: any;
+  private imageLoadPromises: Promise<void>[] = [];
+  private virtualScrollConfig = {
+    itemHeight: 300, // Geschätzte Höhe pro Produktkarte
+    viewportHeight: 800,
+    bufferSize: 5
+  };
 
   // Eigenschaften für Image Modal
   showImageModal: boolean = false;
@@ -135,7 +145,63 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
         artikel.category === this.categoryName
       );
     }
+    
     this.filteredData = [...this.artikelData];
+    
+    // Preload wichtige Bilder für bessere Performance
+    this.preloadImages();
+  }
+
+  // Neue Methode: Preload wichtige Bilder
+  private preloadImages(): void {
+    const imagesToPreload = this.artikelData
+      .filter(artikel => artikel.main_image_url)
+      .slice(0, 10) // Nur die ersten 10 Bilder preloaden
+      .map(artikel => artikel.main_image_url);
+    
+    imagesToPreload.forEach(imageUrl => {
+      const img = new Image();
+      img.src = imageUrl;
+      this.imageLoadPromises.push(
+        new Promise<void>((resolve) => {
+          img.onload = () => resolve();
+          img.onerror = () => resolve(); // Auch bei Fehler auflösen
+        })
+      );
+    });
+  }
+
+  // Optimierte Suchfunktion mit Debouncing
+  @HostListener('window:scroll', ['$event'])
+  onScroll(): void {
+    // Debouncing für Scroll-Events
+    if (this.scrollTimeout) {
+      clearTimeout(this.scrollTimeout);
+    }
+    
+    this.scrollTimeout = setTimeout(() => {
+      // Hier könnten weitere Scroll-Optimierungen hinzugefügt werden
+      this.cdr.detectChanges();
+    }, 16); // ~60fps
+  }
+
+  // TrackBy-Funktion für bessere ngFor Performance
+  trackByArticleNumber(index: number, artikel: any): string {
+    return artikel.article_number || index;
+  }
+
+  // Optimierte Bildlade-Strategie
+  onImageLoad(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    img.classList.add('loaded');
+  }
+
+  // Optimierte Bildfehler-Behandlung
+  onImageError(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    // Fallback auf Standard-Bild
+    img.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60';
+    img.classList.add('error');
   }
 
   filteredArtikelData(): void {
@@ -238,16 +304,12 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
 
   // Image Modal Methoden
   openImageModal(artikel: any): void {
-    console.log('openImageModal called with:', artikel);
-    console.log('artikel.main_image_url:', artikel.main_image_url);
     if (artikel.main_image_url) {
       this.selectedImageUrl = artikel.main_image_url;
       this.selectedImageProduct = artikel;
       this.showImageModal = true;
       // Body scroll verhindern
       document.body.style.overflow = 'hidden';
-    } else {
-      console.log('No main_image_url found for this article');
     }
   }
 
@@ -262,12 +324,6 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
 
   toggleImageZoom(): void {
     this.isImageZoomed = !this.isImageZoomed;
-  }
-
-  onImageError(event: Event): void {
-    const img = event.target as HTMLImageElement;
-    // Fallback auf Standard-Bild
-    img.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60';
   }
 
   // Scanner-Methoden
@@ -316,7 +372,9 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
   playBeep(): void {
     const audio = new Audio('beep.mp3');
     audio.volume = 0.5;
-    audio.play().catch(err => console.error('Fehler beim Abspielen des Tons:', err));
+    audio.play().catch(err => {
+      // Silent error handling
+    });
   }
 
   private preventBodyScroll(): void {
@@ -329,5 +387,13 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.stopScanner();
+    
+    // Cleanup Performance-Optimierungen
+    if (this.scrollTimeout) {
+      clearTimeout(this.scrollTimeout);
+    }
+    
+    // Cleanup Bild-Promises
+    this.imageLoadPromises = [];
   }
 }

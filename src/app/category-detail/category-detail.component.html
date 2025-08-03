@@ -54,7 +54,7 @@
     </div>
     
     <div class="products-grid">
-      @for (artikel of filteredData; track $index) {
+      @for (artikel of filteredData; track trackByArticleNumber($index, artikel)) {
       <div class="product-card">
         <!-- Product Image -->
         <div class="product-image-container">
@@ -64,6 +64,7 @@
             [alt]="artikel.article_text"
             class="product-image"
             (click)="openImageModal(artikel)"
+            (load)="onImageLoad($event)"
             (error)="onImageError($event)"
             loading="lazy">
           

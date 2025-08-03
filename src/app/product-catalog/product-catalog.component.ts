@@ -78,10 +78,6 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    // Performance Monitoring für Lazy Loading
-    const startTime = performance.now();
-    console.log('ProductCatalogComponent: Lazy Loading gestartet');
-    
     const token = localStorage.getItem('token');
     const loadedWarenkorb = localStorage.getItem('warenkorb')
 
@@ -118,16 +114,9 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
             // Keine Kategorie ausgewählt - Hauptseite wird angezeigt
             this.selectedCategory = '';
             
-            // Log Artikel-Kategorien für angemeldete Benutzer
-            this.logArticleCategories('Angemeldeter Benutzer');
-            
             this.collectOrderData(response);
             this.globalService.orderData = this.orderData;
             this.isVisible = false;
-            
-            // Performance Monitoring beenden
-            const endTime = performance.now();
-            console.log(`ProductCatalogComponent: Lazy Loading abgeschlossen in ${(endTime - startTime).toFixed(2)}ms`);
           });
         },
         error: (error) => {
@@ -142,12 +131,8 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
   }
 
   loadAsGuest(): void {
-    console.log('Lade als Gast...');
     this.globalService.setUserLoggedIn(false);
     this.globalService.isAdmin = false;
-    
-    // Performance Monitoring für Gast-Modus
-    const startTime = performance.now();
     
     this.artikelService.getData().subscribe((res) => {
       // Für Gäste nur normale Artikel anzeigen (keine SCHNELLVERKAUF und keine PFAND)
@@ -159,21 +144,13 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
       // Keine Kategorie ausgewählt - Hauptseite wird angezeigt
       this.selectedCategory = '';
       
-      // Log Artikel-Kategorien für Gäste
-      this.logArticleCategories('Gast');
-      
       this.isVisible = false;
-      
-      // Performance Monitoring beenden für Gast-Modus
-      const endTime = performance.now();
-      console.log(`ProductCatalogComponent: Gast-Modus Lazy Loading abgeschlossen in ${(endTime - startTime).toFixed(2)}ms`);
     });
   }
 
   // Neue Methode zum Laden der letzten Bestellungen
   loadLastOrders(): void {
     if (!this.currentUserId) {
-      console.error('Keine User ID verfügbar');
       return;
     }
 
@@ -181,7 +158,6 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
     const token = localStorage.getItem('token');
     
     if (!token) {
-      console.error('Kein Token verfügbar');
       this.isLoadingLastOrders = false;
       return;
     }
@@ -190,31 +166,18 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
       'Authorization': `Bearer ${token}`
     });
 
-    console.log('🔄 [LAST-ORDERS] Lade letzte Bestellungen für User:', this.currentUserId);
-
     this.http.get<CustomerArticlePrice[]>(`https://multi-mandant-ecommerce.onrender.com/api/customer-article-prices/user`, { headers })
       .subscribe({
         next: (data) => {
-          console.log('✅ [LAST-ORDERS] Daten erfolgreich geladen:', data);
-          console.log('📊 [LAST-ORDERS] Anzahl Bestellungen:', Array.isArray(data) ? data.length : 'Kein Array');
-          
           if (Array.isArray(data)) {
             this.lastOrders = data;
-            console.log('💾 [LAST-ORDERS] Bestellungen gespeichert:', this.lastOrders.length);
           } else {
-            console.warn('⚠️ [LAST-ORDERS] Daten sind kein Array:', data);
             this.lastOrders = [];
           }
           
           this.isLoadingLastOrders = false;
         },
         error: (error) => {
-          console.error('❌ [LAST-ORDERS] Fehler beim Laden der letzten Bestellungen:', error);
-          console.error('❌ [LAST-ORDERS] Fehler Details:', {
-            message: error.message,
-            status: error.status,
-            statusText: error.statusText
-          });
           this.lastOrders = [];
           this.isLoadingLastOrders = false;
         }
@@ -230,15 +193,11 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
       this.preventBodyScroll();
       
       if (this.lastOrders.length === 0) {
-        console.log('🔄 [TOGGLE] Lade letzte Bestellungen...');
         this.loadLastOrders();
-      } else {
-        console.log('📊 [TOGGLE] Zeige', this.lastOrders.length, 'Bestellungen');
       }
     } else {
       // Body scroll wieder erlauben
       this.restoreBodyScroll();
-      console.log('❌ [TOGGLE] Modal geschlossen');
     }
   }
 
@@ -373,7 +332,9 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
   playBeep(): void {
   const audio = new Audio('beep.mp3');
   audio.volume = 0.5;
-  audio.play().catch(err => console.error('Fehler beim Abspielen des Tons:', err));
+  audio.play().catch(err => {
+    // Silent error handling
+  });
 }
 
   // Methode zum Anzeigen der Toast-Benachrichtigung
@@ -395,7 +356,6 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
 
   onCategoryImageError(event: Event, category: string): void {
     const img = event.target as HTMLImageElement;
-    console.error(`❌ [BILD-FEHLER] Kategorie "${category}" - Bild konnte nicht geladen werden:`, img.src);
     
     // Fallback auf Standard-Bild
     img.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60';
@@ -403,16 +363,12 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
 
   // Image Modal Methoden
   openImageModal(artikel: any): void {
-    console.log('openImageModal called with:', artikel);
-    console.log('artikel.main_image_url:', artikel.main_image_url);
     if (artikel.main_image_url) {
       this.selectedImageUrl = artikel.main_image_url;
       this.selectedImageProduct = artikel;
       this.showImageModal = true;
       // iOS Safari kompatible Body scroll Verhinderung
       this.preventBodyScroll();
-    } else {
-      console.log('No main_image_url found for this article');
     }
   }
 
@@ -557,23 +513,17 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
     
     // Bereinige die Kategorie von Leerzeichen und normalisiere sie
     const categoryKey = category.trim().toUpperCase();
-    console.log(`🔍 [BILD] Original Kategorie: "${category}"`);
-    console.log(`🔍 [BILD] Normalisierte Kategorie: "${categoryKey}"`);
-    console.log(`🔍 [BILD] Kategorie Länge: ${categoryKey.length}`);
-    console.log(`🔍 [BILD] Verfügbare Kategorie Länge: ${categoryImages['ALKOHOLISCHE GETRÄNKE'] ? 'ALKOHOLISCHE GETRÄNKE'.length : 'NICHT GEFUNDEN'}`);
     
     // Versuche direkten Zugriff
     let foundImage = categoryImages[categoryKey];
     
     // Falls nicht gefunden, versuche alternative Schreibweisen
     if (!foundImage) {
-      console.log(`🔄 [BILD] Versuche alternative Schreibweisen für "${categoryKey}"`);
       
       // Versuche ohne Leerzeichen
       const noSpaces = categoryKey.replace(/\s+/g, '');
       foundImage = categoryImages[noSpaces];
       if (foundImage) {
-        console.log(`✅ [BILD] Gefunden mit "noSpaces": ${noSpaces}`);
       }
       
       // Versuche mit Unterstrich
@@ -581,7 +531,6 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
         const withUnderscore = categoryKey.replace(/\s+/g, '_');
         foundImage = categoryImages[withUnderscore];
         if (foundImage) {
-          console.log(`✅ [BILD] Gefunden mit "withUnderscore": ${withUnderscore}`);
         }
       }
       
@@ -591,7 +540,6 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
         const exactMatch = availableCategories.find(cat => cat.trim() === categoryKey.trim());
         if (exactMatch) {
           foundImage = categoryImages[exactMatch];
-          console.log(`✅ [BILD] Exakte Übereinstimmung gefunden: "${exactMatch}"`);
         }
       }
       
@@ -604,17 +552,12 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
         );
         if (partialMatch) {
           foundImage = categoryImages[partialMatch];
-          console.log(`✅ [BILD] Partielle Übereinstimmung gefunden: "${partialMatch}"`);
         }
       }
     }
     
     if (foundImage) {
-      console.log(`🖼️ [BILD] Kategorie "${category}" -> Bild gefunden: ${foundImage}`);
     } else {
-      console.log(`⚠️ [BILD] Kategorie "${category}" -> KEIN spezifisches Bild, verwende Standard-Bild`);
-      console.log(`🔍 [BILD] Gesuchte Kategorie: "${category}"`);
-      console.log(`🔍 [BILD] Verfügbare Kategorien:`, Object.keys(categoryImages));
     }
     
     return foundImage || defaultImage;
@@ -622,26 +565,6 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
 
   // Methode zum Loggen der Artikel-Kategorien
   logArticleCategories(userType: string): void {
-    console.log(`📊 [ARTIKEL-KATEGORIEN] Benutzertyp: ${userType}`);
-    console.log(`📊 [ARTIKEL-KATEGORIEN] Gesamtzahl Artikel: ${this.globalArtikels.length}`);
-    
-    // Zähle Artikel pro Kategorie
-    const categoryCount: { [key: string]: number } = {};
-    this.globalArtikels.forEach(artikel => {
-      if (artikel.category) {
-        categoryCount[artikel.category] = (categoryCount[artikel.category] || 0) + 1;
-      }
-    });
-    
-    console.log('📊 [ARTIKEL-KATEGORIEN] Artikel pro Kategorie:', categoryCount);
-    
-    // Zeige auch einige Beispiel-Artikel
-    const sampleArticles = this.globalArtikels.slice(0, 5).map(artikel => ({
-      name: artikel.article_text,
-      category: artikel.category,
-      number: artikel.article_number
-    }));
-    console.log('📊 [ARTIKEL-KATEGORIEN] Beispiel-Artikel:', sampleArticles);
   }
 
   getItemsFromCategory(category:string) {
@@ -658,16 +581,6 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
         this.globalArtikels?.map((a) => a.category).filter((cat) => cat && cat !== 'PFAND' && cat !== 'SCHNELLVERKAUF')
       ),
     ];
-    
-    // Log alle gefundenen Kategorien
-    console.log('🏷️ [KATEGORIEN] Gefundene Kategorien:', uniqueCategories);
-    console.log('🏷️ [KATEGORIEN] Anzahl Kategorien:', uniqueCategories.length);
-    console.log('🏷️ [KATEGORIEN] PFAND in Kategorien:', uniqueCategories.includes('PFAND'));
-    console.log('🏷️ [KATEGORIEN] SCHNELLVERKAUF in Kategorien:', uniqueCategories.includes('SCHNELLVERKAUF'));
-    console.log('🏷️ [KATEGORIEN] ALKOHOLISCHE GETRÄNKE in Kategorien:', uniqueCategories.includes('ALKOHOLISCHE GETRÄNKE'));
-    console.log('🏷️ [KATEGORIEN] Alle Kategorien mit "ALKOHOL":', uniqueCategories.filter(cat => cat.includes('ALKOHOL')));
-    console.log('🏷️ [KATEGORIEN] Alle Kategorien mit "GETRÄNKE":', uniqueCategories.filter(cat => cat.includes('GETRÄNKE')));
-    console.log('🏷️ [KATEGORIEN] Alle Artikel mit Kategorien:', this.globalArtikels?.map(a => ({ article_number: a.article_number, category: a.category })));
     
     return uniqueCategories;
   }
@@ -759,7 +672,6 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
   addToCartFromModal(event: Event, order: CustomerArticlePrice): void {
     // Prüfe zuerst, ob der Artikel verfügbar ist
     if (!this.canAddToCart(order.product_id)) {
-      console.warn('⚠️ [MODAL-CART] Artikel nicht verfügbar:', order.product_id);
       return;
     }
 
@@ -767,7 +679,6 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
     const artikel = this.globalArtikels.find(art => art.article_number === order.product_id);
     
     if (!artikel) {
-      console.error('❌ [MODAL-CART] Artikel nicht gefunden:', order.product_id);
       return;
     }
 
@@ -797,14 +708,12 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
     if (existingItem) {
       // Falls der Artikel existiert, die Menge erhöhen
       existingItem.quantity += Number(artikelToAdd.quantity);
-      console.log('🔄 [MODAL-CART] Menge erhöht für Artikel:', artikelToAdd.article_number);
     } else {
       // Neuen Artikel hinzufügen
       this.globalService.warenkorb = [
         ...this.globalService.warenkorb,
         { ...artikelToAdd, quantity: Number(artikelToAdd.quantity) },
       ];
-      console.log('✅ [MODAL-CART] Neuer Artikel hinzugefügt:', artikelToAdd.article_number);
     }
 
     // Eingabefeld für Menge zurücksetzen
@@ -852,7 +761,6 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
     }
     this.showToastNotification(message, 'success');
     
-    console.log('💾 [MODAL-CART] Warenkorb aktualisiert:', this.globalService.warenkorb.length, 'Artikel');
   }
 
 
@@ -917,14 +825,12 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
     if (existingItem) {
       // Falls der Artikel existiert, die Menge erhöhen
       existingItem.quantity += quantity;
-      console.log('🔄 [QUICK-CART] Menge erhöht für Artikel:', artikelToAdd.article_number);
     } else {
       // Neuen Artikel hinzufügen
       this.globalService.warenkorb = [
         ...this.globalService.warenkorb,
         { ...artikelToAdd, quantity: quantity },
       ];
-      console.log('✅ [QUICK-CART] Neuer Artikel hinzugefügt:', artikelToAdd.article_number);
     }
 
     this.getTotalPrice();
