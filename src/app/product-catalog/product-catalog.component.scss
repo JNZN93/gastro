@@ -39,28 +39,17 @@
   display: flex;
   align-items: center;
   
-  // Mobile Optimierung - kleinere Höhe ohne Bild
+  // Mobile Optimierung - Hero Section komplett wie Desktop
   @media (max-width: 768px) {
-    min-height: auto;
-    padding: 3rem 1rem;
-    margin: -60px -1rem 1rem -1rem;
-    
-    // Zusätzliche Regel um sicherzustellen, dass kein Hintergrundbild angezeigt wird
-    .hero-background {
-      background-image: none !important;
-      background-color: #f8fafc !important;
-    }
+    min-height: 100vh;
+    padding: 4rem 1rem;
+    margin: -70px -1rem 2rem -1rem;
   }
   
   @media (max-width: 480px) {
-    min-height: auto;
-    padding: 2rem 0.75rem;
-    
-    // Zusätzliche Regel um sicherzustellen, dass kein Hintergrundbild angezeigt wird
-    .hero-background {
-      background-image: none !important;
-      background-color: #f8fafc !important;
-    }
+    min-height: 100vh;
+    padding: 4rem 0.75rem;
+    margin: -70px -0.75rem 2rem -0.75rem;
   }
 }
 
@@ -74,17 +63,29 @@
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+  background-color: #2d3748; // Fallback-Farbe
   z-index: 0;
   
-  // Mobile Optimierung - Bild ausblenden
+  // Mobile Optimierung - Hintergrundbild forciert anzeigen
+  @media (max-width: 1024px) {
+    background-image: url('https://images.unsplash.com/photo-1553413077-190dd305871c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80') !important;
+    background-size: cover !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+  }
+  
   @media (max-width: 768px) {
-    background-image: none !important;
-    background-color: #f8fafc !important; // Fallback-Hintergrundfarbe
+    background-image: url('https://images.unsplash.com/photo-1553413077-190dd305871c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80') !important;
+    background-size: cover !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
   }
   
   @media (max-width: 480px) {
-    background-image: none !important;
-    background-color: #f8fafc !important; // Fallback-Hintergrundfarbe
+    background-image: url('https://images.unsplash.com/photo-1553413077-190dd305871c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80') !important;
+    background-size: cover !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
   }
 }
 
@@ -99,9 +100,9 @@
   background: linear-gradient(135deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0.4) 100%);
   z-index: 2;
   
-  // Mobile Optimierung - Overlay ausblenden ohne Bild
+  // Mobile Optimierung - Overlay beibehalten
   @media (max-width: 768px) {
-    display: none;
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0.4) 100%);
   }
 }
 
@@ -115,9 +116,9 @@
   background: linear-gradient(135deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0.4) 100%);
   z-index: 2;
   
-  // Mobile Optimierung - Overlay ausblenden ohne Bild
+  // Mobile Optimierung - Overlay beibehalten
   @media (max-width: 768px) {
-    display: none;
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0.4) 100%);
   }
 }
 
@@ -132,15 +133,28 @@
   z-index: 3;
   text-align: center;
   padding: 50px;
+  
+  // Mobile Optimierung
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    padding: 2rem 1rem;
+    text-align: center;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 1.5rem 0.75rem;
+    gap: 1.5rem;
+  }
 }
 
 .hero-text {
   text-align: left;
   color: white;
   
-  // Mobile Optimierung - dunkle Textfarbe ohne Hintergrundbild
+  // Mobile Optimierung - weiße Textfarbe beibehalten
   @media (max-width: 768px) {
-    color: #1a202c;
+    color: white;
   }
 }
 
@@ -272,10 +286,11 @@
   border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   
-  // Mobile Optimierung - dunkler Hintergrund ohne Bild
+  // Mobile Optimierung - gleicher Stil wie Desktop
   @media (max-width: 768px) {
-    background: rgba(248, 250, 252, 0.8);
-    border: 1px solid rgba(226, 232, 240, 0.6);
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 1.5rem;
   }
 }
 
@@ -294,9 +309,9 @@
     color: #cbd5e0;
     font-weight: 600;
     
-    // Mobile Optimierung - dunkle Textfarbe ohne Bild
+    // Mobile Optimierung - gleiche Textfarbe wie Desktop
     @media (max-width: 768px) {
-      color: #64748b;
+      color: #cbd5e0;
     }
   }
 }
@@ -3874,9 +3889,9 @@
 }
 
 @media (max-width: 480px) {
-  // Noch kompaktere Layouts für sehr kleine Bildschirme
+  // Hero Section für sehr kleine Bildschirme - komplette Höhe beibehalten
   .hero-section {
-    min-height: 50vh;
+    min-height: 100vh;
   }
   
   .hero-features {
@@ -3967,15 +3982,17 @@
   
   @media (max-width: 768px) {
     .hero-background {
-      background-image: none !important;
-      background-color: #f8fafc !important;
+      background-image: url('https://images.unsplash.com/photo-1553413077-190dd305871c?ixlib=rb-4.0.3&auto=format&fit=crop&w=2560&q=80');
+      background-size: cover;
+      background-position: center;
     }
   }
   
   @media (max-width: 480px) {
     .hero-background {
-      background-image: none !important;
-      background-color: #f8fafc !important;
+      background-image: url('https://images.unsplash.com/photo-1553413077-190dd305871c?ixlib=rb-4.0.3&auto=format&fit=crop&w=2560&q=80');
+      background-size: cover;
+      background-position: center;
     }
   }
 }
@@ -4032,11 +4049,13 @@
   }
 }
 
-// Globale Regel um sicherzustellen, dass das Hero-Bild auf mobilen Geräten ausgeblendet wird
+// Globale Regel um sicherzustellen, dass das Hero-Bild auf mobilen Geräten angezeigt wird
 @media (max-width: 768px) {
   .hero-background {
-    background-image: none !important;
-    background-color: #f8fafc !important;
+    background-image: url('https://images.unsplash.com/photo-1553413077-190dd305871c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80') !important;
+    background-size: cover !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
   }
 }
 
