@@ -9,6 +9,7 @@ import { GlobalService } from '../global.service';
 import { UploadLoadingComponent } from '../upload-loading/upload-loading.component';
 import { HttpClient } from '@angular/common/http';
 import { ZXingScannerComponent, ZXingScannerModule } from '@zxing/ngx-scanner';
+import { BarcodeFormat } from '@zxing/browser';
 
 @Component({
   selector: 'app-category-detail',
@@ -56,6 +57,13 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
   isTorchOn = false;
   availableDevices: MediaDeviceInfo[] = [];
   selectedDevice?: MediaDeviceInfo;
+  formatsEnabled: BarcodeFormat[] = [
+    BarcodeFormat.EAN_13,
+    BarcodeFormat.EAN_8,
+    BarcodeFormat.CODE_128,
+    BarcodeFormat.CODE_39,
+    BarcodeFormat.ITF
+  ];
 
   videoConstraints: MediaTrackConstraints = {
     width: { ideal: 1920 },
@@ -328,19 +336,32 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
 
   // Scanner-Methoden
   onCodeResult(result: string) {
+    console.log('🔍 [SCANNER] Code scanned:', result);
     this.playBeep();
     this.stopScanner();
     this.searchTerm = result;
     this.filteredArtikelData();
   }
 
+  onScanError(error: any) {
+    console.error('🔍 [SCANNER] Scan error:', error);
+  }
+
   startScanner() {
-    this.isScanning = true;
-    this.preventBodyScroll();
+    console.log('🔍 [SCANNER] startScanner() called');
     
+    // Set scanning state first
+    this.isScanning = true;
+    console.log('🔍 [SCANNER] isScanning set to:', this.isScanning);
+    
+    // Force change detection immediately
+    this.cdr.detectChanges();
+    
+    // Initialize devices first
     navigator.mediaDevices.enumerateDevices().then(devices => {
       const videoDevices = devices.filter(d => d.kind === 'videoinput');
       this.availableDevices = videoDevices;
+      console.log('🔍 [SCANNER] Available devices:', videoDevices.length);
 
       const preferredCam = videoDevices.find(d => {
         const name = d.label.toLowerCase();
@@ -351,22 +372,62 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
       });
 
       this.selectedDevice = preferredCam || videoDevices[0];
+      console.log('🔍 [SCANNER] Selected device:', this.selectedDevice?.label);
+      
+      // Force change detection after devices are loaded
+      this.cdr.detectChanges();
+      
+      // Wait for modal to be rendered, then start scanner
+      setTimeout(() => {
+        console.log('🔍 [SCANNER] Modal should be rendered now');
+        
+        // Check if scanner component exists
+        if (this.scanner) {
+          console.log('🔍 [SCANNER] Scanner component found');
+          
+          // Start scanner
+          setTimeout(() => {
+            console.log('🔍 [SCANNER] Starting scanner...');
+            try {
+              this.scanner.scanStart();
+              this.scanner.torch = true;
+              console.log('🔍 [SCANNER] Scanner started successfully');
+            } catch (error) {
+              console.error('🔍 [SCANNER] Error starting scanner:', error);
+            }
+          }, 100);
+          
+        } else {
+          console.error('🔍 [SCANNER] Scanner component not found!');
+        }
+      }, 500);
+      
+    }).catch(error => {
+      console.error('🔍 [SCANNER] Error enumerating devices:', error);
     });
-    this.scanner?.scanStart();
-
-    if (this.scanner) {
-      this.scanner.torch = true;
-    }
+    
+    this.preventBodyScroll();
   }
 
+
+
   stopScanner() {
+    console.log('🔍 [SCANNER] stopScanner() called');
     this.isScanning = false;
     this.restoreBodyScroll();
     
     if (this.scanner) {
-      this.scanner.torch = false;
+      try {
+        this.scanner.torch = false;
+        this.scanner.reset();
+        console.log('🔍 [SCANNER] Scanner stopped successfully');
+      } catch (error) {
+        console.error('🔍 [SCANNER] Error stopping scanner:', error);
+      }
     }
-    this.scanner?.reset();
+    
+    // Force change detection
+    this.cdr.detectChanges();
   }
 
   playBeep(): void {

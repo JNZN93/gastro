@@ -189,14 +189,17 @@
             [device]="selectedDevice"
             [videoConstraints]="videoConstraints"
             [tryHarder]="true"
-            [formats]="[]"
+            [formats]="formatsEnabled"
             [torch]="true"
-            (scanSuccess)="onCodeResult($event)">
+            (scanSuccess)="onCodeResult($event)"
+            (scanError)="onScanError($event)">
           </zxing-scanner>
         </div>
       </div>
     </div>
   </div>
+
+
 
   <!-- Toast Benachrichtigung -->
   <div class="toast-notification" *ngIf="showToast" [class.success]="toastType === 'success'" [class.error]="toastType === 'error'">
