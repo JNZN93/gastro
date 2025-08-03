@@ -4097,15 +4097,16 @@
 
 // Separate Tab Bar am unteren Bildschirmrand
 .mobile-tab-bar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
   background: #f8f9fa;
   border-top: 1px solid #dee2e6;
   display: flex;
   z-index: 1000;
-  padding-bottom: 0; // Entfernt den Abstand für alle Geräte
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
 
   .tab-btn {
     flex: 1;
