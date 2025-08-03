@@ -154,6 +154,11 @@
   align-items: center;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+}
+
 
 
 .products-section {
@@ -541,6 +546,10 @@
     justify-content: flex-end;
   }
   
+  .header-actions {
+    width: 100%;
+  }
+  
   .product-count-display {
     margin-bottom: 15px;
     padding: 10px 16px;
@@ -623,6 +632,10 @@
     order: 1;
     width: 100%;
     justify-content: flex-end;
+  }
+  
+  .header-actions {
+    width: 100%;
   }
   
   .back-btn {
@@ -1203,6 +1216,8 @@
     padding: 0.625rem 0.875rem;
     border-radius: 10px;
     font-size: 0.8rem;
+    width: 100%;
+    justify-content: center;
   }
 }
 
