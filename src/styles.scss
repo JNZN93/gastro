@@ -94,3 +94,14 @@ input[type="number"] {
 }
 html, body { height: 100%; }
 body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
+/* Globale Regel für mobile Tab-Bars - garantiert Position ganz unten */
+.mobile-tab-bar {
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
+  z-index: 9999 !important;
+}

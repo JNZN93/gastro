@@ -4798,6 +4798,13 @@
   }
 
   .mobile-tab-bar {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
+    
     .tab-btn {
       padding: 12px 8px;
       min-height: 60px; // Größere Tabs für Tablet
@@ -4857,6 +4864,15 @@
 }
 
 @media (max-width: 480px) {
+  .mobile-tab-bar {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
+  }
+  
   .mobile-tabs {
     .tab-header {
       .tab-btn {
