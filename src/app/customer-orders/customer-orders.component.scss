@@ -4094,7 +4094,8 @@
   border-top: 1px solid #dee2e6;
   display: flex;
   z-index: 1000;
-  padding-bottom: 0 !important;
+  /* iOS Safe Area Support - verhindert Überlappung mit Home Indicator */
+  padding-bottom: env(safe-area-inset-bottom, 0) !important;
   margin-bottom: 0 !important;
 
   .tab-btn {
@@ -4802,7 +4803,8 @@
     bottom: 0 !important;
     left: 0 !important;
     right: 0 !important;
-    padding-bottom: 0 !important;
+    /* iOS Safe Area Support - verhindert Überlappung mit Home Indicator */
+    padding-bottom: env(safe-area-inset-bottom, 0) !important;
     margin-bottom: 0 !important;
     
     .tab-btn {
@@ -4869,7 +4871,8 @@
     bottom: 0 !important;
     left: 0 !important;
     right: 0 !important;
-    padding-bottom: 0 !important;
+    /* iOS Safe Area Support - verhindert Überlappung mit Home Indicator */
+    padding-bottom: env(safe-area-inset-bottom, 0) !important;
     margin-bottom: 0 !important;
   }
   

@@ -101,7 +101,8 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
   bottom: 0 !important;
   left: 0 !important;
   right: 0 !important;
-  padding-bottom: 0 !important;
+  /* iOS Safe Area Support - verhindert Überlappung mit Home Indicator */
+  padding-bottom: env(safe-area-inset-bottom, 0) !important;
   margin-bottom: 0 !important;
   z-index: 9999 !important;
 }
