@@ -115,6 +115,9 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
             this.globalService.setPfandArtikels(this.globalArtikels);
             this.artikelData = this.globalArtikels;
             
+            // Keine Kategorie ausgewählt - Hauptseite wird angezeigt
+            this.selectedCategory = '';
+            
             // Log Artikel-Kategorien für angemeldete Benutzer
             this.logArticleCategories('Angemeldeter Benutzer');
             
@@ -152,6 +155,9 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
       // Erstelle zusätzliches pfand-array für Artikel mit category "PFAND" (nur initial, da PFAND-Artikel statisch sind)
       this.globalService.setPfandArtikels(this.globalArtikels);
       this.artikelData = this.globalArtikels;
+      
+      // Keine Kategorie ausgewählt - Hauptseite wird angezeigt
+      this.selectedCategory = '';
       
       // Log Artikel-Kategorien für Gäste
       this.logArticleCategories('Gast');
@@ -304,6 +310,8 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
   get isSearching(): boolean {
     return !!(this.searchTerm && this.searchTerm.trim().length > 0);
   }
+
+
 
   clearSearch() {
     this.searchTerm = '';

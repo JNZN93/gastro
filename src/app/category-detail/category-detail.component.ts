@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ViewChild, OnDestroy, HostListener } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ArtikelDataService } from '../artikel-data.service';
 import { FormsModule } from '@angular/forms';
@@ -8,14 +8,16 @@ import { WarenkorbComponent } from '../warenkorb/warenkorb.component';
 import { GlobalService } from '../global.service';
 import { UploadLoadingComponent } from '../upload-loading/upload-loading.component';
 import { HttpClient } from '@angular/common/http';
+import { ZXingScannerComponent, ZXingScannerModule } from '@zxing/ngx-scanner';
 
 @Component({
   selector: 'app-category-detail',
-  imports: [CommonModule, FormsModule, RouterModule, WarenkorbComponent, UploadLoadingComponent],
+  imports: [CommonModule, FormsModule, RouterModule, WarenkorbComponent, UploadLoadingComponent, ZXingScannerModule],
   templateUrl: './category-detail.component.html',
   styleUrl: './category-detail.component.scss',
 })
-export class CategoryDetailComponent implements OnInit {
+export class CategoryDetailComponent implements OnInit, OnDestroy {
+  @ViewChild(ZXingScannerComponent) scanner!: ZXingScannerComponent;
   private artikelService = inject(ArtikelDataService);
   private http = inject(HttpClient);
   private route = inject(ActivatedRoute);
@@ -39,6 +41,17 @@ export class CategoryDetailComponent implements OnInit {
   toastMessage: string = '';
   toastType: 'success' | 'error' = 'success';
 
+  // Scanner-Eigenschaften
+  isScanning = false;
+  isTorchOn = false;
+  availableDevices: MediaDeviceInfo[] = [];
+  selectedDevice?: MediaDeviceInfo;
+
+  videoConstraints: MediaTrackConstraints = {
+    width: { ideal: 1920 },
+    height: { ideal: 1080 }
+  };
+
   constructor(
     private authService: AuthService,
     public globalService: GlobalService
@@ -48,6 +61,12 @@ export class CategoryDetailComponent implements OnInit {
     // Kategorie-Name aus der URL holen
     this.route.params.subscribe(params => {
       this.categoryName = decodeURIComponent(params['categoryName']);
+      
+      // Spezielle Behandlung für "alle-produkte" Kategorie
+      if (this.categoryName === 'alle-produkte') {
+        this.categoryName = 'Gastro Depot Worms - Alle Produkte';
+      }
+      
       this.loadCategoryProducts();
     });
   }
@@ -104,10 +123,18 @@ export class CategoryDetailComponent implements OnInit {
   }
 
   filterCategoryProducts(): void {
-    // Produkte der spezifischen Kategorie filtern
-    this.artikelData = this.globalArtikels.filter(artikel => 
-      artikel.category === this.categoryName
-    );
+    // Spezielle Behandlung für "alle-produkte" Kategorie
+    if (this.categoryName === 'alle-produkte') {
+      // Alle Produkte anzeigen (außer PFAND und SCHNELLVERKAUF)
+      this.artikelData = this.globalArtikels.filter(artikel => 
+        artikel.category !== 'PFAND' && artikel.category !== 'SCHNELLVERKAUF'
+      );
+    } else {
+      // Produkte der spezifischen Kategorie filtern
+      this.artikelData = this.globalArtikels.filter(artikel => 
+        artikel.category === this.categoryName
+      );
+    }
     this.filteredData = [...this.artikelData];
   }
 
@@ -241,5 +268,66 @@ export class CategoryDetailComponent implements OnInit {
     const img = event.target as HTMLImageElement;
     // Fallback auf Standard-Bild
     img.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60';
+  }
+
+  // Scanner-Methoden
+  onCodeResult(result: string) {
+    this.playBeep();
+    this.stopScanner();
+    this.searchTerm = result;
+    this.filteredArtikelData();
+  }
+
+  startScanner() {
+    this.isScanning = true;
+    this.preventBodyScroll();
+    
+    navigator.mediaDevices.enumerateDevices().then(devices => {
+      const videoDevices = devices.filter(d => d.kind === 'videoinput');
+      this.availableDevices = videoDevices;
+
+      const preferredCam = videoDevices.find(d => {
+        const name = d.label.toLowerCase();
+        return name.includes('back') &&
+               !name.includes('wide') &&
+               !name.includes('ultra') &&
+               !name.includes('tele');
+      });
+
+      this.selectedDevice = preferredCam || videoDevices[0];
+    });
+    this.scanner?.scanStart();
+
+    if (this.scanner) {
+      this.scanner.torch = true;
+    }
+  }
+
+  stopScanner() {
+    this.isScanning = false;
+    this.restoreBodyScroll();
+    
+    if (this.scanner) {
+      this.scanner.torch = false;
+    }
+    this.scanner?.reset();
+  }
+
+  playBeep(): void {
+    const audio = new Audio('beep.mp3');
+    audio.volume = 0.5;
+    audio.play().catch(err => console.error('Fehler beim Abspielen des Tons:', err));
+  }
+
+  private preventBodyScroll(): void {
+    document.body.style.overflow = 'hidden';
+  }
+
+  private restoreBodyScroll(): void {
+    document.body.style.overflow = '';
+  }
+
+  ngOnDestroy(): void {
+    this.stopScanner();
   }
 }

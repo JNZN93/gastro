@@ -31,6 +31,17 @@
         </div>
       </div>
       
+      <div class="header-right">
+        <div class="header-actions">
+          <button (click)="startScanner()" [disabled]="isScanning" class="scanner-btn" title="Scanner">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V6a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1zm12 0h2a1 1 0 001-1V6a1 1 0 00-1-1h-2a1 1 0 001 1v1a1 1 0 001 1zM5 20h2a1 1 0 001-1v-1a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1z"/>
+            </svg>
+            <span class="btn-text">Scanner</span>
+          </button>
+        </div>
+      </div>
+      
 
     </div>
   </div>
@@ -151,6 +162,41 @@
   @if (isVisible) {
   <app-upload-loading></app-upload-loading>
   }
+
+  <!-- Scanner Modal -->
+  <div class="scanner-modal" *ngIf="isScanning">
+    <div class="scanner-content">
+      <div class="scanner-header">
+        <h3>Barcode Scanner</h3>
+        <button (click)="stopScanner()" class="close-scanner">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      
+      <div class="scanner-wrapper">
+        <select [(ngModel)]="selectedDevice" class="device-select">
+          @for (device of availableDevices; track device) {
+          <option [ngValue]="device">
+            {{ device.label }}
+          </option>
+          }
+        </select>
+        
+        <div class="scanner-view">
+          <zxing-scanner #scanner 
+            [device]="selectedDevice"
+            [videoConstraints]="videoConstraints"
+            [tryHarder]="true"
+            [formats]="[]"
+            [torch]="true"
+            (scanSuccess)="onCodeResult($event)">
+          </zxing-scanner>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Toast Benachrichtigung -->
   <div class="toast-notification" *ngIf="showToast" [class.success]="toastType === 'success'" [class.error]="toastType === 'error'">
