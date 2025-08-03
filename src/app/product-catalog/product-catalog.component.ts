@@ -471,10 +471,6 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
     // Seite nach oben scrollen
     window.scrollTo({ top: 0});
 
-    if (category === "FAVORITEN") {
-        this.artikelData = JSON.parse(localStorage.getItem('favoriteItems') || '[]');
-        return;
-    }
     if (category === "") {
       // Verwende die bereits gefilterten globalArtikels (ohne SCHNELLVERKAUF für nicht-Employee/Admin)
       this.artikelData = this.globalArtikels;
@@ -493,9 +489,6 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
   // Methode um passende Stock-Bilder für Kategorien zu erhalten
   getCategoryImage(category: string): string {
     const categoryImages: { [key: string]: string } = {
-      // Favoriten - Herz/Stern Symbol in Essen
-      'FAVORITEN': 'https://images.unsplash.com/photo-1511690743698-d9d85f2fbf38?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60',
-      
       // === DEINE ECHTEN KATEGORIEN === //
       
       // PFAND - Pfandflaschen und Mehrwegbehälter

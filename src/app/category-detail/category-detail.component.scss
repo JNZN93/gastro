@@ -1138,3 +1138,222 @@
     font-size: 12px;
   }
 }
+
+// Scanner Button Styles
+.scanner-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  color: #4a5568;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  padding: 0.75rem 1.25rem;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: 'Poppins', sans-serif;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  min-height: 44px;
+
+  &:hover {
+    background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+    border-color: #cbd5e0;
+    color: #2d3748;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  svg {
+    width: 1.25rem;
+    height: 1.25rem;
+    
+    @media (max-width: 640px) {
+      width: 1.125rem;
+      height: 1.125rem;
+    }
+  }
+
+  .btn-text {
+    @media (max-width: 640px) {
+      display: none;
+    }
+  }
+
+  &.active {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border-color: #10b981;
+    box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
+
+    &:hover {
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+      transform: translateY(-1px);
+    }
+  }
+  
+  @media (max-width: 640px) {
+    padding: 0.625rem 0.875rem;
+    border-radius: 10px;
+    font-size: 0.8rem;
+  }
+}
+
+// Scanner Modal Styles
+.scanner-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(20px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.scanner-content {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.4);
+  max-width: 600px;
+  width: 100%;
+  border: 1px solid rgba(226, 232, 240, 0.6);
+}
+
+.scanner-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2rem 2.5rem;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+
+  h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1a202c;
+    font-family: 'Poppins', sans-serif;
+    letter-spacing: -0.025em;
+  }
+}
+
+.close-scanner {
+  background: none;
+  border: none;
+  padding: 0.75rem;
+  cursor: pointer;
+  color: #718096;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: rgba(113, 128, 150, 0.1);
+    color: #2d3748;
+    transform: scale(1.05);
+  }
+
+  svg {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+}
+
+.scanner-wrapper {
+  padding: 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.device-select {
+  padding: 0.875rem 1rem;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: 12px;
+  font-size: 0.875rem;
+  background: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+  outline: none;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 500;
+  transition: all 0.3s ease;
+
+  &:focus {
+    border-color: #10b981;
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
+    background: white;
+  }
+}
+
+.scanner-view {
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(226, 232, 240, 0.6);
+
+  zxing-scanner {
+    width: 100%;
+    height: 300px;
+    display: block;
+  }
+}
+
+// Responsive Scanner Styles
+@media (max-width: 768px) {
+  .scanner-content {
+    max-width: 95%;
+    margin: 1rem;
+  }
+  
+  .scanner-header {
+    padding: 1.5rem 2rem;
+    
+    h3 {
+      font-size: 1.25rem;
+    }
+  }
+  
+  .scanner-wrapper {
+    padding: 2rem;
+  }
+  
+  .scanner-view zxing-scanner {
+    height: 250px;
+  }
+}
+
+@media (max-width: 480px) {
+  .scanner-content {
+    max-width: 100%;
+    margin: 0.5rem;
+    border-radius: 16px;
+  }
+  
+  .scanner-header {
+    padding: 1rem 1.5rem;
+    
+    h3 {
+      font-size: 1.125rem;
+    }
+  }
+  
+  .scanner-wrapper {
+    padding: 1.5rem;
+    gap: 1rem;
+  }
+  
+  .scanner-view zxing-scanner {
+    height: 200px;
+  }
+}
