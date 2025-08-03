@@ -52,9 +52,29 @@ span {
         flex-direction: column;
         height: auto;
         gap: 12px;
+
+        a {
+            transition: none;
+            
+            &:hover {
+                background-color: transparent;
+            }
+        }
     }
 
     .right-con {
         align-items: center;
     }
-  }
+}
+
+@media only screen and (max-width: 1024px) {
+    footer {
+        a {
+            transition: none;
+            
+            &:hover {
+                background-color: transparent;
+            }
+        }
+    }
+}
