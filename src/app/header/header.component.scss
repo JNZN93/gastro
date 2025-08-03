@@ -19,6 +19,26 @@ header {
   min-height: 70px;
   height: 70px;
 
+  // Logo Container
+  .logo-container {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+
+    &:hover {
+      transform: scale(1.05);
+    }
+
+    .header-logo {
+      height: 50px;
+      width: auto;
+      max-width: 200px;
+      object-fit: contain;
+    }
+  }
+
   img {
     height: 50px;
     cursor: pointer;

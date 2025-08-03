@@ -1,4 +1,8 @@
 <header>
+    <!-- Logo on the left side -->
+    <div class="logo-container">
+        <img src="logo.webp" alt="Logo" class="header-logo">
+    </div>
 
     <!-- Für nicht eingeloggte Benutzer -->
     @if(globalService.isUserLoggedIn === false && !shouldHideElement()) {
