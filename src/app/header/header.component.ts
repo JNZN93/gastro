@@ -232,4 +232,8 @@ export class HeaderComponent {
     this.showSideModal = false;
     document.body.style.overflow = 'auto';
   }
+
+  navigateToHome() {
+    this.router.navigate(['/products']);
+  }
 }

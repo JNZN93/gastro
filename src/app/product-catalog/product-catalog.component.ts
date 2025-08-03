@@ -437,9 +437,7 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
 
   // Methode um alle Kategorien anzuzeigen
   showAllCategories() {
-    this.selectedCategory = "";
-    this.artikelData = this.globalArtikels;
-    window.scrollTo({ top: 0});
+    this.router.navigate(['/category', 'alle-produkte']);
   }
 
   // Methode um passende Stock-Bilder für Kategorien zu erhalten

@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 
 @Component({
   selector: 'app-footer',
@@ -10,5 +10,11 @@ import { RouterModule } from '@angular/router';
 export class FooterComponent {
 
   year = new Date().getFullYear();
+
+  constructor(private router: Router) {}
+
+  navigateToHome() {
+    this.router.navigate(['/products']);
+  }
 
 }
