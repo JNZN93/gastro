@@ -892,33 +892,7 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
     return productsWithImages.slice(0, 6);
   }
 
-  getNewArrivals(): any[] {
-    // Filtere Produkte mit Bildern (main_image_url)
-    const productsWithImages = this.artikelData.filter(artikel => 
-      artikel.main_image_url && 
-      artikel.main_image_url.trim() !== '' && 
-      artikel.main_image_url !== 'null' &&
-      artikel.main_image_url !== 'undefined'
-    );
-    
-    // Zeige die ersten 4 Produkte mit Bildern als "neu eingetroffene Artikel"
-    // Hier könnte später eine Logik hinzugefügt werden, um wirklich neue Artikel zu filtern
-    return productsWithImages.slice(0, 4);
-  }
 
-  getBestsellerProducts(): any[] {
-    // Filtere Produkte mit Bildern (main_image_url)
-    const productsWithImages = this.artikelData.filter(artikel => 
-      artikel.main_image_url && 
-      artikel.main_image_url.trim() !== '' && 
-      artikel.main_image_url !== 'null' &&
-      artikel.main_image_url !== 'undefined'
-    );
-    
-    // Zeige die ersten 6 Produkte mit Bildern als "Bestseller"
-    // Hier könnte später eine Logik basierend auf Verkaufszahlen hinzugefügt werden
-    return productsWithImages.slice(0, 6);
-  }
 
   getQuickOrderProducts(): any[] {
     // Filtere Produkte mit Bildern (main_image_url)
