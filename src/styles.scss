@@ -14,6 +14,20 @@ body {
     margin-top: 70px; // Account for fixed header
 }
 
+// iOS Safari spezifische Fixes
+@supports (-webkit-touch-callout: none) {
+    body, html {
+        -webkit-overflow-scrolling: touch;
+        overflow-scrolling: touch;
+    }
+    
+    // Verhindert unerwartete Bewegungen von fixed-Elementen
+    * {
+        -webkit-transform: translateZ(0);
+        transform: translateZ(0);
+    }
+}
+
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {
     -webkit-appearance: none;

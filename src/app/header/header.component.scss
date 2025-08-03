@@ -119,8 +119,9 @@ header {
   .login-container {
     display: flex;
     align-items: center;
-    justify-content: flex-start;
+    justify-content: flex-end;
     flex-shrink: 0;
+    margin-left: auto; // Push to the right
 
     .login-button {
       display: flex;
@@ -708,6 +709,10 @@ header {
     }
   }
 
+  .login-container {
+    margin-left: auto; // Ensure it stays on the right
+  }
+  
   .login-container .login-button {
     padding: 8px 15px;
     font-size: 13px;
@@ -791,6 +796,10 @@ header {
     }
   }
 
+  .login-container {
+    margin-left: auto; // Ensure it stays on the right
+  }
+  
   .login-container .login-button {
     padding: 6px 12px;
     font-size: 12px;

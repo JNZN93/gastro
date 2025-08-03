@@ -1978,6 +1978,11 @@
   align-items: center;
   justify-content: center;
   padding: 1rem;
+  // iOS Safari Fixes
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
 // Orders Modal
@@ -1996,6 +2001,11 @@
   animation: modalSlideIn 0.3s ease;
   z-index: 1001;
   border: 1px solid rgba(226, 232, 240, 0.6);
+  // iOS Safari Fixes
+  -webkit-transform: translate(-50%, -50%) translateZ(0);
+  transform: translate(-50%, -50%) translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
 @keyframes modalSlideIn {
@@ -2358,6 +2368,11 @@
   align-items: center;
   justify-content: center;
   padding: 1rem;
+  // iOS Safari Fixes
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
 .scanner-content {
@@ -2821,6 +2836,11 @@
   align-items: center;
   justify-content: center;
   padding: 2rem;
+  // iOS Safari Fixes
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
 .image-modal {
@@ -2838,6 +2858,11 @@
   box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
   overflow: hidden;
   animation: modalFadeIn 0.3s ease;
+  // iOS Safari Fixes
+  -webkit-transform: translate(-50%, -50%) translateZ(0);
+  transform: translate(-50%, -50%) translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
 @keyframes modalFadeIn {
@@ -3696,6 +3721,11 @@
   border: 1px solid #e5e7eb;
   animation: slideInRight 0.3s ease-out;
   overflow: hidden;
+  // iOS Safari Fixes
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 
   &.success {
     border-left: 4px solid #10b981;
@@ -4116,4 +4146,51 @@
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
   }
+}
+
+// iOS Safari Fixes für Fixed-Elemente und Modal-Overlays
+// =====================================================
+
+// iOS Safari spezifische Fixes
+@supports (-webkit-touch-callout: none) {
+  // Verhindert "springen" von fixed-Elementen beim Scrollen
+  .modal-overlay,
+  .scanner-modal,
+  .image-modal-overlay,
+  .toast-notification {
+    position: fixed;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    -webkit-perspective: 1000;
+    perspective: 1000;
+  }
+  
+  // Bessere Behandlung von overflow auf iOS
+  .modal-content,
+  .scanner-content,
+  .image-modal {
+    -webkit-overflow-scrolling: touch;
+    overflow-scrolling: touch;
+  }
+  
+  // Verhindert unerwartete Bewegungen von fixed-Elementen
+  .dashboard-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+  }
+}
+
+// Alternative zu body overflow: hidden für iOS Safari
+// ==================================================
+body.modal-open {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  -webkit-overflow-scrolling: touch;
 }

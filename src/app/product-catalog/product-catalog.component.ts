@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, ViewChild, inject, HostListener } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, inject, HostListener } from '@angular/core';
 import { ArtikelDataService } from '../artikel-data.service';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../authentication.service';
@@ -31,7 +31,7 @@ interface CustomerArticlePrice {
   templateUrl: './product-catalog.component.html',
   styleUrl: './product-catalog.component.scss',
 })
-export class ProductCatalogComponent implements OnInit {
+export class ProductCatalogComponent implements OnInit, OnDestroy {
   @ViewChild(ZXingScannerComponent) scanner!: ZXingScannerComponent;
   private artikelService = inject(ArtikelDataService);
   private http = inject(HttpClient);
@@ -219,12 +219,19 @@ export class ProductCatalogComponent implements OnInit {
   toggleLastOrders(): void {
     this.showLastOrders = !this.showLastOrders;
     
-    if (this.showLastOrders && this.lastOrders.length === 0) {
-      console.log('🔄 [TOGGLE] Lade letzte Bestellungen...');
-      this.loadLastOrders();
-    } else if (this.showLastOrders) {
-      console.log('📊 [TOGGLE] Zeige', this.lastOrders.length, 'Bestellungen');
+    if (this.showLastOrders) {
+      // iOS Safari kompatible Body scroll Verhinderung
+      this.preventBodyScroll();
+      
+      if (this.lastOrders.length === 0) {
+        console.log('🔄 [TOGGLE] Lade letzte Bestellungen...');
+        this.loadLastOrders();
+      } else {
+        console.log('📊 [TOGGLE] Zeige', this.lastOrders.length, 'Bestellungen');
+      }
     } else {
+      // Body scroll wieder erlauben
+      this.restoreBodyScroll();
       console.log('❌ [TOGGLE] Modal geschlossen');
     }
   }
@@ -315,7 +322,10 @@ export class ProductCatalogComponent implements OnInit {
 
   startScanner() {
     this.isScanning = true;
-        navigator.mediaDevices.enumerateDevices().then(devices => {
+    // iOS Safari kompatible Body scroll Verhinderung
+    this.preventBodyScroll();
+    
+    navigator.mediaDevices.enumerateDevices().then(devices => {
       const videoDevices = devices.filter(d => d.kind === 'videoinput');
       this.availableDevices = videoDevices;
 
@@ -342,6 +352,9 @@ export class ProductCatalogComponent implements OnInit {
 
   stopScanner() {
     this.isScanning = false;
+    // Body scroll wieder erlauben
+    this.restoreBodyScroll();
+    
     // Torch ausschalten
     if (this.scanner) {
       this.scanner.torch = false;
@@ -388,8 +401,8 @@ export class ProductCatalogComponent implements OnInit {
       this.selectedImageUrl = artikel.main_image_url;
       this.selectedImageProduct = artikel;
       this.showImageModal = true;
-      // Body scroll verhindern
-      document.body.style.overflow = 'hidden';
+      // iOS Safari kompatible Body scroll Verhinderung
+      this.preventBodyScroll();
     } else {
       console.log('No main_image_url found for this article');
     }
@@ -401,7 +414,25 @@ export class ProductCatalogComponent implements OnInit {
     this.selectedImageProduct = null;
     this.isImageZoomed = false;
     // Body scroll wieder erlauben
-    document.body.style.overflow = 'auto';
+    this.restoreBodyScroll();
+  }
+
+  // iOS Safari kompatible Methoden für Body Scroll Control
+  private preventBodyScroll(): void {
+    const scrollY = window.scrollY;
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = '100%';
+    document.body.classList.add('modal-open');
+  }
+
+  private restoreBodyScroll(): void {
+    const scrollY = document.body.style.top;
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.width = '';
+    document.body.classList.remove('modal-open');
+    window.scrollTo(0, parseInt(scrollY || '0') * -1);
   }
 
   toggleImageZoom(): void {
@@ -947,5 +978,10 @@ export class ProductCatalogComponent implements OnInit {
   scrollToContact(): void {
     // Scroll to bottom of page for contact info
     window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+  }
+
+  ngOnDestroy(): void {
+    // Cleanup: Body scroll wiederherstellen falls Modal noch offen ist
+    this.restoreBodyScroll();
   }
 }
