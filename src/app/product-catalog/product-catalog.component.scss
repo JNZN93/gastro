@@ -4009,3 +4009,111 @@
     background-color: #f8fafc !important;
   }
 }
+
+// Mobile Performance Optimierung - Animationen deaktivieren für bessere Performance auf iPhones
+@media (max-width: 768px) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  
+  // Hover-Effekte auf mobilen Geräten deaktivieren
+  .hero-section:hover,
+  .category-card:hover,
+  .product-card:hover,
+  .bestseller-card:hover,
+  .featured-card:hover,
+  .new-arrival-card:hover,
+  .quick-order-card:hover,
+  .hero-btn:hover,
+  .cta-primary-btn:hover,
+  .cta-secondary-btn:hover,
+  .featured-add-btn:hover,
+  .new-arrival-add-btn:hover,
+  .quick-add-btn:hover,
+  .add-to-cart-btn:hover,
+  .favorite-btn:hover,
+  .search-btn:hover,
+  .scanner-btn:hover,
+  .orders-btn:hover,
+  .mobile-redirect-btn:hover {
+    transform: none !important;
+    box-shadow: none !important;
+    background-color: inherit !important;
+  }
+  
+  // Spezifische Animationen deaktivieren
+  .hero-section,
+  .category-card,
+  .product-card,
+  .bestseller-card,
+  .featured-card,
+  .new-arrival-card,
+  .quick-order-card {
+    transition: none !important;
+  }
+  
+  // Bild-Skalierungen deaktivieren
+  .hero-image,
+  .product-image,
+  .featured-image,
+  .new-arrival-image,
+  .quick-order-image,
+  .cta-image {
+    transition: none !important;
+    
+    &:hover {
+      transform: none !important;
+    }
+  }
+  
+  // Infinite Animationen stoppen
+  .firePulse,
+  .pulse {
+    animation: none !important;
+  }
+  
+  // Perspective und 3D-Transformationen deaktivieren
+  .cta-image-container {
+    transform: none !important;
+    transition: none !important;
+    
+    &:hover {
+      transform: none !important;
+    }
+  }
+}
+
+// iPhone-spezifische Performance-Optimierung
+@media (max-width: 768px) and (-webkit-min-device-pixel-ratio: 2) {
+  // Hardware-Beschleunigung für bessere Performance
+  .product-catalog-dashboard {
+    -webkit-transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    -webkit-perspective: 1000;
+  }
+  
+  // Alle Animationen komplett deaktivieren für iPhones
+  * {
+    -webkit-animation: none !important;
+    -webkit-transition: none !important;
+    animation: none !important;
+    transition: none !important;
+  }
+  
+  // Scroll-Performance optimieren
+  .product-catalog-dashboard {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+  
+  // Touch-Optimierung
+  button, a, .category-card, .product-card, .bestseller-card {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+}
