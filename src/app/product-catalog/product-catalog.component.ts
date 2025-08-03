@@ -3,7 +3,7 @@ import { Component, OnInit, OnDestroy, ViewChild, inject, HostListener } from '@
 import { ArtikelDataService } from '../artikel-data.service';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../authentication.service';
-import { Router, RouterModule } from '@angular/router';
+import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { WarenkorbComponent } from '../warenkorb/warenkorb.component';
 import { GlobalService } from '../global.service';
 import { UploadLoadingComponent } from '../upload-loading/upload-loading.component';
@@ -73,6 +73,7 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
 
   constructor(
     private router: Router,
+    private route: ActivatedRoute,
     private authService: AuthService,
     public globalService: GlobalService
   ) {}
@@ -117,6 +118,9 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
             this.collectOrderData(response);
             this.globalService.orderData = this.orderData;
             this.isVisible = false;
+            
+            // Überprüfe Query-Parameter für automatisches Scrollen zu Kategorien
+            this.checkScrollToCategories();
           });
         },
         error: (error) => {
@@ -145,6 +149,9 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
       this.selectedCategory = '';
       
       this.isVisible = false;
+      
+      // Überprüfe Query-Parameter für automatisches Scrollen zu Kategorien
+      this.checkScrollToCategories();
     });
   }
 
@@ -850,8 +857,25 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
   scrollToCategories(): void {
     const categoriesSection = document.querySelector('.categories-section');
     if (categoriesSection) {
-      categoriesSection.scrollIntoView({ behavior: 'smooth' });
+      categoriesSection.scrollIntoView({ behavior: 'auto' });
     }
+  }
+
+  checkScrollToCategories(): void {
+    this.route.queryParams.subscribe(params => {
+      if (params['scrollToCategories'] === 'true') {
+        // Kurze Verzögerung, um sicherzustellen, dass die Seite vollständig geladen ist
+        setTimeout(() => {
+          this.scrollToCategories();
+          // Query-Parameter aus der URL entfernen
+          this.router.navigate([], {
+            relativeTo: this.route,
+            queryParams: {},
+            replaceUrl: true
+          });
+        }, 500);
+      }
+    });
   }
 
   scrollToContact(): void {

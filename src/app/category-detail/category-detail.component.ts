@@ -234,7 +234,7 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
   }
 
   goBack(): void {
-    this.router.navigate(['/products']);
+    this.router.navigate(['/products'], { queryParams: { scrollToCategories: 'true' } });
   }
 
   // Warenkorb-Methoden
