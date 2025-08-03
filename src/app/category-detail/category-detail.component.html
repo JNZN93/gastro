@@ -65,8 +65,7 @@
             class="product-image"
             (click)="openImageModal(artikel)"
             (load)="onImageLoad($event)"
-            (error)="onImageError($event)"
-            loading="lazy">
+            (error)="onImageError($event)">
           
           <!-- Placeholder für Produkte ohne Bild -->
           <div *ngIf="!artikel.main_image_url" class="image-placeholder">
