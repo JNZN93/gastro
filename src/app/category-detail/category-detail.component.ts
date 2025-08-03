@@ -124,7 +124,7 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
 
   filterCategoryProducts(): void {
     // Spezielle Behandlung für "alle-produkte" Kategorie
-    if (this.categoryName === 'alle-produkte') {
+    if (this.categoryName === 'alle-produkte' || this.categoryName === 'Gastro Depot Worms - Alle Produkte') {
       // Alle Produkte anzeigen (außer PFAND und SCHNELLVERKAUF)
       this.artikelData = this.globalArtikels.filter(artikel => 
         artikel.category !== 'PFAND' && artikel.category !== 'SCHNELLVERKAUF'
