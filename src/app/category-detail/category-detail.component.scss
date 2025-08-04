@@ -816,17 +816,17 @@ app-warenkorb .cart-container {
   // Optimierte Bild-Performance
   contain: layout style paint;
   
-  height: 250px; /* Kompaktere Bildhöhe */
+  height: 300px; /* Kompaktere Bildhöhe */
   overflow: hidden;
   background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
   
   // Responsive Bildhöhen
   @media (max-width: 768px) {
-    height: 220px;
+    height: 300px;
   }
   
   @media (max-width: 480px) {
-    height: 180px;
+    height: 300px;
   }
   
   &::before {
@@ -849,17 +849,17 @@ app-warenkorb .cart-container {
   
   .product-image {
     width: 100%;
-    height: 250px; /* Kompaktere Bildhöhe */
+    height: 300px; /* Kompaktere Bildhöhe */
     object-fit: cover;
     transition: transform 0.3s ease;
     
     // Responsive Bildhöhen
     @media (max-width: 768px) {
-      height: 220px;
+      height: 300px;
     }
     
     @media (max-width: 480px) {
-      height: 180px;
+      height: 300px;
     }
     
     // Optimierte Bildlade-Performance
@@ -883,21 +883,12 @@ app-warenkorb .cart-container {
   
   .image-placeholder {
     width: 100%;
-    height: 250px; /* Kompaktere Bildhöhe */
+    height: 300px; /* Kompaktere Bildhöhe */
     background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 12px;
-    
-    // Responsive Bildhöhen
-    @media (max-width: 768px) {
-      height: 220px;
-    }
-    
-    @media (max-width: 480px) {
-      height: 180px;
-    }
     
     .placeholder-icon {
       width: 48px;
