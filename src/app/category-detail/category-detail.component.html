@@ -141,8 +141,23 @@
   <app-upload-loading></app-upload-loading>
   }
 
-  <!-- Scanner Modal -->
-  <div class="scanner-modal" *ngIf="isScanning">
+  <!-- Toast Benachrichtigung -->
+  <div class="toast-notification" *ngIf="showToast" [class.success]="toastType === 'success'" [class.error]="toastType === 'error'">
+    <div class="toast-content">
+      <svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" *ngIf="toastType === 'success'">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+      </svg>
+      <svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" *ngIf="toastType === 'error'">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+      <span class="toast-message">{{ toastMessage }}</span>
+    </div>
+  </div>
+</div>
+
+<!-- Scanner Modal - Outside main container -->
+@if (isScanning) {
+  <div class="scanner-modal">
     <div class="scanner-content">
       <div class="scanner-header">
         <h3>Barcode Scanner</h3>
@@ -176,22 +191,7 @@
       </div>
     </div>
   </div>
-
-
-
-  <!-- Toast Benachrichtigung -->
-  <div class="toast-notification" *ngIf="showToast" [class.success]="toastType === 'success'" [class.error]="toastType === 'error'">
-    <div class="toast-content">
-      <svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" *ngIf="toastType === 'success'">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-      </svg>
-      <svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" *ngIf="toastType === 'error'">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-      </svg>
-      <span class="toast-message">{{ toastMessage }}</span>
-    </div>
-  </div>
-</div>
+}
 
 <!-- Image Modal - Outside main container -->
 @if (isModalOpen) {
