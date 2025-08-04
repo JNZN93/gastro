@@ -669,16 +669,10 @@ export class ProductManagementComponent implements OnInit, OnDestroy {
     if (this.selectedProduct && this.selectedImage) {
       this.isUploading = true;
       
-      const token = localStorage.getItem('token');
       const formData = new FormData();
       formData.append('image', this.selectedImage);
 
-      this.http.post(`https://multi-mandant-ecommerce.onrender.com/api/product-images/${this.selectedProduct.id}/images`, formData, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    })
+      this.http.post(`https://multi-mandant-ecommerce.onrender.com/api/product-images/${this.selectedProduct.id}/images`, formData)
         .subscribe({
           next: (response) => {
             console.log('Image uploaded successfully:', response);
