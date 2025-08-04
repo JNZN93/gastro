@@ -157,7 +157,11 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
 
   // Neue Methode zum Laden der letzten Bestellungen
   loadLastOrders(): void {
+    console.log('🔄 [LAST-ORDERS] loadLastOrders aufgerufen...');
+    console.log('👤 [LAST-ORDERS] currentUserId:', this.currentUserId);
+    
     if (!this.currentUserId) {
+      console.log('❌ [LAST-ORDERS] Keine currentUserId vorhanden');
       return;
     }
 
@@ -165,9 +169,12 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
     const token = localStorage.getItem('token');
     
     if (!token) {
+      console.log('❌ [LAST-ORDERS] Kein Token gefunden');
       this.isLoadingLastOrders = false;
       return;
     }
+
+    console.log('✅ [LAST-ORDERS] Token vorhanden, starte API-Aufruf...');
 
     const headers = new HttpHeaders({
       'Authorization': `Bearer ${token}`
@@ -176,17 +183,40 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
     this.http.get<CustomerArticlePrice[]>(`https://multi-mandant-ecommerce.onrender.com/api/customer-article-prices/user`, { headers })
       .subscribe({
         next: (data) => {
+          console.log('📡 [LAST-ORDERS] API Response erhalten:', data);
+          console.log('📊 [LAST-ORDERS] Response Typ:', typeof data);
+          console.log('📊 [LAST-ORDERS] Ist Array:', Array.isArray(data));
+          console.log('📊 [LAST-ORDERS] Anzahl Einträge:', Array.isArray(data) ? data.length : 'Kein Array');
+          
           if (Array.isArray(data)) {
+            console.log('📋 [LAST-ORDERS] Erste 3 Einträge:', data.slice(0, 3));
+            
+            if (data.length > 0) {
+              console.log('🔍 [LAST-ORDERS] Beispiel-Eintrag:', data[0]);
+              console.log('🔍 [LAST-ORDERS] Verfügbare Felder:', Object.keys(data[0]));
+            }
+            
             this.lastOrders = data;
+            console.log('✅ [LAST-ORDERS] lastOrders gesetzt:', this.lastOrders);
           } else {
+            console.log('❌ [LAST-ORDERS] Response ist kein Array');
             this.lastOrders = [];
           }
           
           this.isLoadingLastOrders = false;
+          console.log('🏁 [LAST-ORDERS] Loading abgeschlossen');
         },
         error: (error) => {
+          console.error('❌ [LAST-ORDERS] API Fehler:', error);
+          console.error('❌ [LAST-ORDERS] Fehler Details:', {
+            status: error.status,
+            statusText: error.statusText,
+            message: error.message,
+            url: error.url
+          });
           this.lastOrders = [];
           this.isLoadingLastOrders = false;
+          console.log('🏁 [LAST-ORDERS] Loading mit Fehler abgeschlossen');
         }
       });
   }
@@ -445,7 +475,7 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
     // Seite nach oben scrollen
     window.scrollTo({ top: 0});
 
-    if (category === "") {
+    if (category === "" || category === "alle-produkte") {
       // Verwende die bereits gefilterten globalArtikels (ohne SCHNELLVERKAUF für nicht-Employee/Admin)
       this.artikelData = this.globalArtikels;
       return;
@@ -461,6 +491,9 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
   // Methode um passende Stock-Bilder für Kategorien zu erhalten
   getCategoryImage(category: string): string {
     const categoryImages: { [key: string]: string } = {
+      // === KUNDENSPEZIFISCHE PREISE === //
+      '💰 KUNDENSPEZIFISCHE PREISE': 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60',
+      
       // === FAVORITEN === //
       '⭐ FAVORITEN': 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60',
       
@@ -587,9 +620,56 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
   }
 
   getItemsFromCategory(category:string) {
-    // Verwende die bereits gefilterten globalArtikels (ohne SCHNELLVERKAUF für nicht-Employee/Admin)
-    this.artikelData = this.globalArtikels
-    this.artikelData = this.artikelData.map((article)=> article).filter((article)=> article?.category == category)
+    console.log('🔄 [PRODUCT-CATALOG] getItemsFromCategory aufgerufen für Kategorie:', category);
+    
+    if (category === '💰 Kundenspezifische Preise') {
+      console.log('💰 [PRODUCT-CATALOG] Lade kundenspezifische Preise...');
+      // Kundenspezifische Preise laden
+      this.loadLastOrders();
+      console.log('📊 [PRODUCT-CATALOG] lastOrders nach loadLastOrders:', this.lastOrders);
+      
+      // Produkte mit kundenspezifischen Preisen anzeigen
+      this.artikelData = this.lastOrders.map(order => {
+        console.log('🔍 [PRODUCT-CATALOG] Verarbeite Order:', order);
+        
+        const artikel = this.getArticleDetails(order.product_id);
+        console.log('🔍 [PRODUCT-CATALOG] Gefundener Artikel für product_id', order.product_id, ':', artikel);
+        
+        if (artikel) {
+          const enrichedArtikel = {
+            ...artikel,
+            customer_price_net: order.unit_price_net,
+            customer_price_gross: order.unit_price_gross,
+            customer_vat: order.vat_percentage,
+            last_order_date: order.invoice_date,
+            invoice_id: order.invoice_id
+          };
+          console.log('✅ [PRODUCT-CATALOG] Angereicherter Artikel:', enrichedArtikel);
+          return enrichedArtikel;
+        } else {
+          console.log('❌ [PRODUCT-CATALOG] Kein Artikel gefunden für product_id:', order.product_id);
+          return null;
+        }
+      }).filter(item => item !== null);
+      
+      console.log('📊 [PRODUCT-CATALOG] Finale artikelData für kundenspezifische Preise:', this.artikelData);
+      console.log('📊 [PRODUCT-CATALOG] Anzahl verarbeiteter Artikel:', this.artikelData.length);
+    } else if (category === '⭐ Favoriten') {
+      console.log('⭐ [PRODUCT-CATALOG] Lade Favoriten...');
+      const favorites = JSON.parse(localStorage.getItem('favoriteItems') || '[]');
+      this.artikelData = favorites;
+      console.log('📊 [PRODUCT-CATALOG] Favoriten geladen:', this.artikelData);
+    } else if (category === 'alle-produkte') {
+      console.log('🏢 [PRODUCT-CATALOG] Lade alle Produkte...');
+      this.artikelData = this.globalArtikels;
+      console.log('📊 [PRODUCT-CATALOG] Alle Produkte geladen:', this.artikelData.length, 'Artikel');
+    } else {
+      console.log('📂 [PRODUCT-CATALOG] Lade Kategorie:', category);
+      // Verwende die bereits gefilterten globalArtikels (ohne SCHNELLVERKAUF für nicht-Employee/Admin)
+      this.artikelData = this.globalArtikels
+      this.artikelData = this.artikelData.map((article)=> article).filter((article)=> article?.category == category)
+      console.log('📊 [PRODUCT-CATALOG] Kategorie', category, 'geladen:', this.artikelData.length, 'Artikel');
+    }
   }
 
 
@@ -605,6 +685,11 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
     const favorites = JSON.parse(localStorage.getItem('favoriteItems') || '[]');
     if (favorites.length > 0) {
       uniqueCategories.unshift('⭐ Favoriten');
+    }
+    
+    // Kundenspezifische Preise-Kategorie hinzufügen, wenn Benutzer angemeldet ist
+    if (this.globalService.isUserLoggedIn && this.currentUserId) {
+      uniqueCategories.unshift('💰 Kundenspezifische Preise');
     }
     
     return uniqueCategories;

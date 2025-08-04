@@ -7,9 +7,23 @@ import { AuthService } from '../authentication.service';
 import { WarenkorbComponent } from '../warenkorb/warenkorb.component';
 import { GlobalService } from '../global.service';
 import { UploadLoadingComponent } from '../upload-loading/upload-loading.component';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { ZXingScannerComponent, ZXingScannerModule } from '@zxing/ngx-scanner';
 import { BarcodeFormat } from '@zxing/browser';
+
+// Interface für kundenspezifische Preise
+interface CustomerArticlePrice {
+  id: number;
+  customer_id: string;
+  product_id: string;
+  invoice_id: number;
+  unit_price_net: string;
+  unit_price_gross: string;
+  vat_percentage: string;
+  invoice_date: string;
+  created_at: string;
+  updated_at: string;
+}
 
 @Component({
   selector: 'app-category-detail',
@@ -164,24 +178,44 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
   }
 
   filterCategoryProducts(): void {
+    console.log('🔄 [FILTER] filterCategoryProducts aufgerufen für Kategorie:', this.categoryName);
+    
     // Spezielle Behandlung für "alle-produkte" Kategorie
     if (this.categoryName === 'alle-produkte' || this.categoryName === 'Gastro Depot Worms - Alle Produkte') {
       // Alle Produkte anzeigen (außer PFAND und SCHNELLVERKAUF)
       this.artikelData = this.globalArtikels.filter(artikel => 
         artikel.category !== 'PFAND' && artikel.category !== 'SCHNELLVERKAUF'
       );
+      console.log('📊 [FILTER] Alle Produkte geladen:', this.artikelData.length);
     } else if (this.categoryName === '⭐ Favoriten') {
       // Favoriten aus localStorage laden
       const favorites = JSON.parse(localStorage.getItem('favoriteItems') || '[]');
       this.artikelData = favorites;
+      console.log('📊 [FILTER] Favoriten geladen:', this.artikelData.length);
+    } else if (this.categoryName === '💰 Kundenspezifische Preise') {
+      // Kundenspezifische Preise laden (asynchron)
+      console.log('💰 [FILTER] Lade kundenspezifische Preise (asynchron)...');
+      this.loadCustomerPrices();
+      return; // Nicht weiter machen, da loadCustomerPrices asynchron ist
     } else {
       // Produkte der spezifischen Kategorie filtern
       this.artikelData = this.globalArtikels.filter(artikel => 
         artikel.category === this.categoryName
       );
+      console.log('📊 [FILTER] Kategorie', this.categoryName, 'geladen:', this.artikelData.length);
     }
     
+    this.updateFilteredData();
+  }
+
+  // Neue Methode zum Aktualisieren der gefilterten Daten
+  private updateFilteredData(): void {
+    console.log('🔄 [FILTER] updateFilteredData aufgerufen');
+    console.log('📊 [FILTER] artikelData vor updateFilteredData:', this.artikelData.length);
+    
     this.filteredData = [...this.artikelData];
+    
+    console.log('📊 [FILTER] filteredData nach updateFilteredData:', this.filteredData.length);
     
     // Preload wichtige Bilder für bessere Performance
     this.preloadImages();
@@ -204,6 +238,95 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
         })
       );
     });
+  }
+
+  // Methode zum Laden der kundenspezifischen Preise
+  loadCustomerPrices(): void {
+    console.log('🔄 [CUSTOMER-PRICES] Starte Laden der kundenspezifischen Preise...');
+    
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+      console.log('❌ [CUSTOMER-PRICES] Kein Token gefunden');
+      this.artikelData = [];
+      return;
+    }
+
+    console.log('✅ [CUSTOMER-PRICES] Token vorhanden, starte API-Aufruf...');
+
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${token}`
+    });
+
+    this.http.get<CustomerArticlePrice[]>(`https://multi-mandant-ecommerce.onrender.com/api/customer-article-prices/user`, { headers })
+      .subscribe({
+        next: (data) => {
+          console.log('📡 [CUSTOMER-PRICES] API Response erhalten:', data);
+          console.log('📊 [CUSTOMER-PRICES] Response Typ:', typeof data);
+          console.log('📊 [CUSTOMER-PRICES] Ist Array:', Array.isArray(data));
+          console.log('📊 [CUSTOMER-PRICES] Anzahl Einträge:', Array.isArray(data) ? data.length : 'Kein Array');
+          
+          if (Array.isArray(data)) {
+            console.log('📋 [CUSTOMER-PRICES] Erste 3 Einträge:', data.slice(0, 3));
+            
+            if (data.length > 0) {
+              console.log('🔍 [CUSTOMER-PRICES] Beispiel-Eintrag:', data[0]);
+              console.log('🔍 [CUSTOMER-PRICES] Verfügbare Felder:', Object.keys(data[0]));
+              console.log('🔍 [CUSTOMER-PRICES] product_id:', data[0].product_id);
+              console.log('🔍 [CUSTOMER-PRICES] unit_price_net:', data[0].unit_price_net);
+              console.log('🔍 [CUSTOMER-PRICES] unit_price_gross:', data[0].unit_price_gross);
+              console.log('🔍 [CUSTOMER-PRICES] vat_percentage:', data[0].vat_percentage);
+              console.log('🔍 [CUSTOMER-PRICES] invoice_date:', data[0].invoice_date);
+              console.log('🔍 [CUSTOMER-PRICES] invoice_id:', data[0].invoice_id);
+            }
+            
+            // Produkte mit kundenspezifischen Preisen anzeigen
+            this.artikelData = data.map(order => {
+              console.log('🔍 [CUSTOMER-PRICES] Verarbeite Order:', order);
+              
+              const artikel = this.globalArtikels.find(art => art.article_number === order.product_id);
+              console.log('🔍 [CUSTOMER-PRICES] Gefundener Artikel für product_id', order.product_id, ':', artikel);
+              
+              if (artikel) {
+                const enrichedArtikel = {
+                  ...artikel,
+                  customer_price_net: order.unit_price_net,
+                  customer_price_gross: order.unit_price_gross,
+                  customer_vat: order.vat_percentage,
+                  last_order_date: order.invoice_date,
+                  invoice_id: order.invoice_id
+                };
+                console.log('✅ [CUSTOMER-PRICES] Angereicherter Artikel:', enrichedArtikel);
+                return enrichedArtikel;
+              } else {
+                console.log('❌ [CUSTOMER-PRICES] Kein Artikel gefunden für product_id:', order.product_id);
+                return null;
+              }
+            }).filter(item => item !== null);
+            
+            console.log('📊 [CUSTOMER-PRICES] Finale artikelData:', this.artikelData);
+            console.log('📊 [CUSTOMER-PRICES] Anzahl verarbeiteter Artikel:', this.artikelData.length);
+            
+            // Jetzt filteredData aktualisieren
+            this.updateFilteredData();
+          } else {
+            console.log('❌ [CUSTOMER-PRICES] Response ist kein Array');
+            this.artikelData = [];
+            this.updateFilteredData();
+          }
+        },
+        error: (error) => {
+          console.error('❌ [CUSTOMER-PRICES] API Fehler:', error);
+          console.error('❌ [CUSTOMER-PRICES] Fehler Details:', {
+            status: error.status,
+            statusText: error.statusText,
+            message: error.message,
+            url: error.url
+          });
+          this.artikelData = [];
+          this.updateFilteredData();
+        }
+      });
   }
 
   // Optimierte Suchfunktion mit Debouncing
@@ -237,6 +360,17 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
     // Fallback auf Standard-Bild
     img.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60';
     img.classList.add('error');
+  }
+
+  // Methode zum Formatieren des Rechnungsdatums
+  formatInvoiceDate(dateString: string): string {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('de-DE', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
   }
 
   filteredArtikelData(): void {

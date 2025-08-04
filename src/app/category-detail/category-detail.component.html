@@ -85,6 +85,32 @@
           <h3 class="product-title">{{ artikel.article_text }}</h3>
           <p class="product-number">Art.-Nr: {{ artikel.article_number }}</p>
           
+          <!-- Kundenspezifische Preise anzeigen -->
+          @if (categoryName === '💰 Kundenspezifische Preise' && artikel.customer_price_net) {
+          <div class="customer-price-info">
+            <div class="price-badge">
+              <span class="price-amount">€{{ artikel.customer_price_net }}</span>
+              <span class="price-label">Ihr Preis</span>
+            </div>
+            <div class="invoice-info">
+              <div class="invoice-row">
+                <span class="invoice-label">Rechnung:</span>
+                <span class="invoice-value">{{ artikel.invoice_id || '-' }}</span>
+              </div>
+              <div class="invoice-row">
+                <span class="invoice-label">Datum:</span>
+                <span class="invoice-value">{{ formatInvoiceDate(artikel.last_order_date) }}</span>
+              </div>
+              @if (artikel.customer_vat) {
+              <div class="invoice-row">
+                <span class="invoice-label">MwSt:</span>
+                <span class="invoice-value">{{ artikel.customer_vat }}%</span>
+              </div>
+              }
+            </div>
+          </div>
+          }
+          
           <div class="product-actions">
             <div class="quantity-input-group">
               <!-- Für angemeldete Benutzer -->
