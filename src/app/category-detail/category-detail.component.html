@@ -46,13 +46,6 @@
       @if (totalPages > 1) {
       <div class="search-row-3">
         <div class="pagination-container">
-          <div class="pagination-info">
-            <span class="pagination-text">
-              Seite {{ currentPage }} von {{ totalPages }} 
-              ({{ paginatedData.length }} von {{ filteredData.length }} Artikeln)
-            </span>
-          </div>
-          
           <div class="pagination-controls">
             <button 
               (click)="previousPage()" 
