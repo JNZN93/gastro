@@ -932,8 +932,8 @@
   .modal-content {
     background: white;
     border-radius: 16px;
-    max-width: 90vw;
-    max-height: 90vh;
+    max-width: 95vw;
+    max-height: 95vh;
     width: auto;
     height: auto;
     position: relative;
@@ -944,7 +944,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 20px 24px;
+      padding: 16px 20px;
       border-bottom: 1px solid #e5e7eb;
       background: #f9fafb;
       border-radius: 16px 16px 0 0;
@@ -985,16 +985,18 @@
     }
 
     .modal-body {
-      padding: 24px;
+      padding: 16px;
       display: flex;
       align-items: center;
       justify-content: center;
-      max-height: calc(90vh - 120px);
+      max-height: calc(95vh - 100px);
       overflow: auto;
 
       .modal-image {
         max-width: 100%;
         max-height: 100%;
+        width: auto;
+        height: auto;
         object-fit: contain;
         border-radius: 8px;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
