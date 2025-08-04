@@ -63,7 +63,7 @@
             [src]="artikel.main_image_url" 
             [alt]="artikel.article_text"
             class="product-image"
-            (click)="openImageModal(artikel)"
+            (click)="artikel.main_image_url && openModal(artikel.main_image_url, artikel.article_text, artikel.id)"
             (load)="onImageLoad($event)"
             (error)="onImageError($event)">
           
@@ -134,29 +134,7 @@
   <app-warenkorb></app-warenkorb>
   }
 
-  <!-- Image Modal für Vollbildanzeige -->
-  <div class="image-modal-overlay" *ngIf="showImageModal" (click)="closeImageModal()"></div>
-  <div class="image-modal" *ngIf="showImageModal">
-    <div class="image-modal-content">
-      <div class="image-modal-header">
-        <h3>{{ selectedImageProduct?.article_text || 'Produktbild' }}</h3>
-        <button (click)="closeImageModal()" class="close-image-modal">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-          </svg>
-        </button>
-      </div>
-      <div class="image-modal-body">
-        <img 
-          [src]="selectedImageUrl" 
-          [alt]="selectedImageProduct?.article_text || 'Produktbild'"
-          class="fullsize-image"
-          [class.zoomed]="isImageZoomed"
-          (click)="toggleImageZoom()"
-          (error)="onImageError($event)">
-      </div>
-    </div>
-  </div>
+
 
   <!-- Loading Screen -->
   @if (isVisible) {
@@ -214,3 +192,31 @@
     </div>
   </div>
 </div>
+
+<!-- Image Modal - Outside main container -->
+@if (isModalOpen) {
+  <div class="modal-overlay" (click)="closeModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3 class="modal-title">{{ modalImageAlt }}</h3>
+        <div class="modal-actions">
+          <button class="modal-close-btn" (click)="closeModal()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <img 
+          [src]="modalImageUrl" 
+          [alt]="modalImageAlt"
+          class="modal-image"
+          [class.zoomed]="isImageZoomed"
+          (click)="toggleImageZoom()"
+          (error)="onImageError($event)"
+          (load)="onModalImageLoad()">
+      </div>
+    </div>
+  </div>
+}

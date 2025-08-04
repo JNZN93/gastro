@@ -41,10 +41,11 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
     bufferSize: 5
   };
 
-  // Eigenschaften für Image Modal
-  showImageModal: boolean = false;
-  selectedImageUrl: string = '';
-  selectedImageProduct: any = null;
+  // Modal properties
+  isModalOpen: boolean = false;
+  modalImageUrl: string = '';
+  modalImageAlt: string = '';
+  modalProductId: number | null = null;
   isImageZoomed: boolean = false;
 
   // Eigenschaften für Toast-Benachrichtigung
@@ -138,6 +139,28 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
       this.filterCategoryProducts();
       this.isVisible = false;
     });
+  }
+
+  // Handle ESC key to close modal
+  @HostListener('document:keydown', ['$event'])
+  handleKeyboardEvent(event: KeyboardEvent) {
+    if (event.key === 'Escape' && this.isModalOpen) {
+      this.closeModal();
+    }
+    if (event.key === 'Escape' && this.isScanning) {
+      this.stopScanner();
+    }
+  }
+
+  // Handle click outside modal to close
+  @HostListener('document:click', ['$event'])
+  handleClickOutside(event: Event) {
+    if (this.isModalOpen) {
+      const target = event.target as HTMLElement;
+      if (target.classList.contains('modal-overlay')) {
+        this.closeModal();
+      }
+    }
   }
 
   filterCategoryProducts(): void {
@@ -310,28 +333,36 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
     localStorage.setItem('favoriteItems', JSON.stringify(favorites));
   }
 
-  // Image Modal Methoden
-  openImageModal(artikel: any): void {
-    if (artikel.main_image_url) {
-      this.selectedImageUrl = artikel.main_image_url;
-      this.selectedImageProduct = artikel;
-      this.showImageModal = true;
-      // Body scroll verhindern
-      document.body.style.overflow = 'hidden';
-    }
+  // Modal methods
+  openModal(imageUrl: string, imageAlt: string, productId: number): void {
+    console.log('🔍 [MODAL] openModal called with:', { imageUrl, imageAlt, productId });
+    this.modalImageUrl = imageUrl;
+    this.modalImageAlt = imageAlt;
+    this.modalProductId = productId;
+    this.isModalOpen = true;
+    document.body.style.overflow = 'hidden'; // Prevent background scrolling
+    console.log('🔍 [MODAL] Modal state after opening:', {
+      isModalOpen: this.isModalOpen,
+      modalImageUrl: this.modalImageUrl,
+      modalImageAlt: this.modalImageAlt
+    });
   }
 
-  closeImageModal(): void {
-    this.showImageModal = false;
-    this.selectedImageUrl = '';
-    this.selectedImageProduct = null;
+  closeModal(): void {
+    this.isModalOpen = false;
+    this.modalImageUrl = '';
+    this.modalImageAlt = '';
+    this.modalProductId = null;
     this.isImageZoomed = false;
-    // Body scroll wieder erlauben
-    document.body.style.overflow = 'auto';
+    document.body.style.overflow = ''; // Restore scrolling
   }
 
   toggleImageZoom(): void {
     this.isImageZoomed = !this.isImageZoomed;
+  }
+
+  onModalImageLoad(): void {
+    console.log('🔍 [MODAL] Image loaded successfully:', this.modalImageUrl);
   }
 
   // Scanner-Methoden
