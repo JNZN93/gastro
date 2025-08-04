@@ -107,32 +107,62 @@ h6 {
 
 // Modern Cart Styles - Inspired by Product Catalog
 .cart-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(4px);
-  z-index: 998;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background: rgba(0, 0, 0, 0.6) !important;
+  backdrop-filter: blur(8px) !important;
+  z-index: 2147483647 !important; /* Maximum Z-Index Wert */
   animation: fadeIn 0.3s ease-out;
+  pointer-events: auto !important;
+  transform: translateZ(0) !important;
+  will-change: transform, opacity !important;
 }
 
 .cart-container {
-  position: fixed;
-  top: 0;
-  right: 0;
-  width: 450px;
-  height: 100vh;
-  background: rgba(255, 255, 255, 0.98);
-  backdrop-filter: blur(20px);
-  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.12);
-  z-index: 999;
-  display: flex;
-  flex-direction: column;
+  position: fixed !important;
+  top: 0 !important;
+  right: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background: rgba(255, 255, 255, 0.98) !important;
+  backdrop-filter: blur(20px) !important;
+  box-shadow: 0 0 50px rgba(0, 0, 0, 0.3) !important;
+  z-index: 2147483647 !important; /* Maximum Z-Index Wert */
+  display: flex !important;
+  flex-direction: column !important;
   animation: slideIn 0.3s ease-out;
   font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  border-left: 1px solid rgba(226, 232, 240, 0.6);
+  border: none !important;
+  pointer-events: auto !important;
+  overflow: hidden !important;
+  transform: translateZ(0) !important;
+  will-change: transform, opacity !important;
+}
+
+// Globale Regel: Warenkorb hat immer den höchsten Z-Index
+:host {
+  z-index: 2147483647 !important; /* Maximum Z-Index Wert */
+  position: relative !important;
+}
+
+// Sicherstellen, dass der Warenkorb über allen anderen Elementen liegt
+.cart-overlay,
+.cart-container {
+  position: fixed !important;
+  z-index: 2147483647 !important; /* Maximum Z-Index Wert */
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  transform: translateZ(0) !important;
+  will-change: transform, opacity !important;
 }
 
 // Header
@@ -573,9 +603,11 @@ h6 {
 @keyframes slideIn {
   from {
     transform: translateX(100%);
+    opacity: 0;
   }
   to {
     transform: translateX(0);
+    opacity: 1;
   }
 }
 
@@ -591,8 +623,8 @@ h6 {
 // Responsive Design
 @media (max-width: 768px) {
   .cart-container {
-    width: 100%;
-    max-width: 400px;
+    width: 100vw !important;
+    height: 100vh !important;
   }
 
   .cart-header {
@@ -621,7 +653,8 @@ h6 {
 
 @media (max-width: 480px) {
   .cart-container {
-    width: 100%;
+    width: 100vw !important;
+    height: 100vh !important;
   }
 
   .cart-header {
@@ -863,4 +896,23 @@ h4, h5 {
     }
     
   }
+
+// Globale Regel: Warenkorb hat immer den höchsten Z-Index in allen Ansichten
+:host {
+  z-index: 2147483647 !important; /* Maximum Z-Index Wert */
+  position: relative !important;
+}
+
+// Sicherstellen, dass Warenkorb-Elemente über allem liegen
+.cart-overlay,
+.cart-container {
+  z-index: 2147483647 !important; /* Maximum Z-Index Wert */
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+}
 

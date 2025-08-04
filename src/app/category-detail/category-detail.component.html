@@ -155,13 +155,6 @@
   </div>
   }
 
-  <!-- Warenkorb -->
-  @if(globalService.isUserLoggedIn) {
-  <app-warenkorb></app-warenkorb>
-  }
-
-
-
   <!-- Loading Screen -->
   @if (isVisible) {
   <app-upload-loading></app-upload-loading>
@@ -180,6 +173,11 @@
     </div>
   </div>
 </div>
+
+<!-- Warenkorb - Outside main container -->
+@if(globalService.isUserLoggedIn) {
+<app-warenkorb></app-warenkorb>
+}
 
 <!-- Scanner Modal - Outside main container -->
 @if (isScanning) {

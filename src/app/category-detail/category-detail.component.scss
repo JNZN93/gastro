@@ -13,12 +13,30 @@
   -webkit-overflow-scrolling: touch;
 }
 
+// Warenkorb in Category-Detail hat höchsten Z-Index
+app-warenkorb {
+  z-index: 2147483647 !important; /* Maximum Z-Index Wert */
+  position: relative !important;
+}
+
+app-warenkorb .cart-overlay,
+app-warenkorb .cart-container {
+  z-index: 2147483647 !important; /* Maximum Z-Index Wert */
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+}
+
 .dashboard-header {
   position: fixed !important;
   top: 70px !important; /* Abstand für den Haupt-Header */
   left: 20px !important;
   right: 20px !important;
-  z-index: 1000 !important;
+  z-index: 99 !important;
   background: white;
   border-radius: 20px;
   padding: 20px;
