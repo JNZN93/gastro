@@ -526,6 +526,10 @@ app-warenkorb .cart-container {
   // Smooth Scrolling
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
+  
+  @media (max-width: 768px) {
+    margin-top: 40px;
+  }
 }
 
 .product-count-display {
