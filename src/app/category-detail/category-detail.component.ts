@@ -72,6 +72,7 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
   showToast: boolean = false;
   toastMessage: string = '';
   toastType: 'success' | 'error' = 'success';
+  toastTopPosition: number = 20;
 
   // Scanner-Eigenschaften
   isScanning = false;
@@ -126,6 +127,19 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
       
       this.loadCategoryProducts();
     });
+    
+    // Event-Listener für Scroll-Events (für Toast-Position) nach dem Laden der Daten hinzufügen
+    setTimeout(() => {
+      const scrollableContent = document.querySelector('.scrollable-content');
+      if (scrollableContent) {
+        scrollableContent.addEventListener('scroll', () => {
+          if (this.showToast) {
+            this.calculateToastPosition();
+            this.cdr.detectChanges();
+          }
+        });
+      }
+    }, 500);
   }
 
   loadCategoryProducts(): void {
@@ -574,6 +588,9 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
     this.toastType = type;
     this.showToast = true;
     
+    // Toast-Position basierend auf aktueller Scroll-Position berechnen
+    this.calculateToastPosition();
+    
     // Force change detection
     this.cdr.detectChanges();
     
@@ -582,6 +599,33 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
       this.showToast = false;
       this.cdr.detectChanges();
     }, 3000);
+  }
+
+  private calculateToastPosition(): void {
+    // Scroll-Position des scrollable-content Containers ermitteln
+    const scrollableContent = document.querySelector('.scrollable-content') as HTMLElement;
+    if (scrollableContent) {
+      const scrollTop = scrollableContent.scrollTop;
+      const viewportHeight = window.innerHeight;
+      const fixedSearchHeight = 350; // Noch höhere Höhe des fixed-search-container für mehr Abstand
+      
+      // Toast-Position berechnen: Scroll-Position + noch größerer Abstand vom oberen Rand
+      this.toastTopPosition = Math.max(100, scrollTop + 100);
+      
+      // Sicherstellen, dass der Toast nicht unter dem fixed-search-container erscheint
+      if (this.toastTopPosition < fixedSearchHeight + 100) {
+        this.toastTopPosition = fixedSearchHeight + 100;
+      }
+      
+      // Sicherstellen, dass der Toast nicht unter dem unteren Rand verschwindet
+      const maxTopPosition = scrollTop + viewportHeight - 150; // 150px Abstand vom unteren Rand
+      if (this.toastTopPosition > maxTopPosition) {
+        this.toastTopPosition = maxTopPosition;
+      }
+    } else {
+      // Fallback: Verwende eine feste Position, falls der Container nicht gefunden wird
+      this.toastTopPosition = 350; // Noch höhere Fallback-Position
+    }
   }
 
   // Favoriten-Methoden
