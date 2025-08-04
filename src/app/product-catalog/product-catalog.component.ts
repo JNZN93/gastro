@@ -239,9 +239,15 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
     if (index > -1) {
       // Artikel existiert -> Entfernen
       favorites.splice(index, 1);
+      
+      // Toast-Benachrichtigung für entfernten Artikel
+      this.showToastNotification(`⭐ "${artikel.article_text}" aus Favoriten entfernt`, 'success');
     } else {
       // Artikel hinzufügen
       favorites.push(artikel);
+      
+      // Toast-Benachrichtigung für hinzugefügten Artikel
+      this.showToastNotification(`⭐ "${artikel.article_text}" zu Favoriten hinzugefügt`, 'success');
     }
     // Alphabetisch sortieren nach artikel.name (case-insensitive)
     favorites.sort((a: any, b: any) => 
@@ -249,6 +255,11 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
     );
 
     localStorage.setItem('favoriteItems', JSON.stringify(favorites));
+    
+    // Force change detection to update the categories list
+    setTimeout(() => {
+      // Trigger change detection to update the categories list
+    }, 0);
   }
 
   
@@ -450,6 +461,9 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
   // Methode um passende Stock-Bilder für Kategorien zu erhalten
   getCategoryImage(category: string): string {
     const categoryImages: { [key: string]: string } = {
+      // === FAVORITEN === //
+      '⭐ FAVORITEN': 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60',
+      
       // === DEINE ECHTEN KATEGORIEN === //
       
       // PFAND - Pfandflaschen und Mehrwegbehälter
@@ -586,6 +600,12 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
         this.globalArtikels?.map((a) => a.category).filter((cat) => cat && cat !== 'PFAND' && cat !== 'SCHNELLVERKAUF')
       ),
     ];
+    
+    // Favoriten-Kategorie hinzufügen, wenn Favoriten vorhanden sind
+    const favorites = JSON.parse(localStorage.getItem('favoriteItems') || '[]');
+    if (favorites.length > 0) {
+      uniqueCategories.unshift('⭐ Favoriten');
+    }
     
     return uniqueCategories;
   }

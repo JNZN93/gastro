@@ -170,6 +170,10 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
       this.artikelData = this.globalArtikels.filter(artikel => 
         artikel.category !== 'PFAND' && artikel.category !== 'SCHNELLVERKAUF'
       );
+    } else if (this.categoryName === '⭐ Favoriten') {
+      // Favoriten aus localStorage laden
+      const favorites = JSON.parse(localStorage.getItem('favoriteItems') || '[]');
+      this.artikelData = favorites;
     } else {
       // Produkte der spezifischen Kategorie filtern
       this.artikelData = this.globalArtikels.filter(artikel => 
@@ -307,9 +311,13 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
     this.toastType = type;
     this.showToast = true;
     
+    // Force change detection
+    this.cdr.detectChanges();
+    
     // Toast nach 3 Sekunden automatisch ausblenden
     setTimeout(() => {
       this.showToast = false;
+      this.cdr.detectChanges();
     }, 3000);
   }
 
@@ -326,11 +334,22 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
     
     if (existingIndex > -1) {
       favorites.splice(existingIndex, 1);
+      
+      // Toast-Benachrichtigung für entfernten Artikel
+      this.showToastNotification(`⭐ "${artikel.article_text}" aus Favoriten entfernt`, 'success');
     } else {
       favorites.push(artikel);
+      
+      // Toast-Benachrichtigung für hinzugefügten Artikel
+      this.showToastNotification(`⭐ "${artikel.article_text}" zu Favoriten hinzugefügt`, 'success');
     }
     
     localStorage.setItem('favoriteItems', JSON.stringify(favorites));
+    
+    // Wenn wir uns in der Favoriten-Kategorie befinden, aktualisieren wir die Anzeige
+    if (this.categoryName === '⭐ Favoriten') {
+      this.filterCategoryProducts();
+    }
   }
 
   // Modal methods
@@ -488,4 +507,6 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
     // Cleanup Bild-Promises
     this.imageLoadPromises = [];
   }
+
+
 }

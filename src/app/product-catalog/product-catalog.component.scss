@@ -3200,4 +3200,70 @@
   }
 }
 
+// Featured Category Styles - Hervorhebung der wichtigsten Kategorien
+.category-card.featured-category {
+  // Größere Karte für Featured-Kategorien
+  transform: scale(1.05);
+  border: 2px solid rgba(16, 185, 129, 0.2);
+  box-shadow: 0 8px 32px rgba(16, 185, 129, 0.15);
+  position: relative;
+  
+  &:hover {
+    transform: scale(1.08) translateY(-4px);
+    box-shadow: 0 12px 40px rgba(16, 185, 129, 0.25);
+    border-color: rgba(16, 185, 129, 0.4);
+  }
+  
+  &.active {
+    border-color: #10b981;
+    box-shadow: 0 8px 32px rgba(16, 185, 129, 0.3);
+  }
+  
+  // Spezielle Behandlung für Favoriten-Kategorie
+  &:has(.category-badge) {
+    border-color: rgba(246, 173, 85, 0.2);
+    box-shadow: 0 8px 32px rgba(246, 173, 85, 0.15);
+    
+    &:hover {
+      border-color: rgba(246, 173, 85, 0.4);
+      box-shadow: 0 12px 40px rgba(246, 173, 85, 0.25);
+    }
+    
+    &.active {
+      border-color: #f6ad55;
+      box-shadow: 0 8px 32px rgba(246, 173, 85, 0.3);
+    }
+  }
+  
+  @media (max-width: 768px) {
+    transform: scale(1.02);
+    
+    &:hover {
+      transform: scale(1.03) translateY(-2px);
+    }
+  }
+}
+
+// Category Badge für Featured-Kategorien
+.category-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: rgba(16, 185, 129, 0.9);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 16px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  backdrop-filter: blur(10px);
+  z-index: 2;
+  
+  @media (max-width: 768px) {
+    top: 8px;
+    left: 8px;
+    padding: 3px 8px;
+    font-size: 0.65rem;
+  }
+}
+
 

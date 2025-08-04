@@ -1068,9 +1068,9 @@
 // Toast Benachrichtigung Styles
 .toast-notification {
   position: fixed;
-  top: 20px;
+  top: 180px;
   right: 20px;
-  z-index: 9999;
+  z-index: 999999;
   max-width: 400px;
   min-width: 300px;
   background: white;
@@ -1166,8 +1166,9 @@
     }
   }
 
+  // Toast-Position für Mobile anpassen
   .toast-notification {
-    top: 10px;
+    top: 200px;
     right: 10px;
     left: 10px;
     max-width: none;

@@ -70,20 +70,20 @@
     </div>
     <div class="category-grid">
       <!-- Alle Kategorien -->
-      <div class="category-card" [routerLink]="['/category', 'alle-produkte']" [class.active]="selectedCategory === 'alle-produkte'">
+      <div class="category-card featured-category" [routerLink]="['/category', 'alle-produkte']" [class.active]="selectedCategory === 'alle-produkte'">
         <div class="category-img">
           <img src="/alle-produkte.jpg" alt="Alle Produkte" class="category-image">
+          <div class="category-badge">Hauptkategorie</div>
         </div>
         <div class="category-name">🏢 Alle Produkte</div>
       </div>
       
-
-      
       <!-- Dynamische Kategorien -->
       @for (category of categories; track category) {
-      <div class="category-card" [routerLink]="['/category', category]" [class.active]="selectedCategory === category">
+      <div class="category-card" [class.featured-category]="category === '⭐ Favoriten'" [routerLink]="['/category', category]" [class.active]="selectedCategory === category">
         <div class="category-img">
           <img [src]="getCategoryImage(category)" [alt]="category" class="category-image" (error)="onCategoryImageError($event, category)">
+          <div class="category-badge" *ngIf="category === '⭐ Favoriten'">Ihre Favoriten</div>
         </div>
         <div class="category-name">{{ category }}</div>
       </div>
