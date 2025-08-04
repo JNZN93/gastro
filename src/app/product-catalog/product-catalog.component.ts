@@ -515,10 +515,10 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
       'DROGERIE': 'https://images.unsplash.com/photo-1556228720-195a672e8a03?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60',
       
       // GETRÄNKE - Verschiedene Getränke
-      'GETRÄNKE': '/getränke.jpg',
+      'GETRÄNKE': '/getraenke.jpg',
       
       // GEWÜRZ - Gewürze und Kräuter
-      'GEWÜRZ': '/gewürz.jpg',
+      'GEWÜRZ': '/gewuerz.jpg',
       
       // ALKOHOLISCHE GETRÄNKE - Alkohol
       'ALKOHOLISCHE GETRÄNKE': '/alkohol.jpg',
