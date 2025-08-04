@@ -690,6 +690,13 @@
   color: #1a202c;
   margin: 0 0 0.75rem 0;
   line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  word-wrap: break-word;
+  max-height: 3.5rem; /* 2 lines * 1.4 line-height * 1.25rem font-size */
 }
 
 .featured-number {
@@ -2787,175 +2794,7 @@
   }
 }
 
-// Quick Order Section
-.quick-order-section {
-  padding: 3rem 2rem;
-  background: linear-gradient(135deg, #fefce8 0%, #fef3c7 100%);
-  margin-bottom: 2rem;
-  position: relative;
-  
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, #eab308 0%, #fbbf24 50%, #fcd34d 100%);
-  }
-}
 
-.quick-order-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 2rem;
-  max-width: 1400px;
-  margin: 0 auto;
-}
-
-.quick-order-card {
-  background: white;
-  border-radius: 20px;
-  box-shadow: 0 8px 32px rgba(234, 179, 8, 0.15);
-  transition: all 0.4s ease;
-  border: 2px solid rgba(234, 179, 8, 0.1);
-  position: relative;
-  
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, #eab308 0%, #fbbf24 100%);
-    transform: scaleX(0);
-    transition: transform 0.3s ease;
-  }
-}
-
-.quick-order-card:hover {
-  transform: translateY(-12px) scale(1.02);
-  box-shadow: 0 20px 60px rgba(234, 179, 8, 0.25);
-  border-color: rgba(234, 179, 8, 0.3);
-  
-  &::before {
-    transform: scaleX(1);
-  }
-}
-
-.quick-order-image-container {
-  position: relative;
-  height: 200px;
-  overflow: hidden;
-}
-
-.quick-order-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.4s ease;
-}
-
-.quick-order-card:hover .quick-order-image {
-  transform: scale(1.08);
-}
-
-.quick-order-placeholder {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #fefce8 0%, #fef3c7 100%);
-  color: #eab308;
-  
-  svg {
-    width: 3.5rem;
-    height: 3.5rem;
-  }
-}
-
-.quick-order-badge {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  background: linear-gradient(135deg, #eab308 0%, #fbbf24 100%);
-  color: white;
-  padding: 0.625rem 1.25rem;
-  border-radius: 25px;
-  font-size: 0.875rem;
-  font-weight: 700;
-  box-shadow: 0 4px 15px rgba(234, 179, 8, 0.4);
-  animation: lightningPulse 1.5s infinite;
-  
-  &::before {
-    content: '⚡';
-    margin-right: 0.25rem;
-  }
-}
-
-@keyframes lightningPulse {
-  0%, 100% {
-    transform: scale(1);
-    box-shadow: 0 4px 15px rgba(234, 179, 8, 0.4);
-  }
-  50% {
-    transform: scale(1.05);
-    box-shadow: 0 6px 20px rgba(234, 179, 8, 0.6);
-  }
-}
-
-.quick-order-content {
-  padding: 1.75rem;
-}
-
-.quick-order-title {
-  font-size: 1.125rem;
-  font-weight: 700;
-  color: #1a202c;
-  margin: 0 0 0.75rem 0;
-  line-height: 1.4;
-}
-
-.quick-order-number {
-  font-size: 0.875rem;
-  color: #64748b;
-  margin: 0 0 1.25rem 0;
-  font-weight: 500;
-}
-
-.quick-order-actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.quick-add-btn {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.25rem;
-  background: linear-gradient(135deg, #eab308 0%, #fbbf24 100%);
-  color: white;
-  border: none;
-  padding: 0.75rem 0.5rem;
-  border-radius: 12px;
-  font-weight: 700;
-  font-size: 0.8rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  
-  svg {
-    width: 1rem;
-    height: 1rem;
-  }
-  
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(234, 179, 8, 0.4);
-  }
-}
 
 // Toast Notification Styles
 .toast-notification {
@@ -3210,41 +3049,7 @@
     font-size: 0.8rem;
   }
   
-  // Quick Order Section
-  .quick-order-section {
-    padding: 2rem 1rem;
-  }
-  
-  .quick-order-grid {
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1.5rem;
-  }
-  
-  .quick-order-card {
-    border-radius: 16px;
-  }
-  
-  .quick-order-image-container {
-    height: 160px;
-  }
-  
-  .quick-order-content {
-    padding: 1.25rem;
-  }
-  
-  .quick-order-title {
-    font-size: 1rem;
-  }
-  
-  .quick-order-actions {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  
-  .quick-add-btn {
-    padding: 0.75rem;
-    font-size: 0.75rem;
-  }
+
   
   // New Arrivals Section
   .new-arrivals-section {
@@ -3301,6 +3106,13 @@
   
   .featured-title {
     font-size: 1.125rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    word-wrap: break-word;
+    max-height: 3.15rem; /* 2 lines * 1.4 line-height * 1.125rem font-size */
   }
   
   .featured-add-btn {

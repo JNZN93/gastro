@@ -136,60 +136,6 @@
     </div>
   </div>
 
-  <!-- Quick Order Section - nur anzeigen wenn nicht gesucht wird -->
-  <div class="quick-order-section" *ngIf="!isSearching && globalService.isUserLoggedIn">
-    <div class="section-header">
-      <h2 class="section-title">⚡ Schnellbestellung</h2>
-      <p class="section-subtitle">Häufig gekaufte Artikel - Mit einem Klick bestellen</p>
-    </div>
-    <div class="quick-order-grid">
-      @for (artikel of getQuickOrderProducts(); track $index) {
-      <div class="quick-order-card">
-        <div class="quick-order-image-container">
-          <img 
-            *ngIf="artikel.main_image_url"
-            [src]="artikel.main_image_url" 
-            [alt]="artikel.article_text"
-            class="quick-order-image"
-            (error)="onImageError($event)"
-            loading="lazy">
-          <div *ngIf="!artikel.main_image_url" class="quick-order-placeholder">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-            </svg>
-          </div>
-          <div class="quick-order-badge">Schnell</div>
-        </div>
-        <div class="quick-order-content">
-          <h3 class="quick-order-title">{{ artikel.article_text }}</h3>
-          <p class="quick-order-number">Art.-Nr: {{ artikel.article_number }}</p>
-          <div class="quick-order-actions">
-            <button (click)="quickAddToCart($event, artikel, 1)" class="quick-add-btn">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-              </svg>
-              +1
-            </button>
-            <button (click)="quickAddToCart($event, artikel, 5)" class="quick-add-btn">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-              </svg>
-              +5
-            </button>
-            <button (click)="quickAddToCart($event, artikel, 10)" class="quick-add-btn">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-              </svg>
-              +10
-            </button>
-          </div>
-        </div>
-      </div>
-      }
-    </div>
-  </div>
-
-
 
   <!-- Call to Action Section -->
   <div class="cta-section">
