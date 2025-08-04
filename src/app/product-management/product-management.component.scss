@@ -8,6 +8,15 @@
   width: 100%;
   box-sizing: border-box;
 
+  // Scroll Wrapper for iOS compatibility
+  .scroll-wrapper {
+    position: relative;
+    height: calc(100vh - 90px); // Account for top margin
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
   .dashboard-header {
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
@@ -16,9 +25,33 @@
     margin-bottom: 20px;
     box-sizing: border-box;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-    position: relative;
-    z-index: 1;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    flex-shrink: 0;
+  }
 
+    .scrollable-content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-top: 120px; // Space for fixed header
+    -webkit-overflow-scrolling: touch; // Smooth scrolling on iOS
+    
+    // Hide scrollbar on webkit browsers
+    &::-webkit-scrollbar {
+      width: 0;
+      background: transparent;
+    }
+    
+    // For Firefox
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .dashboard-header {
     .header-content {
       display: flex;
       justify-content: space-between;
@@ -1029,6 +1062,14 @@
     width: 100%;
     box-sizing: border-box;
     
+    .scroll-wrapper {
+      height: calc(100vh - 90px);
+    }
+    
+    .scrollable-content {
+      padding-top: 120px;
+    }
+    
     .dashboard-header {
       box-sizing: border-box;
       .header-actions {
@@ -1087,22 +1128,24 @@
       }
     }
     
-    .products-section {
-      .mobile-view {
-        display: block;
-      }
-      
-      .desktop-view {
-        display: none;
-      }
-      
-      // Tablet-spezifische Button-Ausrichtung
-      .card-upload-btn,
-      .card-remove-btn,
-      .card-file-upload-btn,
-      .card-confirm-upload-btn {
-        justify-content: flex-start !important;
-        text-align: left;
+    .scrollable-content {
+      .products-section {
+        .mobile-view {
+          display: block;
+        }
+        
+        .desktop-view {
+          display: none;
+        }
+        
+        // Tablet-spezifische Button-Ausrichtung
+        .card-upload-btn,
+        .card-remove-btn,
+        .card-file-upload-btn,
+        .card-confirm-upload-btn {
+          justify-content: flex-start !important;
+          text-align: left;
+        }
       }
     }
   }
@@ -1976,10 +2019,18 @@
     width: 100%;
     padding: 10px;
     box-sizing: border-box;
+    
+    .scroll-wrapper {
+      height: calc(100vh - 70px);
+    }
+    
+    .scrollable-content {
+      padding-top: 100px; // Reduced space for compact header
+    }
   }
   
   .dashboard-header {
-    padding: 1rem;
+    padding: 12px;
     width: 100%;
     max-width: 100%;
     overflow-x: hidden;
@@ -1988,7 +2039,7 @@
 
   .header-content {
     flex-direction: column;
-    gap: 1rem;
+    gap: 8px;
     align-items: stretch;
     width: 100%;
     max-width: 100%;
@@ -1996,7 +2047,7 @@
 
   .header-actions {
     flex-direction: column;
-    gap: 1rem;
+    gap: 8px;
     align-items: stretch;
     width: 100%;
     max-width: 100%;
@@ -2006,6 +2057,17 @@
     order: 1;
     max-width: none;
     width: 100%;
+    
+    .search-input {
+      padding: 8px 16px 8px 40px;
+      font-size: 13px;
+    }
+    
+    .search-icon {
+      width: 16px;
+      height: 16px;
+      left: 12px;
+    }
   }
 
   .scanner-btn {
@@ -2013,9 +2075,14 @@
     width: 100%;
     max-width: none;
     justify-content: center;
-    padding: 12px 16px;
-    font-size: 14px;
+    padding: 8px 12px;
+    font-size: 13px;
     font-weight: 500;
+    
+    svg {
+      width: 16px;
+      height: 16px;
+    }
   }
 
   .ean-modal-content {
@@ -2062,10 +2129,18 @@
     width: 100%;
     padding: 5px;
     box-sizing: border-box;
+    
+    .scroll-wrapper {
+      height: calc(100vh - 60px);
+    }
+    
+    .scrollable-content {
+      padding-top: 90px; // Even more compact for small screens
+    }
   }
   
   .dashboard-header {
-    padding: 0.75rem;
+    padding: 8px;
     width: 100%;
     max-width: 100%;
     overflow-x: hidden;
@@ -2074,7 +2149,7 @@
 
   .header-content {
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 6px;
     align-items: stretch;
     width: 100%;
     max-width: 100%;
@@ -2082,7 +2157,7 @@
 
   .header-actions {
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 6px;
     align-items: stretch;
     width: 100%;
     max-width: 100%;
@@ -2092,6 +2167,17 @@
     order: 1;
     max-width: none;
     width: 100%;
+    
+    .search-input {
+      padding: 6px 12px 6px 36px;
+      font-size: 12px;
+    }
+    
+    .search-icon {
+      width: 14px;
+      height: 14px;
+      left: 10px;
+    }
   }
 
   .scanner-btn {
@@ -2099,8 +2185,13 @@
     width: 100%;
     max-width: none;
     justify-content: center;
-    padding: 12px 16px;
-    font-size: 14px;
+    padding: 6px 10px;
+    font-size: 12px;
     font-weight: 500;
+    
+    svg {
+      width: 14px;
+      height: 14px;
+    }
   }
 } 
