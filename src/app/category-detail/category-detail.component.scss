@@ -3,7 +3,7 @@
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   padding: 20px;
   font-family: 'Poppins', sans-serif;
-  margin-top: 70px; /* Abstand für den fixierten Header */
+  margin-top: 0; /* Kein Abstand mehr nötig, da Header außerhalb ist */
   // Hardware-Beschleunigung aktivieren
   transform: translateZ(0);
   will-change: scroll-position;
@@ -14,11 +14,21 @@
 }
 
 .dashboard-header {
+  position: fixed !important;
+  top: 70px !important; /* Abstand für den Haupt-Header */
+  left: 20px !important;
+  right: 20px !important;
+  z-index: 1000 !important;
   background: white;
   border-radius: 20px;
   padding: 20px;
   margin-bottom: 30px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  /* Sicherstellen, dass der Header wirklich fixiert bleibt */
+  transform: none !important;
+  will-change: auto !important;
 }
 
 .header-content {
@@ -169,6 +179,7 @@
 
 
 .products-section {
+  margin-top: 180px; /* Abstand für den fixierten Header */
   margin-bottom: 30px;
   // Hardware-Beschleunigung
   transform: translateZ(0);
@@ -577,6 +588,12 @@
     padding: 15px;
   }
   
+  .dashboard-header {
+    left: 15px !important;
+    right: 15px !important;
+    padding: 15px;
+  }
+  
   .header-content {
     flex-direction: column;
     gap: 15px;
@@ -663,6 +680,12 @@
 @media (max-width: 480px) {
   .category-detail-dashboard {
     padding: 10px;
+  }
+  
+  .dashboard-header {
+    left: 10px !important;
+    right: 10px !important;
+    padding: 12px;
   }
   
   .header-content {
