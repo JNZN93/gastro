@@ -641,6 +641,15 @@
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 15px;
   }
+
+  // Toast-Position für Tablet anpassen
+  .toast-notification {
+    top: 250px;
+    right: 15px;
+    left: 15px;
+    max-width: none;
+    min-width: auto;
+  }
   
   .product-card {
     margin-bottom: 0;
@@ -1168,7 +1177,7 @@
 
   // Toast-Position für Mobile anpassen
   .toast-notification {
-    top: 300px;
+    top: 350px;
     right: 10px;
     left: 10px;
     max-width: none;
@@ -1212,7 +1221,7 @@
   }
 
   .toast-notification {
-    top: 5px;
+    top: 400px;
     right: 5px;
     left: 5px;
     border-radius: 8px;
