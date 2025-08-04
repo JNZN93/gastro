@@ -752,7 +752,7 @@
   }
   
   .products-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(1, 1fr);
     gap: 10px;
   }
   
@@ -1168,7 +1168,7 @@
 
   // Toast-Position für Mobile anpassen
   .toast-notification {
-    top: 200px;
+    top: 300px;
     right: 10px;
     left: 10px;
     max-width: none;
