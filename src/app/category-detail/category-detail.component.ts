@@ -46,6 +46,11 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
   isVisible: boolean = true;
   searchTerm: string = '';
   filteredData: any[] = [];
+  
+  // Pagination properties
+  currentPage: number = 1;
+  itemsPerPage: number = 50;
+  paginatedData: any[] = [];
 
   // Performance-Optimierungen
   private scrollTimeout: any;
@@ -235,6 +240,10 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
     
     console.log('📊 [FILTER] filteredData nach updateFilteredData:', this.filteredData.length);
     
+    // Initialize pagination
+    this.currentPage = 1;
+    this.updatePagination();
+    
     // Preload wichtige Bilder für bessere Performance
     this.preloadImages();
   }
@@ -394,22 +403,108 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
   filteredArtikelData(): void {
     if (!this.searchTerm.trim()) {
       this.filteredData = [...this.artikelData];
-      return;
+    } else {
+      const terms = this.searchTerm.toLowerCase().split(/\s+/);
+      this.filteredData = this.artikelData.filter(artikel =>
+        terms.every((term) =>
+          artikel.article_text?.toLowerCase().includes(term) ||
+          artikel.article_number?.toLowerCase().includes(term) ||
+          artikel.ean?.toLowerCase().includes(term)
+        )
+      );
     }
-
-    const terms = this.searchTerm.toLowerCase().split(/\s+/);
-    this.filteredData = this.artikelData.filter(artikel =>
-      terms.every((term) =>
-        artikel.article_text?.toLowerCase().includes(term) ||
-        artikel.article_number?.toLowerCase().includes(term) ||
-        artikel.ean?.toLowerCase().includes(term)
-      )
-    );
+    
+    // Reset to first page when filtering
+    this.currentPage = 1;
+    this.updatePagination();
   }
 
   clearSearch(): void {
     this.searchTerm = '';
     this.filteredData = [...this.artikelData];
+    this.currentPage = 1;
+    this.updatePagination();
+  }
+
+  // Pagination methods
+  get totalPages(): number {
+    return Math.ceil(this.filteredData.length / this.itemsPerPage);
+  }
+
+  updatePagination(): void {
+    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+    const endIndex = startIndex + this.itemsPerPage;
+    this.paginatedData = this.filteredData.slice(startIndex, endIndex);
+  }
+
+  previousPage(): void {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+      this.updatePagination();
+      this.scrollToTop();
+    }
+  }
+
+  nextPage(): void {
+    if (this.currentPage < this.totalPages) {
+      this.currentPage++;
+      this.updatePagination();
+      this.scrollToTop();
+    }
+  }
+
+  goToPage(page: number | string): void {
+    const pageNumber = typeof page === 'string' ? parseInt(page, 10) : page;
+    if (pageNumber >= 1 && pageNumber <= this.totalPages && pageNumber !== this.currentPage) {
+      this.currentPage = pageNumber;
+      this.updatePagination();
+      this.scrollToTop();
+    }
+  }
+
+  getVisiblePages(): (number | string)[] {
+    const totalPages = this.totalPages;
+    const currentPage = this.currentPage;
+    const pages: (number | string)[] = [];
+
+    if (totalPages <= 7) {
+      // Show all pages if total is 7 or less
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      // Always show first page
+      pages.push(1);
+
+      if (currentPage <= 4) {
+        // Show pages 2, 3, 4, 5, ..., last
+        for (let i = 2; i <= 5; i++) {
+          pages.push(i);
+        }
+        if (totalPages > 5) {
+          pages.push('...');
+          pages.push(totalPages);
+        }
+      } else if (currentPage >= totalPages - 3) {
+        // Show first, ..., last-4, last-3, last-2, last-1, last
+        if (totalPages > 5) {
+          pages.push('...');
+        }
+        for (let i = totalPages - 4; i <= totalPages; i++) {
+          pages.push(i);
+        }
+      } else {
+        // Show first, ..., current-1, current, current+1, ..., last
+        pages.push('...');
+        pages.push(currentPage - 1);
+        pages.push(currentPage);
+        pages.push(currentPage + 1);
+        pages.push('...');
+        pages.push(totalPages);
+      }
+    }
+
+    return pages;
   }
 
   goBack(): void {

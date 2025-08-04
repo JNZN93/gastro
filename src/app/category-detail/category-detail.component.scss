@@ -80,6 +80,200 @@
   }
 }
 
+.search-row-3 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding-top: 8px;
+  border-top: 1px solid rgba(226, 232, 240, 0.6);
+  
+  @media (max-width: 768px) {
+    padding-top: 6px;
+  }
+  
+  @media (max-width: 480px) {
+    padding-top: 4px;
+  }
+}
+
+.pagination-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 600px;
+  
+  @media (max-width: 768px) {
+    gap: 6px;
+  }
+  
+  @media (max-width: 480px) {
+    gap: 4px;
+  }
+}
+
+.pagination-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pagination-text {
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 500;
+  
+  @media (max-width: 768px) {
+    font-size: 13px;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 12px;
+  }
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  
+  @media (max-width: 768px) {
+    gap: 6px;
+  }
+  
+  @media (max-width: 480px) {
+    gap: 4px;
+  }
+}
+
+.pagination-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  color: #495057;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 600;
+  
+  &:hover:not(:disabled) {
+    background: #e9ecef;
+    border-color: #dee2e6;
+    transform: translateY(-1px);
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+  
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+  
+  @media (max-width: 768px) {
+    padding: 6px 10px;
+    
+    svg {
+      width: 14px;
+      height: 14px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    padding: 5px 8px;
+    
+    svg {
+      width: 12px;
+      height: 12px;
+    }
+  }
+}
+
+.page-numbers {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  
+  @media (max-width: 480px) {
+    gap: 2px;
+  }
+}
+
+.page-number-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  color: #495057;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  font-size: 14px;
+  
+  &:hover {
+    background: #e9ecef;
+    border-color: #dee2e6;
+    transform: translateY(-1px);
+  }
+  
+  &.active {
+    background: #3b82f6;
+    border-color: #3b82f6;
+    color: white;
+    font-weight: 600;
+  }
+  
+  @media (max-width: 768px) {
+    min-width: 28px;
+    height: 28px;
+    font-size: 13px;
+  }
+  
+  @media (max-width: 480px) {
+    min-width: 24px;
+    height: 24px;
+    font-size: 12px;
+    padding: 0 6px;
+  }
+}
+
+.page-ellipsis {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  color: #64748b;
+  font-weight: 500;
+  font-size: 14px;
+  
+  @media (max-width: 768px) {
+    min-width: 28px;
+    height: 28px;
+    font-size: 13px;
+  }
+  
+  @media (max-width: 480px) {
+    min-width: 24px;
+    height: 24px;
+    font-size: 12px;
+  }
+}
+
 // Removed .search-left as it's no longer needed with the new row structure
 
 .back-btn {
@@ -514,7 +708,7 @@ app-warenkorb .cart-container {
 }
 
 .products-section {
-  margin-top: 0; /* Kein Abstand mehr nötig, da Search Container fixiert ist */
+  margin-top: 100px !important; /* Kein Abstand mehr nötig, da Search Container fixiert ist */
   margin-bottom: 30px;
   // Hardware-Beschleunigung
   transform: translateZ(0);

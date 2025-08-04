@@ -41,6 +41,57 @@
           </svg>
         </button>
       </div>
+
+      <!-- Row 3: Pagination -->
+      @if (totalPages > 1) {
+      <div class="search-row-3">
+        <div class="pagination-container">
+          <div class="pagination-info">
+            <span class="pagination-text">
+              Seite {{ currentPage }} von {{ totalPages }} 
+              ({{ paginatedData.length }} von {{ filteredData.length }} Artikeln)
+            </span>
+          </div>
+          
+          <div class="pagination-controls">
+            <button 
+              (click)="previousPage()" 
+              [disabled]="currentPage <= 1"
+              class="pagination-btn prev-btn"
+              title="Vorherige Seite">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+              </svg>
+            </button>
+            
+            <div class="page-numbers">
+              @for (page of getVisiblePages(); track page) {
+                @if (page === '...') {
+                  <span class="page-ellipsis">...</span>
+                } @else {
+                  <button 
+                    (click)="goToPage(page)"
+                    [class.active]="page === currentPage"
+                    class="page-number-btn">
+                    {{ page }}
+                  </button>
+                }
+              }
+            </div>
+            
+            <button 
+              (click)="nextPage()" 
+              [disabled]="currentPage >= totalPages"
+              class="pagination-btn next-btn"
+              title="Nächste Seite">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+      }
     </div>
   </div>
 
@@ -55,7 +106,7 @@
         </div>
         
         <div class="products-grid">
-          @for (artikel of filteredData; track trackByArticleNumber($index, artikel)) {
+          @for (artikel of paginatedData; track trackByArticleNumber($index, artikel)) {
           <div class="product-card">
             <!-- Product Image -->
             <div class="product-image-container">
