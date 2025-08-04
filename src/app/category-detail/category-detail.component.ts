@@ -97,11 +97,18 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
   ) {}
 
   private scrollToTop(): void {
-    // Multiple methods to ensure scroll to top works
-    this.viewportScroller.scrollToPosition([0, 0]);
-    window.scrollTo(0, 0);
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
+    // Scroll the scrollable-content container to top with 100px margin - instant
+    const scrollableContent = document.querySelector('.scrollable-content') as HTMLElement;
+    if (scrollableContent) {
+      scrollableContent.scrollTop = 100;
+    } else {
+      // Fallback: scroll the entire page if container not found
+      const scrollPosition = 100;
+      this.viewportScroller.scrollToPosition([0, scrollPosition]);
+      window.scrollTo(0, scrollPosition);
+      document.documentElement.scrollTop = scrollPosition;
+      document.body.scrollTop = scrollPosition;
+    }
   }
 
   ngOnInit(): void {
@@ -246,6 +253,9 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
     
     // Preload wichtige Bilder für bessere Performance
     this.preloadImages();
+    
+    // Scroll to top when data is updated
+    this.scrollToTop();
   }
 
   // Neue Methode: Preload wichtige Bilder
@@ -417,6 +427,9 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
     // Reset to first page when filtering
     this.currentPage = 1;
     this.updatePagination();
+    
+    // Scroll to top when searching
+    this.scrollToTop();
   }
 
   clearSearch(): void {
@@ -424,6 +437,9 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
     this.filteredData = [...this.artikelData];
     this.currentPage = 1;
     this.updatePagination();
+    
+    // Scroll to top when clearing search
+    this.scrollToTop();
   }
 
   // Pagination methods

@@ -10,8 +10,8 @@
   transform: translateZ(0);
   will-change: scroll-position;
   
-  // Smooth Scrolling optimieren
-  scroll-behavior: smooth;
+  // Instant scrolling
+  scroll-behavior: auto;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -651,7 +651,7 @@
   
   // iOS-spezifische Optimierungen
   -webkit-overflow-scrolling: touch;
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
   
   // Hardware-Beschleunigung
   transform: translateZ(0);
@@ -676,8 +676,8 @@
   transform: translateZ(0);
   will-change: scroll-position;
   
-  // Smooth Scrolling optimieren
-  scroll-behavior: smooth;
+  // Instant scrolling
+  scroll-behavior: auto;
   -webkit-overflow-scrolling: touch;
   
   @media (max-width: 768px) {
@@ -717,8 +717,8 @@ app-warenkorb .cart-container {
   // Optimierte Container
   contain: layout style paint;
   
-  // Smooth Scrolling
-  scroll-behavior: smooth;
+  // Instant scrolling
+  scroll-behavior: auto;
   -webkit-overflow-scrolling: touch;
   
   @media (max-width: 768px) {
