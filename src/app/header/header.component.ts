@@ -70,7 +70,7 @@ export class HeaderComponent {
   // Login Modal Methods
   openLoginModal() {
     this.showLoginModal = true;
-    document.body.style.overflow = 'hidden';
+    document.body.style.overflowY = 'hidden';
   }
 
   closeLoginModal() {
@@ -79,7 +79,7 @@ export class HeaderComponent {
     this.errorMessage = null;
     this.loginForm.reset();
     this.registerForm.reset();
-    document.body.style.overflow = 'auto';
+    document.body.style.overflowY = 'auto';
   }
 
   toggleMode() {
@@ -222,15 +222,15 @@ export class HeaderComponent {
   toggleSideModal() {
     this.showSideModal = !this.showSideModal;
     if (this.showSideModal) {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflowY = 'hidden';
     } else {
-      document.body.style.overflow = 'auto';
+      document.body.style.overflowY = 'auto';
     }
   }
 
   closeSideModal() {
     this.showSideModal = false;
-    document.body.style.overflow = 'auto';
+    document.body.style.overflowY = 'auto';
   }
 
   navigateToHome() {
