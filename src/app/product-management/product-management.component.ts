@@ -1,14 +1,15 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, ViewChild, inject, HostListener, OnDestroy } from '@angular/core';
+import { Component, OnInit, ViewChild, inject, HostListener, OnDestroy, AfterViewInit } from '@angular/core';
 import { ArtikelDataService } from '../artikel-data.service';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../authentication.service';
-import { Router, RouterModule } from '@angular/router';
+import { Router, RouterModule, NavigationEnd } from '@angular/router';
 import { GlobalService } from '../global.service';
 import { UploadLoadingComponent } from '../upload-loading/upload-loading.component';
 import { ZXingScannerComponent, ZXingScannerModule } from '@zxing/ngx-scanner';
 import { BarcodeFormat } from '@zxing/browser';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { filter } from 'rxjs/operators';
 
 @Component({
   selector: 'app-product-management',
@@ -16,7 +17,7 @@ import { HttpClient, HttpClientModule } from '@angular/common/http';
   templateUrl: './product-management.component.html',
   styleUrl: './product-management.component.scss',
 })
-export class ProductManagementComponent implements OnInit, OnDestroy {
+export class ProductManagementComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild(ZXingScannerComponent) scanner!: ZXingScannerComponent;
   @ViewChild('eanScanner') eanScanner!: ZXingScannerComponent;
   private artikelService = inject(ArtikelDataService);
@@ -79,7 +80,17 @@ export class ProductManagementComponent implements OnInit, OnDestroy {
     private router: Router,
     private authService: AuthService,
     public globalService: GlobalService
-  ) {}
+  ) {
+    // Listen to navigation events to scroll to top when entering this component
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd)
+    ).subscribe(() => {
+      // Small delay to ensure component is fully loaded
+      setTimeout(() => {
+        this.scrollToTop();
+      }, 100);
+    });
+  }
 
   ngOnInit(): void {
     const token = localStorage.getItem('token');
@@ -110,6 +121,18 @@ export class ProductManagementComponent implements OnInit, OnDestroy {
       console.log('Kein Token gefunden.');
       this.router.navigate(['/login']);
     }
+  }
+
+  ngAfterViewInit(): void {
+    // Scroll to top without animation when component loads
+    this.scrollToTop();
+  }
+
+  private scrollToTop(): void {
+    // Multiple approaches to ensure scroll to top works
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
   }
 
   ngOnDestroy(): void {
@@ -365,6 +388,11 @@ export class ProductManagementComponent implements OnInit, OnDestroy {
         this.products = data;
         this.filteredProducts = [...this.products];
         this.isVisible = false; // Verstecke Loading-Screen nach erfolgreichem Laden
+        
+        // Scroll to top after products are loaded
+        setTimeout(() => {
+          this.scrollToTop();
+        }, 50);
         
         // Search for product if specified
         if (this.productToSearchFor) {
