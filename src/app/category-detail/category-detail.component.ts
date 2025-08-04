@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { CommonModule, ViewportScroller } from '@angular/common';
 import { Component, OnInit, inject, ViewChild, OnDestroy, HostListener, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ArtikelDataService } from '../artikel-data.service';
@@ -38,6 +38,7 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
+  private viewportScroller = inject(ViewportScroller);
   
   categoryName: string = '';
   artikelData: any[] = [];
@@ -90,7 +91,18 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
     public globalService: GlobalService
   ) {}
 
+  private scrollToTop(): void {
+    // Multiple methods to ensure scroll to top works
+    this.viewportScroller.scrollToPosition([0, 0]);
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }
+
   ngOnInit(): void {
+    // Scroll to top immediately when component initializes
+    this.scrollToTop();
+    
     // Kategorie-Name aus der URL holen
     this.route.params.subscribe(params => {
       this.categoryName = decodeURIComponent(params['categoryName']);
@@ -129,6 +141,9 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
             // Produkte der spezifischen Kategorie filtern
             this.filterCategoryProducts();
             this.isVisible = false;
+            
+            // Scroll to top after data is loaded
+            setTimeout(() => this.scrollToTop(), 100);
           });
         },
         error: (error) => {
@@ -152,6 +167,9 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
       // Produkte der spezifischen Kategorie filtern
       this.filterCategoryProducts();
       this.isVisible = false;
+      
+      // Scroll to top after data is loaded
+      setTimeout(() => this.scrollToTop(), 100);
     });
   }
 
