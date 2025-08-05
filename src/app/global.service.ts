@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { AuthService } from './authentication.service';
+import { ToggleCartService } from './toggle-cart.service';
 
 @Injectable({
   providedIn: 'root'
@@ -21,7 +22,7 @@ export class GlobalService {
   // Global verfügbares Array für PFAND-Artikel (statisch, wird nur einmal geladen)
   public pfandArtikels: any[] = [];
 
-  constructor(private authService: AuthService) { 
+  constructor(private authService: AuthService, private toggleService: ToggleCartService) { 
     // Beim Start der Anwendung Token-Validierung durchführen
     this.validateTokenOnStart();
   }
@@ -195,7 +196,6 @@ export class GlobalService {
   public isWarenkorbVisible: boolean = false;
 
   toggleWarenkorb(): void {
-    this.isWarenkorbVisible = !this.isWarenkorbVisible;
-    console.log('🔄 [GLOBAL-WARENKORB] Warenkorb visibility toggled:', this.isWarenkorbVisible);
+    this.toggleService.toggle(); // Use the same service as header
   }
 }

@@ -7,10 +7,11 @@ import { AuthService } from '../authentication.service';
 import { MatDialog } from '@angular/material/dialog';
 import { MyDialogComponent } from '../my-dialog/my-dialog.component';
 import { CommonModule } from '@angular/common';
+import { WarenkorbComponent } from '../warenkorb/warenkorb.component';
 
 @Component({
   selector: 'app-header',
-  imports: [RouterModule, FormsModule, ReactiveFormsModule, CommonModule],
+  imports: [RouterModule, FormsModule, ReactiveFormsModule, CommonModule, WarenkorbComponent],
   templateUrl: './header.component.html',
   styleUrl: './header.component.scss'
 })
