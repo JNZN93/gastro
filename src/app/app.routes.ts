@@ -16,6 +16,7 @@ import { CustomerOrdersComponent } from './customer-orders/customer-orders.compo
 import { OrderOverviewComponent } from './order-overview/order-overview.component';
 import { UserManagementComponent } from './user-management/user-management.component';
 import { CategoryDetailComponent } from './category-detail/category-detail.component';
+import { RoutePlanningComponent } from './route-planning/route-planning.component';
 import { AuthGuard } from './auth.guard';
 import { AdminAuthGuard } from './admin-auth.guard';
 
@@ -42,5 +43,6 @@ export const routes: Routes = [
     { path: 'customer-orders', component: CustomerOrdersComponent, canActivate: [AdminAuthGuard] },
     { path: 'order-overview', component: OrderOverviewComponent, canActivate: [AuthGuard] },
     { path: 'user-management', component: UserManagementComponent },
+    { path: 'route-planning', component: RoutePlanningComponent, canActivate: [AuthGuard] },
     { path: 'category/:categoryName', component: CategoryDetailComponent }
 ];
