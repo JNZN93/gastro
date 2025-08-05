@@ -163,8 +163,9 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
       this.map = null;
     }
 
-    // Map initialisieren
-    this.map = L.map('route-map').setView(this.START_LOCATION, 10);
+    // Map initialisieren (Koordinaten umkehren: [lng, lat] -> [lat, lng])
+    const initialCoords: [number, number] = [this.START_LOCATION[1], this.START_LOCATION[0]];
+    this.map = L.map('route-map').setView(initialCoords, 10);
 
     // OpenStreetMap Tiles hinzufügen
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -186,8 +187,9 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
       iconAnchor: [20, 60]
     });
 
-    // Startpunkt markieren
-    const startMarker = L.marker(this.START_LOCATION, { icon: startIcon })
+    // Startpunkt markieren (Koordinaten umkehren: [lng, lat] -> [lat, lng])
+    const startCoords: [number, number] = [this.START_LOCATION[1], this.START_LOCATION[0]];
+    const startMarker = L.marker(startCoords, { icon: startIcon })
       .addTo(this.map)
       .bindPopup(`
         <div class="popup-content">
@@ -197,12 +199,13 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
         </div>
       `);
 
-    // Kundenstandorte markieren
+    // Kundenstandorte markieren (Koordinaten umkehren: [lng, lat] -> [lat, lng])
     const customerMarkers: any[] = [];
     this.optimalOrder.forEach((stop, index) => {
       const waypoint = this.waypoints.find(wp => wp.customerId === stop.customer.id);
       if (waypoint) {
-        const marker = L.marker(waypoint.location, { icon: customerIcon(index + 1, stop.name) })
+        const customerCoords: [number, number] = [waypoint.location[1], waypoint.location[0]];
+        const marker = L.marker(customerCoords, { icon: customerIcon(index + 1, stop.name) })
           .addTo(this.map)
           .bindPopup(`
             <div class="popup-content">
@@ -218,11 +221,12 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
       }
     });
 
-    // Route-Linie zeichnen (falls verfügbar)
+    // Route-Linie zeichnen (falls verfügbar) - Koordinaten umkehren: [lng, lat] -> [lat, lng]
     if (this.routeData && this.routeData.routes && this.routeData.routes[0].geometry) {
       const routeGeometry = this.routeData.routes[0].geometry;
       if (routeGeometry.coordinates) {
-        const routeLine = L.polyline(routeGeometry.coordinates, {
+        const routeCoords = routeGeometry.coordinates.map((coord: [number, number]) => [coord[1], coord[0]]);
+        const routeLine = L.polyline(routeCoords, {
           color: '#667eea',
           weight: 6,
           opacity: 0.9,
@@ -237,8 +241,8 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
         }).setContent('🚗 Optimale Route');
 
         // Label in der Mitte der Route platzieren
-        const midPoint = Math.floor(routeGeometry.coordinates.length / 2);
-        if (routeGeometry.coordinates[midPoint]) {
+        const midPoint = Math.floor(routeCoords.length / 2);
+        if (routeCoords[midPoint]) {
           routeLine.bindTooltip(routeLabel).openTooltip();
         }
       }
@@ -252,7 +256,12 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
 
     // Map auf alle Marker zoomen
     const group = new L.featureGroup([startMarker, ...customerMarkers]);
-    this.map.fitBounds(group.getBounds().pad(0.1));
+    if (group.getBounds().isValid()) {
+      this.map.fitBounds(group.getBounds().pad(0.1));
+    } else {
+      // Fallback: Auf Startpunkt zoomen wenn keine gültigen Bounds
+      this.map.setView(initialCoords, 12);
+    }
 
     // Legende hinzufügen
     this.addLegend();
@@ -264,7 +273,7 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
     const coordinates = this.routeData.routes[0].geometry.coordinates;
     if (coordinates.length < 2) return;
 
-    // Pfeile alle 5 Koordinaten hinzufügen
+    // Pfeile alle 5 Koordinaten hinzufügen (Koordinaten umkehren: [lng, lat] -> [lat, lng])
     for (let i = 5; i < coordinates.length - 5; i += 5) {
       const current = coordinates[i];
       const next = coordinates[i + 1];
@@ -279,7 +288,9 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
           iconAnchor: [10, 10]
         });
 
-        L.marker(current, { icon: arrowIcon })
+        // Koordinaten umkehren: [lng, lat] -> [lat, lng]
+        const arrowCoords: [number, number] = [current[1], current[0]];
+        L.marker(arrowCoords, { icon: arrowIcon })
           .addTo(this.map)
           .setRotationAngle(angle);
       }
@@ -291,19 +302,19 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
 
     const connectionPoints: [number, number][] = [];
     
-    // Startpunkt hinzufügen
-    connectionPoints.push(this.START_LOCATION);
+    // Startpunkt hinzufügen (Koordinaten umkehren: [lng, lat] -> [lat, lng])
+    connectionPoints.push([this.START_LOCATION[1], this.START_LOCATION[0]]);
     
-    // Kundenstandorte in Reihenfolge hinzufügen
+    // Kundenstandorte in Reihenfolge hinzufügen (Koordinaten umkehren: [lng, lat] -> [lat, lng])
     this.optimalOrder.forEach(stop => {
       const waypoint = this.waypoints.find(wp => wp.customerId === stop.customer.id);
       if (waypoint) {
-        connectionPoints.push(waypoint.location);
+        connectionPoints.push([waypoint.location[1], waypoint.location[0]]);
       }
     });
     
-    // Zurück zum Startpunkt
-    connectionPoints.push(this.START_LOCATION);
+    // Zurück zum Startpunkt (Koordinaten umkehren: [lng, lat] -> [lat, lng])
+    connectionPoints.push([this.START_LOCATION[1], this.START_LOCATION[0]]);
 
     // Verbindungslinien zeichnen
     for (let i = 0; i < connectionPoints.length - 1; i++) {
@@ -448,8 +459,8 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
   }
 
   async calculateRoute() {
-    if (this.selectedCustomers.length < 2) {
-      alert('Bitte wählen Sie mindestens 2 Kunden aus.');
+    if (this.selectedCustomers.length < 1) {
+      alert('Bitte wählen Sie mindestens 1 Kunden aus.');
       return;
     }
 
@@ -477,16 +488,21 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
 
       this.waypoints = waypoints;
 
-      if (waypoints.length < 2) {
-        alert('Konnte nicht genügend Adressen geocodieren. Bitte überprüfen Sie die Adressen der ausgewählten Kunden.');
+      if (waypoints.length < 1) {
+        alert('Konnte keine Adressen geocodieren. Bitte überprüfen Sie die Adressen der ausgewählten Kunden.');
         this.isLoading = false;
         return;
       }
 
       console.log(`Route berechnen für ${waypoints.length} Wegpunkte:`, waypoints);
 
-      // Route berechnen
-      const route = await this.calculateOptimalRoute(waypoints);
+      // Route berechnen - bei nur einem Kunden normale Directions API verwenden
+      let route;
+      if (waypoints.length === 1) {
+        route = await this.calculateSingleCustomerRoute(waypoints[0]);
+      } else {
+        route = await this.calculateOptimalRoute(waypoints);
+      }
       
       if (route) {
         console.log('Route erfolgreich berechnet:', route);
@@ -519,6 +535,41 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
     }
     
     return null;
+  }
+
+  private async calculateSingleCustomerRoute(waypoint: RouteWaypoint): Promise<any> {
+    // Normale Directions API für einen einzelnen Kunden verwenden
+    const coordinates = `${this.START_LOCATION[0]},${this.START_LOCATION[1]};${waypoint.location[0]},${waypoint.location[1]};${this.START_LOCATION[0]},${this.START_LOCATION[1]}`;
+    
+    try {
+      const response = await fetch(`${this.OPENROUTE_API_URL}?api_key=${this.OPENROUTE_API_KEY}&coordinates=${coordinates}&format=geojson&instructions=true&preference=fastest&units=km`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      // Daten in das gleiche Format wie die Optimization API konvertieren
+      const route = data.features[0];
+      console.log('Directions API Response:', route.properties.summary);
+      return {
+        routes: [{
+          distance: route.properties.summary.distance / 1000, // Konvertiere Meter zu Kilometer
+          duration: route.properties.summary.duration,
+          geometry: route.geometry,
+          steps: route.properties.segments.map((segment: any, index: number) => ({
+            distance: segment.distance / 1000, // Konvertiere Meter zu Kilometer
+            duration: segment.duration,
+            location: index === 0 ? this.START_LOCATION : waypoint.location
+          }))
+        }]
+      };
+      
+    } catch (error) {
+      console.error('Fehler bei der Einzelkunden-Routenberechnung:', error);
+      throw error;
+    }
   }
 
   private async calculateOptimalRoute(waypoints: RouteWaypoint[]): Promise<any> {
@@ -599,6 +650,31 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
         return customer !== null;
       });
 
+      // Bei nur einem Kunden: Start -> Kunde -> Start
+      if (this.selectedCustomers.length === 1) {
+        const customer = this.selectedCustomers[0];
+        const [hours, minutes] = this.startTime.split(':').map(Number);
+        const startTime = new Date();
+        startTime.setHours(hours, minutes, 0, 0);
+        let currentTime = new Date(startTime.getTime());
+
+        // Fahrzeit zum Kunden
+        const travelTime = steps[0]?.duration || 0;
+        currentTime = new Date(currentTime.getTime() + travelTime * 1000);
+
+        this.optimalOrder = [{
+          position: 1,
+          customer: customer,
+          name: customer.last_name_company || customer.name,
+          customerNumber: customer.customer_number,
+          address: `${customer.street || customer.address}, ${customer.postal_code} ${customer.city}`,
+          arrivalTime: new Date(currentTime.getTime()),
+          travelTime: travelTime,
+          stayDuration: 15
+        }];
+        return;
+      }
+
       // Startzeit aus der Eingabe verwenden
       const [hours, minutes] = this.startTime.split(':').map(Number);
       const startTime = new Date();
@@ -678,7 +754,7 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
   }
 
   formatDistance(kilometers: number): string {
-    return `${kilometers.toFixed(1)} km`;
+    return `${(kilometers / 1000).toFixed(1)} km`;
   }
 
   formatTime(date: Date): string {
