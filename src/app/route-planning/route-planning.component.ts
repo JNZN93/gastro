@@ -429,23 +429,27 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
       this.filteredCustomers = [...this.customers];
     } else {
       const searchTermLower = this.searchTerm.toLowerCase();
-      this.filteredCustomers = this.customers.filter(customer =>
-        customer.name.toLowerCase().includes(searchTermLower) ||
-        customer.address.toLowerCase().includes(searchTermLower) ||
-        customer.city.toLowerCase().includes(searchTermLower) ||
-        customer.postal_code.toLowerCase().includes(searchTermLower) ||
-        (customer.country && customer.country.toLowerCase().includes(searchTermLower)) ||
-        // Zusätzliche Suchfelder
-        (customer.last_name_company && customer.last_name_company.toLowerCase().includes(searchTermLower)) ||
-        (customer.name_addition && customer.name_addition.toLowerCase().includes(searchTermLower)) ||
-        (customer.street && customer.street.toLowerCase().includes(searchTermLower)) ||
-        (customer.email && customer.email.toLowerCase().includes(searchTermLower)) ||
-        (customer.phone && customer.phone.toLowerCase().includes(searchTermLower)) ||
-        (customer.customer_number && customer.customer_number.toLowerCase().includes(searchTermLower)) ||
-        // Suche auch nach Teilen des Namens (z.B. "Müller" findet "Müller GmbH")
-        customer.name.toLowerCase().split(' ').some(part => part.includes(searchTermLower)) ||
-        (customer.last_name_company && customer.last_name_company.toLowerCase().split(' ').some(part => part.includes(searchTermLower)))
-      );
+      
+      this.filteredCustomers = this.customers.filter(customer => {
+        const matches = 
+          (customer.name && customer.name.toLowerCase().includes(searchTermLower)) ||
+          (customer.address && customer.address.toLowerCase().includes(searchTermLower)) ||
+          (customer.city && customer.city.toLowerCase().includes(searchTermLower)) ||
+          (customer.postal_code && customer.postal_code.toLowerCase().includes(searchTermLower)) ||
+          (customer.country && customer.country.toLowerCase().includes(searchTermLower)) ||
+          // Zusätzliche Suchfelder
+          (customer.last_name_company && customer.last_name_company.toLowerCase().includes(searchTermLower)) ||
+          (customer.name_addition && customer.name_addition.toLowerCase().includes(searchTermLower)) ||
+          (customer.street && customer.street.toLowerCase().includes(searchTermLower)) ||
+          (customer.email && customer.email.toLowerCase().includes(searchTermLower)) ||
+          (customer.phone && customer.phone.toLowerCase().includes(searchTermLower)) ||
+          (customer.customer_number && customer.customer_number.toLowerCase().includes(searchTermLower)) ||
+          // Suche auch nach Teilen des Namens (z.B. "Müller" findet "Müller GmbH")
+          (customer.name && customer.name.toLowerCase().split(' ').some(part => part.includes(searchTermLower))) ||
+          (customer.last_name_company && customer.last_name_company.toLowerCase().split(' ').some(part => part.includes(searchTermLower)));
+        
+        return matches;
+      });
     }
   }
 

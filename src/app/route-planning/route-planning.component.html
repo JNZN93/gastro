@@ -40,7 +40,7 @@
             type="text" 
             placeholder="Kunden durchsuchen..." 
             [(ngModel)]="searchTerm"
-            (input)="filterCustomers()"
+            (ngModelChange)="filterCustomers()"
             class="search-input"
           >
         </div>
