@@ -940,4 +940,15 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
     // Cleanup: Body scroll wiederherstellen falls Modal noch offen ist
     this.restoreBodyScroll();
   }
+
+  // ===== WARENKORB BADGE METHODS =====
+  
+  toggleWarenkorb(): void {
+    // Toggle the warenkorb visibility using the global service
+    this.globalService.toggleWarenkorb();
+  }
+
+  getWarenkorbItemCount(): number {
+    return this.globalService.warenkorb.reduce((total, item) => total + parseInt(item.quantity || 1), 0);
+  }
 }

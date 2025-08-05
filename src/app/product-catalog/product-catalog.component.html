@@ -62,6 +62,18 @@
     </div>
   </div>
 
+  <!-- Floating Warenkorb Badge - nur für angemeldete Benutzer -->
+  @if(globalService.isUserLoggedIn) {
+  <div class="floating-warenkorb-badge" (click)="toggleWarenkorb()">
+    <div class="badge-icon">
+      <img src="shoppingcart.png" alt="Warenkorb">
+    </div>
+    @if (getWarenkorbItemCount() > 0) {
+      <div class="badge-count">{{ getWarenkorbItemCount() }}</div>
+    }
+  </div>
+  }
+
   <!-- Categories Section - nur anzeigen wenn nicht gesucht wird -->
   <div class="categories-section" *ngIf="!isSearching">
     <div class="section-header">

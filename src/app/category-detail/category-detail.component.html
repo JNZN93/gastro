@@ -88,6 +88,18 @@
     </div>
   </div>
 
+  <!-- Floating Warenkorb Badge -->
+  @if(globalService.isUserLoggedIn) {
+  <div class="floating-warenkorb-badge" (click)="toggleWarenkorb()">
+    <div class="badge-icon">
+      <img src="shoppingcart.png" alt="Warenkorb">
+    </div>
+    @if (getWarenkorbItemCount() > 0) {
+      <div class="badge-count">{{ getWarenkorbItemCount() }}</div>
+    }
+  </div>
+  }
+
   <!-- Scrollable Content -->
   <div class="scrollable-content">
     <div class="category-detail-dashboard">

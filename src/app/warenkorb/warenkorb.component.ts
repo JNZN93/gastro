@@ -33,11 +33,22 @@ export class WarenkorbComponent implements OnInit {
       this.isVisible = state;
     });
 
+    // Subscribe to global service warenkorb visibility
+    // This allows the floating badge to control the warenkorb visibility
+    this.globalService.isWarenkorbVisible = false;
+
   }
 
   ngOnInit(): void {
     // Berechne den Gesamtpreis beim Initialisieren
     this.getTotalPrice();
+    
+    // Watch for changes in global service warenkorb visibility
+    setInterval(() => {
+      if (this.globalService.isWarenkorbVisible !== this.isVisible) {
+        this.isVisible = this.globalService.isWarenkorbVisible;
+      }
+    }, 100);
   }
 
   toggleDelivery(fulfillment_type:string) {
@@ -181,6 +192,8 @@ export class WarenkorbComponent implements OnInit {
 
   closeWarenkorb(){
     this.toggleService.toggle();
+    // Also reset the global service visibility
+    this.globalService.isWarenkorbVisible = false;
   }
 
   showOrderCompletedDialog(): void {

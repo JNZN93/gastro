@@ -190,4 +190,12 @@ export class GlobalService {
   hasPfandArtikels(): boolean {
     return this.pfandArtikels.length > 0;
   }
+
+  // ===== WARENKORB METHODS =====
+  public isWarenkorbVisible: boolean = false;
+
+  toggleWarenkorb(): void {
+    this.isWarenkorbVisible = !this.isWarenkorbVisible;
+    console.log('🔄 [GLOBAL-WARENKORB] Warenkorb visibility toggled:', this.isWarenkorbVisible);
+  }
 }
