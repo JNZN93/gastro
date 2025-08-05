@@ -663,7 +663,7 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
       jobs: jobs,
       vehicles: [{
         id: 1,
-        profile: 'driving-car',
+        profile: 'driving-car', // Standard-Profil ohne Verkehrsdaten
         start: this.START_LOCATION,
         end: this.START_LOCATION,
         time_window: [0, 86400] // Ganzer Tag verfügbar
@@ -887,6 +887,69 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
     a.download = `route_${new Date().toISOString().split('T')[0]}.json`;
     a.click();
     window.URL.revokeObjectURL(url);
+  }
+
+  generateShareLink(): string {
+    if (!this.routeData || !this.optimalOrder.length) {
+      return '';
+    }
+
+    // Google Maps URL mit allen Stopps erstellen
+    // Jeder Stopp wird als separater Wegpunkt hinzugefügt
+    const waypoints = this.optimalOrder.map(stop => 
+      encodeURIComponent(stop.address)
+    ).join('/');
+
+    const startLocation = encodeURIComponent('Im Winkel 6, 67547 Worms');
+    const endLocation = encodeURIComponent('Im Winkel 6, 67547 Worms');
+
+    // Google Maps Share-URL - jeder Stopp als separater Wegpunkt
+    const googleMapsUrl = `https://www.google.com/maps/dir/${startLocation}/${waypoints}/${endLocation}`;
+    
+    return googleMapsUrl;
+  }
+
+  async copyShareLink(): Promise<void> {
+    const shareUrl = this.generateShareLink();
+    
+    if (!shareUrl) {
+      alert('Keine Route verfügbar zum Teilen.');
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      alert('Google Maps Link wurde in die Zwischenablage kopiert!');
+    } catch (err) {
+      // Fallback für ältere Browser
+      const textArea = document.createElement('textarea');
+      textArea.value = shareUrl;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      alert('Google Maps Link wurde in die Zwischenablage kopiert!');
+    }
+  }
+
+  openInGoogleMaps(): void {
+    if (!this.optimalOrder.length) {
+      alert('Keine Route verfügbar.');
+      return;
+    }
+
+    // Google Maps URL mit allen Stopps erstellen
+    // Jeder Stopp wird als separater Wegpunkt hinzugefügt
+    const waypoints = this.optimalOrder.map(stop => 
+      encodeURIComponent(stop.address)
+    ).join('/');
+
+    const startLocation = encodeURIComponent('Im Winkel 6, 67547 Worms');
+    const endLocation = encodeURIComponent('Im Winkel 6, 67547 Worms');
+
+    const googleMapsUrl = `https://www.google.com/maps/dir/${startLocation}/${waypoints}/${endLocation}`;
+    
+    window.open(googleMapsUrl, '_blank');
   }
 
   goBack() {

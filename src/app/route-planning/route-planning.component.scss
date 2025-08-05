@@ -426,15 +426,19 @@
 .btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   padding: 12px 20px;
   border: none;
   border-radius: 8px;
-  font-size: 1rem;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
   text-decoration: none;
+  min-width: 140px;
+  height: 44px;
+  white-space: nowrap;
 
   &.btn-primary {
     background: #667eea;
@@ -726,9 +730,16 @@
 
   .button-group {
     display: flex;
-    gap: 15px;
+    gap: 12px;
     justify-content: center;
     flex-wrap: wrap;
+    align-items: center;
+
+    .btn {
+      flex: 1;
+      max-width: 180px;
+      min-width: 140px;
+    }
   }
 }
 
@@ -1127,12 +1138,27 @@
   width: 100px;
 }
 
-.modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  padding: 20px 24px;
-  border-top: 1px solid #eee;
-  background: #fafafa;
-  border-radius: 0 0 12px 12px;
-} 
+  .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 20px 24px;
+    border-top: 1px solid #eee;
+    background: #fafafa;
+    border-radius: 0 0 12px 12px;
+  }
+
+  // Share Button Styles
+  .btn-success {
+    background: #28a745 !important;
+    color: white !important;
+
+    &:hover {
+      background: #218838 !important;
+      transform: translateY(-1px);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+  } 
