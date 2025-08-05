@@ -297,6 +297,11 @@
                 <div class="step-number start">S</div>
                 <div class="step-content">
                   <p class="step-instruction"><strong>Startpunkt:</strong> Im Winkel 6, 67547 Worms</p>
+                  <div class="step-timing">
+                    <span class="start-time">
+                      <strong>Startzeit:</strong> {{ startTime }}
+                    </span>
+                  </div>
                 </div>
               </div>
               @for (stop of optimalOrder; track stop.position) {
@@ -319,11 +324,12 @@
                           <strong>Fahrt:</strong> {{ formatDuration(stop.travelTime) }}
                         </span>
                       }
-                      @if (stop.stayDuration > 0) {
-                        <span class="stay-time">
-                          <strong>Aufenthalt:</strong> {{ stop.stayDuration }} min
-                        </span>
-                      }
+                      <span class="stay-time">
+                        <strong>Aufenthalt:</strong> {{ stop.stayDuration }} min
+                      </span>
+                      <span class="departure-time">
+                        <strong>Abfahrt:</strong> {{ formatTime(stop.departureTime) }}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -332,6 +338,13 @@
                 <div class="step-number end">E</div>
                 <div class="step-content">
                   <p class="step-instruction"><strong>Endpunkt:</strong> Im Winkel 6, 67547 Worms</p>
+                  @if (endTime) {
+                    <div class="step-timing">
+                      <span class="end-time">
+                        <strong>Endzeit:</strong> {{ formatTime(endTime) }}
+                      </span>
+                    </div>
+                  }
                 </div>
               </div>
             </div>

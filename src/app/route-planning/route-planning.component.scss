@@ -635,6 +635,11 @@
         gap: 12px;
         font-size: 0.8rem;
 
+        .start-time {
+          color: #6f42c1;
+          font-weight: 500;
+        }
+
         .arrival-time {
           color: #28a745;
           font-weight: 500;
@@ -647,6 +652,16 @@
 
         .stay-time {
           color: #ffc107;
+          font-weight: 500;
+        }
+
+        .departure-time {
+          color: #fd7e14;
+          font-weight: 500;
+        }
+
+        .end-time {
+          color: #dc3545;
           font-weight: 500;
         }
       }

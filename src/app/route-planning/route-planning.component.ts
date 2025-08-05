@@ -69,6 +69,7 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
   showMap: boolean = false;
   map: any = null;
   startTime: string = '';
+  endTime: Date | null = null;
   
   // Neue Eigenschaften für das Modal
   showConstraintsModal: boolean = false;
@@ -849,16 +850,29 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
         const travelTime = steps[0]?.duration || 0;
         currentTime = new Date(currentTime.getTime() + travelTime * 1000);
 
+        const arrivalTime = new Date(currentTime.getTime());
+        const departureTime = new Date(arrivalTime.getTime() + 15 * 60 * 1000); // 15 Minuten Aufenthalt
+
         this.optimalOrder = [{
           position: 1,
           customer: customer,
           name: customer.last_name_company || customer.name,
           customerNumber: customer.customer_number,
           address: `${customer.street || customer.address}, ${customer.postal_code} ${customer.city}`,
-          arrivalTime: new Date(currentTime.getTime()),
+          arrivalTime: arrivalTime,
+          departureTime: departureTime,
           travelTime: travelTime,
           stayDuration: 15
         }];
+
+        // Endzeit für einen Kunden berechnen: Aufenthalt + Rückfahrt
+        const stayDuration = 15 * 60 * 1000; // 15 Minuten in Millisekunden
+        currentTime = new Date(currentTime.getTime() + stayDuration);
+        
+        // Fahrzeit zurück zum Startpunkt (angenommen gleich der Hinreise)
+        const returnTravelTime = travelTime;
+        this.endTime = new Date(currentTime.getTime() + returnTravelTime * 1000);
+        
         return;
       }
 
@@ -872,18 +886,29 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
         const customer = this.getCustomerByLocation(step.location);
         
         // Fahrzeit zum aktuellen Stopp hinzufügen
-        if (index > 0) {
-          const previousStep = customerSteps[index - 1];
-          const travelTime = previousStep.duration || 0; // Sekunden
+        // Für den ersten Kunden: Fahrzeit vom Startpunkt
+        // Für weitere Kunden: Fahrzeit vom vorherigen Kunden
+        if (index === 0) {
+          // Fahrzeit vom Startpunkt zum ersten Kunden
+          const travelTime = step.duration || 0; // Sekunden
+          currentTime = new Date(currentTime.getTime() + travelTime * 1000);
+        } else {
+          // Fahrzeit vom vorherigen Kunden zum aktuellen Kunden
+          // Wir verwenden die Dauer des aktuellen Schritts, da diese die Fahrzeit
+          // vom vorherigen Standort zum aktuellen Standort enthält
+          const travelTime = step.duration || 0; // Sekunden
           currentTime = new Date(currentTime.getTime() + travelTime * 1000);
         }
 
         // Geschätzte Ankunftszeit
         const arrivalTime = new Date(currentTime.getTime());
         
-        // 15 Minuten Aufenthalt pro Kunde (außer beim ersten)
-        const stayDuration = index === 0 ? 0 : 15 * 60 * 1000; // 15 Minuten in Millisekunden
+        // 15 Minuten Aufenthalt pro Kunde (auch beim ersten)
+        const stayDuration = 15 * 60 * 1000; // 15 Minuten in Millisekunden
         currentTime = new Date(currentTime.getTime() + stayDuration);
+
+        // Abfahrtszeit berechnen (Ankunft + Aufenthaltsdauer)
+        const departureTime = new Date(arrivalTime.getTime() + 15 * 60 * 1000);
 
         return {
           position: index + 1,
@@ -892,10 +917,18 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
           customerNumber: customer?.customer_number,
           address: customer ? `${customer.street || customer.address}, ${customer.postal_code} ${customer.city}` : 'Unbekannte Adresse',
           arrivalTime: arrivalTime,
+          departureTime: departureTime,
           travelTime: step.duration || 0,
-          stayDuration: index === 0 ? 0 : 15
+          stayDuration: 15
         };
       });
+
+      // Endzeit berechnen: Fahrzeit vom letzten Kunden zurück zum Startpunkt
+      if (customerSteps.length > 0) {
+        const lastStep = customerSteps[customerSteps.length - 1];
+        const returnTravelTime = lastStep.duration || 0; // Sekunden
+        this.endTime = new Date(currentTime.getTime() + returnTravelTime * 1000);
+      }
     }
   }
 
