@@ -2019,6 +2019,8 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
             quantity: originalQuantity
           });
           console.log('✅ [PFAND-ADD] PFAND-Artikel automatisch hinzugefügt:', matchingPfand.article_text, 'Menge:', originalQuantity);
+        } else {
+          console.warn('⚠️ [PFAND-ADD] PFAND-Artikel nicht gefunden für custom_field_1:', artikel.custom_field_1);
         }
       }
       
