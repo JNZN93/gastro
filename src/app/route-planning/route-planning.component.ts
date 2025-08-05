@@ -428,29 +428,78 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
     if (!this.searchTerm.trim()) {
       this.filteredCustomers = [...this.customers];
     } else {
-      const searchTermLower = this.searchTerm.toLowerCase();
+      // Normalisiere Suchbegriff: Leerzeichen entfernen, Kleinbuchstaben, Umlaute normalisieren
+      const normalizedSearchTerm = this.normalizeSearchTerm(this.searchTerm);
       
       this.filteredCustomers = this.customers.filter(customer => {
-        const matches = 
-          (customer.name && customer.name.toLowerCase().includes(searchTermLower)) ||
-          (customer.address && customer.address.toLowerCase().includes(searchTermLower)) ||
-          (customer.city && customer.city.toLowerCase().includes(searchTermLower)) ||
-          (customer.postal_code && customer.postal_code.toLowerCase().includes(searchTermLower)) ||
-          (customer.country && customer.country.toLowerCase().includes(searchTermLower)) ||
-          // Zusätzliche Suchfelder
-          (customer.last_name_company && customer.last_name_company.toLowerCase().includes(searchTermLower)) ||
-          (customer.name_addition && customer.name_addition.toLowerCase().includes(searchTermLower)) ||
-          (customer.street && customer.street.toLowerCase().includes(searchTermLower)) ||
-          (customer.email && customer.email.toLowerCase().includes(searchTermLower)) ||
-          (customer.phone && customer.phone.toLowerCase().includes(searchTermLower)) ||
-          (customer.customer_number && customer.customer_number.toLowerCase().includes(searchTermLower)) ||
-          // Suche auch nach Teilen des Namens (z.B. "Müller" findet "Müller GmbH")
-          (customer.name && customer.name.toLowerCase().split(' ').some(part => part.includes(searchTermLower))) ||
-          (customer.last_name_company && customer.last_name_company.toLowerCase().split(' ').some(part => part.includes(searchTermLower)));
+        // Normalisiere alle Kundendaten für den Vergleich
+        const normalizedName = this.normalizeSearchTerm(customer.name || '');
+        const normalizedAddress = this.normalizeSearchTerm(customer.address || '');
+        const normalizedCity = this.normalizeSearchTerm(customer.city || '');
+        const normalizedPostalCode = this.normalizeSearchTerm(customer.postal_code || '');
+        const normalizedCountry = this.normalizeSearchTerm(customer.country || '');
+        const normalizedCompany = this.normalizeSearchTerm(customer.last_name_company || '');
+        const normalizedAddition = this.normalizeSearchTerm(customer.name_addition || '');
+        const normalizedStreet = this.normalizeSearchTerm(customer.street || '');
+        const normalizedEmail = this.normalizeSearchTerm(customer.email || '');
+        const normalizedPhone = this.normalizeSearchTerm(customer.phone || '');
+        const normalizedCustomerNumber = this.normalizeSearchTerm(customer.customer_number || '');
         
-        return matches;
+        // Direkte Übereinstimmung
+        const directMatches = 
+          normalizedName.includes(normalizedSearchTerm) ||
+          normalizedAddress.includes(normalizedSearchTerm) ||
+          normalizedCity.includes(normalizedSearchTerm) ||
+          normalizedPostalCode.includes(normalizedSearchTerm) ||
+          normalizedCountry.includes(normalizedSearchTerm) ||
+          normalizedCompany.includes(normalizedSearchTerm) ||
+          normalizedAddition.includes(normalizedSearchTerm) ||
+          normalizedStreet.includes(normalizedSearchTerm) ||
+          normalizedEmail.includes(normalizedSearchTerm) ||
+          normalizedPhone.includes(normalizedSearchTerm) ||
+          normalizedCustomerNumber.includes(normalizedSearchTerm);
+        
+        // Wort-für-Wort Suche (mehr Toleranz)
+        const wordMatches = 
+          this.hasWordMatch(normalizedName, normalizedSearchTerm) ||
+          this.hasWordMatch(normalizedCompany, normalizedSearchTerm) ||
+          this.hasWordMatch(normalizedAddress, normalizedSearchTerm) ||
+          this.hasWordMatch(normalizedCity, normalizedSearchTerm);
+        
+        return directMatches || wordMatches;
       });
     }
+  }
+
+  // Normalisiert Suchbegriffe für bessere Toleranz
+  private normalizeSearchTerm(term: string): string {
+    return term
+      .toLowerCase()
+      .trim()
+      // Mehrere Leerzeichen durch ein Leerzeichen ersetzen
+      .replace(/\s+/g, ' ')
+      // Umlaute normalisieren
+      .replace(/ä/g, 'ae')
+      .replace(/ö/g, 'oe')
+      .replace(/ü/g, 'ue')
+      .replace(/ß/g, 'ss')
+      // Sonderzeichen entfernen (außer Leerzeichen und Bindestriche)
+      .replace(/[^a-z0-9\s\-]/g, '')
+      // Mehrere Bindestriche durch einen ersetzen
+      .replace(/-+/g, '-');
+  }
+
+  // Prüft, ob Suchbegriff in einzelnen Wörtern enthalten ist
+  private hasWordMatch(text: string, searchTerm: string): boolean {
+    if (!text || !searchTerm) return false;
+    
+    const words = text.split(/\s+/);
+    const searchWords = searchTerm.split(/\s+/);
+    
+    // Jedes Suchwort muss in mindestens einem Textwort enthalten sein
+    return searchWords.every(searchWord => 
+      words.some(word => word.includes(searchWord))
+    );
   }
 
   toggleCustomerSelection(customer: Customer) {
