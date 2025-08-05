@@ -231,18 +231,34 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     const savedOrders = this.globalService.loadCustomerOrders();
     if (savedOrders && savedOrders.length > 0) {
       console.log('📱 [LOAD-STORED] Gespeicherte Aufträge gefunden:', savedOrders.length);
-      this.orderItems = savedOrders;
       
       // Stelle sicher, dass die Aufträge korrekte Preise haben
-      this.orderItems = this.orderItems.map(orderItem => ({
-        ...orderItem,
-        // Stelle sicher, dass different_price korrekt gesetzt ist
-        different_price: orderItem.different_price !== undefined ? orderItem.different_price : undefined,
+      this.orderItems = savedOrders.map(orderItem => {
+        // Validiere und korrigiere different_price Werte
+        let correctedDifferentPrice = undefined;
+        if (orderItem.different_price !== undefined && orderItem.different_price !== null && orderItem.different_price !== '') {
+          const parsedPrice = parseFloat(orderItem.different_price);
+          if (!isNaN(parsedPrice) && parsedPrice >= 0) {
+            correctedDifferentPrice = Math.round(parsedPrice * 100) / 100; // Runde auf 2 Dezimalstellen
+          } else {
+            console.warn('⚠️ [LOAD-STORED] Ungültiger different_price Wert gefunden:', orderItem.different_price, 'für Artikel:', orderItem.article_text);
+          }
+        }
+        
         // Stelle sicher, dass original_price korrekt gesetzt ist
-        original_price: orderItem.original_price || orderItem.sale_price
-      }));
+        const originalPrice = orderItem.original_price || orderItem.sale_price;
+        
+        return {
+          ...orderItem,
+          different_price: correctedDifferentPrice,
+          original_price: originalPrice,
+          // Stelle sicher, dass sale_price immer den Standard-Preis enthält
+          sale_price: originalPrice
+        };
+      });
       
-      console.log('✅ [LOAD-STORED] Aufträge mit korrekten Preisen geladen');
+      console.log('✅ [LOAD-STORED] Aufträge mit korrigierten Preisen geladen');
+      console.log('📊 [LOAD-STORED] Aufträge mit different_price:', this.orderItems.filter(item => item.different_price !== undefined).length);
     }
   }
 
@@ -1248,15 +1264,46 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
 
   getOrderTotal(): number {
     return this.orderItems.reduce((sum, item) => {
-      // Verwende different_price falls vorhanden, ansonsten sale_price
-      const priceToUse = item.different_price !== undefined ? item.different_price : item.sale_price;
-      return sum + (priceToUse * item.quantity);
+      // Robuste Preis-Validierung für getOrderTotal
+      let priceToUse: number;
+      
+      // Prüfe different_price zuerst
+      if (item.different_price !== undefined && item.different_price !== null && item.different_price !== '') {
+        const parsedDifferentPrice = parseFloat(item.different_price);
+        if (!isNaN(parsedDifferentPrice) && parsedDifferentPrice >= 0) {
+          priceToUse = parsedDifferentPrice;
+        } else {
+          // Ungültiger different_price - verwende sale_price
+          console.warn('⚠️ [GET-ORDER-TOTAL] Ungültiger different_price:', item.different_price, 'für Artikel:', item.article_text, '- verwende sale_price');
+          priceToUse = parseFloat(item.sale_price) || 0;
+        }
+      } else {
+        // Kein different_price - verwende sale_price
+        priceToUse = parseFloat(item.sale_price) || 0;
+      }
+      
+      // Validiere auch die Menge
+      const quantity = parseFloat(item.quantity) || 0;
+      
+      return sum + (priceToUse * quantity);
     }, 0);
   }
 
   // Hilfsmethode um den korrekten Preis für ein orderItem zu bekommen
   getItemPrice(item: any): number {
-    return item.different_price !== undefined ? item.different_price : item.sale_price;
+    // Robuste Preis-Validierung für getItemPrice
+    if (item.different_price !== undefined && item.different_price !== null && item.different_price !== '') {
+      const parsedDifferentPrice = parseFloat(item.different_price);
+      if (!isNaN(parsedDifferentPrice) && parsedDifferentPrice >= 0) {
+        return parsedDifferentPrice;
+      } else {
+        // Ungültiger different_price - verwende sale_price
+        console.warn('⚠️ [GET-ITEM-PRICE] Ungültiger different_price:', item.different_price, 'für Artikel:', item.article_text, '- verwende sale_price');
+      }
+    }
+    
+    // Fallback auf sale_price
+    return parseFloat(item.sale_price) || 0;
   }
 
   // Neue Methode für Input-Event - nur Gesamtsumme aktualisieren, keine Validierung
