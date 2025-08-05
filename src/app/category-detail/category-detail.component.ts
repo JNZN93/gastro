@@ -98,13 +98,13 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
   ) {}
 
   private scrollToTop(): void {
-    // Scroll the scrollable-content container to top with 100px margin - instant
+    // Scroll the scrollable-content container to top - instant
     const scrollableContent = document.querySelector('.scrollable-content') as HTMLElement;
     if (scrollableContent) {
-      scrollableContent.scrollTop = 100;
+      scrollableContent.scrollTop = 0;
     } else {
       // Fallback: scroll the entire page if container not found
-      const scrollPosition = 100;
+      const scrollPosition = 0;
       this.viewportScroller.scrollToPosition([0, scrollPosition]);
       window.scrollTo(0, scrollPosition);
       document.documentElement.scrollTop = scrollPosition;
