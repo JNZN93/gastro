@@ -977,6 +977,7 @@ h4, h5 {
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 2rem 1rem;
   animation: fadeIn 0.3s ease-out;
 }
 
@@ -987,10 +988,11 @@ h4, h5 {
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
   max-width: 400px;
   width: 90%;
-  margin: 1rem;
+  margin: 0 auto;
   z-index: 1001 !important;
   animation: slideInScale 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
+  transform: translateY(-20vh);
 }
 
 .dialog-header {
