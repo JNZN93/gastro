@@ -124,16 +124,27 @@
     <div class="route-section">
       <div class="section-header">
         <h2>Route berechnen</h2>
-        <button 
-          class="btn btn-primary" 
-          (click)="calculateRoute()"
-          [disabled]="selectedCustomers.length < 2 || isLoading"
-        >
-          @if (isLoading) {
-            <div class="btn-spinner"></div>
-          }
-          Route berechnen
-        </button>
+        <div class="route-controls">
+          <div class="start-time-input">
+            <label for="startTime">Startzeit:</label>
+            <input 
+              type="time" 
+              id="startTime"
+              [(ngModel)]="startTime"
+              class="time-input"
+            >
+          </div>
+          <button 
+            class="btn btn-primary" 
+            (click)="calculateRoute()"
+            [disabled]="selectedCustomers.length < 2 || isLoading"
+          >
+            @if (isLoading) {
+              <div class="btn-spinner"></div>
+            }
+            Route berechnen
+          </button>
+        </div>
       </div>
 
       <!-- Route Results -->
@@ -198,6 +209,21 @@
                       }
                     </p>
                     <p class="step-address">{{ stop.address }}</p>
+                    <div class="step-timing">
+                      <span class="arrival-time">
+                        <strong>Ankunft:</strong> {{ formatTime(stop.arrivalTime) }}
+                      </span>
+                      @if (stop.travelTime > 0) {
+                        <span class="travel-time">
+                          <strong>Fahrt:</strong> {{ formatDuration(stop.travelTime) }}
+                        </span>
+                      }
+                      @if (stop.stayDuration > 0) {
+                        <span class="stay-time">
+                          <strong>Aufenthalt:</strong> {{ stop.stayDuration }} min
+                        </span>
+                      }
+                    </div>
                   </div>
                 </div>
               }
@@ -210,24 +236,7 @@
             </div>
           </div>
 
-          <!-- Route Steps -->
-          <div class="route-steps">
-            <h3>Detaillierte Wegbeschreibung</h3>
-            <div class="steps-list">
-              @for (step of routeSteps; track $index) {
-                <div class="step-item">
-                  <div class="step-number">{{ $index + 1 }}</div>
-                  <div class="step-content">
-                    <p class="step-instruction">{{ step.instruction }}</p>
-                    <div class="step-details">
-                      <span class="step-distance">{{ formatDistance(step.distance) }}</span>
-                      <span class="step-duration">{{ formatDuration(step.duration) }}</span>
-                    </div>
-                  </div>
-                </div>
-              }
-            </div>
-          </div>
+
 
           <!-- Map and Export Buttons -->
           <div class="export-section">

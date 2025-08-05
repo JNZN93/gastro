@@ -59,6 +59,7 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
   waypoints: RouteWaypoint[] = [];
   showMap: boolean = false;
   map: any = null;
+  startTime: string = '';
   
   // OpenRoute Service API Key
   private readonly OPENROUTE_API_KEY = 'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6ImQ4N2IyM2NjZTA1NTQyNTNiNDZmODhhZmQ1NDE1NDBhIiwiaCI6Im11cm11cjY0In0=';
@@ -76,6 +77,7 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
   ngOnInit(): void {
     this.loadCustomers();
     this.hideFooter();
+    this.startTime = this.getCurrentTime();
   }
 
   ngOnDestroy(): void {
@@ -208,6 +210,8 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
               <p><strong>Adresse:</strong><br>${stop.address}</p>
               ${stop.customerNumber ? `<p><strong>Kundennummer:</strong> ${stop.customerNumber}</p>` : ''}
               <p><strong>Reihenfolge:</strong> Stopp ${index + 1} von ${this.optimalOrder.length}</p>
+              <p><strong>Ankunft:</strong> ${this.formatTime(stop.arrivalTime)}</p>
+              ${stop.stayDuration > 0 ? `<p><strong>Aufenthalt:</strong> ${stop.stayDuration} min</p>` : ''}
             </div>
           `);
         customerMarkers.push(marker);
@@ -565,7 +569,7 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
       const route = optimizationResult.routes[0];
       
       // Distanz und Dauer aus der Route
-      this.totalDistance = route.distance * 1000; // Konvertiere km zu Meter
+      this.totalDistance = route.distance; // Bereits in Kilometern
       this.totalDuration = route.duration; // Bereits in Sekunden
       
       // Optimale Reihenfolge aus den Steps extrahieren
@@ -574,7 +578,7 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
       // Schritte für die Anzeige erstellen
       this.routeSteps = route.steps.map((step: any, index: number) => ({
         instruction: `Fahrt zu ${step.location ? this.getCustomerNameByLocation(step.location) : 'Kunde'}`,
-        distance: step.distance * 1000, // Konvertiere km zu Meter
+        distance: step.distance, // Bereits in Kilometern
         duration: step.duration
       }));
       
@@ -595,14 +599,38 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
         return customer !== null;
       });
 
+      // Startzeit aus der Eingabe verwenden
+      const [hours, minutes] = this.startTime.split(':').map(Number);
+      const startTime = new Date();
+      startTime.setHours(hours, minutes, 0, 0);
+      let currentTime = new Date(startTime.getTime());
+
       this.optimalOrder = customerSteps.map((step, index) => {
         const customer = this.getCustomerByLocation(step.location);
+        
+        // Fahrzeit zum aktuellen Stopp hinzufügen
+        if (index > 0) {
+          const previousStep = customerSteps[index - 1];
+          const travelTime = previousStep.duration || 0; // Sekunden
+          currentTime = new Date(currentTime.getTime() + travelTime * 1000);
+        }
+
+        // Geschätzte Ankunftszeit
+        const arrivalTime = new Date(currentTime.getTime());
+        
+        // 15 Minuten Aufenthalt pro Kunde (außer beim ersten)
+        const stayDuration = index === 0 ? 0 : 15 * 60 * 1000; // 15 Minuten in Millisekunden
+        currentTime = new Date(currentTime.getTime() + stayDuration);
+
         return {
           position: index + 1,
           customer: customer,
           name: customer ? (customer.last_name_company || customer.name) : 'Unbekannter Kunde',
           customerNumber: customer?.customer_number,
-          address: customer ? `${customer.street || customer.address}, ${customer.postal_code} ${customer.city}` : 'Unbekannte Adresse'
+          address: customer ? `${customer.street || customer.address}, ${customer.postal_code} ${customer.city}` : 'Unbekannte Adresse',
+          arrivalTime: arrivalTime,
+          travelTime: step.duration || 0,
+          stayDuration: index === 0 ? 0 : 15
         };
       });
     }
@@ -649,9 +677,22 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
     }
   }
 
-  formatDistance(meters: number): string {
-    const km = meters / 1000;
-    return `${km.toFixed(1)} km`;
+  formatDistance(kilometers: number): string {
+    return `${kilometers.toFixed(1)} km`;
+  }
+
+  formatTime(date: Date): string {
+    return date.toLocaleTimeString('de-DE', { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+  }
+
+  private getCurrentTime(): string {
+    const now = new Date();
+    const hours = now.getHours().toString().padStart(2, '0');
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+    return `${hours}:${minutes}`;
   }
 
   exportRoute() {
