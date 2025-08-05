@@ -163,5 +163,27 @@
     </div>
   </div>
   }
+
+  <!-- Bestellbestätigung -->
+  @if (showOrderConfirmation) {
+  <div class="confirmation-overlay" (click)="cancelOrder()"></div>
+  <div class="confirmation-dialog">
+    <div class="dialog-header">
+      <h3>Bestellung bestätigen</h3>
+      <button class="dialog-close-btn" (click)="cancelOrder()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+    <div class="dialog-content">
+      <p>Möchtest du die Bestellung wirklich absenden?</p>
+    </div>
+    <div class="dialog-actions">
+      <button class="dialog-btn cancel" (click)="cancelOrder()">Abbrechen</button>
+      <button class="dialog-btn confirm" (click)="confirmOrder()">Bestätigen</button>
+    </div>
+  </div>
+  }
 </div>
 }

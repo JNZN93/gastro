@@ -26,6 +26,7 @@ export class WarenkorbComponent implements OnInit {
   
   // Lokaler Bestätigungsdialog
   showClearConfirmation: boolean = false;
+  showOrderConfirmation: boolean = false;
 
   
 
@@ -52,6 +53,10 @@ export class WarenkorbComponent implements OnInit {
   }
 
   sendOrder() {
+    this.showOrderConfirmation = true;
+  }
+
+  confirmOrder() {
     this.getTotalPrice();
     const newAddress = this.city + '$' + this.zipCode + '$' + this.street;
     // save address for next orders
@@ -106,6 +111,12 @@ export class WarenkorbComponent implements OnInit {
         this.isVisible = false; // Warenkorb schließen nach Abschluss
       }
     });
+    
+    this.showOrderConfirmation = false;
+  }
+
+  cancelOrder() {
+    this.showOrderConfirmation = false;
   }
 
   getTotalPrice() {
