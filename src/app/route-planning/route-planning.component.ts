@@ -1,8 +1,16 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders, HttpClientModule } from '@angular/common/http';
 import { Router } from '@angular/router';
+
+// Leaflet TypeScript Deklarationen
+declare var L: any;
+declare global {
+  interface Window {
+    L: any;
+  }
+}
 
 interface Customer {
   id: number;
@@ -35,7 +43,7 @@ interface RouteWaypoint {
   templateUrl: './route-planning.component.html',
   styleUrl: './route-planning.component.scss',
 })
-export class RoutePlanningComponent implements OnInit, OnDestroy {
+export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit {
   customers: Customer[] = [];
   filteredCustomers: Customer[] = [];
   selectedCustomers: Customer[] = [];
@@ -49,6 +57,8 @@ export class RoutePlanningComponent implements OnInit, OnDestroy {
   showRoute: boolean = false;
   optimalOrder: any[] = [];
   waypoints: RouteWaypoint[] = [];
+  showMap: boolean = false;
+  map: any = null;
   
   // OpenRoute Service API Key
   private readonly OPENROUTE_API_KEY = 'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6ImQ4N2IyM2NjZTA1NTQyNTNiNDZmODhhZmQ1NDE1NDBhIiwiaCI6Im11cm11cjY0In0=';
@@ -70,6 +80,7 @@ export class RoutePlanningComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.showFooter();
+    this.destroyMap();
   }
 
   private hideFooter(): void {
@@ -79,11 +90,278 @@ export class RoutePlanningComponent implements OnInit, OnDestroy {
     }
   }
 
-  private showFooter(): void {
+  private   showFooter(): void {
     const footer = document.querySelector('app-footer');
     if (footer) {
       (footer as HTMLElement).style.display = '';
     }
+  }
+
+  ngAfterViewInit(): void {
+    // Map wird später initialisiert
+  }
+
+  toggleMap(): void {
+    this.showMap = !this.showMap;
+    if (this.showMap && this.optimalOrder.length > 0) {
+      setTimeout(() => {
+        this.initializeMap();
+      }, 100);
+    } else if (!this.showMap && this.map) {
+      // Map zerstören beim Ausblenden
+      this.map.remove();
+      this.map = null;
+    }
+  }
+
+  private initializeMap(): void {
+    // Leaflet Map initialisieren
+    if (typeof L !== 'undefined') {
+      this.createMap();
+    } else {
+      // Leaflet CSS und JS laden
+      this.loadLeaflet();
+    }
+  }
+
+  private destroyMap(): void {
+    if (this.map) {
+      this.map.remove();
+      this.map = null;
+    }
+  }
+
+  private loadLeaflet(): void {
+    // Leaflet CSS laden
+    if (!document.querySelector('link[href*="leaflet.css"]')) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+      document.head.appendChild(link);
+    }
+
+    // Leaflet JS laden
+    if (!window.L) {
+      const script = document.createElement('script');
+      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+      script.onload = () => {
+        this.createMap();
+      };
+      document.head.appendChild(script);
+    }
+  }
+
+  private createMap(): void {
+    const mapContainer = document.getElementById('route-map');
+    if (!mapContainer) return;
+    
+    // Bestehende Map entfernen falls vorhanden
+    if (this.map) {
+      this.map.remove();
+      this.map = null;
+    }
+
+    // Map initialisieren
+    this.map = L.map('route-map').setView(this.START_LOCATION, 10);
+
+    // OpenStreetMap Tiles hinzufügen
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(this.map);
+
+    // Custom Icons erstellen
+    const startIcon = L.divIcon({
+      className: 'custom-marker start-marker',
+      html: '<div class="marker-content">🏢<br><span class="marker-label">Gastro Depot</span></div>',
+      iconSize: [40, 60],
+      iconAnchor: [20, 60]
+    });
+
+    const customerIcon = (number: number, companyName: string) => L.divIcon({
+      className: 'custom-marker customer-marker',
+      html: `<div class="marker-content">${number}<br><span class="marker-label">${companyName}</span></div>`,
+      iconSize: [40, 60],
+      iconAnchor: [20, 60]
+    });
+
+    // Startpunkt markieren
+    const startMarker = L.marker(this.START_LOCATION, { icon: startIcon })
+      .addTo(this.map)
+      .bindPopup(`
+        <div class="popup-content">
+          <h4>🏢 Gastro Depot</h4>
+          <p><strong>Adresse:</strong><br>Im Winkel 6<br>67547 Worms</p>
+          <p><strong>Status:</strong> Ausgangspunkt für alle Touren</p>
+        </div>
+      `);
+
+    // Kundenstandorte markieren
+    const customerMarkers: any[] = [];
+    this.optimalOrder.forEach((stop, index) => {
+      const waypoint = this.waypoints.find(wp => wp.customerId === stop.customer.id);
+      if (waypoint) {
+        const marker = L.marker(waypoint.location, { icon: customerIcon(index + 1, stop.name) })
+          .addTo(this.map)
+          .bindPopup(`
+            <div class="popup-content">
+              <h4>📍 ${index + 1}. ${stop.name}</h4>
+              <p><strong>Adresse:</strong><br>${stop.address}</p>
+              ${stop.customerNumber ? `<p><strong>Kundennummer:</strong> ${stop.customerNumber}</p>` : ''}
+              <p><strong>Reihenfolge:</strong> Stopp ${index + 1} von ${this.optimalOrder.length}</p>
+            </div>
+          `);
+        customerMarkers.push(marker);
+      }
+    });
+
+    // Route-Linie zeichnen (falls verfügbar)
+    if (this.routeData && this.routeData.routes && this.routeData.routes[0].geometry) {
+      const routeGeometry = this.routeData.routes[0].geometry;
+      if (routeGeometry.coordinates) {
+        const routeLine = L.polyline(routeGeometry.coordinates, {
+          color: '#667eea',
+          weight: 6,
+          opacity: 0.9,
+          dashArray: '10, 5'
+        }).addTo(this.map);
+
+        // Route-Beschriftung hinzufügen
+        const routeLabel = L.tooltip({
+          permanent: true,
+          direction: 'center',
+          className: 'route-label'
+        }).setContent('🚗 Optimale Route');
+
+        // Label in der Mitte der Route platzieren
+        const midPoint = Math.floor(routeGeometry.coordinates.length / 2);
+        if (routeGeometry.coordinates[midPoint]) {
+          routeLine.bindTooltip(routeLabel).openTooltip();
+        }
+      }
+    }
+
+    // Verbindungslinien zwischen Standorten in Reihenfolge zeichnen
+    this.drawConnectionLines();
+
+    // Route-Pfeile für Richtung hinzufügen
+    this.addRouteArrows();
+
+    // Map auf alle Marker zoomen
+    const group = new L.featureGroup([startMarker, ...customerMarkers]);
+    this.map.fitBounds(group.getBounds().pad(0.1));
+
+    // Legende hinzufügen
+    this.addLegend();
+  }
+
+  private addRouteArrows(): void {
+    if (!this.routeData || !this.routeData.routes || !this.routeData.routes[0].geometry) return;
+
+    const coordinates = this.routeData.routes[0].geometry.coordinates;
+    if (coordinates.length < 2) return;
+
+    // Pfeile alle 5 Koordinaten hinzufügen
+    for (let i = 5; i < coordinates.length - 5; i += 5) {
+      const current = coordinates[i];
+      const next = coordinates[i + 1];
+      
+      if (current && next) {
+        const angle = Math.atan2(next[1] - current[1], next[0] - current[0]) * 180 / Math.PI;
+        
+        const arrowIcon = L.divIcon({
+          className: 'route-arrow',
+          html: '➡️',
+          iconSize: [20, 20],
+          iconAnchor: [10, 10]
+        });
+
+        L.marker(current, { icon: arrowIcon })
+          .addTo(this.map)
+          .setRotationAngle(angle);
+      }
+    }
+  }
+
+  private drawConnectionLines(): void {
+    if (this.optimalOrder.length === 0) return;
+
+    const connectionPoints: [number, number][] = [];
+    
+    // Startpunkt hinzufügen
+    connectionPoints.push(this.START_LOCATION);
+    
+    // Kundenstandorte in Reihenfolge hinzufügen
+    this.optimalOrder.forEach(stop => {
+      const waypoint = this.waypoints.find(wp => wp.customerId === stop.customer.id);
+      if (waypoint) {
+        connectionPoints.push(waypoint.location);
+      }
+    });
+    
+    // Zurück zum Startpunkt
+    connectionPoints.push(this.START_LOCATION);
+
+    // Verbindungslinien zeichnen
+    for (let i = 0; i < connectionPoints.length - 1; i++) {
+      const from = connectionPoints[i];
+      const to = connectionPoints[i + 1];
+      
+      const connectionLine = L.polyline([from, to], {
+        color: '#ff6b6b',
+        weight: 3,
+        opacity: 0.8,
+        dashArray: '5, 5'
+      }).addTo(this.map);
+
+      // Pfeil in der Mitte der Verbindung
+      const midPoint = [
+        (from[0] + to[0]) / 2,
+        (from[1] + to[1]) / 2
+      ];
+      
+      const angle = Math.atan2(to[1] - from[1], to[0] - from[0]) * 180 / Math.PI;
+      
+      const arrowIcon = L.divIcon({
+        className: 'connection-arrow',
+        html: '➡️',
+        iconSize: [16, 16],
+        iconAnchor: [8, 8]
+      });
+
+      L.marker(midPoint, { icon: arrowIcon })
+        .addTo(this.map)
+        .setRotationAngle(angle);
+    }
+  }
+
+  private addLegend(): void {
+    const legend = L.control({ position: 'bottomright' });
+    
+    legend.onAdd = () => {
+      const div = L.DomUtil.create('div', 'map-legend');
+      div.innerHTML = `
+        <h4>Legende</h4>
+        <div class="legend-item">
+          <span class="legend-icon start-icon">🏢</span>
+          <span>Gastro Depot</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-icon customer-icon">1</span>
+          <span>Firmenstandorte</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-icon route-icon">🚗</span>
+          <span>Optimale Route</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-icon connection-icon">➡️</span>
+          <span>Verbindungen</span>
+        </div>
+      `;
+      return div;
+    };
+    
+    legend.addTo(this.map);
   }
 
   loadCustomers() {

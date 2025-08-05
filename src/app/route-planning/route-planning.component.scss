@@ -666,6 +666,163 @@
   text-align: center;
   padding-top: 20px;
   border-top: 1px solid #e9ecef;
+
+  .button-group {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+}
+
+.map-container {
+  margin-top: 20px;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+
+  .route-map {
+    height: 400px;
+    width: 100%;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+  }
+}
+
+// Custom Marker Styles
+:host ::ng-deep {
+  .custom-marker {
+    .marker-content {
+      background: white;
+      border: 3px solid;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 14px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      text-align: center;
+      line-height: 1.2;
+
+      .marker-label {
+        font-size: 7px;
+        font-weight: normal;
+        margin-top: 2px;
+        max-width: 35px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        text-align: center;
+      }
+    }
+  }
+
+  .start-marker .marker-content {
+    border-color: #28a745;
+    color: #28a745;
+  }
+
+  .customer-marker .marker-content {
+    border-color: #667eea;
+    color: #667eea;
+  }
+
+  .route-arrow {
+    background: none;
+    border: none;
+    font-size: 16px;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+  }
+
+  .connection-arrow {
+    background: none;
+    border: none;
+    font-size: 14px;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+  }
+
+  .route-label {
+    background: rgba(102, 126, 234, 0.9);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-weight: bold;
+    font-size: 12px;
+  }
+
+  .map-legend {
+    background: white;
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    font-size: 12px;
+    min-width: 150px;
+
+    h4 {
+      margin: 0 0 8px 0;
+      font-size: 14px;
+      color: #2c3e50;
+      border-bottom: 1px solid #e9ecef;
+      padding-bottom: 4px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+
+      .legend-icon {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: bold;
+      }
+
+      .start-icon {
+        background: #28a745;
+        color: white;
+      }
+
+      .customer-icon {
+        background: #667eea;
+        color: white;
+      }
+
+      .route-icon {
+        background: #667eea;
+        color: white;
+      }
+
+      .connection-icon {
+        background: #ff6b6b;
+        color: white;
+      }
+    }
+  }
+
+  .popup-content {
+    h4 {
+      margin: 0 0 8px 0;
+      color: #2c3e50;
+      font-size: 14px;
+    }
+
+    p {
+      margin: 0 0 6px 0;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+  }
 }
 
 @keyframes spin {
