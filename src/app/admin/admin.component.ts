@@ -486,4 +486,34 @@ formatDate(dateString: string): string {
   canUploadData(): boolean {
     return this.isAdmin();
   }
+
+  // Neue Methode zum Laden einer Bestellung in die Customer Orders Komponente
+  loadOrderToCustomerOrders(order: any): void {
+    console.log('🔄 [LOAD-ORDER] Lade Bestellung in Customer Orders:', order);
+    
+    // Transformiere die Bestelldaten in das erwartete Format für Customer Orders
+    const orderData = {
+      customer: {
+        id: order.customer_id,
+        customer_number: order.customer_number || order.order_id,
+        last_name_company: order.name,
+        name_addition: order.company || '',
+        email: order.email || '',
+        street: order.shipping_address || '',
+        city: '',
+        postal_code: '',
+        _country_code: ''
+      },
+      items: order.items || [],
+      differentCompanyName: order.company || ''
+    };
+
+    // Speichere die Bestelldaten im localStorage für die Customer Orders Komponente
+    localStorage.setItem('pendingOrderData', JSON.stringify(orderData));
+    
+    console.log('💾 [LOAD-ORDER] Bestelldaten im localStorage gespeichert');
+    
+    // Navigiere zur Customer Orders Seite
+    this.router.navigate(['/customer-orders']);
+  }
 }

@@ -137,6 +137,9 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     // Lade gespeicherte Daten aus localStorage
     this.loadStoredData();
     
+    // Prüfe auf pending order data aus dem Admin-Bereich
+    this.checkForPendingOrderData();
+    
     const token = localStorage.getItem('token');
     
     navigator.mediaDevices.enumerateDevices().then(devices => {
@@ -260,6 +263,105 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       console.log('✅ [LOAD-STORED] Aufträge mit korrigierten Preisen geladen');
       console.log('📊 [LOAD-STORED] Aufträge mit different_price:', this.orderItems.filter(item => item.different_price !== undefined).length);
     }
+  }
+
+  // Prüfe auf pending order data aus dem Admin-Bereich
+  private checkForPendingOrderData(): void {
+    const pendingOrderData = localStorage.getItem('pendingOrderData');
+    if (pendingOrderData) {
+      console.log('📥 [PENDING-ORDER] Pending Order Data gefunden');
+      
+      try {
+        const orderData = JSON.parse(pendingOrderData);
+        console.log('📦 [PENDING-ORDER] Bestelldaten:', orderData);
+        
+        // Prüfe, ob bereits ein Auftrag vorhanden ist
+        if (this.orderItems.length > 0) {
+          // Zeige Bestätigungsdialog
+          this.showReplaceOrderConfirmation(orderData);
+        } else {
+          // Lade die Bestellung direkt
+          this.loadOrderData(orderData);
+        }
+        
+        // Entferne die pending order data aus localStorage
+        localStorage.removeItem('pendingOrderData');
+        
+      } catch (error) {
+        console.error('❌ [PENDING-ORDER] Fehler beim Parsen der Bestelldaten:', error);
+        localStorage.removeItem('pendingOrderData');
+      }
+    }
+  }
+
+  // Zeige Bestätigungsdialog zum Ersetzen des aktuellen Auftrags
+  private showReplaceOrderConfirmation(orderData: any): void {
+    const dialogRef = this.dialog.open(MyDialogComponent, {
+      width: '400px',
+      data: {
+        title: 'Auftrag ersetzen',
+        message: `Sie haben bereits einen Auftrag mit ${this.orderItems.length} Artikel(n) in Bearbeitung. Möchten Sie diesen durch die neue Bestellung ersetzen?`,
+        isConfirmation: true,
+        confirmLabel: 'Ersetzen',
+        cancelLabel: 'Abbrechen'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result === true) {
+        this.loadOrderData(orderData);
+      }
+    });
+  }
+
+  // Lade die Bestelldaten in die Customer Orders Komponente
+  private loadOrderData(orderData: any): void {
+    console.log('🔄 [LOAD-ORDER-DATA] Lade Bestelldaten:', orderData);
+    
+    // Setze den Kunden
+    if (orderData.customer) {
+      console.log('👤 [LOAD-ORDER-DATA] Setze Kunde:', orderData.customer);
+      this.globalService.setSelectedCustomerForOrders(orderData.customer);
+      
+      // Setze den geänderten Firmennamen falls vorhanden
+      if (orderData.differentCompanyName) {
+        this.differentCompanyName = orderData.differentCompanyName;
+      }
+      
+      // Lade kundenspezifische Preise
+      if (orderData.customer.customer_number) {
+        this.loadCustomerArticlePrices(orderData.customer.customer_number);
+      }
+    }
+    
+    // Setze die Bestellartikel
+    if (orderData.items && orderData.items.length > 0) {
+      console.log('📦 [LOAD-ORDER-DATA] Setze Bestellartikel:', orderData.items.length);
+      
+      // Transformiere die Artikel in das erwartete Format
+      this.orderItems = orderData.items.map((item: any) => ({
+        ...item,
+        quantity: item.quantity || 1,
+        article_text: item.product_name || item.article_text || 'Unbekannter Artikel',
+        article_number: item.product_article_number || item.article_number || '',
+        sale_price: item.price || item.sale_price || 0,
+        cost_price: item.cost_price || 0,
+        different_price: item.different_price,
+        original_price: item.original_price || item.sale_price || item.price || 0
+      }));
+      
+      // Speichere die Aufträge
+      this.globalService.saveCustomerOrders(this.orderItems);
+      
+      console.log('✅ [LOAD-ORDER-DATA] Bestellartikel erfolgreich geladen');
+    }
+    
+    // Wechsle zum Auftrag-Tab bei mobiler Ansicht
+    if (window.innerWidth <= 768) {
+      this.setActiveTab('order');
+    }
+    
+    console.log('🎉 [LOAD-ORDER-DATA] Bestellung erfolgreich geladen!');
   }
 
   filteredArtikelData() {
