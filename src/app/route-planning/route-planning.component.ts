@@ -29,6 +29,15 @@ interface Customer {
   selected?: boolean;
 }
 
+interface CustomerConstraint {
+  customerId: number;
+  customerName: string;
+  timeWindowStart: string;
+  timeWindowEnd: string;
+  priority: number; // 1 = höchste Priorität, 5 = niedrigste
+  stayDuration: number; // Aufenthaltsdauer in Minuten
+}
+
 interface RouteWaypoint {
   location: [number, number]; // [longitude, latitude]
   name: string;
@@ -60,6 +69,11 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
   showMap: boolean = false;
   map: any = null;
   startTime: string = '';
+  
+  // Neue Eigenschaften für das Modal
+  showConstraintsModal: boolean = false;
+  customerConstraints: CustomerConstraint[] = [];
+  isSettingConstraints: boolean = false;
   
   // OpenRoute Service API Key
   private readonly OPENROUTE_API_KEY = 'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6ImQ4N2IyM2NjZTA1NTQyNTNiNDZmODhhZmQ1NDE1NDBhIiwiaCI6Im11cm11cjY0In0=';
@@ -458,12 +472,56 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
     this.updateSelectedCustomers();
   }
 
+  openConstraintsModal(): void {
+    // Constraints für alle ausgewählten Kunden initialisieren
+    this.customerConstraints = this.selectedCustomers.map(customer => ({
+      customerId: customer.id,
+      customerName: customer.last_name_company || customer.name,
+      timeWindowStart: '', // Leer - kein Standard-Zeitfenster
+      timeWindowEnd: '',   // Leer - kein Standard-Zeitfenster
+      priority: 3, // Standard-Priorität
+      stayDuration: 15 // Standard-Aufenthaltsdauer
+    }));
+    
+    this.showConstraintsModal = true;
+  }
+
+  closeConstraintsModal(): void {
+    this.showConstraintsModal = false;
+  }
+
+  async startRouteWithConstraints(): Promise<void> {
+    this.closeConstraintsModal();
+    await this.calculateRouteWithConstraints();
+  }
+
+  getCustomerNumber(customerId: number): string | undefined {
+    const customer = this.selectedCustomers.find(c => c.id === customerId);
+    return customer?.customer_number;
+  }
+
+  resetTimeWindow(constraint: CustomerConstraint): void {
+    constraint.timeWindowStart = '';
+    constraint.timeWindowEnd = '';
+  }
+
   async calculateRoute() {
     if (this.selectedCustomers.length < 1) {
       alert('Bitte wählen Sie mindestens 1 Kunden aus.');
       return;
     }
 
+    // Bei mehreren Kunden: Modal für Constraints öffnen
+    if (this.selectedCustomers.length > 1) {
+      this.openConstraintsModal();
+      return;
+    }
+
+    // Bei einem Kunden: Direkt Route berechnen
+    await this.calculateRouteWithConstraints();
+  }
+
+  async calculateRouteWithConstraints(): Promise<void> {
     this.isLoading = true;
     this.showRoute = false;
 
@@ -501,7 +559,7 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
       if (waypoints.length === 1) {
         route = await this.calculateSingleCustomerRoute(waypoints[0]);
       } else {
-        route = await this.calculateOptimalRoute(waypoints);
+        route = await this.calculateOptimalRouteWithConstraints(waypoints);
       }
       
       if (route) {
@@ -572,24 +630,51 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
     }
   }
 
-  private async calculateOptimalRoute(waypoints: RouteWaypoint[]): Promise<any> {
-    // Optimization API verwenden mit festem Startpunkt
-    const requestBody = {
-      jobs: waypoints.map((wp, index) => ({
+  private async calculateOptimalRouteWithConstraints(waypoints: RouteWaypoint[]): Promise<any> {
+    // Optimization API mit Constraints verwenden
+    const jobs = waypoints.map((wp, index) => {
+      const constraint = this.customerConstraints.find(c => c.customerId === wp.customerId);
+      const job: any = {
         id: index,
         location: wp.location
-      })),
+      };
+
+      // Zeitfenster hinzufügen falls definiert
+      if (constraint) {
+        // Nur Zeitfenster hinzufügen wenn beide Werte gesetzt sind
+        if (constraint.timeWindowStart && constraint.timeWindowEnd) {
+          const [startHours, startMinutes] = constraint.timeWindowStart.split(':').map(Number);
+          const [endHours, endMinutes] = constraint.timeWindowEnd.split(':').map(Number);
+          
+          // Startzeit in Sekunden seit Mitternacht
+          const startTimeSeconds = startHours * 3600 + startMinutes * 60;
+          const endTimeSeconds = endHours * 3600 + endMinutes * 60;
+          
+          job.time_windows = [[startTimeSeconds, endTimeSeconds]];
+        }
+        // Service-Zeit immer hinzufügen
+        job.service = constraint.stayDuration * 60; // Service-Zeit in Sekunden
+      }
+
+      return job;
+    });
+
+    const requestBody = {
+      jobs: jobs,
       vehicles: [{
         id: 1,
         profile: 'driving-car',
         start: this.START_LOCATION,
-        end: this.START_LOCATION
+        end: this.START_LOCATION,
+        time_window: [0, 86400] // Ganzer Tag verfügbar
       }],
       options: {
         g: true, // Geometrie einschließen
         optimize: true // Optimierung aktivieren
       }
     };
+
+    console.log('Optimization Request mit Constraints:', requestBody);
 
     try {
       const response = await fetch(this.OPENROUTE_OPTIMIZATION_URL, {

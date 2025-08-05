@@ -147,6 +147,107 @@
         </div>
       </div>
 
+      <!-- Constraints Modal -->
+      @if (showConstraintsModal) {
+        <div class="modal-overlay" (click)="closeConstraintsModal()">
+          <div class="modal-content" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+              <h3>Zeitfenster und Prioritäten festlegen</h3>
+              <button class="close-btn" (click)="closeConstraintsModal()">×</button>
+            </div>
+            
+            <div class="modal-body">
+              <p class="modal-description">
+                Legen Sie für jeden Kunden Zeitfenster und Prioritäten fest. 
+                Die Optimierung berücksichtigt diese Bedingungen bei der Routenplanung.
+              </p>
+              
+              <div class="constraints-list">
+                @for (constraint of customerConstraints; track constraint.customerId) {
+                  <div class="constraint-item">
+                    <div class="constraint-header">
+                      <h4>{{ constraint.customerName }}</h4>
+                      @if (getCustomerNumber(constraint.customerId)) {
+                        <span class="customer-number">
+                          ({{ getCustomerNumber(constraint.customerId) }})
+                        </span>
+                      }
+                    </div>
+                    
+                    <div class="constraint-fields">
+                      <div class="field-group">
+                        <label>Zeitfenster:</label>
+                        <div class="time-inputs">
+                          <input 
+                            type="time" 
+                            [(ngModel)]="constraint.timeWindowStart"
+                            class="time-input"
+                            placeholder="--:--"
+                          >
+                          <span>bis</span>
+                          <input 
+                            type="time" 
+                            [(ngModel)]="constraint.timeWindowEnd"
+                            class="time-input"
+                            placeholder="--:--"
+                          >
+                          <button 
+                            type="button" 
+                            class="reset-btn" 
+                            (click)="resetTimeWindow(constraint)"
+                            title="Zeitfenster zurücksetzen"
+                          >
+                            ↺
+                          </button>
+                        </div>
+                      </div>
+                      
+                      <div class="field-group">
+                        <label>Priorität:</label>
+                        <select [(ngModel)]="constraint.priority" class="priority-select">
+                          <option value="1">1 - Höchste Priorität</option>
+                          <option value="2">2 - Hohe Priorität</option>
+                          <option value="3">3 - Normale Priorität</option>
+                          <option value="4">4 - Niedrige Priorität</option>
+                          <option value="5">5 - Niedrigste Priorität</option>
+                        </select>
+                      </div>
+                      
+                      <div class="field-group">
+                        <label>Aufenthaltsdauer (Minuten):</label>
+                        <input 
+                          type="number" 
+                          [(ngModel)]="constraint.stayDuration"
+                          min="5" 
+                          max="120"
+                          class="duration-input"
+                        >
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+            
+            <div class="modal-footer">
+              <button class="btn btn-secondary" (click)="closeConstraintsModal()">
+                Abbrechen
+              </button>
+              <button 
+                class="btn btn-primary" 
+                (click)="startRouteWithConstraints()"
+                [disabled]="isLoading"
+              >
+                @if (isLoading) {
+                  <div class="btn-spinner"></div>
+                }
+                Route mit Constraints berechnen
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
       <!-- Route Results -->
       @if (showRoute && routeData) {
         <div class="route-results">
