@@ -491,8 +491,8 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
   // Methode um passende Stock-Bilder für Kategorien zu erhalten
   getCategoryImage(category: string): string {
     const categoryImages: { [key: string]: string } = {
-      // === KUNDENSPEZIFISCHE PREISE === //
-      '💰 KUNDENSPEZIFISCHE PREISE': 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60',
+      // === ZULETZT GEKAUFT === //
+      '🕒 ZULETZT GEKAUFT': 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60',
       
       // === FAVORITEN === //
       '⭐ FAVORITEN': 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60',
@@ -622,13 +622,13 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
   getItemsFromCategory(category:string) {
     console.log('🔄 [PRODUCT-CATALOG] getItemsFromCategory aufgerufen für Kategorie:', category);
     
-    if (category === '💰 Kundenspezifische Preise') {
-      console.log('💰 [PRODUCT-CATALOG] Lade kundenspezifische Preise...');
-      // Kundenspezifische Preise laden
+    if (category === '🕒 Zuletzt gekauft') {
+      console.log('🕒 [PRODUCT-CATALOG] Lade zuletzt gekaufte Artikel...');
+      // Zuletzt gekaufte Artikel laden
       this.loadLastOrders();
       console.log('📊 [PRODUCT-CATALOG] lastOrders nach loadLastOrders:', this.lastOrders);
       
-      // Produkte mit kundenspezifischen Preisen anzeigen
+      // Produkte mit zuletzt gekauften Preisen anzeigen
       this.artikelData = this.lastOrders.map(order => {
         console.log('🔍 [PRODUCT-CATALOG] Verarbeite Order:', order);
         
@@ -652,7 +652,7 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
         }
       }).filter(item => item !== null);
       
-      console.log('📊 [PRODUCT-CATALOG] Finale artikelData für kundenspezifische Preise:', this.artikelData);
+      console.log('📊 [PRODUCT-CATALOG] Finale artikelData für zuletzt gekaufte Artikel:', this.artikelData);
       console.log('📊 [PRODUCT-CATALOG] Anzahl verarbeiteter Artikel:', this.artikelData.length);
     } else if (category === '⭐ Favoriten') {
       console.log('⭐ [PRODUCT-CATALOG] Lade Favoriten...');
@@ -687,9 +687,9 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
       uniqueCategories.unshift('⭐ Favoriten');
     }
     
-    // Kundenspezifische Preise-Kategorie hinzufügen, wenn Benutzer angemeldet ist
+    // Zuletzt gekauft-Kategorie hinzufügen, wenn Benutzer angemeldet ist
     if (this.globalService.isUserLoggedIn && this.currentUserId) {
-      uniqueCategories.unshift('💰 Kundenspezifische Preise');
+      uniqueCategories.unshift('🕒 Zuletzt gekauft');
     }
     
     return uniqueCategories;

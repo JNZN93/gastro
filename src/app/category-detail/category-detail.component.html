@@ -129,23 +129,44 @@
             <div class="product-content">
               <h3 class="product-title">{{ artikel.article_text }}</h3>
               <p class="product-number">Art.-Nr: {{ artikel.article_number }}</p>
+              <!-- Debug Info -->
+              @if (categoryName === '🕒 Zuletzt gekauft' || categoryName === 'Zuletzt gekauft') {
+              <div style="font-size: 10px; color: #666; margin: 5px 0;">
+                Debug: customer_price_net={{ artikel.customer_price_net }}, 
+                customer_price_gross={{ artikel.customer_price_gross }}, 
+                invoice_id={{ artikel.invoice_id }}, 
+                last_order_date={{ artikel.last_order_date }}
+              </div>
+              }
               
-              <!-- Kundenspezifische Preise anzeigen -->
-              @if (categoryName === '💰 Kundenspezifische Preise' && artikel.customer_price_net) {
+              <!-- Zuletzt gekaufte Artikel anzeigen -->
+              <!-- Debug: {{ categoryName }} - {{ artikel.customer_price_net }} -->
+              @if ((categoryName === '🕒 Zuletzt gekauft' || categoryName === 'Zuletzt gekauft') && artikel.customer_price_net) {
               <div class="customer-price-info">
                 <div class="price-badge">
                   <span class="price-amount">€{{ artikel.customer_price_net }}</span>
                   <span class="price-label">Ihr Preis</span>
+                  @if (artikel.price && artikel.customer_price_net !== artikel.price) {
+                  <div class="price-difference" [class.savings]="calculatePriceDifference(artikel).isLower" [class.higher]="!calculatePriceDifference(artikel).isLower">
+                    {{ formatPriceDifference(artikel) }}
+                  </div>
+                  }
                 </div>
                 <div class="invoice-info">
                   <div class="invoice-row">
-                    <span class="invoice-label">Rechnung:</span>
+                    <span class="invoice-label">Rechnungsnr.:</span>
                     <span class="invoice-value">{{ artikel.invoice_id || '-' }}</span>
                   </div>
                   <div class="invoice-row">
-                    <span class="invoice-label">Datum:</span>
+                    <span class="invoice-label">Rechnungsdatum:</span>
                     <span class="invoice-value">{{ formatInvoiceDate(artikel.last_order_date) }}</span>
                   </div>
+                  @if (artikel.customer_price_gross && artikel.customer_price_gross !== artikel.customer_price_net) {
+                  <div class="invoice-row">
+                    <span class="invoice-label">Bruttopreis:</span>
+                    <span class="invoice-value">€{{ artikel.customer_price_gross }}</span>
+                  </div>
+                  }
                   @if (artikel.customer_vat) {
                   <div class="invoice-row">
                     <span class="invoice-label">MwSt:</span>

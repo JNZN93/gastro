@@ -1026,7 +1026,7 @@ app-warenkorb .cart-container {
   }
 }
 
-// Kundenspezifische Preise Styles
+// Zuletzt gekaufte Artikel Styles
 .customer-price-info {
   margin-bottom: 1rem;
   padding: 0.75rem;
@@ -1040,6 +1040,7 @@ app-warenkorb .cart-container {
   align-items: center;
   gap: 0.5rem;
   margin-bottom: 0.75rem;
+  flex-wrap: wrap;
 }
 
 .price-amount {
@@ -1055,6 +1056,26 @@ app-warenkorb .cart-container {
   background: rgba(59, 130, 246, 0.1);
   padding: 0.25rem 0.5rem;
   border-radius: 8px;
+}
+
+.price-difference {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.2rem 0.4rem;
+  border-radius: 6px;
+  margin-left: auto;
+  
+  &.savings {
+    color: #059669;
+    background: rgba(5, 150, 105, 0.1);
+    border: 1px solid rgba(5, 150, 105, 0.2);
+  }
+  
+  &.higher {
+    color: #dc2626;
+    background: rgba(220, 38, 38, 0.1);
+    border: 1px solid rgba(220, 38, 38, 0.2);
+  }
 }
 
 .invoice-info {

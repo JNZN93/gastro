@@ -223,6 +223,11 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
 
   filterCategoryProducts(): void {
     console.log('🔄 [FILTER] filterCategoryProducts aufgerufen für Kategorie:', this.categoryName);
+    console.log('🔄 [FILTER] Kategorie Vergleich:', {
+      categoryName: this.categoryName,
+      isZuletztGekauft: this.categoryName === '🕒 Zuletzt gekauft',
+      isZuletztGekauftAlt: this.categoryName === 'Zuletzt gekauft'
+    });
     
     // Spezielle Behandlung für "alle-produkte" Kategorie
     if (this.categoryName === 'alle-produkte' || this.categoryName === 'Gastro Depot Worms - Alle Produkte') {
@@ -236,10 +241,18 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
       const favorites = JSON.parse(localStorage.getItem('favoriteItems') || '[]');
       this.artikelData = favorites;
       console.log('📊 [FILTER] Favoriten geladen:', this.artikelData.length);
-    } else if (this.categoryName === '💰 Kundenspezifische Preise') {
-      // Kundenspezifische Preise laden (asynchron)
-      console.log('💰 [FILTER] Lade kundenspezifische Preise (asynchron)...');
-      this.loadCustomerPrices();
+    } else if (this.categoryName === '🕒 Zuletzt gekauft') {
+      // Zuletzt gekaufte Artikel laden (asynchron)
+      console.log('🕒 [FILTER] Lade zuletzt gekaufte Artikel (asynchron)...');
+      // Warten bis globalArtikels geladen ist
+      if (this.globalArtikels.length > 0) {
+        this.loadCustomerPrices();
+      } else {
+        // Wenn globalArtikels noch nicht geladen ist, warten wir kurz
+        setTimeout(() => {
+          this.loadCustomerPrices();
+        }, 100);
+      }
       return; // Nicht weiter machen, da loadCustomerPrices asynchron ist
     } else {
       // Produkte der spezifischen Kategorie filtern
@@ -291,15 +304,26 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
     });
   }
 
-  // Methode zum Laden der kundenspezifischen Preise
+  // Methode zum Laden der zuletzt gekauften Artikel
   loadCustomerPrices(): void {
-    console.log('🔄 [CUSTOMER-PRICES] Starte Laden der kundenspezifischen Preise...');
+    console.log('🔄 [CUSTOMER-PRICES] Starte Laden der zuletzt gekauften Artikel...');
+    console.log('📊 [CUSTOMER-PRICES] globalArtikels Länge:', this.globalArtikels.length);
     
     const token = localStorage.getItem('token');
     
     if (!token) {
       console.log('❌ [CUSTOMER-PRICES] Kein Token gefunden');
       this.artikelData = [];
+      this.updateFilteredData();
+      return;
+    }
+
+    // Prüfen ob globalArtikels geladen sind
+    if (this.globalArtikels.length === 0) {
+      console.log('⚠️ [CUSTOMER-PRICES] globalArtikels noch nicht geladen, warte...');
+      setTimeout(() => {
+        this.loadCustomerPrices();
+      }, 200);
       return;
     }
 
@@ -334,6 +358,8 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
             // Produkte mit kundenspezifischen Preisen anzeigen
             this.artikelData = data.map(order => {
               console.log('🔍 [CUSTOMER-PRICES] Verarbeite Order:', order);
+              console.log('🔍 [CUSTOMER-PRICES] Suche nach product_id:', order.product_id);
+              console.log('🔍 [CUSTOMER-PRICES] Verfügbare Artikel:', this.globalArtikels.map(a => a.article_number).slice(0, 5));
               
               const artikel = this.globalArtikels.find(art => art.article_number === order.product_id);
               console.log('🔍 [CUSTOMER-PRICES] Gefundener Artikel für product_id', order.product_id, ':', artikel);
@@ -422,6 +448,36 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
       month: '2-digit',
       year: 'numeric'
     });
+  }
+
+  // Berechnet den Preisunterschied zwischen Kundenpreis und normalem Preis
+  calculatePriceDifference(artikel: any): { difference: number; percentage: number; isLower: boolean } {
+    if (!artikel.customer_price_net || !artikel.price) {
+      return { difference: 0, percentage: 0, isLower: false };
+    }
+
+    const customerPrice = parseFloat(artikel.customer_price_net);
+    const normalPrice = parseFloat(artikel.price);
+    
+    if (isNaN(customerPrice) || isNaN(normalPrice)) {
+      return { difference: 0, percentage: 0, isLower: false };
+    }
+
+    const difference = customerPrice - normalPrice;
+    const percentage = normalPrice > 0 ? (difference / normalPrice) * 100 : 0;
+    const isLower = customerPrice < normalPrice;
+
+    return { difference: Math.abs(difference), percentage: Math.abs(percentage), isLower };
+  }
+
+  // Formatiert den Preisunterschied für die Anzeige
+  formatPriceDifference(artikel: any): string {
+    const priceInfo = this.calculatePriceDifference(artikel);
+    
+    if (priceInfo.difference === 0) return '';
+    
+    const sign = priceInfo.isLower ? '-' : '+';
+    return `${sign}€${priceInfo.difference.toFixed(2)} (${sign}${priceInfo.percentage.toFixed(1)}%)`;
   }
 
   filteredArtikelData(): void {

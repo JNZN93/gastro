@@ -81,14 +81,14 @@
       <!-- Dynamische Kategorien -->
       @for (category of categories; track category) {
       <div class="category-card" 
-           [class.featured-category]="category === '⭐ Favoriten' || category === '💰 Kundenspezifische Preise'" 
-           [class.customer-prices]="category === '💰 Kundenspezifische Preise'"
+           [class.featured-category]="category === '⭐ Favoriten' || category === '🕒 Zuletzt gekauft'" 
+           [class.customer-prices]="category === '🕒 Zuletzt gekauft'"
            [routerLink]="['/category', category]" 
            [class.active]="selectedCategory === category">
         <div class="category-img">
           <img [src]="getCategoryImage(category)" [alt]="category" class="category-image" (error)="onCategoryImageError($event, category)">
           <div class="category-badge" *ngIf="category === '⭐ Favoriten'">Ihre Favoriten</div>
-          <div class="category-badge" *ngIf="category === '💰 Kundenspezifische Preise'">Ihre Preise</div>
+          <div class="category-badge" *ngIf="category === '🕒 Zuletzt gekauft'">Zuletzt gekauft</div>
         </div>
         <div class="category-name">{{ category }}</div>
       </div>
