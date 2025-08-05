@@ -597,6 +597,12 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
     this.router.navigate(['/products'], { queryParams: { scrollToCategories: 'true' } });
   }
 
+  openLoginPrompt(): void {
+    // Dispatch custom event to trigger header login modal
+    const event = new CustomEvent('openLoginModal');
+    window.dispatchEvent(event);
+  }
+
   // Warenkorb-Methoden
   addToCart(event: Event, artikel: any): void {
     if (!artikel.quantity || isNaN(Number(artikel.quantity)) || Number(artikel.quantity) < 1) {
