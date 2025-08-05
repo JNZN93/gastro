@@ -529,19 +529,32 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
       // Geocoding für alle ausgewählten Kunden
       const waypoints: RouteWaypoint[] = [];
       
+      const failedCustomers: string[] = [];
+      
       for (const customer of this.selectedCustomers) {
-        console.log(`Geocoding für: ${customer.last_name_company || customer.name}`);
+        const customerName = customer.last_name_company || customer.name;
+        const address = `${customer.street || customer.address}, ${customer.postal_code} ${customer.city}`;
+        console.log(`Geocoding für: ${customerName} - ${address}`);
+        
         const coordinates = await this.geocodeAddress(customer);
         if (coordinates) {
           console.log(`Koordinaten gefunden: ${coordinates[0]}, ${coordinates[1]}`);
           waypoints.push({
             location: coordinates,
-            name: customer.last_name_company || customer.name,
+            name: customerName,
             customerId: customer.id
           });
         } else {
-          console.warn(`Keine Koordinaten gefunden für: ${customer.last_name_company || customer.name}`);
+          console.warn(`Keine Koordinaten gefunden für: ${customerName} - ${address}`);
+          failedCustomers.push(`${customerName} (${address})`);
         }
+      }
+
+      // Warnung anzeigen wenn Kunden nicht geocodiert werden konnten
+      if (failedCustomers.length > 0) {
+        const warningMessage = `Folgende Kunden konnten nicht geocodiert werden:\n${failedCustomers.join('\n')}\n\nDiese werden von der Routenberechnung ausgeschlossen.`;
+        console.warn(warningMessage);
+        alert(warningMessage);
       }
 
       this.waypoints = waypoints;
@@ -578,20 +591,56 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
   }
 
   private async geocodeAddress(customer: Customer): Promise<[number, number] | null> {
-    const address = `${customer.street || customer.address}, ${customer.postal_code} ${customer.city}, ${customer.country || 'Deutschland'}`;
+    const street = customer.street || customer.address;
+    const postalCode = customer.postal_code;
+    const city = customer.city;
+    const country = customer.country || 'Deutschland';
     
-    try {
-      const response = await fetch(`https://api.openrouteservice.org/geocode/search?api_key=${this.OPENROUTE_API_KEY}&text=${encodeURIComponent(address)}`);
-      const data = await response.json();
+    // Verschiedene Adressformate versuchen
+    const addressAttempts = [
+      `${street}, ${postalCode} ${city}, ${country}`,
+      `${street}, ${city}, ${country}`,
+      `${street} ${postalCode}, ${city}, ${country}`,
+      `${street}, ${city} ${postalCode}, ${country}`,
+      `${city}, ${country}` // Fallback auf Stadt
+    ];
+    
+    for (let i = 0; i < addressAttempts.length; i++) {
+      const address = addressAttempts[i];
+      console.log(`Geocoding Versuch ${i + 1} für: ${address}`);
       
-      if (data.features && data.features.length > 0) {
-        const coordinates = data.features[0].geometry.coordinates;
-        return [coordinates[0], coordinates[1]]; // [longitude, latitude]
+      try {
+        const response = await fetch(`https://api.openrouteservice.org/geocode/search?api_key=${this.OPENROUTE_API_KEY}&text=${encodeURIComponent(address)}&size=1`);
+        
+        if (!response.ok) {
+          console.error(`Geocoding HTTP error für ${customer.last_name_company || customer.name}: ${response.status}`);
+          continue;
+        }
+        
+        const data = await response.json();
+        
+        if (data.features && data.features.length > 0) {
+          const feature = data.features[0];
+          const coordinates = feature.geometry.coordinates;
+          
+          // Prüfen ob es eine spezifische Straße ist oder nur Stadt
+          const isSpecificAddress = feature.properties.layer === 'address' || 
+                                   feature.properties.layer === 'street' ||
+                                   feature.properties.accuracy === 'point';
+          
+          console.log(`Koordinaten gefunden für ${address}: [${coordinates[0]}, ${coordinates[1]}] - Layer: ${feature.properties.layer}, Accuracy: ${feature.properties.accuracy}`);
+          
+          // Wenn es eine spezifische Adresse ist oder der letzte Versuch (Stadt), verwenden
+          if (isSpecificAddress || i === addressAttempts.length - 1) {
+            return [coordinates[0], coordinates[1]]; // [longitude, latitude]
+          }
+        }
+      } catch (error) {
+        console.error(`Geocoding-Fehler für ${customer.last_name_company || customer.name} (Versuch ${i + 1}):`, error);
       }
-    } catch (error) {
-      console.error(`Geocoding-Fehler für ${customer.last_name_company || customer.name}:`, error);
     }
     
+    console.warn(`Keine Koordinaten gefunden für: ${customer.last_name_company || customer.name}`);
     return null;
   }
 
