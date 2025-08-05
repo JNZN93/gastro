@@ -263,8 +263,7 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
       }
     }
 
-    // Verbindungslinien zwischen Standorten in Reihenfolge zeichnen
-    this.drawConnectionLines();
+    // Verbindungslinien entfernt
 
     // Route-Pfeile für Richtung hinzufügen
     this.addRouteArrows();
@@ -312,57 +311,7 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
     }
   }
 
-  private drawConnectionLines(): void {
-    if (this.optimalOrder.length === 0) return;
-
-    const connectionPoints: [number, number][] = [];
-    
-    // Startpunkt hinzufügen (Koordinaten umkehren: [lng, lat] -> [lat, lng])
-    connectionPoints.push([this.START_LOCATION[1], this.START_LOCATION[0]]);
-    
-    // Kundenstandorte in Reihenfolge hinzufügen (Koordinaten umkehren: [lng, lat] -> [lat, lng])
-    this.optimalOrder.forEach(stop => {
-      const waypoint = this.waypoints.find(wp => wp.customerId === stop.customer.id);
-      if (waypoint) {
-        connectionPoints.push([waypoint.location[1], waypoint.location[0]]);
-      }
-    });
-    
-    // Zurück zum Startpunkt (Koordinaten umkehren: [lng, lat] -> [lat, lng])
-    connectionPoints.push([this.START_LOCATION[1], this.START_LOCATION[0]]);
-
-    // Verbindungslinien zeichnen
-    for (let i = 0; i < connectionPoints.length - 1; i++) {
-      const from = connectionPoints[i];
-      const to = connectionPoints[i + 1];
-      
-      const connectionLine = L.polyline([from, to], {
-        color: '#ff6b6b',
-        weight: 3,
-        opacity: 0.8,
-        dashArray: '5, 5'
-      }).addTo(this.map);
-
-      // Pfeil in der Mitte der Verbindung
-      const midPoint = [
-        (from[0] + to[0]) / 2,
-        (from[1] + to[1]) / 2
-      ];
-      
-      const angle = Math.atan2(to[1] - from[1], to[0] - from[0]) * 180 / Math.PI;
-      
-      const arrowIcon = L.divIcon({
-        className: 'connection-arrow',
-        html: '➡️',
-        iconSize: [16, 16],
-        iconAnchor: [8, 8]
-      });
-
-      L.marker(midPoint, { icon: arrowIcon })
-        .addTo(this.map)
-        .setRotationAngle(angle);
-    }
-  }
+  // drawConnectionLines Methode entfernt
 
   private addLegend(): void {
     const legend = L.control({ position: 'bottomright' });
@@ -384,8 +333,8 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
           <span>Optimale Route</span>
         </div>
         <div class="legend-item">
-          <span class="legend-icon connection-icon">➡️</span>
-          <span>Verbindungen</span>
+          <span class="legend-icon route-icon">🚗</span>
+          <span>Optimale Route</span>
         </div>
       `;
       return div;
