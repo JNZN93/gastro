@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { AuthService } from './authentication.service';
 import { ToggleCartService } from './toggle-cart.service';
+import { FavoritesService } from './favorites.service';
 
 @Injectable({
   providedIn: 'root'
@@ -9,7 +10,7 @@ export class GlobalService {
   public warenkorb: any[] = [];
   public orderData: any = {};
   public totalPrice: any = 0;
-  public favoriteItems: any = [];
+  public favoriteItems: any[] = [];
   public isAdmin: boolean = false;
   public userRole: string = '';
   public userName: string = '';
@@ -22,7 +23,11 @@ export class GlobalService {
   // Global verfügbares Array für PFAND-Artikel (statisch, wird nur einmal geladen)
   public pfandArtikels: any[] = [];
 
-  constructor(private authService: AuthService, private toggleService: ToggleCartService) { 
+  constructor(
+    private authService: AuthService, 
+    private toggleService: ToggleCartService,
+    private favoritesService: FavoritesService
+  ) { 
     // Beim Start der Anwendung Token-Validierung durchführen
     this.validateTokenOnStart();
   }
@@ -41,6 +46,9 @@ export class GlobalService {
           this.userRole = response.user.role;
           this.userName = response.user.name || response.user.email || 'Benutzer';
           console.log('🔄 [GLOBAL-VALIDATE] Login-Status gesetzt:', this.isUserLoggedIn, 'Rolle:', this.userRole, 'Name:', this.userName);
+          
+          // Favoriten beim Token-Validierung laden
+          this.onUserLogin();
         },
         error: (error) => {
           console.error('🔄 [GLOBAL-VALIDATE] Token ungültig:', error);
@@ -197,5 +205,85 @@ export class GlobalService {
 
   toggleWarenkorb(): void {
     this.toggleService.toggle(); // Use the same service as header
+  }
+
+  // ===== FAVORITES METHODS =====
+  
+  // Favoriten laden
+  loadFavorites(): void {
+    if (this.isUserLoggedIn) {
+      this.favoritesService.getFavorites().subscribe({
+        next: (favorites) => {
+          this.favoriteItems = favorites;
+          console.log('🔄 [GLOBAL-FAVORITES] Favoriten geladen:', favorites.length);
+        },
+        error: (error) => {
+          console.error('🔄 [GLOBAL-FAVORITES] Fehler beim Laden der Favoriten:', error);
+          this.favoriteItems = [];
+        }
+      });
+    } else {
+      this.favoriteItems = [];
+    }
+  }
+
+  // Favorit hinzufügen
+  addFavorite(productId: number): void {
+    if (this.isUserLoggedIn) {
+      // Sofort lokal hinzufügen für bessere UX
+      if (!this.isFavorite(productId)) {
+        // Temporärer Eintrag hinzufügen
+        this.favoriteItems.push({ product_id: productId, id: Date.now() });
+      }
+      
+      this.favoritesService.addFavorite(productId).subscribe({
+        next: (response) => {
+          console.log('🔄 [GLOBAL-FAVORITES] Favorit hinzugefügt:', response);
+          // Favoriten neu laden um sicherzustellen, dass alles synchron ist
+          this.loadFavorites();
+        },
+        error: (error) => {
+          console.error('🔄 [GLOBAL-FAVORITES] Fehler beim Hinzufügen des Favoriten:', error);
+          // Bei Fehler den temporären Eintrag wieder entfernen
+          this.favoriteItems = this.favoriteItems.filter(fav => fav.product_id !== productId);
+        }
+      });
+    }
+  }
+
+  // Favorit entfernen
+  removeFavorite(productId: number): void {
+    if (this.isUserLoggedIn) {
+      // Sofort lokal entfernen für bessere UX
+      this.favoriteItems = this.favoriteItems.filter(fav => fav.product_id !== productId);
+      
+      this.favoritesService.removeFavorite(productId).subscribe({
+        next: (response) => {
+          console.log('🔄 [GLOBAL-FAVORITES] Favorit entfernt:', response);
+          // Favoriten neu laden um sicherzustellen, dass alles synchron ist
+          this.loadFavorites();
+        },
+        error: (error) => {
+          console.error('🔄 [GLOBAL-FAVORITES] Fehler beim Entfernen des Favoriten:', error);
+          // Bei Fehler den Eintrag wieder hinzufügen
+          this.loadFavorites();
+        }
+      });
+    }
+  }
+
+  // Prüfen ob ein Produkt favorisiert ist
+  isFavorite(productId: number): boolean {
+    return this.favoriteItems.some((fav: any) => fav.product_id === productId);
+  }
+
+  // Favoriten beim Login laden
+  onUserLogin(): void {
+    this.loadFavorites();
+  }
+
+  // Favoriten beim Logout leeren
+  onUserLogout(): void {
+    this.favoriteItems = [];
   }
 }

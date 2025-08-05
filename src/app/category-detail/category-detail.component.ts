@@ -237,9 +237,13 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
       );
       console.log('📊 [FILTER] Alle Produkte geladen:', this.artikelData.length);
     } else if (this.categoryName === '⭐ Favoriten') {
-      // Favoriten aus localStorage laden
-      const favorites = JSON.parse(localStorage.getItem('favoriteItems') || '[]');
-      this.artikelData = favorites;
+      // Favoriten aus API laden
+      if (this.globalService.isUserLoggedIn) {
+        this.artikelData = this.globalService.favoriteItems;
+      } else {
+        this.artikelData = [];
+        this.showToastNotification('Bitte melden Sie sich an, um Ihre Favoriten zu sehen', 'error');
+      }
       console.log('📊 [FILTER] Favoriten geladen:', this.artikelData.length);
     } else if (this.categoryName === '🕒 Zuletzt gekauft') {
       // Zuletzt gekaufte Artikel laden (asynchron)
@@ -692,32 +696,38 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
 
   // Favoriten-Methoden
   isFavorite(artikel: any): boolean {
-    const favorites = JSON.parse(localStorage.getItem('favoriteItems') || '[]');
-    return favorites.some((fav: any) => fav.article_number === artikel.article_number);
+    return this.globalService.isFavorite(artikel.id);
   }
 
   toggleFavorite(event: Event, artikel: any): void {
     event.stopPropagation();
-    const favorites = JSON.parse(localStorage.getItem('favoriteItems') || '[]');
-    const existingIndex = favorites.findIndex((fav: any) => fav.article_number === artikel.article_number);
     
-    if (existingIndex > -1) {
-      favorites.splice(existingIndex, 1);
-      
-      // Toast-Benachrichtigung für entfernten Artikel
-      this.showToastNotification(`⭐ "${artikel.article_text}" aus Favoriten entfernt`, 'success');
-    } else {
-      favorites.push(artikel);
-      
-      // Toast-Benachrichtigung für hinzugefügten Artikel
-      this.showToastNotification(`⭐ "${artikel.article_text}" zu Favoriten hinzugefügt`, 'success');
+    if (!this.globalService.isUserLoggedIn) {
+      this.showToastNotification('Bitte melden Sie sich an, um Favoriten zu verwenden', 'error');
+      return;
     }
-    
-    localStorage.setItem('favoriteItems', JSON.stringify(favorites));
-    
-    // Wenn wir uns in der Favoriten-Kategorie befinden, aktualisieren wir die Anzeige
-    if (this.categoryName === '⭐ Favoriten') {
-      this.filterCategoryProducts();
+
+    const isCurrentlyFavorite = this.globalService.isFavorite(artikel.id);
+
+    if (isCurrentlyFavorite) {
+      // Favorit entfernen
+      this.globalService.removeFavorite(artikel.id);
+      this.showToastNotification(`⭐ "${artikel.article_text}" aus Favoriten entfernt`, 'success');
+      
+      // Wenn wir uns in der Favoriten-Kategorie befinden, Artikel sofort aus der Anzeige entfernen
+      if (this.categoryName === '⭐ Favoriten') {
+        this.artikelData = this.artikelData.filter(item => item.id !== artikel.id);
+        this.updateFilteredData();
+        
+        // Wenn keine Favoriten mehr vorhanden sind, zur Hauptseite zurückkehren
+        if (this.artikelData.length === 0) {
+          this.router.navigate(['/products']);
+        }
+      }
+    } else {
+      // Favorit hinzufügen
+      this.globalService.addFavorite(artikel.id);
+      this.showToastNotification(`⭐ "${artikel.article_text}" zu Favoriten hinzugefügt`, 'success');
     }
   }
 

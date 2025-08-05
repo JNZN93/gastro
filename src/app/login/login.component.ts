@@ -39,6 +39,9 @@ export class LoginComponent {
           this.globalService.setUserRole(response.role);
           this.globalService.setUserLoggedIn(true);
           
+          // Favoriten beim Login laden
+          this.globalService.onUserLogin();
+          
           // selectedCustomer bei Login löschen
           this.globalService.clearSelectedCustomer();
           

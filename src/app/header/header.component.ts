@@ -198,6 +198,10 @@ export class HeaderComponent {
     this.globalService.clearSelectedCustomer();
     this.globalService.setUserLoggedIn(false);
     this.globalService.setUserRole('');
+    
+    // Favoriten beim Logout leeren
+    this.globalService.onUserLogout();
+    
     this.showModal = false;
     this.router.navigate(['/products']);
   }

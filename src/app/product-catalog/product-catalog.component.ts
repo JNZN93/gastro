@@ -256,40 +256,37 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
   }
 
   isFavorite(artikel: any): boolean {
-    const favs = localStorage.getItem('favoriteItems') || '[]';
-    return JSON.parse(favs).some((item: any) => item.article_number === artikel.article_number);
-    
+    return this.globalService.isFavorite(artikel.id);
   }
 
   toggleFavorite(event: Event, artikel: any): void {
-    let favorites = JSON.parse(localStorage.getItem('favoriteItems') || '[]');
-  
-    const index = favorites.findIndex((item: any) => item.article_number === artikel.article_number);
-  
-    if (index > -1) {
-      // Artikel existiert -> Entfernen
-      favorites.splice(index, 1);
-      
-      // Toast-Benachrichtigung für entfernten Artikel
+    if (!this.globalService.isUserLoggedIn) {
+      this.showToastNotification('Bitte melden Sie sich an, um Favoriten zu verwenden', 'error');
+      return;
+    }
+
+    const isCurrentlyFavorite = this.globalService.isFavorite(artikel.id);
+
+    if (isCurrentlyFavorite) {
+      // Favorit entfernen
+      this.globalService.removeFavorite(artikel.id);
       this.showToastNotification(`⭐ "${artikel.article_text}" aus Favoriten entfernt`, 'success');
-    } else {
-      // Artikel hinzufügen
-      favorites.push(artikel);
       
-      // Toast-Benachrichtigung für hinzugefügten Artikel
+      // Wenn wir uns in der Favoriten-Kategorie befinden, Artikel sofort aus der Anzeige entfernen
+      if (this.selectedCategory === 'FAVORITEN') {
+        this.artikelData = this.artikelData.filter(item => item.id !== artikel.id);
+        
+        // Wenn keine Favoriten mehr vorhanden sind, zur Hauptseite zurückkehren
+        if (this.artikelData.length === 0) {
+          this.selectedCategory = '';
+          this.artikelData = this.globalArtikels;
+        }
+      }
+    } else {
+      // Favorit hinzufügen
+      this.globalService.addFavorite(artikel.id);
       this.showToastNotification(`⭐ "${artikel.article_text}" zu Favoriten hinzugefügt`, 'success');
     }
-    // Alphabetisch sortieren nach artikel.name (case-insensitive)
-    favorites.sort((a: any, b: any) => 
-      a.article_text.localeCompare(b.article_text, undefined, { sensitivity: 'base' })
-    );
-
-    localStorage.setItem('favoriteItems', JSON.stringify(favorites));
-    
-    // Force change detection to update the categories list
-    setTimeout(() => {
-      // Trigger change detection to update the categories list
-    }, 0);
   }
 
   
@@ -458,7 +455,12 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
     window.scrollTo({ top: 0});
 
     if (this.selectedCategory == "FAVORITEN") {
-        this.artikelData = JSON.parse(localStorage.getItem('favoriteItems') || '[]');
+        if (this.globalService.isUserLoggedIn) {
+          this.artikelData = this.globalService.favoriteItems;
+        } else {
+          this.artikelData = [];
+          this.showToastNotification('Bitte melden Sie sich an, um Ihre Favoriten zu sehen', 'error');
+        }
         return
     }
     if (this.selectedCategory == "") {
@@ -656,8 +658,12 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
       console.log('📊 [PRODUCT-CATALOG] Anzahl verarbeiteter Artikel:', this.artikelData.length);
     } else if (category === '⭐ Favoriten') {
       console.log('⭐ [PRODUCT-CATALOG] Lade Favoriten...');
-      const favorites = JSON.parse(localStorage.getItem('favoriteItems') || '[]');
-      this.artikelData = favorites;
+      if (this.globalService.isUserLoggedIn) {
+        this.artikelData = this.globalService.favoriteItems;
+      } else {
+        this.artikelData = [];
+        this.showToastNotification('Bitte melden Sie sich an, um Ihre Favoriten zu sehen', 'error');
+      }
       console.log('📊 [PRODUCT-CATALOG] Favoriten geladen:', this.artikelData);
     } else if (category === 'alle-produkte') {
       console.log('🏢 [PRODUCT-CATALOG] Lade alle Produkte...');
@@ -681,9 +687,8 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
       ),
     ];
     
-    // Favoriten-Kategorie hinzufügen, wenn Favoriten vorhanden sind
-    const favorites = JSON.parse(localStorage.getItem('favoriteItems') || '[]');
-    if (favorites.length > 0) {
+    // Favoriten-Kategorie hinzufügen, wenn Benutzer angemeldet ist und Favoriten vorhanden sind
+    if (this.globalService.isUserLoggedIn && this.globalService.favoriteItems.length > 0) {
       uniqueCategories.unshift('⭐ Favoriten');
     }
     
