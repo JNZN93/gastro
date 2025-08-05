@@ -23,9 +23,11 @@ export class WarenkorbComponent implements OnInit {
   delivery_date: string | null = '';
   customer_notes: string | null = '';
   combinedValue: string = '';
+  
+  // Lokaler Bestätigungsdialog
+  showClearConfirmation: boolean = false;
 
   
-
 
   constructor(private toggleService: ToggleCartService, public globalService: GlobalService, private orderService: OrderService, private dialog: MatDialog) { 
 
@@ -153,30 +155,26 @@ export class WarenkorbComponent implements OnInit {
   }
 
   clearCart() {
-    // Bestätigungsdialog anzeigen
-    const dialogRef = this.dialog.open(MyDialogComponent, {
-      data: {
-        title: 'Warenkorb leeren',
-        message: 'Möchtest du wirklich den gesamten Warenkorb leeren? Diese Aktion kann nicht rückgängig gemacht werden.',
-        isConfirmation: true,
-        confirmLabel: 'Ja, leeren',
-        cancelLabel: 'Abbrechen'
-      },
-      maxWidth: '400px',
-      minWidth: '300px',
-    });
+    // Lokalen Bestätigungsdialog anzeigen
+    this.showClearConfirmation = true;
+  }
 
-    dialogRef.afterClosed().subscribe(result => {
-      if (result === true) {
-        // Warenkorb komplett leeren
-        this.globalService.warenkorb = [];
-        this.globalService.totalPrice = 0;
-        localStorage.removeItem('warenkorb');
-        
-        // Ausgewählten Kunden löschen
-        this.globalService.clearSelectedCustomer();
-      }
-    });
+  confirmClearCart() {
+    // Warenkorb komplett leeren
+    this.globalService.warenkorb = [];
+    this.globalService.totalPrice = 0;
+    localStorage.removeItem('warenkorb');
+    
+    // Ausgewählten Kunden löschen
+    this.globalService.clearSelectedCustomer();
+    
+    // Dialog schließen
+    this.showClearConfirmation = false;
+  }
+
+  cancelClearCart() {
+    // Dialog schließen ohne zu leeren
+    this.showClearConfirmation = false;
   }
 
   closeWarenkorb(){
