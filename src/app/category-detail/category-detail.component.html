@@ -129,15 +129,7 @@
             <div class="product-content">
               <h3 class="product-title">{{ artikel.article_text }}</h3>
               <p class="product-number">Art.-Nr: {{ artikel.article_number }}</p>
-              <!-- Debug Info -->
-              @if (categoryName === '🕒 Zuletzt gekauft' || categoryName === 'Zuletzt gekauft') {
-              <div style="font-size: 10px; color: #666; margin: 5px 0;">
-                Debug: customer_price_net={{ artikel.customer_price_net }}, 
-                customer_price_gross={{ artikel.customer_price_gross }}, 
-                invoice_id={{ artikel.invoice_id }}, 
-                last_order_date={{ artikel.last_order_date }}
-              </div>
-              }
+
               
               <!-- Zuletzt gekaufte Artikel anzeigen -->
               <!-- Debug: {{ categoryName }} - {{ artikel.customer_price_net }} -->
