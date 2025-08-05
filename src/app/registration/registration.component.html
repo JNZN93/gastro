@@ -1,87 +1,123 @@
-<div class="registration-container">
-  <div class="registration-card">
-      <div class="registration-header">
-          <h1>Account erstellen</h1>
-          <p>Füllen Sie die Felder aus, um sich zu registrieren</p>
-      </div>
-
-      <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="registration-form">
-          <!-- Name Field -->
-          <div class="input-group">
+<div class="registration-dashboard">
+  <!-- Hero Section -->
+  <div class="hero-section">
+    <div class="hero-background">
+      <div class="hero-video-overlay"></div>
+    </div>
+    
+    <div class="hero-content">
+      <!-- Main Content Area -->
+      <div class="main-content">
+        <div class="hero-text">
+          <div class="hero-badge">Willkommen bei uns</div>
+          <h1 class="hero-title">Gastro Depot Worms</h1>
+          <p class="hero-subtitle">Erstellen Sie Ihr Konto und profitieren Sie von unserem umfangreichen Gastronomie-Sortiment</p>
+        </div>
+        
+        <!-- Registration Form -->
+        <div class="registration-card">
+          <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="registration-form">
+            <!-- Name Field -->
+            <div class="input-group">
               <input type="text" id="name" formControlName="name" placeholder=" " required>
               <label for="name">Name</label>
               <span class="input-border"></span>
-              <div *ngIf="isSubmitted && registerForm.controls['name'].errors" class="error-message">
-                  <small *ngIf="registerForm.controls['name'].errors['required']">Benutzername ist erforderlich</small>
-                  <small *ngIf="registerForm.controls['name'].errors['minlength']">Mindestens 3 Zeichen</small>
+              <div *ngIf="isSubmitted && registerForm.controls['name'].errors" class="field-error">
+                <small *ngIf="registerForm.controls['name'].errors['required']">Benutzername ist erforderlich</small>
+                <small *ngIf="registerForm.controls['name'].errors['minlength']">Mindestens 3 Zeichen</small>
               </div>
-          </div>
+            </div>
 
-          <!-- Company Field -->
-          <div class="input-group">
+            <!-- Company Field -->
+            <div class="input-group">
               <input type="text" id="company" formControlName="company" placeholder=" ">
               <label for="company">Firma (optional)</label>
               <span class="input-border"></span>
-              <div *ngIf="isSubmitted && registerForm.controls['company'].errors" class="error-message">
-                  <small *ngIf="registerForm.controls['company'].errors['minlength']">Mindestens 3 Zeichen</small>
+              <div *ngIf="isSubmitted && registerForm.controls['company'].errors" class="field-error">
+                <small *ngIf="registerForm.controls['company'].errors['minlength']">Mindestens 3 Zeichen</small>
               </div>
-          </div>
+            </div>
 
-          <!-- Email Field -->
-          <div class="input-group">
+            <!-- Email Field -->
+            <div class="input-group">
               <input type="email" id="email" formControlName="email" placeholder=" " required>
               <label for="email">E-Mail</label>
               <span class="input-border"></span>
-              <div *ngIf="isSubmitted && registerForm.controls['email'].errors" class="error-message">
-                  <small *ngIf="registerForm.controls['email'].errors['required']">E-Mail ist erforderlich</small>
-                  <small *ngIf="registerForm.controls['email'].errors['email']">Gültige E-Mail-Adresse erforderlich</small>
+              <div *ngIf="isSubmitted && registerForm.controls['email'].errors" class="field-error">
+                <small *ngIf="registerForm.controls['email'].errors['required']">E-Mail ist erforderlich</small>
+                <small *ngIf="registerForm.controls['email'].errors['email']">Gültige E-Mail-Adresse erforderlich</small>
               </div>
-          </div>
+            </div>
 
-      <!-- Passwort Feld -->
-<div class="input-group">
-  <input [type]="passwordVisible ? 'text' : 'password'" id="password" formControlName="password" placeholder=" " required>
-  <label for="password">Passwort</label>
-  <span class="input-border"></span>
-  <button type="button" class="toggle-password" (click)="togglePassword()">
-    <i class="material-icons">{{passwordVisible ? 'visibility_off' : 'visibility'}}</i>
-  </button>
-  <div *ngIf="isSubmitted && registerForm.controls['password'].errors" class="error-message">
-    <small *ngIf="registerForm.controls['password'].errors['required']">Passwort ist erforderlich</small>
-    <small *ngIf="registerForm.controls['password'].errors['minlength']">Mindestens 6 Zeichen</small>
-  </div>
-</div>
+            <!-- Password Field -->
+            <div class="input-group">
+              <input [type]="passwordVisible ? 'text' : 'password'" id="password" formControlName="password" placeholder=" " required>
+              <label for="password">Passwort</label>
+              <span class="input-border"></span>
+              <button type="button" class="toggle-password" (click)="togglePassword()">
+                <img [src]="passwordVisible ? '/visibility_off.png' : '/visibility_on.png'" alt="toggle password">
+              </button>
+              <div *ngIf="isSubmitted && registerForm.controls['password'].errors" class="field-error">
+                <small *ngIf="registerForm.controls['password'].errors['required']">Passwort ist erforderlich</small>
+                <small *ngIf="registerForm.controls['password'].errors['minlength']">Mindestens 6 Zeichen</small>
+              </div>
+            </div>
 
-        <!-- Passwort bestätigen Feld -->
-<div class="input-group">
-  <input [type]="confirmPasswordVisible ? 'text' : 'password'" id="confirmPassword" formControlName="confirmPassword" placeholder=" " required>
-  <label for="confirmPassword">Passwort bestätigen</label>
-  <span class="input-border"></span>
-  <button type="button" class="toggle-password" (click)="toggleConfirmPassword()">
-    <i class="material-icons">{{confirmPasswordVisible ? 'visibility_off' : 'visibility'}}</i>
-  </button>
-  <div *ngIf="isSubmitted && registerForm.hasError('mismatch')" class="error-message">
-    <small>Passwörter stimmen nicht überein</small>
-  </div>
-</div>
+            <!-- Confirm Password Field -->
+            <div class="input-group">
+              <input [type]="confirmPasswordVisible ? 'text' : 'password'" id="confirmPassword" formControlName="confirmPassword" placeholder=" " required>
+              <label for="confirmPassword">Passwort bestätigen</label>
+              <span class="input-border"></span>
+              <button type="button" class="toggle-password" (click)="toggleConfirmPassword()">
+                <img [src]="confirmPasswordVisible ? '/visibility_off.png' : '/visibility_on.png'" alt="toggle password">
+              </button>
+              <div *ngIf="isSubmitted && registerForm.hasError('mismatch')" class="field-error">
+                <small>Passwörter stimmen nicht überein</small>
+              </div>
+            </div>
 
-          <div class="terms">
+            <div class="terms">
               <small>Mit der Registrierung akzeptieren Sie unsere <a routerLink="/privacy">Datenschutzbestimmungen</a></small>
-          </div>
+            </div>
 
-          <button type="submit" class="submit-btn" [disabled]="registerForm.invalid">
-              Registrieren
-              <span class="btn-arrow">→</span>
-          </button>
+            <div class="form-actions">
+              <button type="submit" class="registration-btn primary" [disabled]="registerForm.invalid">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+                </svg>
+                Account erstellen
+              </button>
+            </div>
 
-          <div *ngIf="errorMessage" class="form-error">
-              <i class="material-icons">error_outline</i>
-              <span>{{ errorMessage }}</span>
-          </div>
+            <div class="form-footer">
+              <a routerLink="/login">Bereits registriert? Zum Login</a>
+            </div>
+          </form>
 
-          <div class="login-link">
-              <p>Bereits registriert? <a routerLink="/login">Zum Login</a></p>
+          <div *ngIf="errorMessage" class="error-message">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <span>{{ errorMessage }}</span>
           </div>
-      </form>
+        </div>
+      </div>
+      
+      <!-- Stats Section -->
+      <div class="hero-stats">
+        <div class="stat-item">
+          <div class="stat-number">2500+</div>
+          <div class="stat-label">Produkte</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">300+</div>
+          <div class="stat-label">Kunden</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">Express</div>
+          <div class="stat-label">Lieferung</div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
