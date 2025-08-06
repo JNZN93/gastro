@@ -4075,6 +4075,7 @@
       opacity: 0;
       visibility: hidden;
       transition: opacity 0.3s ease, visibility 0.3s ease;
+      padding-bottom: 120px; // Mehr Abstand für Tab-Bar
 
       &.active {
         opacity: 1;
@@ -4840,6 +4841,7 @@
     .tab-content {
       .tab-panel {
         padding: 20px; // Mehr Padding für Tablet
+        padding-bottom: 140px; // Noch mehr Abstand für Tab-Bar auf Tablet
       }
     }
   }
@@ -4987,6 +4989,7 @@
     .tab-content {
       .tab-panel {
         padding: 12px;
+        padding-bottom: 130px; // Mehr Abstand für Tab-Bar auf kleinen Mobilgeräten
         box-sizing: border-box;
       }
     }
