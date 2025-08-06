@@ -568,53 +568,63 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
     // Standard-Bild für unbekannte Kategorien - Allgemeine Lebensmittel
     const defaultImage = 'https://images.unsplash.com/photo-1542838132-92c53300491e?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60';
     
-    // Bereinige die Kategorie von Leerzeichen und normalisiere sie
-    const categoryKey = category.trim().toUpperCase();
+    // Hilfsfunktion zum Normalisieren von Kategorienamen
+    const normalizeCategory = (cat: string): string => {
+      return cat
+        .trim()
+        .toUpperCase()
+        // Entferne alle unsichtbaren Zeichen (non-breaking spaces, zero-width spaces, etc.)
+        .replace(/[\u00A0\u200B\u200C\u200D\uFEFF]/g, ' ')
+        // Normalisiere Leerzeichen
+        .replace(/\s+/g, ' ')
+        .trim();
+    };
     
-    // Versuche direkten Zugriff
-    let foundImage = categoryImages[categoryKey];
+    // Normalisiere die eingegebene Kategorie
+    const normalizedCategory = normalizeCategory(category);
+    
+    // Versuche direkten Zugriff mit normalisiertem Namen
+    let foundImage = categoryImages[normalizedCategory];
     
     // Falls nicht gefunden, versuche alternative Schreibweisen
     if (!foundImage) {
-      
       // Versuche ohne Leerzeichen
-      const noSpaces = categoryKey.replace(/\s+/g, '');
+      const noSpaces = normalizedCategory.replace(/\s+/g, '');
       foundImage = categoryImages[noSpaces];
-      if (foundImage) {
-      }
       
       // Versuche mit Unterstrich
       if (!foundImage) {
-        const withUnderscore = categoryKey.replace(/\s+/g, '_');
+        const withUnderscore = normalizedCategory.replace(/\s+/g, '_');
         foundImage = categoryImages[withUnderscore];
-        if (foundImage) {
-        }
       }
       
-      // Versuche exakte Suche in allen verfügbaren Kategorien
+      // Versuche exakte Suche in allen verfügbaren Kategorien (normalisiert)
       if (!foundImage) {
         const availableCategories = Object.keys(categoryImages);
-        const exactMatch = availableCategories.find(cat => cat.trim() === categoryKey.trim());
+        const exactMatch = availableCategories.find(cat => 
+          normalizeCategory(cat) === normalizedCategory
+        );
         if (exactMatch) {
           foundImage = categoryImages[exactMatch];
         }
       }
       
-      // Versuche partielle Übereinstimmung
+      // Versuche partielle Übereinstimmung für spezielle Fälle
       if (!foundImage) {
         const availableCategories = Object.keys(categoryImages);
-        const partialMatch = availableCategories.find(cat => 
-          cat.includes('ALKOHOL') && categoryKey.includes('ALKOHOL') ||
-          cat.includes('BROT') && categoryKey.includes('BROT')
-        );
+        const partialMatch = availableCategories.find(cat => {
+          const normalizedCat = normalizeCategory(cat);
+          return (
+            (normalizedCat.includes('ALKOHOL') && normalizedCategory.includes('ALKOHOL')) ||
+            (normalizedCat.includes('BROT') && normalizedCategory.includes('BROT')) ||
+            (normalizedCat.includes('FRISCHE') && normalizedCategory.includes('FRISCHE') && 
+             normalizedCat.includes('HAEHNCHEN') && normalizedCategory.includes('HAEHNCHEN'))
+          );
+        });
         if (partialMatch) {
           foundImage = categoryImages[partialMatch];
         }
       }
-    }
-    
-    if (foundImage) {
-    } else {
     }
     
     return foundImage || defaultImage;
