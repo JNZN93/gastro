@@ -397,6 +397,7 @@ export class EmployeesComponent implements OnInit, OnDestroy {
 
   private searchEanInApi(eanCode: string): void {
     const token = localStorage.getItem('token');
+    /** test log for commit */
     
     this.http.get(`https://multi-mandant-ecommerce.onrender.com/api/product-eans/ean/${eanCode}`, {
       headers: {
