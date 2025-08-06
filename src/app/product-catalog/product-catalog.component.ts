@@ -58,6 +58,9 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
   // Eigenschaft für Loading-Overlay während Navigation
   showLoadingOverlay: boolean = false;
 
+  // Neue Eigenschaft für Loading-Screen-Typ
+  isFromCategoryDetail: boolean = false;
+
   // Eigenschaften für Image Modal
   showImageModal: boolean = false;
   selectedImageUrl: string = '';
@@ -89,6 +92,9 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
     if(loadedWarenkorb) {
       this.globalService.warenkorb = JSON.parse(loadedWarenkorb);
     }
+
+    // Prüfe, ob wir von der Category-Detail-Seite kommen
+    this.isFromCategoryDetail = this.route.snapshot.queryParams['scrollToCategories'] === 'true';
 
     if (token) {
       // Benutzer ist angemeldet - normale Funktionalität
@@ -126,8 +132,7 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
             this.checkScrollToCategories();
             
             // Loading-Screen mit angepasster Verzögerung basierend auf Navigation
-            const isFromCategoryDetail = this.route.snapshot.queryParams['scrollToCategories'] === 'true';
-            this.hideLoadingScreenWithDelay(isFromCategoryDetail ? 500 : 1000);
+            this.hideLoadingScreenWithDelay(this.isFromCategoryDetail ? 500 : 1000);
           });
         },
         error: (error) => {
@@ -159,8 +164,7 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
       this.checkScrollToCategories();
       
       // Loading-Screen mit angepasster Verzögerung basierend auf Navigation
-      const isFromCategoryDetail = this.route.snapshot.queryParams['scrollToCategories'] === 'true';
-      this.hideLoadingScreenWithDelay(isFromCategoryDetail ? 500 : 1000);
+      this.hideLoadingScreenWithDelay(this.isFromCategoryDetail ? 500 : 1000);
     });
   }
 
@@ -956,6 +960,7 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
         
         // Loading-Overlay anzeigen
         this.showLoadingOverlay = true;
+        this.isFromCategoryDetail = true; // Setze den neuen Flag
         
         // Query-Parameter aus der URL entfernen
         this.router.navigate([], {
@@ -976,11 +981,13 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
               overlay.classList.add('fade-out');
               setTimeout(() => {
                 this.showLoadingOverlay = false;
+                this.isFromCategoryDetail = false; // Zurücksetzen des Flags
                 // Body scroll wiederherstellen
                 document.body.style.overflow = '';
               }, 400); // Warte auf CSS-Transition
             } else {
               this.showLoadingOverlay = false;
+              this.isFromCategoryDetail = false; // Zurücksetzen des Flags
               document.body.style.overflow = '';
             }
           }, 300); // Reduziert von 800ms auf 300ms für schnellere Navigation von category detail

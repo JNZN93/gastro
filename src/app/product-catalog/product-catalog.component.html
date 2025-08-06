@@ -343,7 +343,16 @@
 
     <!-- Loading Screen -->
     @if (isVisible) {
-    <div class="black-loading-screen"></div>
+      @if (isFromCategoryDetail) {
+        <!-- Schwarzer Loading Screen für Navigation von Category-Detail -->
+        <div class="black-loading-screen"></div>
+      } @else {
+        <!-- Durchsichtiger Loading Screen für initiales Laden -->
+        <div class="transparent-loading-screen">
+          <div class="spinner"></div>
+          <p>Laden...</p>
+        </div>
+      }
     }
 
     <!-- Toast Benachrichtigung -->
