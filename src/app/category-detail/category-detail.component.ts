@@ -116,6 +116,12 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
     // Scroll to top immediately when component initializes
     this.scrollToTop();
     
+    // Warenkorb aus localStorage laden (wie in product-catalog)
+    const loadedWarenkorb = localStorage.getItem('warenkorb');
+    if (loadedWarenkorb) {
+      this.globalService.warenkorb = JSON.parse(loadedWarenkorb);
+    }
+    
     // Kategorie-Name aus der URL holen
     this.route.params.subscribe(params => {
       this.categoryName = decodeURIComponent(params['categoryName']);
