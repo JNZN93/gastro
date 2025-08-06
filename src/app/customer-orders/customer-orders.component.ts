@@ -57,6 +57,11 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   isArticlePricesNotificationVisible: boolean = false;
   articlePricesNotificationText: string = '';
   articlePricesNotificationTimeout: any = null;
+
+  // Toast für mobile/tablet Artikel-Hinzufügung
+  isMobileToastVisible: boolean = false;
+  mobileToastText: string = '';
+  mobileToastTimeout: any = null;
   
   // EAN Assignment modal properties
   isEanAssignmentModalOpen: boolean = false;
@@ -1288,6 +1293,9 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     // Speichere Aufträge im localStorage
     this.globalService.saveCustomerOrders(this.orderItems);
 
+    // Zeige Toast für mobile/tablet Ansicht
+    this.showMobileToast(artikel.article_text || artikel.article_name || 'Artikel', Number(artikel.quantity));
+
     // Nur Button-Animation ausführen, wenn event.target existiert (echtes Klick-Event)
     if (event.target) {
       const button = event.target as HTMLElement;
@@ -1310,8 +1318,10 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     this.searchTerm = '';
     this.filteredArtikelData();
     
-    // Fokussiere zurück auf das Suchfeld
-    this.focusSearchInput();
+    // Nur in Desktop-Ansicht: Fokussiere zurück auf das Suchfeld
+    if (!this.isMobileOrTabletView()) {
+      this.focusSearchInput();
+    }
 
     // Scrolle zur letzten Artikel-Position
     this.scrollToLastArticle();
@@ -1985,6 +1995,34 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     }
   }
 
+  // Mobile/Tablet Toast Methoden
+  showMobileToast(articleName: string, quantity: number) {
+    this.mobileToastText = `✅ ${articleName} (${quantity}x) hinzugefügt`;
+    this.isMobileToastVisible = true;
+    
+    // Toast nach 3 Sekunden ausblenden
+    if (this.mobileToastTimeout) {
+      clearTimeout(this.mobileToastTimeout);
+    }
+    this.mobileToastTimeout = setTimeout(() => {
+      this.hideMobileToast();
+    }, 3000);
+  }
+
+  hideMobileToast() {
+    this.isMobileToastVisible = false;
+    this.mobileToastText = '';
+    if (this.mobileToastTimeout) {
+      clearTimeout(this.mobileToastTimeout);
+      this.mobileToastTimeout = null;
+    }
+  }
+
+  // Hilfsmethode um zu prüfen, ob wir in der mobilen/tablet Ansicht sind
+  private isMobileOrTabletView(): boolean {
+    return window.innerWidth <= 1023;
+  }
+
   clearArticlePricesSearch() {
     this.articlePricesSearchTerm = '';
     this.filterArticlePrices();
@@ -2134,14 +2172,19 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       // Zeige Benachrichtigung
       this.showArticlePricesNotification(artikel.article_text || artikel.article_name || 'Unbekannter Artikel', quantity);
       
+      // Zeige Toast für mobile/tablet Ansicht
+      this.showMobileToast(artikel.article_text || artikel.article_name || 'Artikel', quantity);
+      
       // Setze die temporäre Menge zurück
       customerPrice.tempQuantity = null;
       
       // Modal bleibt offen - nicht mehr automatisch schließen
       // this.closeArticlePricesModal();
 
-      // Fokussiere zurück auf das Suchfeld
-      this.focusSearchInput();
+      // Nur in Desktop-Ansicht: Fokussiere zurück auf das Suchfeld und wechsle Tab
+      if (!this.isMobileOrTabletView()) {
+        this.focusSearchInput();
+      }
 
       // Scrolle zur letzten Artikel-Position
       this.scrollToLastArticle();

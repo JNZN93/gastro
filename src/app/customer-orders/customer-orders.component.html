@@ -1008,3 +1008,15 @@
     </div>
   </div>
 </div>
+
+<!-- Mobile/Tablet Toast -->
+<div class="mobile-toast" 
+     [class.visible]="isMobileToastVisible"
+     [class.hidden]="!isMobileToastVisible">
+  <div class="mobile-toast-content">
+    <span class="mobile-toast-text">{{ mobileToastText }}</span>
+    <button class="mobile-toast-close" (click)="hideMobileToast()">
+      <span class="material-icons">close</span>
+    </button>
+  </div>
+</div>
