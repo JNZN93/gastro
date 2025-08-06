@@ -121,7 +121,9 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
             
             this.collectOrderData(response);
             this.globalService.orderData = this.orderData;
-            this.isVisible = false;
+            
+            // Loading-Screen für mindestens 1 Sekunde anzeigen
+            this.hideLoadingScreenWithDelay();
             
             // Überprüfe Query-Parameter für automatisches Scrollen zu Kategorien
             this.checkScrollToCategories();
@@ -152,7 +154,8 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
       // Keine Kategorie ausgewählt - Hauptseite wird angezeigt
       this.selectedCategory = '';
       
-      this.isVisible = false;
+      // Loading-Screen für mindestens 1 Sekunde anzeigen
+      this.hideLoadingScreenWithDelay();
       
       // Überprüfe Query-Parameter für automatisches Scrollen zu Kategorien
       this.checkScrollToCategories();
@@ -240,6 +243,13 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
       // Body scroll wieder erlauben
       this.restoreBodyScroll();
     }
+  }
+
+  // Methode zum Verstecken des Loading-Screens mit mindestens 1 Sekunde Verzögerung
+  private hideLoadingScreenWithDelay(): void {
+    setTimeout(() => {
+      this.isVisible = false;
+    }, 1000); // Mindestens 1 Sekunde anzeigen
   }
 
   // Methode zum Finden der Artikel-Details basierend auf product_id
