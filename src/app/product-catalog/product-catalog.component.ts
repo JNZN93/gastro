@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { CommonModule, ViewportScroller } from '@angular/common';
 import { Component, OnInit, OnDestroy, ViewChild, inject, HostListener } from '@angular/core';
 import { ArtikelDataService } from '../artikel-data.service';
 import { FormsModule } from '@angular/forms';
@@ -55,6 +55,9 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
   isLoadingLastOrders: boolean = false;
   currentUserId: string = '';
 
+  // Eigenschaft für sofortiges Scrollen zu Kategorien
+  shouldSkipHero: boolean = false;
+
   // Eigenschaften für Image Modal
   showImageModal: boolean = false;
   selectedImageUrl: string = '';
@@ -75,7 +78,8 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
     private router: Router,
     private route: ActivatedRoute,
     private authService: AuthService,
-    public globalService: GlobalService
+    public globalService: GlobalService,
+    private viewportScroller: ViewportScroller
   ) {}
 
   ngOnInit(): void {
@@ -935,18 +939,37 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
   checkScrollToCategories(): void {
     this.route.queryParams.subscribe(params => {
       if (params['scrollToCategories'] === 'true') {
-        // Kurze Verzögerung, um sicherzustellen, dass die Seite vollständig geladen ist
+        // Hero Section temporär ausblenden
+        this.shouldSkipHero = true;
+        
+        // Sofortiges Scrollen ohne Verzögerung
+        this.scrollToCategoriesImmediate();
+        
+        // Query-Parameter aus der URL entfernen
+        this.router.navigate([], {
+          relativeTo: this.route,
+          queryParams: {},
+          replaceUrl: true
+        });
+        
+        // Hero Section nach kurzer Verzögerung wieder anzeigen
         setTimeout(() => {
-          this.scrollToCategories();
-          // Query-Parameter aus der URL entfernen
-          this.router.navigate([], {
-            relativeTo: this.route,
-            queryParams: {},
-            replaceUrl: true
-          });
-        }, 500);
+          this.shouldSkipHero = false;
+        }, 100);
       }
     });
+  }
+
+  // Neue Methode für sofortiges Scrollen ohne Animation
+  scrollToCategoriesImmediate(): void {
+    const categoriesSection = document.querySelector('.categories-section');
+    if (categoriesSection) {
+      // Sofortige Position ohne Animation
+      categoriesSection.scrollIntoView({ behavior: 'instant' });
+    } else {
+      // Fallback: ViewportScroller verwenden
+      this.viewportScroller.scrollToPosition([0, 800]);
+    }
   }
 
   scrollToContact(): void {

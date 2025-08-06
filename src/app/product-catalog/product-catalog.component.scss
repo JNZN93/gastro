@@ -30,6 +30,10 @@
     padding: 4rem 0.75rem;
     margin: -70px -0.75rem 2rem -0.75rem;
   }
+  
+  &.hidden {
+    display: none;
+  }
 }
 
 .hero-background {
