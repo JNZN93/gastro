@@ -55,8 +55,8 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
   isLoadingLastOrders: boolean = false;
   currentUserId: string = '';
 
-  // Eigenschaft für sofortiges Scrollen zu Kategorien
-  shouldSkipHero: boolean = false;
+  // Eigenschaft für Loading-Overlay während Navigation
+  showLoadingOverlay: boolean = false;
 
   // Eigenschaften für Image Modal
   showImageModal: boolean = false;
@@ -939,11 +939,11 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
   checkScrollToCategories(): void {
     this.route.queryParams.subscribe(params => {
       if (params['scrollToCategories'] === 'true') {
-        // Hero Section temporär ausblenden
-        this.shouldSkipHero = true;
+        // Body scroll verhindern
+        document.body.style.overflow = 'hidden';
         
-        // Sofortiges Scrollen ohne Verzögerung
-        this.scrollToCategoriesImmediate();
+        // Loading-Overlay anzeigen
+        this.showLoadingOverlay = true;
         
         // Query-Parameter aus der URL entfernen
         this.router.navigate([], {
@@ -952,10 +952,27 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
           replaceUrl: true
         });
         
-        // Hero Section nach kurzer Verzögerung wieder anzeigen
+        // Kurze Verzögerung für bessere UX, dann scrollen
         setTimeout(() => {
-          this.shouldSkipHero = false;
-        }, 100);
+          this.scrollToCategoriesImmediate();
+          
+          // Loading-Overlay nach längerer Verzögerung sanft ausblenden
+          setTimeout(() => {
+            // Sanfte Ausblendung mit CSS-Transition
+            const overlay = document.querySelector('.loading-overlay') as HTMLElement;
+            if (overlay) {
+              overlay.classList.add('fade-out');
+              setTimeout(() => {
+                this.showLoadingOverlay = false;
+                // Body scroll wiederherstellen
+                document.body.style.overflow = '';
+              }, 400); // Warte auf CSS-Transition
+            } else {
+              this.showLoadingOverlay = false;
+              document.body.style.overflow = '';
+            }
+          }, 800);
+        }, 200);
       }
     });
   }

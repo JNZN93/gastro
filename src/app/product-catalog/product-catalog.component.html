@@ -1,8 +1,16 @@
 <!-- Viewport Container für absolute positioning -->
 <div class="viewport-container">
+  <!-- Loading Overlay für Navigation -->
+  <div class="loading-overlay" *ngIf="showLoadingOverlay">
+    <div class="loading-spinner">
+      <div class="spinner"></div>
+      <p>Lade Kategorien...</p>
+    </div>
+  </div>
+  
   <div class="product-catalog-dashboard">
     <!-- Hero Section für Gastronomie -->
-    <div class="hero-section" [class.hidden]="shouldSkipHero">
+    <div class="hero-section">
       <div class="hero-background">
         <div class="hero-video-overlay"></div>
       </div>
