@@ -69,6 +69,7 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
   showMap: boolean = false;
   map: any = null;
   startTime: string = '';
+  actualStartTime: Date | null = null;
   endTime: Date | null = null;
   
   // Neue Eigenschaften für das Modal
@@ -781,26 +782,35 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
 
   private calculateOptimalOrderFromSteps(steps: any[]) {
     if (steps && steps.length > 0) {
+      console.log('Original steps from API:', steps);
+      
       // Filtere nur die Schritte, die zu unseren Kunden gehören (nicht Start/End)
       const customerSteps = steps.filter(step => {
         const customer = this.getCustomerByLocation(step.location);
         return customer !== null;
       });
 
-      // Bei nur einem Kunden: Start -> Kunde -> Start
-      if (this.selectedCustomers.length === 1) {
-        const customer = this.selectedCustomers[0];
-        const [hours, minutes] = this.startTime.split(':').map(Number);
-        const startTime = new Date();
-        startTime.setHours(hours, minutes, 0, 0);
-        let currentTime = new Date(startTime.getTime());
+      console.log('Filtered customer steps:', customerSteps);
 
-        // Fahrzeit zum Kunden
-        const travelTime = steps[0]?.duration || 0;
+              // Bei nur einem Kunden: Start -> Kunde -> Start
+        if (this.selectedCustomers.length === 1) {
+          const customer = this.selectedCustomers[0];
+          const [hours, minutes] = this.startTime.split(':').map(Number);
+          const startTime = new Date();
+          startTime.setHours(hours, minutes, 0, 0);
+          this.actualStartTime = new Date(startTime.getTime()); // Speichere die tatsächliche Startzeit
+          let currentTime = new Date(startTime.getTime());
+
+        // Berechne Fahrzeit basierend auf der tatsächlichen Distanz
+        const customerConstraint = this.customerConstraints.find(c => c.customerId === customer.id);
+        const customerStayDuration = customerConstraint?.stayDuration || 15;
+        const totalTravelTime = this.totalDuration - (customerStayDuration * 60); // Gesamt - Aufenthalt
+        const travelTime = Math.max(600, totalTravelTime / 2); // mindestens 10 Minuten, geteilt durch Hin- und Rückfahrt
+        
         currentTime = new Date(currentTime.getTime() + travelTime * 1000);
-
         const arrivalTime = new Date(currentTime.getTime());
-        const departureTime = new Date(arrivalTime.getTime() + 15 * 60 * 1000); // 15 Minuten Aufenthalt
+        
+        const departureTime = new Date(arrivalTime.getTime() + customerStayDuration * 60 * 1000);
 
         this.optimalOrder = [{
           position: 1,
@@ -811,53 +821,68 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
           arrivalTime: arrivalTime,
           departureTime: departureTime,
           travelTime: travelTime,
-          stayDuration: 15
+          stayDuration: customerStayDuration
         }];
 
-        // Endzeit für einen Kunden berechnen: Aufenthalt + Rückfahrt
-        const stayDuration = 15 * 60 * 1000; // 15 Minuten in Millisekunden
-        currentTime = new Date(currentTime.getTime() + stayDuration);
+        // Endzeit berechnen: Aufenthalt + Rückfahrt
+        const stayDurationMs = customerStayDuration * 60 * 1000;
+        currentTime = new Date(currentTime.getTime() + stayDurationMs);
         
-        // Fahrzeit zurück zum Startpunkt (angenommen gleich der Hinreise)
-        const returnTravelTime = travelTime;
-        this.endTime = new Date(currentTime.getTime() + returnTravelTime * 1000);
+        // Rückfahrt
+        this.endTime = new Date(currentTime.getTime() + travelTime * 1000);
         
         return;
       }
 
-      // Startzeit aus der Eingabe verwenden
+      // Für mehrere Kunden: Verwende die echten Fahrzeiten aus der API
       const [hours, minutes] = this.startTime.split(':').map(Number);
       const startTime = new Date();
       startTime.setHours(hours, minutes, 0, 0);
+      this.actualStartTime = new Date(startTime.getTime()); // Speichere die tatsächliche Startzeit
       let currentTime = new Date(startTime.getTime());
+      
+      console.log(`Start time set to: ${startTime.toLocaleTimeString()}`);
 
+      console.log('Using real API travel times from steps:', steps.map(s => ({ distance: s.distance, duration: s.duration })));
+
+      // Finde alle Job-Schritte (Kundenbesuche) in der Route
+      const jobSteps = steps.filter(s => s.type === 'job');
+      console.log('Job steps:', jobSteps);
+      
       this.optimalOrder = customerSteps.map((step, index) => {
         const customer = this.getCustomerByLocation(step.location);
         
-        // Fahrzeit zum aktuellen Stopp hinzufügen
-        // Für den ersten Kunden: Fahrzeit vom Startpunkt
-        // Für weitere Kunden: Fahrzeit vom vorherigen Kunden
+        // Berechne die echte Segment-Fahrzeit (nicht kumulativ)
+        let travelTimeToThisStop = 0;
+        
         if (index === 0) {
-          // Fahrzeit vom Startpunkt zum ersten Kunden
-          const travelTime = step.duration || 0; // Sekunden
-          currentTime = new Date(currentTime.getTime() + travelTime * 1000);
+          // Erster Kunde: Fahrzeit vom Startpunkt zum ersten Kunden
+          travelTimeToThisStop = jobSteps[0]?.duration || 0;
         } else {
-          // Fahrzeit vom vorherigen Kunden zum aktuellen Kunden
-          // Wir verwenden die Dauer des aktuellen Schritts, da diese die Fahrzeit
-          // vom vorherigen Standort zum aktuellen Standort enthält
-          const travelTime = step.duration || 0; // Sekunden
-          currentTime = new Date(currentTime.getTime() + travelTime * 1000);
+          // Weitere Kunden: Differenz zwischen aktueller und vorheriger kumulativer Zeit
+          const currentCumulativeTime = jobSteps[index]?.duration || 0;
+          const previousCumulativeTime = jobSteps[index - 1]?.duration || 0;
+          travelTimeToThisStop = currentCumulativeTime - previousCumulativeTime;
         }
-
-        // Geschätzte Ankunftszeit
+        
+        console.log(`Segment ${index + 1}: Distance=${jobSteps[index]?.distance}km, Segment Duration=${travelTimeToThisStop}s (${Math.round(travelTimeToThisStop/60)}min)`);
+        
+        // Ankunftszeit berechnen: aktuelle Zeit + Fahrzeit zu diesem Stopp
+        currentTime = new Date(currentTime.getTime() + travelTimeToThisStop * 1000);
         const arrivalTime = new Date(currentTime.getTime());
         
-        // 15 Minuten Aufenthalt pro Kunde (auch beim ersten)
-        const stayDuration = 15 * 60 * 1000; // 15 Minuten in Millisekunden
-        currentTime = new Date(currentTime.getTime() + stayDuration);
+        console.log(`Customer ${index + 1} arrival time: ${arrivalTime.toLocaleTimeString()}`);
+        
+        // Aufenthaltsdauer aus Constraints verwenden oder Standard
+        const constraint = this.customerConstraints.find(c => c.customerId === customer?.id);
+        const stayDurationMinutes = constraint?.stayDuration || 15;
+        const stayDurationMs = stayDurationMinutes * 60 * 1000;
+        currentTime = new Date(currentTime.getTime() + stayDurationMs);
 
         // Abfahrtszeit berechnen (Ankunft + Aufenthaltsdauer)
-        const departureTime = new Date(arrivalTime.getTime() + 15 * 60 * 1000);
+        const departureTime = new Date(arrivalTime.getTime() + stayDurationMs);
+        
+        console.log(`Customer ${index + 1} departure time: ${departureTime.toLocaleTimeString()}`);
 
         return {
           position: index + 1,
@@ -867,17 +892,23 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
           address: customer ? `${customer.street || customer.address}, ${customer.postal_code} ${customer.city}` : 'Unbekannte Adresse',
           arrivalTime: arrivalTime,
           departureTime: departureTime,
-          travelTime: step.duration || 0,
-          stayDuration: 15
+          travelTime: travelTimeToThisStop,
+          stayDuration: stayDurationMinutes
         };
       });
 
-      // Endzeit berechnen: Fahrzeit vom letzten Kunden zurück zum Startpunkt
-      if (customerSteps.length > 0) {
-        const lastStep = customerSteps[customerSteps.length - 1];
-        const returnTravelTime = lastStep.duration || 0; // Sekunden
-        this.endTime = new Date(currentTime.getTime() + returnTravelTime * 1000);
-      }
+      // Endzeit berechnen: Rückfahrt zum Startpunkt (letzter Schritt in der Route)
+      const endStep = steps.find(s => s.type === 'end');
+      const lastJobStep = jobSteps[jobSteps.length - 1];
+      
+      // Berechne Rückfahrt-Zeit: Differenz zwischen End-Schritt und letztem Job-Schritt
+      const endCumulativeTime = endStep?.duration || 0;
+      const lastJobCumulativeTime = lastJobStep?.duration || 0;
+      const returnTravelTime = endCumulativeTime - lastJobCumulativeTime;
+      
+      console.log(`Return trip: Distance=${endStep?.distance}km, Segment Duration=${returnTravelTime}s (${Math.round(returnTravelTime/60)}min)`);
+      
+      this.endTime = new Date(currentTime.getTime() + returnTravelTime * 1000);
     }
   }
 
