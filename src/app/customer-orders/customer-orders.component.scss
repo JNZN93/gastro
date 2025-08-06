@@ -4793,6 +4793,29 @@
       }
     }
   }
+
+  // Mobile/Tablet Artikelsuche Preis-Styles
+  .mobile-articles-dropdown {
+    .mobile-article-dropdown-item {
+      .article-info {
+        .article-details {
+          .article-price {
+            .customer-price {
+              color: #28a745 !important; // Kundenpreis in grün
+            }
+
+            .standard-price {
+              color: #555555 !important; // Standardpreis in dunkelgrau
+            }
+
+            .original-price {
+              color: #555555 !important; // Originalpreis auch in dunkelgrau
+            }
+          }
+        }
+      }
+    }
+  }
 }
 
 // Tablet responsive styles (769px - 1023px) - Mobile Ansicht mit Tabs
@@ -4886,6 +4909,29 @@
               &::placeholder {
                 color: #28a745 !important; // Placeholder auch in grün
               }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Tablet Artikelsuche Preis-Styles
+  .mobile-articles-dropdown {
+    .mobile-article-dropdown-item {
+      .article-info {
+        .article-details {
+          .article-price {
+            .customer-price {
+              color: #28a745 !important; // Kundenpreis in grün
+            }
+
+            .standard-price {
+              color: #555555 !important; // Standardpreis in dunkelgrau
+            }
+
+            .original-price {
+              color: #555555 !important; // Originalpreis auch in dunkelgrau
             }
           }
         }

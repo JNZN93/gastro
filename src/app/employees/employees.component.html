@@ -677,6 +677,19 @@
 
 </div>
 
+<!-- Toast Notification -->
+<div class="toast-notification" *ngIf="showToast" [class]="'toast-' + toastType">
+  <div class="toast-content">
+    <span class="material-icons toast-icon">
+      {{ toastType === 'success' ? 'check_circle' : 'error' }}
+    </span>
+    <span class="toast-message">{{ toastMessage }}</span>
+    <button class="toast-close" (click)="hideToast()">
+      <span class="material-icons">close</span>
+    </button>
+  </div>
+</div>
+
 @if (isVisible) {
 <app-upload-loading></app-upload-loading>
 }

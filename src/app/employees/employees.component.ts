@@ -87,6 +87,12 @@ export class EmployeesComponent implements OnInit, OnDestroy {
   // Mobile Tab properties
   activeTab: 'search' | 'order' | 'prices' = 'search';
   
+  // Toast properties
+  showToast: boolean = false;
+  toastMessage: string = '';
+  toastType: 'success' | 'error' = 'success';
+  toastTimeout: any = null;
+  
   availableDevices: MediaDeviceInfo[] = [];
   selectedDevice?: MediaDeviceInfo;
   formatsEnabled: BarcodeFormat[] = [
@@ -195,6 +201,11 @@ export class EmployeesComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    // Bereinige Toast-Timeout
+    if (this.toastTimeout) {
+      clearTimeout(this.toastTimeout);
+    }
+    
     // Footer wieder anzeigen beim Verlassen der Komponente
     this.showFooter();
   }
@@ -1199,6 +1210,14 @@ export class EmployeesComponent implements OnInit, OnDestroy {
 
     // Scrolle zur letzten Artikel-Position
     this.scrollToLastArticle();
+
+    // Zeige Toast-Nachricht
+    this.showToastMessage(`Artikel "${artikel.article_text}" wurde zum Auftrag hinzugefügt`, 'success');
+
+    // Fokussiere zurück auf das Suchfeld nur wenn wir im Such-Tab sind
+    if (this.activeTab === 'search') {
+      this.focusSearchInput();
+    }
   }
 
   removeFromOrder(index: number): void {
@@ -1938,14 +1957,17 @@ export class EmployeesComponent implements OnInit, OnDestroy {
       // Zeige Benachrichtigung
       this.showArticlePricesNotification(artikel.article_text || artikel.article_name || 'Unbekannter Artikel', quantity);
       
+      // Zeige Toast-Nachricht
+      this.showToastMessage(`Artikel "${artikel.article_text || artikel.article_name || 'Unbekannter Artikel'}" wurde zum Auftrag hinzugefügt`, 'success');
+      
       // Setze die temporäre Menge zurück
       customerPrice.tempQuantity = null;
       
       // Modal bleibt offen - nicht mehr automatisch schließen
       // this.closeArticlePricesModal();
 
-      // Fokussiere zurück auf das Suchfeld
-      this.focusSearchInput();
+      // Fokussiere NICHT zurück auf das Suchfeld - bleibt im Kundenpreise-Tab
+      // this.focusSearchInput();
 
       // Scrolle zur letzten Artikel-Position
       this.scrollToLastArticle();
@@ -2463,6 +2485,31 @@ export class EmployeesComponent implements OnInit, OnDestroy {
     if (tab === 'prices') {
       this.articlePricesSearchTerm = '';
       this.filterArticlePrices();
+    }
+  }
+
+  // Toast methods
+  showToastMessage(message: string, type: 'success' | 'error' = 'success', duration: number = 3000): void {
+    this.toastMessage = message;
+    this.toastType = type;
+    this.showToast = true;
+    
+    // Clear existing timeout
+    if (this.toastTimeout) {
+      clearTimeout(this.toastTimeout);
+    }
+    
+    // Auto hide after duration
+    this.toastTimeout = setTimeout(() => {
+      this.hideToast();
+    }, duration);
+  }
+
+  hideToast(): void {
+    this.showToast = false;
+    if (this.toastTimeout) {
+      clearTimeout(this.toastTimeout);
+      this.toastTimeout = null;
     }
   }
 }
