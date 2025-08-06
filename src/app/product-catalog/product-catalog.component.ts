@@ -122,11 +122,12 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
             this.collectOrderData(response);
             this.globalService.orderData = this.orderData;
             
-            // Loading-Screen für mindestens 1 Sekunde anzeigen
-            this.hideLoadingScreenWithDelay();
-            
             // Überprüfe Query-Parameter für automatisches Scrollen zu Kategorien
             this.checkScrollToCategories();
+            
+            // Loading-Screen mit angepasster Verzögerung basierend auf Navigation
+            const isFromCategoryDetail = this.route.snapshot.queryParams['scrollToCategories'] === 'true';
+            this.hideLoadingScreenWithDelay(isFromCategoryDetail ? 500 : 1000);
           });
         },
         error: (error) => {
@@ -154,11 +155,12 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
       // Keine Kategorie ausgewählt - Hauptseite wird angezeigt
       this.selectedCategory = '';
       
-      // Loading-Screen für mindestens 1 Sekunde anzeigen
-      this.hideLoadingScreenWithDelay();
-      
       // Überprüfe Query-Parameter für automatisches Scrollen zu Kategorien
       this.checkScrollToCategories();
+      
+      // Loading-Screen mit angepasster Verzögerung basierend auf Navigation
+      const isFromCategoryDetail = this.route.snapshot.queryParams['scrollToCategories'] === 'true';
+      this.hideLoadingScreenWithDelay(isFromCategoryDetail ? 500 : 1000);
     });
   }
 
@@ -245,11 +247,11 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Methode zum Verstecken des Loading-Screens mit mindestens 1 Sekunde Verzögerung
-  private hideLoadingScreenWithDelay(): void {
+  // Methode zum Verstecken des Loading-Screens mit konfigurierbarer Verzögerung
+  private hideLoadingScreenWithDelay(delay: number = 1000): void {
     setTimeout(() => {
       this.isVisible = false;
-    }, 1000); // Mindestens 1 Sekunde anzeigen
+    }, delay); // Standard: 1 Sekunde, kann angepasst werden
   }
 
   // Methode zum Finden der Artikel-Details basierend auf product_id
@@ -981,7 +983,7 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
               this.showLoadingOverlay = false;
               document.body.style.overflow = '';
             }
-          }, 800);
+          }, 300); // Reduziert von 800ms auf 300ms für schnellere Navigation von category detail
         }, 200);
       }
     });
