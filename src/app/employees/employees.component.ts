@@ -1303,8 +1303,8 @@ export class EmployeesComponent implements OnInit, OnDestroy {
     // Zeige Toast-Nachricht
     this.showToastMessage(`Artikel "${artikel.article_text}" wurde zum Auftrag hinzugefügt`, 'success');
 
-    // Fokussiere zurück auf das Suchfeld nur in mobile und tablet Ansicht
-    if (window.innerWidth <= 1023) {
+    // Nur in Desktop-Ansicht: Fokussiere zurück auf das Suchfeld
+    if (!this.isMobileOrTabletView()) {
       this.focusSearchInput();
     }
   }
@@ -2600,5 +2600,10 @@ export class EmployeesComponent implements OnInit, OnDestroy {
       clearTimeout(this.toastTimeout);
       this.toastTimeout = null;
     }
+  }
+
+  // Hilfsmethode um zu prüfen, ob wir in der mobilen/tablet Ansicht sind
+  private isMobileOrTabletView(): boolean {
+    return window.innerWidth <= 1023;
   }
 }
