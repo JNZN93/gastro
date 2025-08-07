@@ -1047,16 +1047,66 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       return; // No PFAND associated with this product
     }
 
+    // Find the index of the product item
+    const productIndex = this.orderItems.findIndex(item => 
+      item.article_number === productItem.article_number && 
+      item.quantity === productItem.quantity &&
+      item === productItem // Exact reference match
+    );
+
+    if (productIndex === -1) {
+      return; // Product not found
+    }
+
     // Find and remove PFAND items that match the custom_field_1 of the product
     const pfandArtikels = this.globalService.getPfandArtikels();
     const matchingPfand = pfandArtikels.find(pfand => pfand.article_number === productItem.custom_field_1);
     
     if (matchingPfand) {
-      // Remove PFAND items with the same article_number as the matching PFAND
-      this.orderItems = this.orderItems.filter(item => 
-        !(item.article_number === matchingPfand.article_number && item.category === 'PFAND')
-      );
-      console.log('🗑️ [PFAND-REPLACE] PFAND-Artikel entfernt für:', productItem.article_text);
+      // Check if there's a PFAND item directly after the product item
+      const nextItemIndex = productIndex + 1;
+      if (nextItemIndex < this.orderItems.length) {
+        const nextItem = this.orderItems[nextItemIndex];
+        
+        // Only remove if the next item is the matching PFAND item
+        if (nextItem.article_number === matchingPfand.article_number && 
+            nextItem.category === 'PFAND') {
+          
+          // Remove only this specific PFAND item
+          this.orderItems.splice(nextItemIndex, 1);
+          console.log('🗑️ [PFAND-REPLACE] PFAND-Artikel entfernt für:', productItem.article_text, 'an Position', nextItemIndex);
+        } else {
+          console.log('⚠️ [PFAND-REPLACE] Kein zugehöriger PFAND-Artikel direkt nach', productItem.article_text, 'gefunden');
+        }
+      } else {
+        console.log('⚠️ [PFAND-REPLACE] Kein Artikel nach', productItem.article_text, 'gefunden');
+      }
+    }
+  }
+
+  // Alternative method: Remove PFAND items based on quantity matching
+  private removeAssociatedPfandItemsByQuantity(productItem: any): void {
+    if (!productItem.custom_field_1) {
+      return; // No PFAND associated with this product
+    }
+
+    const pfandArtikels = this.globalService.getPfandArtikels();
+    const matchingPfand = pfandArtikels.find(pfand => pfand.article_number === productItem.custom_field_1);
+    
+    if (matchingPfand) {
+      // Find PFAND items with the same quantity as the product
+      const productQuantity = Number(productItem.quantity);
+      
+      // Remove PFAND items that match both article_number and quantity
+      this.orderItems = this.orderItems.filter(item => {
+        if (item.article_number === matchingPfand.article_number && 
+            item.category === 'PFAND' && 
+            Number(item.quantity) === productQuantity) {
+          console.log('🗑️ [PFAND-REPLACE] PFAND-Artikel entfernt für:', productItem.article_text, 'Menge:', productQuantity);
+          return false; // Remove this item
+        }
+        return true; // Keep this item
+      });
     }
   }
 
@@ -2703,5 +2753,46 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       this.articlePricesSearchTerm = '';
       this.filterArticlePrices();
     }
+  }
+
+  // Advanced method: Add unique PFAND association with parent reference
+  private addPfandWithParentReference(artikel: any, quantity: number, parentIndex: number): void {
+    if (!artikel.custom_field_1) {
+      return;
+    }
+
+    const pfandArtikels = this.globalService.getPfandArtikels();
+    const matchingPfand = pfandArtikels.find(pfand => pfand.article_number === artikel.custom_field_1);
+    
+    if (matchingPfand) {
+      const pfandItem = { 
+        ...matchingPfand, 
+        quantity: quantity,
+        parentArticleIndex: parentIndex, // Reference to parent article
+        parentArticleNumber: artikel.article_number // Backup reference
+      };
+      
+      // Insert the PFAND item at the position right after the parent item
+      this.orderItems.splice(parentIndex + 1, 0, pfandItem);
+      console.log('✅ [PFAND-ADD] PFAND-Artikel mit Parent-Referenz hinzugefügt:', matchingPfand.article_text, 'Menge:', quantity, 'Parent:', artikel.article_text);
+    }
+  }
+
+  // Advanced method: Remove PFAND items based on parent reference
+  private removeAssociatedPfandItemsByParentReference(productItem: any, productIndex: number): void {
+    if (!productItem.custom_field_1) {
+      return;
+    }
+
+    // Remove PFAND items that reference this product as parent
+    this.orderItems = this.orderItems.filter((item, index) => {
+      if (item.category === 'PFAND' && 
+          (item.parentArticleIndex === productIndex || 
+           item.parentArticleNumber === productItem.article_number)) {
+        console.log('🗑️ [PFAND-REPLACE] PFAND-Artikel mit Parent-Referenz entfernt für:', productItem.article_text);
+        return false; // Remove this item
+      }
+      return true; // Keep this item
+    });
   }
 }
