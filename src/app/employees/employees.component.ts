@@ -1297,17 +1297,14 @@ export class EmployeesComponent implements OnInit, OnDestroy {
     this.searchTerm = '';
     this.filteredArtikelData();
     
-    // Fokussiere zurück auf das Suchfeld
-    this.focusSearchInput();
-
     // Scrolle zur letzten Artikel-Position
     this.scrollToLastArticle();
 
     // Zeige Toast-Nachricht
     this.showToastMessage(`Artikel "${artikel.article_text}" wurde zum Auftrag hinzugefügt`, 'success');
 
-    // Fokussiere zurück auf das Suchfeld nur wenn wir im Such-Tab sind
-    if (this.activeTab === 'search') {
+    // Fokussiere zurück auf das Suchfeld nur in mobile und tablet Ansicht
+    if (window.innerWidth <= 1023) {
       this.focusSearchInput();
     }
   }

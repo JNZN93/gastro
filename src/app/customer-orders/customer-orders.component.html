@@ -329,7 +329,25 @@
       @if (globalService.selectedCustomerForOrders) {
       <div class="mobile-customer-header" [class.prices-tab-active]="activeTab === 'prices'">
         <div class="customer-info">
-          <h3>{{ globalService.selectedCustomerForOrders.last_name_company || globalService.selectedCustomerForOrders.customer_number }}</h3>
+          <div class="company-name-container" 
+               [class.editing]="isEditingCompanyName"
+               title="Klicken zum Bearbeiten des Firmennamens">
+            @if (isEditingCompanyName) {
+              <input type="text" 
+                     [(ngModel)]="editingCompanyName"
+                     (keydown)="onCompanyNameKeyDown($event)"
+                     (blur)="saveCompanyName()"
+                     class="company-name-edit-input mobile-company-name-input"
+                     autofocus>
+            } @else {
+              <h3 (click)="startEditCompanyName()">
+                {{ differentCompanyName || globalService.selectedCustomerForOrders.last_name_company || globalService.selectedCustomerForOrders.customer_number }}
+                @if (differentCompanyName) {
+                  <span class="edit-indicator">(geändert)</span>
+                }
+              </h3>
+            }
+          </div>
           @if (globalService.selectedCustomerForOrders.name_addition) {
             <p class="customer-addition">{{ globalService.selectedCustomerForOrders.name_addition }}</p>
           }
