@@ -6,7 +6,6 @@ import { AuthService } from '../authentication.service';
 import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { WarenkorbComponent } from '../warenkorb/warenkorb.component';
 import { GlobalService } from '../global.service';
-import { UploadLoadingComponent } from '../upload-loading/upload-loading.component';
 import { ZXingScannerComponent, ZXingScannerModule } from '@zxing/ngx-scanner';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 
@@ -27,7 +26,7 @@ interface CustomerArticlePrice {
 
 @Component({
   selector: 'app-product-catalog',
-  imports: [CommonModule, FormsModule, RouterModule, WarenkorbComponent, UploadLoadingComponent, ZXingScannerModule],
+  imports: [CommonModule, FormsModule, RouterModule, WarenkorbComponent, ZXingScannerModule],
   templateUrl: './product-catalog.component.html',
   styleUrl: './product-catalog.component.scss',
 })
