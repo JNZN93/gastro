@@ -1303,8 +1303,8 @@ export class EmployeesComponent implements OnInit, OnDestroy {
     // Zeige Toast-Nachricht
     this.showToastMessage(`Artikel "${artikel.article_text}" wurde zum Auftrag hinzugefügt`, 'success');
 
-    // Nur in Desktop-Ansicht: Fokussiere zurück auf das Suchfeld
-    if (!this.isMobileOrTabletView()) {
+    // Fokussiere zurück auf das Suchfeld in Desktop-Ansicht oder wenn im search Tab in mobile/tablet Ansicht
+    if (!this.isMobileOrTabletView() || (this.isMobileOrTabletView() && this.activeTab === 'search')) {
       this.focusSearchInput();
     }
   }
