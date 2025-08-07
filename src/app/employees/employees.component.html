@@ -320,7 +320,7 @@
     <div class="mobile-view">
       <!-- Kunden-Header für Mobile -->
       @if (globalService.selectedCustomerForOrders) {
-      <div class="mobile-customer-header">
+      <div class="mobile-customer-header" [class.prices-tab-active]="activeTab === 'prices'">
         <div class="customer-info">
           <h3>{{ globalService.selectedCustomerForOrders.last_name_company || globalService.selectedCustomerForOrders.customer_number }}</h3>
           @if (globalService.selectedCustomerForOrders.name_addition) {
@@ -670,6 +670,9 @@
                 [disabled]="!globalService.selectedCustomerForOrders">
           <span class="material-icons">price_check</span>
           <span class="tab-label">Kundenpreise</span>
+          @if (customerArticlePrices.length > 0) {
+            <span class="tab-badge">{{ customerArticlePrices.length }}</span>
+          }
         </button>
       </div>
     </div>
