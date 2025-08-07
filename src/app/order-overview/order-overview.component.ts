@@ -129,6 +129,7 @@ export class OrderOverviewComponent implements OnInit {
       order.name?.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
       order.company?.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
       order.email?.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+      order.customer_number?.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
       (order.role && order.role.toLowerCase().includes(this.searchTerm.toLowerCase()))
     );
   }
