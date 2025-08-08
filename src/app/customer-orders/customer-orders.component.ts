@@ -323,20 +323,12 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   private loadOrderData(orderData: any): void {
     console.log('🔄 [LOAD-ORDER-DATA] Lade Bestelldaten:', orderData);
     
-    // Setze den Kunden
-    if (orderData.customer) {
-      console.log('👤 [LOAD-ORDER-DATA] Setze Kunde:', orderData.customer);
-      this.globalService.setSelectedCustomerForOrders(orderData.customer);
+    // Setze den Kunden basierend auf der Kundennummer
+    if (orderData.customer && orderData.customer.customer_number) {
+      console.log('👤 [LOAD-ORDER-DATA] Suche Kunde mit Kundennummer:', orderData.customer.customer_number);
       
-      // Setze den geänderten Firmennamen falls vorhanden
-      if (orderData.differentCompanyName) {
-        this.differentCompanyName = orderData.differentCompanyName;
-      }
-      
-      // Lade kundenspezifische Preise
-      if (orderData.customer.customer_number) {
-        this.loadCustomerArticlePrices(orderData.customer.customer_number);
-      }
+      // Lade den Kunden direkt aus der API
+      this.loadCustomerByNumber(orderData.customer.customer_number, orderData);
     }
     
     // Setze die Bestellartikel
@@ -419,6 +411,99 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     }
     
     console.log('🎉 [LOAD-ORDER-DATA] Bestellung erfolgreich geladen!');
+  }
+
+
+
+  // Neue Methode zum Laden eines Kunden anhand der Kundennummer
+  private loadCustomerByNumber(customerNumber: string, orderData: any): void {
+    console.log('🔍 [LOAD-CUSTOMER-BY-NUMBER] Lade Kunde mit Nummer:', customerNumber);
+    
+    const token = localStorage.getItem('token');
+    
+    // Versuche zuerst, den Kunden aus der bereits geladenen Kundenliste zu finden
+    const foundCustomer = this.customers.find(customer => 
+      customer.customer_number === customerNumber
+    );
+    
+    if (foundCustomer) {
+      console.log('✅ [LOAD-CUSTOMER-BY-NUMBER] Kunde in lokaler Liste gefunden:', foundCustomer);
+      this.setCustomerFromOrderData(foundCustomer, orderData);
+      return;
+    }
+    
+    // Wenn nicht in lokaler Liste, lade alle Kunden und suche dann
+    console.log('🔄 [LOAD-CUSTOMER-BY-NUMBER] Kunde nicht in lokaler Liste, lade alle Kunden...');
+    
+    fetch('https://multi-mandant-ecommerce.onrender.com/api/customers', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Fehler beim Laden der Kunden');
+      }
+      return response.json();
+    })
+    .then(data => {
+      this.customers = data;
+      
+      // Suche den Kunden in der geladenen Liste
+      const customer = this.customers.find(c => c.customer_number === customerNumber);
+      
+      if (customer) {
+        console.log('✅ [LOAD-CUSTOMER-BY-NUMBER] Kunde gefunden:', customer);
+        this.setCustomerFromOrderData(customer, orderData);
+      } else {
+        console.warn('⚠️ [LOAD-CUSTOMER-BY-NUMBER] Kunde nicht gefunden:', customerNumber);
+        // Erstelle einen minimalen Kunden mit nur der Kundennummer als Fallback
+        const fallbackCustomer = {
+          id: 0,
+          customer_number: customerNumber,
+          last_name_company: `Kunde ${customerNumber}`,
+          name_addition: '',
+          email: '',
+          street: '',
+          city: '',
+          postal_code: '',
+          _country_code: ''
+        };
+        this.setCustomerFromOrderData(fallbackCustomer, orderData);
+      }
+    })
+    .catch(error => {
+      console.error('❌ [LOAD-CUSTOMER-BY-NUMBER] Fehler beim Laden der Kunden:', error);
+      // Erstelle einen minimalen Kunden mit nur der Kundennummer als Fallback
+      const fallbackCustomer = {
+        id: 0,
+        customer_number: customerNumber,
+        last_name_company: `Kunde ${customerNumber}`,
+        name_addition: '',
+        email: '',
+        street: '',
+        city: '',
+        postal_code: '',
+        _country_code: ''
+      };
+      this.setCustomerFromOrderData(fallbackCustomer, orderData);
+    });
+  }
+
+  // Hilfsmethode zum Setzen des Kunden
+  private setCustomerFromOrderData(customer: any, orderData: any): void {
+    console.log('👤 [SET-CUSTOMER] Setze Kunde:', customer);
+    this.globalService.setSelectedCustomerForOrders(customer);
+    
+    // Setze den geänderten Firmennamen falls vorhanden
+    if (orderData.differentCompanyName) {
+      this.differentCompanyName = orderData.differentCompanyName;
+    }
+    
+    // Lade kundenspezifische Preise
+    this.loadCustomerArticlePrices(customer.customer_number);
   }
 
   filteredArtikelData() {

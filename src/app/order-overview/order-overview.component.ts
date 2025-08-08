@@ -416,14 +416,15 @@ export class OrderOverviewComponent implements OnInit {
     console.log('🔄 [LOAD-ORDER] Lade Bestellung in Customer Orders:', order);
     
     // Transformiere die Bestelldaten in das erwartete Format für Customer Orders
+    // Verwende nur die Kundennummer - die Kundendaten werden später aus der Datenbank geladen
     const orderData = {
       customer: {
-        id: order.user_id,
+        id: 0, // Wird später aus der Kundendatenbank gesetzt
         customer_number: order.customer_number || order.order_id.toString(),
-        last_name_company: order.name,
-        name_addition: order.company || '',
-        email: order.email || '',
-        street: order.shipping_address || '',
+        last_name_company: '', // Wird später aus der Kundendatenbank geladen
+        name_addition: '',
+        email: '', // Wird später aus der Kundendatenbank geladen
+        street: '', // Wird später aus der Kundendatenbank geladen
         city: '',
         postal_code: '',
         _country_code: ''
@@ -439,7 +440,7 @@ export class OrderOverviewComponent implements OnInit {
         cost_price: 0,
         original_price: parseFloat(item.price)
       })),
-      differentCompanyName: order.company || ''
+      differentCompanyName: '' // Kein differentCompanyName beim Import, da die Kundendaten aus der Datenbank geladen werden
     };
 
     console.log('📦 [LOAD-ORDER] Artikel werden zur Customer Orders Komponente weitergeleitet');
