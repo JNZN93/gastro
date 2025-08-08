@@ -504,9 +504,28 @@ formatDate(dateString: string): string {
         postal_code: '',
         _country_code: ''
       },
-      items: order.items || [],
+      items: order.items.map((item: any) => ({
+        id: item.product_id, // Transformiere product_id zu id für Backend-Kompatibilität
+        article_number: item.product_article_number,
+        article_text: item.product_name,
+        sale_price: item.price,
+        quantity: item.quantity,
+        different_price: item.different_price,
+        description: item.product_name,
+        cost_price: 0,
+        original_price: item.price
+      })),
       differentCompanyName: order.company || ''
     };
+
+    // Check: Prüfe ob alle Artikel in globalArtikels vorhanden sind
+    // Hinweis: globalArtikels sind in der Admin-Komponente nicht verfügbar
+    // Der Check wird in der Customer Orders Komponente durchgeführt
+    console.log('📦 [LOAD-ORDER] Artikel werden zur Customer Orders Komponente weitergeleitet');
+    console.log('📦 [LOAD-ORDER] Anzahl Artikel:', orderData.items.length);
+    orderData.items.forEach((item: any) => {
+      console.log(`📦 [LOAD-ORDER] Artikel: ${item.article_text} (${item.article_number}) - ID: ${item.id}`);
+    });
 
     // Speichere die Bestelldaten im localStorage für die Customer Orders Komponente
     localStorage.setItem('pendingOrderData', JSON.stringify(orderData));

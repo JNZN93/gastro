@@ -343,6 +343,26 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     if (orderData.items && orderData.items.length > 0) {
       console.log('📦 [LOAD-ORDER-DATA] Setze Bestellartikel:', orderData.items.length);
       
+      // Check: Prüfe ob alle Artikel in globalArtikels vorhanden sind
+      const missingArticles = orderData.items.filter((item: any) => {
+        const foundInGlobal = this.globalArtikels.some((art: any) => 
+          art.article_number === item.article_number
+        );
+        if (!foundInGlobal) {
+          console.warn(`⚠️ [LOAD-ORDER-DATA] Artikel nicht in globalArtikels gefunden: ${item.article_text} (${item.article_number})`);
+        }
+        return !foundInGlobal;
+      });
+
+      if (missingArticles.length > 0) {
+        const missingArticleNames = missingArticles.map((item: any) => `${item.article_text} (${item.article_number})`).join(', ');
+        console.warn(`⚠️ [LOAD-ORDER-DATA] ${missingArticles.length} Artikel nicht in globalArtikels gefunden: ${missingArticleNames}`);
+        
+        // Zeige Warnung an den Benutzer
+        const warningMessage = `${missingArticles.length} Artikel konnten nicht in der Artikeldatenbank gefunden werden:\n${missingArticleNames}\n\nDiese Artikel werden trotzdem importiert, aber möglicherweise nicht korrekt angezeigt.`;
+        alert(warningMessage);
+      }
+      
       // Transformiere die Artikel in das erwartete Format
       this.orderItems = orderData.items.map((item: any) => ({
         ...item,
