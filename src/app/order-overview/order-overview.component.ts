@@ -6,6 +6,7 @@ import { jsPDF } from 'jspdf';
 import { Router } from '@angular/router';
 import { AuthService } from '../authentication.service';
 import { OrderService } from '../order.service';
+import { GlobalService } from '../global.service';
 
 interface OrderItem {
   product_id: number;
@@ -66,7 +67,8 @@ export class OrderOverviewComponent implements OnInit {
     private http: HttpClient,
     private router: Router,
     private authService: AuthService,
-    private orderService: OrderService
+    private orderService: OrderService,
+    private globalService: GlobalService
   ) {}
 
   ngOnInit(): void {
@@ -407,5 +409,51 @@ export class OrderOverviewComponent implements OnInit {
         // Hier könnte man eine Fehlermeldung anzeigen
       }
     });
+  }
+
+  // Neue Methode zum Laden einer Bestellung in die Customer Orders Komponente
+  loadOrderToCustomerOrders(order: Order): void {
+    console.log('🔄 [LOAD-ORDER] Lade Bestellung in Customer Orders:', order);
+    
+    // Transformiere die Bestelldaten in das erwartete Format für Customer Orders
+    const orderData = {
+      customer: {
+        id: order.user_id,
+        customer_number: order.customer_number || order.order_id.toString(),
+        last_name_company: order.name,
+        name_addition: order.company || '',
+        email: order.email || '',
+        street: order.shipping_address || '',
+        city: '',
+        postal_code: '',
+        _country_code: ''
+      },
+      items: order.items.map((item: OrderItem) => ({
+        id: item.product_id, // Transformiere product_id zu id für Backend-Kompatibilität
+        article_number: item.product_article_number,
+        article_text: item.product_name,
+        sale_price: parseFloat(item.price),
+        quantity: item.quantity,
+        different_price: item.different_price ? parseFloat(item.different_price) : null,
+        description: item.product_name,
+        cost_price: 0,
+        original_price: parseFloat(item.price)
+      })),
+      differentCompanyName: order.company || ''
+    };
+
+    console.log('📦 [LOAD-ORDER] Artikel werden zur Customer Orders Komponente weitergeleitet');
+    console.log('📦 [LOAD-ORDER] Anzahl Artikel:', orderData.items.length);
+    orderData.items.forEach((item: any) => {
+      console.log(`📦 [LOAD-ORDER] Artikel: ${item.article_text} (${item.article_number}) - ID: ${item.id}`);
+    });
+
+    // Speichere die Bestelldaten im localStorage für die Customer Orders Komponente
+    localStorage.setItem('pendingOrderData', JSON.stringify(orderData));
+    
+    console.log('💾 [LOAD-ORDER] Bestelldaten im localStorage gespeichert');
+    
+    // Navigiere zur Customer Orders Seite
+    this.router.navigate(['/customer-orders']);
   }
 } 
