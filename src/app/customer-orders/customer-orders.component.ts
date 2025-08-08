@@ -344,18 +344,50 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       console.log('📦 [LOAD-ORDER-DATA] Setze Bestellartikel:', orderData.items.length);
       
       // Check: Prüfe ob alle Artikel in globalArtikels vorhanden sind
-      const missingArticles = orderData.items.filter((item: any) => {
-        const foundInGlobal = this.globalArtikels.some((art: any) => 
-          art.article_number === item.article_number
-        );
-        if (!foundInGlobal) {
-          console.warn(`⚠️ [LOAD-ORDER-DATA] Artikel nicht in globalArtikels gefunden: ${item.article_text} (${item.article_number})`);
-        }
-        return !foundInGlobal;
-      });
+      // Nach der Transformation in order-overview haben die Artikel die Felder article_number und article_text
+      let missingArticles: any[] = [];
+      
+      // Warte bis globalArtikels vollständig geladen sind
+      if (this.globalArtikels.length === 0) {
+        console.log('⏳ [LOAD-ORDER-DATA] globalArtikels noch nicht geladen, überspringe Prüfung');
+        // Keine Prüfung durchführen, wenn globalArtikels noch nicht geladen sind
+      } else {
+        console.log('🔍 [LOAD-ORDER-DATA] Debug: Prüfe Artikel in globalArtikels');
+        console.log('🔍 [LOAD-ORDER-DATA] Anzahl globalArtikels:', this.globalArtikels.length);
+        console.log('🔍 [LOAD-ORDER-DATA] Anzahl orderData.items:', orderData.items.length);
+        
+        // Zeige die ersten 5 Artikel aus globalArtikels für Debugging
+        console.log('🔍 [LOAD-ORDER-DATA] Erste 5 Artikel aus globalArtikels:');
+        this.globalArtikels.slice(0, 5).forEach((art, index) => {
+          console.log(`   ${index + 1}. ${art.article_text} (${art.article_number})`);
+        });
+        
+        // Zeige die ersten 5 Artikel aus orderData.items für Debugging
+        console.log('🔍 [LOAD-ORDER-DATA] Erste 5 Artikel aus orderData.items:');
+        orderData.items.slice(0, 5).forEach((item: any, index: number) => {
+          console.log(`   ${index + 1}. ${item.article_text} (${item.article_number})`);
+        });
+        
+        missingArticles = orderData.items.filter((item: any) => {
+          const articleNumber = item.article_number;
+          const foundInGlobal = this.globalArtikels.some((art: any) => {
+            const match = art.article_number === articleNumber;
+            if (!match) {
+              console.log(`🔍 [LOAD-ORDER-DATA] Vergleich: "${art.article_number}" !== "${articleNumber}" für Artikel: ${item.article_text}`);
+            }
+            return match;
+          });
+          if (!foundInGlobal) {
+            console.warn(`⚠️ [LOAD-ORDER-DATA] Artikel nicht in globalArtikels gefunden: ${item.article_text} (${articleNumber})`);
+          }
+          return !foundInGlobal;
+        });
+      }
 
       if (missingArticles.length > 0) {
-        const missingArticleNames = missingArticles.map((item: any) => `${item.article_text} (${item.article_number})`).join(', ');
+        const missingArticleNames = missingArticles.map((item: any) => {
+          return `${item.article_text} (${item.article_number})`;
+        }).join(', ');
         console.warn(`⚠️ [LOAD-ORDER-DATA] ${missingArticles.length} Artikel nicht in globalArtikels gefunden: ${missingArticleNames}`);
         
         // Zeige Warnung an den Benutzer
