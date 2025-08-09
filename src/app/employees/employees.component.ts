@@ -25,6 +25,7 @@ export class EmployeesComponent implements OnInit, OnDestroy {
   @ViewChild('articlesDropdown') articlesDropdown!: any;
   @ViewChild('orderTableContainer') orderTableContainer!: any;
   @ViewChild('eanCodeInput') eanCodeInput!: any;
+  @ViewChild('imageInput') imageInput!: any;
   private artikelService = inject(ArtikelDataService);
   private http = inject(HttpClient);
   artikelData: any[] = [];
@@ -36,6 +37,8 @@ export class EmployeesComponent implements OnInit, OnDestroy {
   pendingCustomerForPriceUpdate: any = null; // Temporärer Kunde für Preis-Updates nach dem Laden der Artikel
   isVisible: boolean = true;
   isScanning = false;
+  isAnalyzingImages = false;
+  analyzedImagesCount: number = 0;
   
   // Neue Properties für Dropdown-Navigation
   selectedIndex: number = -1;
@@ -208,6 +211,78 @@ export class EmployeesComponent implements OnInit, OnDestroy {
     
     // Footer wieder anzeigen beim Verlassen der Komponente
     this.showFooter();
+  }
+
+  // Image analyze upload handlers
+  onImagesSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const files = input.files;
+    if (!files || files.length === 0) {
+      return;
+    }
+    if (!this.globalService.selectedCustomerForOrders) {
+      alert('Bitte wählen Sie zuerst einen Kunden aus.');
+      // reset input
+      input.value = '';
+      return;
+    }
+    const formData = new FormData();
+    for (let i = 0; i < files.length; i++) {
+      formData.append('images', files[i]);
+    }
+
+    this.isAnalyzingImages = true;
+    const token = localStorage.getItem('token');
+
+    fetch('https://multi-mandant-ecommerce.onrender.com/api/orders/analyze-images', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      body: formData
+    })
+    .then(async (res) => {
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || `HTTP ${res.status}`);
+      }
+      return res.json();
+    })
+    .then((response) => {
+      // Expecting response.data.orderSuggestion.orderItems
+      const suggestion = response?.data?.orderSuggestion?.orderItems || [];
+      let addedCount = 0;
+      suggestion.forEach((sItem: any) => {
+        // Find matching artikel in global list by article_number
+        const artikel = this.globalArtikels.find(a => a.article_number === sItem.article_number);
+        if (artikel) {
+          const artikelWithQty = { ...artikel, quantity: Number(sItem.quantity) || 1 };
+          // Reuse existing logic to insert and merge
+          this.addToOrder(new Event('analyze-images'), artikelWithQty);
+          addedCount++;
+        }
+      });
+
+      this.analyzedImagesCount = response?.data?.summary?.totalImages || files.length;
+      if (addedCount > 0) {
+        this.showToastMessage(`${addedCount} Artikel aus Bild-Analyse hinzugefügt`, 'success');
+      } else {
+        this.showToastMessage('Keine passenden Artikel gefunden', 'error');
+      }
+    })
+    .catch((err) => {
+      console.error('Fehler bei Bildanalyse:', err);
+      this.showToastMessage('Bildanalyse fehlgeschlagen', 'error');
+    })
+    .finally(() => {
+      this.isAnalyzingImages = false;
+      // reset input so same files can be reselected
+      if (this.imageInput && this.imageInput.nativeElement) {
+        this.imageInput.nativeElement.value = '';
+      } else {
+        (event.target as HTMLInputElement).value = '';
+      }
+    });
   }
 
   // Footer verstecken

@@ -160,14 +160,19 @@ export class OrderOverviewComponent implements OnInit {
     if (!this.searchTerm) {
       return this.orders;
     }
-    return this.orders.filter(order => 
-      order.order_id?.toString().includes(this.searchTerm) ||
-      order.name?.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-      order.company?.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-      order.email?.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-      order.customer_number?.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-      (order.role && order.role.toLowerCase().includes(this.searchTerm.toLowerCase()))
-    );
+    const term = this.searchTerm.toLowerCase();
+    return this.orders.filter(order => {
+      const mappedCustomerName = (this.getCustomerDisplayName(order) || '').toLowerCase();
+      return (
+        order.order_id?.toString().includes(this.searchTerm) ||
+        order.name?.toLowerCase().includes(term) ||
+        order.company?.toLowerCase().includes(term) ||
+        order.email?.toLowerCase().includes(term) ||
+        order.customer_number?.toLowerCase().includes(term) ||
+        (order.role && order.role.toLowerCase().includes(term)) ||
+        (mappedCustomerName && mappedCustomerName.includes(term))
+      );
+    });
   }
 
   onOrderClick(order: Order) {
