@@ -221,12 +221,16 @@ export class EmployeesComponent implements OnInit, OnDestroy {
     if (!files || files.length === 0) {
       return;
     }
-    if (!this.globalService.selectedCustomerForOrders) {
-      alert('Bitte wählen Sie zuerst einen Kunden aus.');
-      // reset input
-      input.value = '';
-      return;
+    
+    console.log('📁 [BILD-UPLOAD] Dateien ausgewählt:', files.length);
+    for (let i = 0; i < files.length; i++) {
+      console.log(`📁 [BILD-UPLOAD] Datei ${i + 1}:`, {
+        name: files[i].name,
+        size: files[i].size,
+        type: files[i].type
+      });
     }
+    
     const formData = new FormData();
     for (let i = 0; i < files.length; i++) {
       formData.append('images', files[i]);
@@ -234,6 +238,9 @@ export class EmployeesComponent implements OnInit, OnDestroy {
 
     this.isAnalyzingImages = true;
     const token = localStorage.getItem('token');
+
+    console.log('🚀 [BILD-UPLOAD] Starte API-Aufruf an /api/orders/analyze-images');
+    console.log('🔑 [BILD-UPLOAD] Token vorhanden:', !!token);
 
     fetch('https://multi-mandant-ecommerce.onrender.com/api/orders/analyze-images', {
       method: 'POST',
@@ -243,36 +250,102 @@ export class EmployeesComponent implements OnInit, OnDestroy {
       body: formData
     })
     .then(async (res) => {
+      console.log('📡 [BILD-UPLOAD] HTTP Response Status:', res.status);
+      console.log('📡 [BILD-UPLOAD] HTTP Response OK:', res.ok);
+      console.log('📡 [BILD-UPLOAD] HTTP Response Headers:', Object.fromEntries(res.headers.entries()));
+      
       if (!res.ok) {
         const text = await res.text();
+        console.error('❌ [BILD-UPLOAD] HTTP Response nicht OK:', res.status, res.statusText);
+        console.error('❌ [BILD-UPLOAD] Response Text:', text);
         throw new Error(text || `HTTP ${res.status}`);
       }
+      
+      console.log('✅ [BILD-UPLOAD] HTTP Response erfolgreich, parse JSON...');
       return res.json();
     })
     .then((response) => {
-      // Expecting response.data.orderSuggestion.orderItems
-      const suggestion = response?.data?.orderSuggestion?.orderItems || [];
-      let addedCount = 0;
-      suggestion.forEach((sItem: any) => {
-        // Find matching artikel in global list by article_number
-        const artikel = this.globalArtikels.find(a => a.article_number === sItem.article_number);
-        if (artikel) {
-          const artikelWithQty = { ...artikel, quantity: Number(sItem.quantity) || 1 };
-          // Reuse existing logic to insert and merge
-          this.addToOrder(new Event('analyze-images'), artikelWithQty);
-          addedCount++;
-        }
-      });
+      // Detaillierte Logs für die API-Antwort
+      console.log('📡 [BILD-UPLOAD] API Response erhalten:', response);
+      console.log('📊 [BILD-UPLOAD] Response Typ:', typeof response);
+      console.log('📊 [BILD-UPLOAD] Response Struktur:', Object.keys(response));
+      
+      if (response.data) {
+        console.log('📊 [BILD-UPLOAD] Response.data verfügbar:', Object.keys(response.data));
+        
+        if (response.data.imageAnalyses) {
+          console.log('📊 [BILD-UPLOAD] imageAnalyses verfügbar:', response.data.imageAnalyses);
+          console.log('📊 [BILD-UPLOAD] Anzahl imageAnalyses:', response.data.imageAnalyses.length);
+          
+          // Durchsuche alle imageAnalyses nach einer gültigen customer_number
+          let foundCustomerNumber: string | null = null;
+          let foundCustomerName: string | null = null;
+          
+          for (let i = 0; i < response.data.imageAnalyses.length; i++) {
+            const analysis = response.data.imageAnalyses[i];
+            console.log(`📊 [BILD-UPLOAD] Analyse ${i}:`, analysis);
+            
+            if (analysis.orderInfo && analysis.orderInfo.customer_number && analysis.orderInfo.customer) {
+              foundCustomerNumber = analysis.orderInfo.customer_number;
+              foundCustomerName = analysis.orderInfo.customer;
+              console.log(`👤 [BILD-UPLOAD] Gültige Kundendaten in Analyse ${i} gefunden:`, {
+                customer_number: foundCustomerNumber,
+                customer: foundCustomerName
+              });
+              break; // Verwende die erste gültige Kundennummer
+            }
+          }
+          
+          // Wenn eine Kundennummer gefunden wurde, lade den Kunden (immer, auch wenn bereits ein Kunde ausgewählt ist)
+          if (foundCustomerNumber) {
+            console.log('👤 [BILD-UPLOAD] Wechsle zu Kunde aus Response:', foundCustomerNumber, foundCustomerName);
+            this.loadCustomerByNumberFromResponse(foundCustomerNumber);
+          }
+          
+          // Sammle alle Produkte aus allen Analysen
+          let allProducts: any[] = [];
+          response.data.imageAnalyses.forEach((analysis: any, index: number) => {
+            if (analysis.products && Array.isArray(analysis.products)) {
+              console.log(`📋 [BILD-UPLOAD] Produkte in Analyse ${index}:`, analysis.products.length);
+              allProducts = allProducts.concat(analysis.products);
+            }
+          });
+          
+          console.log('📋 [BILD-UPLOAD] Alle gefundenen Produkte:', allProducts.length);
+          
+          // Verarbeite alle gefundenen Produkte
+          let addedCount = 0;
+          allProducts.forEach((product: any) => {
+            // Find matching artikel in global list by article_number
+            const artikel = this.globalArtikels.find(a => a.article_number === product.article_number);
+            if (artikel) {
+              const artikelWithQty = { ...artikel, quantity: Number(product.quantity) || 1 };
+              // Reuse existing logic to insert and merge
+              this.addToOrder(new Event('analyze-images'), artikelWithQty);
+              addedCount++;
+            }
+          });
 
-      this.analyzedImagesCount = response?.data?.summary?.totalImages || files.length;
-      if (addedCount > 0) {
-        this.showToastMessage(`${addedCount} Artikel aus Bild-Analyse hinzugefügt`, 'success');
-      } else {
-        this.showToastMessage('Keine passenden Artikel gefunden', 'error');
+          console.log('✅ [BILD-UPLOAD] Verarbeitung abgeschlossen. Hinzugefügte Artikel:', addedCount);
+
+          this.analyzedImagesCount = response.data.imageAnalyses.length;
+          if (addedCount > 0) {
+            this.showToastMessage(`${addedCount} Artikel aus Bild-Analyse hinzugefügt`, 'success');
+          } else {
+            this.showToastMessage('Keine passenden Artikel gefunden', 'error');
+          }
+        } else {
+          console.log('⚠️ [BILD-UPLOAD] Keine imageAnalyses in der Response gefunden');
+        }
       }
     })
     .catch((err) => {
-      console.error('Fehler bei Bildanalyse:', err);
+      console.error('❌ [BILD-UPLOAD] Fehler bei Bildanalyse:', err);
+      console.error('❌ [BILD-UPLOAD] Fehler Details:', {
+        message: err.message,
+        stack: err.stack,
+        name: err.name
+      });
       this.showToastMessage('Bildanalyse fehlgeschlagen', 'error');
     })
     .finally(() => {
@@ -315,6 +388,96 @@ export class EmployeesComponent implements OnInit, OnDestroy {
     }
 
     // Lade gespeicherte Aufträge
+    this.loadStoredOrders();
+  }
+
+  // Lade Kunden basierend auf der Kundennummer aus der Response
+  private loadCustomerByNumberFromResponse(customerNumber: string): void {
+    console.log('🔍 [LOAD-CUSTOMER-FROM-RESPONSE] Lade Kunde mit Nummer aus Response:', customerNumber);
+    
+    const token = localStorage.getItem('token');
+    
+    // Versuche zuerst, den Kunden aus der bereits geladenen Kundenliste zu finden
+    const foundCustomer = this.customers.find(customer => 
+      customer.customer_number === customerNumber
+    );
+    
+    if (foundCustomer) {
+      console.log('✅ [LOAD-CUSTOMER-FROM-RESPONSE] Kunde in lokaler Liste gefunden:', foundCustomer);
+      this.setCustomerFromResponse(foundCustomer);
+      return;
+    }
+    
+    // Wenn nicht in lokaler Liste, lade alle Kunden und suche dann
+    console.log('🔄 [LOAD-CUSTOMER-FROM-RESPONSE] Kunde nicht in lokaler Liste, lade alle Kunden...');
+    
+    fetch('https://multi-mandant-ecommerce.onrender.com/api/customers', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Fehler beim Laden der Kunden');
+      }
+      return response.json();
+    })
+    .then(data => {
+      this.customers = data;
+      
+      // Suche den Kunden in der geladenen Liste
+      const customer = this.customers.find(c => c.customer_number === customerNumber);
+      
+      if (customer) {
+        console.log('✅ [LOAD-CUSTOMER-FROM-RESPONSE] Kunde gefunden:', customer);
+        this.setCustomerFromResponse(customer);
+      } else {
+        console.warn('⚠️ [LOAD-CUSTOMER-FROM-RESPONSE] Kunde nicht gefunden:', customerNumber);
+        // Erstelle einen minimalen Kunden mit nur der Kundennummer als Fallback
+        const fallbackCustomer = {
+          id: 0,
+          customer_number: customerNumber,
+          last_name_company: `Kunde ${customerNumber}`,
+          name_addition: '',
+          email: '',
+          street: '',
+          city: '',
+          postal_code: '',
+          _country_code: ''
+        };
+        this.setCustomerFromResponse(fallbackCustomer);
+      }
+    })
+    .catch(error => {
+      console.error('❌ [LOAD-CUSTOMER-FROM-RESPONSE] Fehler beim Laden der Kunden:', error);
+      // Erstelle einen minimalen Kunden mit nur der Kundennummer als Fallback
+      const fallbackCustomer = {
+        id: 0,
+        customer_number: customerNumber,
+        last_name_company: `Kunde ${customerNumber}`,
+        name_addition: '',
+        email: '',
+        street: '',
+        postal_code: '',
+        _country_code: ''
+      };
+      this.setCustomerFromResponse(fallbackCustomer);
+    });
+  }
+
+  // Hilfsmethode zum Setzen des Kunden aus der Response
+  private setCustomerFromResponse(customer: any): void {
+    console.log('👤 [SET-CUSTOMER-FROM-RESPONSE] Setze Kunde aus Response:', customer);
+    this.globalService.setSelectedCustomerForOrders(customer);
+    
+    // Lade kundenspezifische Preise
+    this.loadCustomerArticlePrices(customer.customer_number);
+  }
+
+  // Lade gespeicherte Aufträge
+  private loadStoredOrders(): void {
     const savedOrders = this.globalService.loadCustomerOrders();
     if (savedOrders && savedOrders.length > 0) {
       console.log('📱 [LOAD-STORED] Gespeicherte Aufträge gefunden:', savedOrders.length);
