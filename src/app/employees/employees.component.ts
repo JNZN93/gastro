@@ -2074,16 +2074,18 @@ export class EmployeesComponent implements OnInit, OnDestroy {
     const contentWidth = pageWidth - marginLeft * 2;
     let y = 20;
 
-    // Header
-    doc.setFontSize(16);
-    doc.text('Kundenspezifische Preise', marginLeft, y);
-    y += 8;
-    doc.setFontSize(11);
-    doc.text(`Kunde: ${customer.last_name_company || ''} (${customer.customer_number || ''})`, marginLeft, y);
-    y += 6;
-    const now = new Date();
-    doc.text(`Datum: ${now.toLocaleDateString('de-DE')} ${now.toLocaleTimeString('de-DE')}`, marginLeft, y);
-    y += 10;
+         // Header
+     doc.setFontSize(16);
+     doc.text('Kundenspezifische Preise', marginLeft, y);
+     y += 8;
+     doc.setFontSize(11);
+     doc.text(`Kunde: ${customer.last_name_company || ''}`, marginLeft, y);
+     y += 6;
+     doc.text(`Kundennummer: ${customer.customer_number || ''}`, marginLeft, y);
+     y += 6;
+     const now = new Date();
+     doc.text(`Datum: ${now.toLocaleDateString('de-DE')} ${now.toLocaleTimeString('de-DE')}`, marginLeft, y);
+     y += 10;
 
          // Tabellenkopf
      doc.setFontSize(10);
