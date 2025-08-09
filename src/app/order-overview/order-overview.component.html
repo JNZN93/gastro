@@ -63,7 +63,6 @@
               <th>Kundennummer</th>
               <th>Sachbearbeiter</th>
               <th>Kunde</th>
-              <th>Firma</th>
               <th>Status</th>
               <th>Gesamtpreis</th>
               <th>Aktionen</th>
@@ -77,7 +76,6 @@
                 <td class="customer-number">{{ order.customer_number || '-' }}</td>
                 <td class="employee-name">{{ getEmployeeDisplayName(order) }}</td>
                 <td class="customer-name">{{ getCustomerDisplayName(order) }}</td>
-                <td class="company-name">{{ order.company || '-' }}</td>
                 <td class="status-cell">
                   <span class="status-badge" [class]="getStatusClass(order.status)">
                     {{ getStatusText(order.status) }}
@@ -284,8 +282,8 @@
                 <span class="detail-value">{{ selectedOrder.customer_number || 'Keine Angabe' }}</span>
               </div>
               <div class="detail-item">
-                <span class="detail-label">Firma:</span>
-                <span class="detail-value">{{ selectedOrder.company || 'Keine Angabe' }}</span>
+                <span class="detail-label">Kunde:</span>
+                <span class="detail-value">{{ getCustomerDisplayName(selectedOrder) }}</span>
               </div>
               <div class="detail-item">
                 <span class="detail-label">Lieferadresse:</span>

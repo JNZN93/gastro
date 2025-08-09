@@ -62,6 +62,9 @@ export class OrderOverviewComponent implements OnInit {
   deleteAllConfirmationText = '';
   showDeleteAllConfirmationError = false;
   userRole: string = '';
+  
+  // Mapping Kundennummer -> Kundenname
+  private customerNameByNumber: Record<string, string> = {};
 
   constructor(
     private http: HttpClient,
@@ -74,6 +77,7 @@ export class OrderOverviewComponent implements OnInit {
   ngOnInit(): void {
     this.checkUserRole();
     this.loadOrders();
+    this.loadCustomers();
   }
 
   checkUserRole() {
@@ -109,9 +113,7 @@ export class OrderOverviewComponent implements OnInit {
     this.http.get<OrdersResponse>('https://multi-mandant-ecommerce.onrender.com/api/orders/all-orders', { headers })
       .subscribe({
         next: (response) => {
-          console.log('Server Response:', response); // Debug-Log
           this.orders = response.orders || [];
-          console.log('Processed Orders:', this.orders); // Debug-Log
           this.isLoading = false;
         },
         error: (error) => {
@@ -120,6 +122,38 @@ export class OrderOverviewComponent implements OnInit {
           this.isLoading = false;
         }
       });
+  }
+
+  private loadCustomers() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      return;
+    }
+
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    });
+
+    this.http.get<any[]>(
+      'https://multi-mandant-ecommerce.onrender.com/api/customers',
+      { headers }
+    ).subscribe({
+      next: (data) => {
+        const map: Record<string, string> = {};
+        for (const customer of data || []) {
+          const numberStr = String(customer?.customer_number ?? '').trim();
+          const nameStr = String(customer?.last_name_company ?? customer?.name ?? '').trim();
+          if (numberStr && nameStr) {
+            map[numberStr] = nameStr;
+          }
+        }
+        this.customerNameByNumber = map;
+      },
+      error: (error) => {
+        console.error('Fehler beim Laden der Kunden:', error);
+      }
+    });
   }
 
   get filteredOrders(): Order[] {
@@ -165,14 +199,14 @@ export class OrderOverviewComponent implements OnInit {
 
     doc.text('Datum: ' + orderDateFormatted, 14, 50);
     doc.text('Erstellt um: ' + createdAtFormatted, 14, 60);
-    doc.text('Kunde: ' + order.customer_number, 14, 70);
+    doc.text('Kunde: ' + this.getCustomerDisplayName(order), 14, 70);
     doc.text('E-Mail: ' + order.email, 14, 80);
     doc.text('Lieferart: ' + (order.fulfillment_type === 'delivery' ? 'Lieferung' : 'Abholung'), 14, 100);
 
     // Zusätzliche Bestellinformationen
-    doc.text('Firma: ' + (order.company ? order.company : 'Keine Angabe'), 14, 110);
-    doc.text('Lieferadresse: ' + (order.shipping_address ? order.shipping_address : 'Keine Angabe'), 14, 120);
-    doc.text('Liefer-/ Abholdatum: ' + this.formatDate(order.delivery_date), 14, 130);
+    // Firma wird nicht mehr ausgegeben; stattdessen nur Kunde (oben) und die Adresse
+    doc.text('Lieferadresse: ' + (order.shipping_address ? order.shipping_address : 'Keine Angabe'), 14, 110);
+    doc.text('Liefer-/ Abholdatum: ' + this.formatDate(order.delivery_date), 14, 120);
 
     // Trennlinie
     doc.line(14, 135, 200, 135);
@@ -199,7 +233,7 @@ export class OrderOverviewComponent implements OnInit {
       if (yPosition + lineHeight > pageHeight - bottomMargin) {
         doc.addPage();
         doc.text('Bestellnummer: ' + order.order_id, 14, 40);
-        doc.text('Kunde: ' + order.customer_number, 14, 50);
+        doc.text('Kunde: ' + this.getCustomerDisplayName(order), 14, 50);
         yPosition = 60;
 
         // Tabellenüberschrift auf neuer Seite wiederholen
@@ -301,8 +335,16 @@ export class OrderOverviewComponent implements OnInit {
   }
 
   getCustomerDisplayName(order: Order): string {
+    const key = String(order.customer_number ?? '').trim();
+    if (key) {
+      const mapped = this.customerNameByNumber[key];
+      if (mapped && mapped.trim()) {
+        return mapped;
+      }
+      return `Kunde ${key}`;
+    }
     if (this.isEmployee(order)) {
-      return '-'; // Keine Anzeige für admin/employee in der Kundenspalte
+      return '-';
     }
     return order.name;
   }
