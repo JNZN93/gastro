@@ -25,6 +25,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   @ViewChild('articlesDropdown') articlesDropdown!: any;
   @ViewChild('orderTableContainer') orderTableContainer!: any;
   @ViewChild('eanCodeInput') eanCodeInput!: any;
+  @ViewChild('imageInput') imageInput!: any;
   private artikelService = inject(ArtikelDataService);
   private http = inject(HttpClient);
   artikelData: any[] = [];
@@ -36,6 +37,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   pendingCustomerForPriceUpdate: any = null; // Temporärer Kunde für Preis-Updates nach dem Laden der Artikel
   isVisible: boolean = true;
   isScanning = false;
+  isAnalyzingImages = false;
   
   // Neue Properties für Dropdown-Navigation
   selectedIndex: number = -1;
@@ -221,6 +223,72 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     if (footer) {
       (footer as HTMLElement).style.display = 'block';
     }
+  }
+
+  // Image analyze upload handlers
+  onImagesSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const files = input.files;
+    if (!files || files.length === 0) {
+      return;
+    }
+    if (!this.globalService.selectedCustomerForOrders) {
+      alert('Bitte wählen Sie zuerst einen Kunden aus.');
+      input.value = '';
+      return;
+    }
+    const formData = new FormData();
+    for (let i = 0; i < files.length; i++) {
+      formData.append('images', files[i]);
+    }
+
+    this.isAnalyzingImages = true;
+    const token = localStorage.getItem('token');
+
+    fetch('https://multi-mandant-ecommerce.onrender.com/api/orders/analyze-images', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      body: formData
+    })
+    .then(async (res) => {
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || `HTTP ${res.status}`);
+      }
+      return res.json();
+    })
+    .then((response) => {
+      const suggestion = response?.data?.orderSuggestion?.orderItems || [];
+      let addedCount = 0;
+      suggestion.forEach((sItem: any) => {
+        const artikel = this.globalArtikels.find(a => a.article_number === sItem.article_number);
+        if (artikel) {
+          const artikelWithQty = { ...artikel, quantity: Number(sItem.quantity) || 1 };
+          this.addToOrder(new Event('analyze-images'), artikelWithQty);
+          addedCount++;
+        }
+      });
+      // Info-Hinweise für Mobile/Tablet: nutze vorhandenes Toast-Schema mit Dummy-Werten
+      if (addedCount > 0) {
+        this.showMobileToast('Bild-Analyse', addedCount);
+      } else {
+        this.showMobileToast('Keine Treffer', 0);
+      }
+    })
+    .catch((err) => {
+      console.error('Fehler bei Bildanalyse:', err);
+      this.showMobileToast('Analyse fehlgeschlagen', 0);
+    })
+    .finally(() => {
+      this.isAnalyzingImages = false;
+      if (this.imageInput && this.imageInput.nativeElement) {
+        this.imageInput.nativeElement.value = '';
+      } else {
+        (event.target as HTMLInputElement).value = '';
+      }
+    });
   }
 
 

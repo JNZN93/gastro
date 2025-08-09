@@ -1,6 +1,10 @@
 <div class="article-container">
 
   <div class="content">
+    @if (isAnalyzingImages) {
+      <app-upload-loading></app-upload-loading>
+    }
+    <input #imageInput type="file" accept="image/*" multiple style="display:none" (change)="onImagesSelected($event)">
     <!-- Desktop Ansicht (unverändert) -->
     <div class="main-content desktop-view">
       <!-- Linke Spalte: Auftrag -->
@@ -270,6 +274,9 @@
               <button (click)="startScanner()" [disabled]="isScanning" class="scanner-btn">
                 <span class="material-symbols-outlined">barcode</span>
               </button>
+              <button (click)="imageInput.click()" class="upload-images-btn" [disabled]="isAnalyzingImages">
+                <span class="material-icons">image</span>
+              </button>
             </div>
           </div>
           
@@ -404,6 +411,9 @@
                   </div>
                   <button (click)="startScanner()" [disabled]="isScanning" class="scanner-btn">
                     <span class="material-symbols-outlined">barcode</span>
+                  </button>
+                  <button (click)="imageInput.click()" class="upload-images-btn" [disabled]="isAnalyzingImages">
+                    <span class="material-icons">image</span>
                   </button>
                 </div>
               </div>
