@@ -11,6 +11,7 @@ import { BarcodeFormat } from '@zxing/browser';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MyDialogComponent } from '../my-dialog/my-dialog.component';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { jsPDF } from 'jspdf';
 
 @Component({
   selector: 'app-customer-orders',
@@ -2350,6 +2351,142 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     });
     
     return foundInGlobal;
+  }
+
+  // Druck-Funktion für kundenspezifische Preise
+  printCustomerPrices(): void {
+    if (!this.globalService.selectedCustomerForOrders) {
+      alert('Bitte wählen Sie zuerst einen Kunden aus.');
+      return;
+    }
+
+    const prices = (this.filteredArticlePrices && this.filteredArticlePrices.length > 0)
+      ? this.filteredArticlePrices
+      : this.customerArticlePrices;
+
+    if (!prices || prices.length === 0) {
+      alert('Keine Artikelpreise zum Drucken verfügbar.');
+      return;
+    }
+
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.width;
+    const margin = 20;
+    const contentWidth = pageWidth - (2 * margin);
+    
+    // Spaltenbreiten anpassen (ohne Rechnungs-ID und Datum)
+    const colArticle = margin;
+    const colNumber = margin + 60;
+    const colPrice = margin + 120;
+    const colQuantity = margin + 180;
+    
+    let y = 30;
+    const lineHeight = 8;
+    const maxLinesPerPage = 30;
+
+    // Header mit Kundendaten
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.text('Kundenspezifische Artikelpreise', pageWidth / 2, y, { align: 'center' });
+    y += 12;
+    
+    doc.setFontSize(12);
+    doc.text(`Kunde: ${this.globalService.selectedCustomerForOrders.name}`, margin, y);
+    y += 8;
+    doc.text(`Druckdatum: ${new Date().toLocaleDateString('de-DE')}`, margin, y);
+    y += 15;
+
+    // Tabellen-Header
+    const drawHeader = () => {
+      doc.setFont('helvetica', 'bold');
+      doc.text('Artikel', colArticle, y);
+      doc.text('Art.-Nr.', colNumber, y);
+      doc.text('Kundenpreis (€)', colPrice, y);
+      doc.text('Menge', colQuantity, y);
+      doc.setFont('helvetica', 'normal');
+      y += 6;
+    };
+
+    // Zeichne Linien für die Tabelle
+    const drawTableLines = () => {
+      doc.setDrawColor(200, 200, 200);
+      doc.line(margin, y - 6, pageWidth - margin, y - 6); // Header-Linie
+      doc.line(margin, y, pageWidth - margin, y); // Untere Linie
+    };
+
+    let currentPage = 1;
+    let itemsOnCurrentPage = 0;
+
+    drawHeader();
+    drawTableLines();
+
+    for (let i = 0; i < prices.length; i++) {
+      const price = prices[i];
+      
+      // Prüfe ob neue Seite benötigt wird
+      if (itemsOnCurrentPage >= maxLinesPerPage) {
+        doc.addPage();
+        currentPage++;
+        y = 30;
+        drawHeader();
+        drawTableLines();
+        itemsOnCurrentPage = 0;
+      }
+
+      // Artikelname (gekürzt falls zu lang)
+      let articleName = price.article_name || 'Unbekannter Artikel';
+      if (articleName.length > 25) {
+        articleName = articleName.substring(0, 22) + '...';
+      }
+
+      // Artikelnummer
+      let articleNumber = price.article_number || 'N/A';
+      if (articleNumber.length > 12) {
+        articleNumber = articleNumber.substring(0, 9) + '...';
+      }
+
+      // Preis formatieren
+      const formattedPrice = price.customer_price ? 
+        parseFloat(price.customer_price).toFixed(2) : '0.00';
+
+      // Zeichne Artikelzeile
+      doc.text(articleName, colArticle, y);
+      doc.text(articleNumber, colNumber, y);
+      doc.text(formattedPrice, colPrice, y);
+      
+      // Menge-Kästchen zeichnen
+      const boxSize = 6;
+      const boxX = colQuantity - 2;
+      const boxY = y - 4;
+      doc.rect(boxX, boxY, boxSize, boxSize);
+      
+      y += lineHeight;
+      itemsOnCurrentPage++;
+    }
+
+    // Footer
+    doc.setFontSize(10);
+    doc.text(`Seite ${currentPage}`, pageWidth / 2, y + 10, { align: 'center' });
+
+    // PDF öffnen und Drucken
+    try {
+      const pdfBlob = doc.output('blob');
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+      const printWindow = window.open(pdfUrl);
+      
+      if (printWindow) {
+        printWindow.onload = () => {
+          printWindow.print();
+        };
+      } else {
+        // Fallback: PDF herunterladen
+        doc.save(`kundenpreise_${this.globalService.selectedCustomerForOrders.name}_${new Date().toISOString().split('T')[0]}.pdf`);
+      }
+    } catch (error) {
+      console.error('Fehler beim Drucken:', error);
+      alert('Fehler beim Drucken. PDF wird heruntergeladen.');
+      doc.save(`kundenpreise_${this.globalService.selectedCustomerForOrders.name}_${new Date().toISOString().split('T')[0]}.pdf`);
+    }
   }
 
   addArticleFromPricesModal(customerPrice: any) {
