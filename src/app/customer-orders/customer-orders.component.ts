@@ -2391,23 +2391,20 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     // Tabellenkopf
     doc.setFontSize(10);
     const colArticle = marginLeft;
-    const colArticleWidth = Math.floor(contentWidth * 0.39); // ~70mm
+    const colArticleWidth = Math.floor(contentWidth * 0.35);
     const colNumber = colArticle + colArticleWidth;
-    const colNumberWidth = Math.floor(contentWidth * 0.17); // ~30mm
+    const colNumberWidth = Math.floor(contentWidth * 0.20);
     const colPrice = colNumber + colNumberWidth;
-    const colPriceWidth = Math.floor(contentWidth * 0.17); // ~30mm
-    const colInvoice = colPrice + colPriceWidth;
-    const colInvoiceWidth = Math.floor(contentWidth * 0.14); // ~25mm
-    const colDate = colInvoice + colInvoiceWidth;
-    const colDateWidth = contentWidth - (colArticleWidth + colNumberWidth + colPriceWidth + colInvoiceWidth);
+    const colPriceWidth = Math.floor(contentWidth * 0.20);
+    const colQuantity = colPrice + colPriceWidth;
+    const colQuantityWidth = contentWidth - (colArticleWidth + colNumberWidth + colPriceWidth);
 
     const drawHeader = () => {
       doc.setFont('helvetica', 'bold');
       doc.text('Artikel', colArticle, y);
       doc.text('Art.-Nr.', colNumber, y);
       doc.text('Kundenpreis (€)', colPrice, y);
-      doc.text('Rechnungs-ID', colInvoice, y);
-      doc.text('Datum', colDate, y);
+      doc.text('Menge', colQuantity, y);
       doc.setFont('helvetica', 'normal');
       y += 6;
     };
@@ -2436,22 +2433,33 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       return acc === text ? acc : acc.slice(0, Math.max(0, acc.length - 1)) + '…';
     };
 
-    prices.forEach((p: any) => {
+    prices.forEach((p: any, index: number) => {
       const articleText = truncateText(p.article_text || '-', colArticleWidth - 2);
       const articleNumber = String(p.article_number || p.product_id || '-');
       const priceNet = (() => {
         const val = parseFloat(p.unit_price_net);
         return isNaN(val) ? '-' : val.toFixed(2);
       })();
-      const invoiceId = String(p.invoice_id || '-');
-      const dateText = this.formatInvoiceDate(p.invoice_date);
 
       addPageIfNeeded(7);
+      
+      // Abwechselnde Zeilenfarben (grau/weiß)
+      if (index % 2 === 1) {
+        doc.setFillColor(245, 245, 245); // Hellgrau
+        doc.rect(marginLeft, y - 4, contentWidth, 6, 'F');
+      }
+      
       doc.text(articleText, colArticle, y);
       doc.text(truncateText(articleNumber, colNumberWidth - 2), colNumber, y);
       doc.text(priceNet, colPrice, y, { align: 'left' });
-      doc.text(truncateText(invoiceId, colInvoiceWidth - 2), colInvoice, y);
-      doc.text(truncateText(dateText, colDateWidth - 2), colDate, y);
+      
+             // Leeres Mengen-Kästchen zeichnen
+       const boxWidth = 12; // Breiter für größere Zahlen
+       const boxHeight = 4; // Höhe beibehalten
+       const boxX = colQuantity + 2; // Bündiger zur Überschrift "Menge"
+       const boxY = y - 2;
+       doc.rect(boxX, boxY, boxWidth, boxHeight);
+      
       y += 6;
     });
 
