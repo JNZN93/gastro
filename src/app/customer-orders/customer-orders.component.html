@@ -607,11 +607,15 @@
           <div class="tab-panel" [class.active]="activeTab === 'prices'">
             @if (globalService.selectedCustomerForOrders) {
               @if (customerArticlePrices.length > 0) {
-              <div class="mobile-customer-prices">
-                <div class="prices-header">
-                  <h3>Kundenspezifische Preise</h3>
-                  <p>{{ customerArticlePrices.length }} Preise verfügbar</p>
-                </div>
+                              <div class="mobile-customer-prices">
+                  <div class="prices-header">
+                    <h3>Kundenspezifische Preise</h3>
+                    <p>{{ customerArticlePrices.length }} Preise verfügbar</p>
+                    <button (click)="printCustomerPrices()" class="mobile-print-btn" title="Kundenpreise drucken">
+                      <span class="material-icons">print</span>
+                      Drucken
+                    </button>
+                  </div>
                 
                 <!-- Suchfeld für kundenspezifische Preise -->
                 <div class="mobile-prices-search-section">

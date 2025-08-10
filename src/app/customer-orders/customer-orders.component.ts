@@ -2575,14 +2575,13 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
 
     // Header
     doc.setFontSize(16);
-    doc.text('Kundenspezifische Preise', 14, 20);
+    doc.text('Bestellformular', 14, 20);
     
     doc.setFontSize(11);
     doc.text(`Kunde: ${customer.last_name_company || ''}`, 14, 30);
     doc.text(`Kundennummer: ${customer.customer_number || ''}`, 14, 37);
     
-    const now = new Date();
-    doc.text(`Datum: ${now.toLocaleDateString('de-DE')} ${now.toLocaleTimeString('de-DE')}`, 14, 44);
+    doc.text('Datum:', 14, 44);
 
     // Daten für die Tabelle vorbereiten (ohne Preis-Spalte)
     const tableData = prices.map((p: any) => [
