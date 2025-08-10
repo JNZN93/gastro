@@ -505,15 +505,21 @@ export class EmployeesComponent implements OnInit, OnDestroy {
   filteredArtikelData() {
     this.filteredArtikels = [];
     this.showDropdown = false;
-    
+
     if (this.searchTerm) {
-      // Check if search term is an 8 or 13 digit EAN code
-      const isEanSearch = /^\d{8}$|^\d{13}$/.test(this.searchTerm.trim());
-      
+      const trimmedTerm = this.searchTerm.trim();
+
+      // Mindestlänge prüfen (außer bei EAN)
+      const isEanSearch = /^\d{8}$|^\d{13}$/.test(trimmedTerm);
+      if (!isEanSearch && trimmedTerm.length < 3) {
+        this.selectedIndex = -1;
+        return; // Suche abbrechen
+      }
+
       if (isEanSearch) {
         // EAN-Suche: Zuerst in lokalen Artikeln suchen
         const localEanResults = this.globalArtikels.filter(artikel =>
-          artikel.ean?.toLowerCase() === this.searchTerm.toLowerCase()
+          artikel.ean?.toLowerCase() === trimmedTerm.toLowerCase()
         );
         
         if (localEanResults.length > 0) {
@@ -525,12 +531,12 @@ export class EmployeesComponent implements OnInit, OnDestroy {
           console.log('🔍 [EAN-LOCAL] EAN in lokalen Artikeln gefunden:', this.filteredArtikels.length);
         } else {
           // EAN nicht in lokalen Artikeln gefunden - API-Suche
-          this.searchEanInApi(this.searchTerm.trim());
+          this.searchEanInApi(trimmedTerm);
           return; // Warte auf API-Ergebnis
         }
       } else {
         // Normale Text-Suche
-        const terms = this.searchTerm.toLowerCase().split(/\s+/);
+        const terms = trimmedTerm.toLowerCase().split(/\s+/);
         
         // Filtere Artikel basierend auf Suchbegriffen
         const filtered = this.globalArtikels.filter((artikel) =>
