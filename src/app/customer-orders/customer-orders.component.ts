@@ -290,28 +290,33 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
           console.log('📊 [BILD-UPLOAD] imageAnalyses verfügbar:', response.data.imageAnalyses);
           console.log('📊 [BILD-UPLOAD] Anzahl imageAnalyses:', response.data.imageAnalyses.length);
           
-          // Durchsuche alle imageAnalyses nach einer gültigen customer_number
+          // Verwende die neue Response-Struktur mit customerNumber direkt in der Response
           let foundCustomerNumber: string | null = null;
-          let foundCustomerName: string | null = null;
           
-          for (let i = 0; i < response.data.imageAnalyses.length; i++) {
-            const analysis = response.data.imageAnalyses[i];
-            console.log(`📊 [BILD-UPLOAD] Analyse ${i}:`, analysis);
-            
-            if (analysis.orderInfo && analysis.orderInfo.customer_number && analysis.orderInfo.customer) {
-              foundCustomerNumber = analysis.orderInfo.customer_number;
-              foundCustomerName = analysis.orderInfo.customer;
-              console.log(`👤 [BILD-UPLOAD] Gültige Kundendaten in Analyse ${i} gefunden:`, {
-                customer_number: foundCustomerNumber,
-                customer: foundCustomerName
-              });
-              break; // Verwende die erste gültige Kundennummer
+          if (response.data.customerNumber) {
+            foundCustomerNumber = response.data.customerNumber;
+            console.log(`👤 [BILD-UPLOAD] Kundennummer aus Response gefunden:`, foundCustomerNumber);
+          } else {
+            // Fallback: Durchsuche alle imageAnalyses nach einer gültigen customer_number (alte Struktur)
+            console.log('⚠️ [BILD-UPLOAD] Keine customerNumber in Response, verwende Fallback-Logik');
+            for (let i = 0; i < response.data.imageAnalyses.length; i++) {
+              const analysis = response.data.imageAnalyses[i];
+              console.log(`📊 [BILD-UPLOAD] Analyse ${i}:`, analysis);
+              
+              if (analysis.orderInfo && analysis.orderInfo.customer_number && analysis.orderInfo.customer) {
+                foundCustomerNumber = analysis.orderInfo.customer_number;
+                console.log(`👤 [BILD-UPLOAD] Gültige Kundendaten in Analyse ${i} gefunden:`, {
+                  customer_number: foundCustomerNumber,
+                  customer: analysis.orderInfo.customer
+                });
+                break; // Verwende die erste gültige Kundennummer
+              }
             }
           }
           
           // Wenn eine Kundennummer gefunden wurde, lade den Kunden (immer, auch wenn bereits ein Kunde ausgewählt ist)
           if (foundCustomerNumber) {
-            console.log('👤 [BILD-UPLOAD] Wechsle zu Kunde aus Response:', foundCustomerNumber, foundCustomerName);
+            console.log('👤 [BILD-UPLOAD] Wechsle zu Kunde aus Response:', foundCustomerNumber);
             this.loadCustomerByNumberFromResponse(foundCustomerNumber);
           }
           
