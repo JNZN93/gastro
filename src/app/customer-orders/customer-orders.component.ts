@@ -378,7 +378,11 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
           console.log('✅ [BILD-UPLOAD] Verarbeitung abgeschlossen. Hinzugefügte Artikel:', addedCount);
           
           // Info-Hinweise für Mobile/Tablet: nutze vorhandenes Toast-Schema mit Dummy-Werten
-        
+          if (addedCount > 0) {
+            this.showMobileToast('Bild-Analyse', addedCount);
+          } else {
+            this.showMobileToast('Keine Treffer', 0);
+          }
         } else {
           console.log('⚠️ [BILD-UPLOAD] Keine imageAnalyses in der Response gefunden');
         }
@@ -391,7 +395,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
         stack: err.stack,
         name: err.name
       });
-      alert('Fehler beim Laden der Bildanalyse');
+      this.showMobileToast('Analyse fehlgeschlagen', 0);
     })
     .finally(() => {
       this.isAnalyzingImages = false;

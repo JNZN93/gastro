@@ -4,7 +4,7 @@
     @if (isAnalyzingImages) {
       <app-upload-loading></app-upload-loading>
     }
-    <input #imageInput type="file" accept="image/*" multiple style="display:none" (change)="onImagesSelected($event)">
+    <input #imageInput type="file" multiple style="display:none" (change)="onImagesSelected($event)">
     <!-- Desktop Ansicht (unverändert) -->
     <div class="main-content desktop-view">
       <!-- Linke Spalte: Auftrag -->
