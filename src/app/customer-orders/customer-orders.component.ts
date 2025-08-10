@@ -2584,14 +2584,10 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     const now = new Date();
     doc.text(`Datum: ${now.toLocaleDateString('de-DE')} ${now.toLocaleTimeString('de-DE')}`, 14, 44);
 
-    // Daten für die Tabelle vorbereiten
+    // Daten für die Tabelle vorbereiten (ohne Preis-Spalte)
     const tableData = prices.map((p: any) => [
       p.article_text || '-',
       p.article_number || p.product_id || '-',
-      (() => {
-        const val = parseFloat(p.unit_price_net);
-        return isNaN(val) ? '-' : val.toFixed(2) + ' €';
-      })(),
       '' // Leere Menge zum Ausfüllen
     ]);
 
@@ -2599,7 +2595,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     import('jspdf-autotable').then(({ default: autoTable }) => {
       autoTable(doc, {
         startY: 55,
-        head: [['Artikel', 'Art.-Nr.', 'Preis', 'Menge']],
+        head: [['Artikel', 'Art.-Nr.', 'Menge']],
         body: tableData,
         theme: 'grid',
         styles: {
@@ -2618,10 +2614,9 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
           fillColor: [245, 245, 245]
         },
         columnStyles: {
-                  0: { cellWidth: 100, halign: 'left' }, // Artikel (noch breiter)
-        1: { cellWidth: 40, halign: 'left' }, // Art.-Nr. (noch schmaler)
-          2: { cellWidth: 25, halign: 'right' }, // Preis (noch schmaler)
-          3: { cellWidth: 35, halign: 'center' } // Menge (etwas breiter)
+          0: { cellWidth: 120, halign: 'left' }, // Artikel (breiter für mehr Platz)
+          1: { cellWidth: 50, halign: 'left' }, // Art.-Nr. (etwas breiter)
+          2: { cellWidth: 40, halign: 'center' } // Menge (etwas breiter)
         },
         margin: { left: 14, right: 14 }
       });
