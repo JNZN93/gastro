@@ -2302,26 +2302,37 @@ export class EmployeesComponent implements OnInit, OnDestroy {
          return isNaN(val) ? '-' : val.toFixed(2);
        })();
 
-       addPageIfNeeded(7);
+       addPageIfNeeded(20); // Erhöht auf 20 für maximalen Abstand
        
-       // Abwechselnde Zeilenfarben (grau/weiß)
+       // Abwechselnde Zeilenfarben (grau/weiß) - OCR-optimiert
        if (index % 2 === 1) {
-         doc.setFillColor(245, 245, 245); // Hellgrau
-         doc.rect(marginLeft, y - 4, contentWidth, 6, 'F');
+         doc.setFillColor(235, 235, 235); // Noch dunkleres Grau für optimalen Kontrast
+         doc.rect(marginLeft, y - 8, contentWidth, 16, 'F'); // Höhe auf 16 erhöht für maximalen Abstand
        }
+       
+       // OCR-optimierte Schriftart und Größe - größer für bessere Erkennung
+       doc.setFont('helvetica', 'bold'); // Bold für bessere OCR-Erkennung
+       doc.setFontSize(11); // Größere Schrift für bessere Lesbarkeit
        
        doc.text(articleText, colArticle, y);
        doc.text(truncateText(articleNumber, colNumberWidth - 2), colNumber, y);
        doc.text(priceNet, colPrice, y, { align: 'left' });
        
-       // Leeres Mengen-Kästchen zeichnen
-       const boxWidth = 12; // Breiter für größere Zahlen
-       const boxHeight = 4; // Höhe beibehalten
-       const boxX = colQuantity + 2; // Bündiger zur Überschrift "Menge"
-       const boxY = y - 2;
-       doc.rect(boxX, boxY, boxWidth, boxHeight);
+       // Mengen-Kästchen für Handschrift optimiert - OCR-optimiert
+       const boxWidth = 20; // Noch breiter für Handschrift
+       const boxHeight = 8; // Höher für Handschrift
+       const boxX = colQuantity + 2;
+       const boxY = y - 5; // Ein kleines Stück höher
        
-       y += 6;
+       // Dickere Umrandung für bessere OCR-Erkennung
+       doc.setLineWidth(0.3);
+       doc.rect(boxX, boxY, boxWidth, boxHeight, 'S');
+       
+       // Zurücksetzen der Zeicheneinstellungen
+       doc.setLineWidth(0.1);
+       doc.setDrawColor(0, 0, 0);
+       
+       y += 16; // Erhöht auf 16 für maximalen Abstand zwischen den Zeilen
      });
 
     try {
