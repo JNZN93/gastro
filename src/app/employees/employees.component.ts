@@ -12,6 +12,7 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MyDialogComponent } from '../my-dialog/my-dialog.component';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { jsPDF } from 'jspdf';
+import 'jspdf-autotable';
 
 @Component({
   selector: 'app-employees',
@@ -2214,6 +2215,7 @@ export class EmployeesComponent implements OnInit, OnDestroy {
   }
 
   // Druck-Funktion für kundenspezifische Preise (Employees)
+  // Druck-Funktion für kundenspezifische Preise mit Excel-ähnlicher Tabelle
   printCustomerPrices(): void {
     if (!this.globalService.selectedCustomerForOrders) {
       alert('Bitte wählen Sie zuerst einen Kunden aus.');
@@ -2232,120 +2234,72 @@ export class EmployeesComponent implements OnInit, OnDestroy {
     const customer = this.globalService.selectedCustomerForOrders;
     const doc = new jsPDF();
 
-    const marginLeft = 14;
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const contentWidth = pageWidth - marginLeft * 2;
-    let y = 20;
+    // Header
+    doc.setFontSize(16);
+    doc.text('Kundenspezifische Preise', 14, 20);
+    
+    doc.setFontSize(11);
+    doc.text(`Kunde: ${customer.last_name_company || ''}`, 14, 30);
+    doc.text(`Kundennummer: ${customer.customer_number || ''}`, 14, 37);
+    
+    const now = new Date();
+    doc.text(`Datum: ${now.toLocaleDateString('de-DE')} ${now.toLocaleTimeString('de-DE')}`, 14, 44);
 
-         // Header
-     doc.setFontSize(16);
-     doc.text('Kundenspezifische Preise', marginLeft, y);
-     y += 8;
-     doc.setFontSize(11);
-     doc.text(`Kunde: ${customer.last_name_company || ''}`, marginLeft, y);
-     y += 6;
-     doc.text(`Kundennummer: ${customer.customer_number || ''}`, marginLeft, y);
-     y += 6;
-     const now = new Date();
-     doc.text(`Datum: ${now.toLocaleDateString('de-DE')} ${now.toLocaleTimeString('de-DE')}`, marginLeft, y);
-     y += 10;
+    // Daten für die Tabelle vorbereiten
+    const tableData = prices.map((p: any) => [
+      p.article_text || '-',
+      p.article_number || p.product_id || '-',
+      (() => {
+        const val = parseFloat(p.unit_price_net);
+        return isNaN(val) ? '-' : val.toFixed(2) + ' €';
+      })(),
+      '' // Leere Menge zum Ausfüllen
+    ]);
 
-         // Tabellenkopf
-     doc.setFontSize(10);
-     const colArticle = marginLeft;
-     const colArticleWidth = Math.floor(contentWidth * 0.35);
-     const colNumber = colArticle + colArticleWidth;
-     const colNumberWidth = Math.floor(contentWidth * 0.20);
-     const colPrice = colNumber + colNumberWidth;
-     const colPriceWidth = Math.floor(contentWidth * 0.20);
-     const colQuantity = colPrice + colPriceWidth;
-     const colQuantityWidth = contentWidth - (colArticleWidth + colNumberWidth + colPriceWidth);
+    // Excel-ähnliche Tabelle mit jsPDF-AutoTable
+    import('jspdf-autotable').then(({ default: autoTable }) => {
+      autoTable(doc, {
+        startY: 55,
+        head: [['Artikel', 'Art.-Nr.', 'Preis', 'Menge']],
+        body: tableData,
+        theme: 'grid',
+        styles: {
+          fontSize: 10,
+          cellPadding: 5,
+          lineWidth: 0.1,
+          lineColor: [0, 0, 0]
+        },
+        headStyles: {
+          fillColor: [51, 51, 51],
+          textColor: [255, 255, 255],
+          fontStyle: 'bold',
+          fontSize: 11
+        },
+        alternateRowStyles: {
+          fillColor: [245, 245, 245]
+        },
+        columnStyles: {
+                  0: { cellWidth: 100, halign: 'left' }, // Artikel (noch breiter)
+        1: { cellWidth: 40, halign: 'left' }, // Art.-Nr. (noch schmaler)
+          2: { cellWidth: 25, halign: 'right' }, // Preis (noch schmaler)
+          3: { cellWidth: 35, halign: 'center' } // Menge (etwas breiter)
+        },
+        margin: { left: 14, right: 14 }
+      });
 
-         const drawHeader = () => {
-       doc.setFont('helvetica', 'bold');
-       doc.text('Artikel', colArticle, y);
-       doc.text('Art.-Nr.', colNumber, y);
-       doc.text('Kundenpreis (€)', colPrice, y);
-       doc.text('Menge', colQuantity, y);
-       doc.setFont('helvetica', 'normal');
-       y += 6;
-     };
-
-    const addPageIfNeeded = (rowHeight: number) => {
-      const pageHeight = doc.internal.pageSize.getHeight();
-      if (y + rowHeight > pageHeight - 14) {
-        doc.addPage();
-        y = 20;
-        drawHeader();
-      }
-    };
-
-    drawHeader();
-
-    const truncateText = (text: string, maxWidth: number) => {
-      if (!text) return '';
-      const chars = text.split('');
-      let acc = '';
-      for (const c of chars) {
-        const next = acc + c;
-        if (doc.getTextWidth(next) > maxWidth) break;
-        acc = next;
-      }
-      return acc === text ? acc : acc.slice(0, Math.max(0, acc.length - 1)) + '…';
-    };
-
-         prices.forEach((p: any, index: number) => {
-       const articleText = truncateText(p.article_text || '-', colArticleWidth - 2);
-       const articleNumber = String(p.article_number || p.product_id || '-');
-       const priceNet = (() => {
-         const val = parseFloat(p.unit_price_net);
-         return isNaN(val) ? '-' : val.toFixed(2);
-       })();
-
-       addPageIfNeeded(20); // Erhöht auf 20 für maximalen Abstand
-       
-       // Abwechselnde Zeilenfarben (grau/weiß) - OCR-optimiert
-       if (index % 2 === 1) {
-         doc.setFillColor(235, 235, 235); // Noch dunkleres Grau für optimalen Kontrast
-         doc.rect(marginLeft, y - 8, contentWidth, 16, 'F'); // Höhe auf 16 erhöht für maximalen Abstand
-       }
-       
-       // OCR-optimierte Schriftart und Größe - größer für bessere Erkennung
-       doc.setFont('helvetica', 'bold'); // Bold für bessere OCR-Erkennung
-       doc.setFontSize(11); // Größere Schrift für bessere Lesbarkeit
-       
-       doc.text(articleText, colArticle, y);
-       doc.text(truncateText(articleNumber, colNumberWidth - 2), colNumber, y);
-       doc.text(priceNet, colPrice, y, { align: 'left' });
-       
-       // Mengen-Kästchen für Handschrift optimiert - OCR-optimiert
-       const boxWidth = 20; // Noch breiter für Handschrift
-       const boxHeight = 8; // Höher für Handschrift
-       const boxX = colQuantity + 2;
-       const boxY = y - 5; // Ein kleines Stück höher
-       
-       // Dickere Umrandung für bessere OCR-Erkennung
-       doc.setLineWidth(0.3);
-       doc.rect(boxX, boxY, boxWidth, boxHeight, 'S');
-       
-       // Zurücksetzen der Zeicheneinstellungen
-       doc.setLineWidth(0.1);
-       doc.setDrawColor(0, 0, 0);
-       
-       y += 16; // Erhöht auf 16 für maximalen Abstand zwischen den Zeilen
-     });
-
-    try {
-      const blobUrl = doc.output('bloburl');
-      const win = window.open(blobUrl, '_blank');
-      if (win) {
-        setTimeout(() => { try { win.print(); } catch {} }, 400);
-      } else {
+      // Öffne Druck-Dialog erst nach dem Zeichnen der Tabelle
+      try {
+        const blobUrl = doc.output('bloburl');
+        const win = window.open(blobUrl, '_blank');
+        if (win) {
+          setTimeout(() => { try { win.print(); } catch {} }, 400);
+        } else {
+          doc.save(`Kundenpreise_${customer.customer_number || ''}.pdf`);
+        }
+      } catch (e) {
         doc.save(`Kundenpreise_${customer.customer_number || ''}.pdf`);
       }
-    } catch (e) {
-      doc.save(`Kundenpreise_${customer.customer_number || ''}.pdf`);
-    }
+    });
   }
 
   addArticleFromPricesModal(customerPrice: any) {
