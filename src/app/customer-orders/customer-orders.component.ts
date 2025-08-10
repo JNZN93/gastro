@@ -314,27 +314,60 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
             this.loadCustomerByNumberFromResponse(foundCustomerNumber);
           }
           
-          // Sammle alle Produkte aus allen Analysen
-          let allProducts: any[] = [];
-          response.data.imageAnalyses.forEach((analysis: any, index: number) => {
-            if (analysis.products && Array.isArray(analysis.products)) {
-              console.log(`📋 [BILD-UPLOAD] Produkte in Analyse ${index}:`, analysis.products.length);
-              allProducts = allProducts.concat(analysis.products);
-            }
-          });
-          
-          console.log('📋 [BILD-UPLOAD] Alle gefundenen Produkte:', allProducts.length);
-          
-          // Verarbeite alle gefundenen Produkte
+          // Verwende orderSuggestion.orderItems für bessere Artikelverarbeitung
           let addedCount = 0;
-          allProducts.forEach((product: any) => {
-            const artikel = this.globalArtikels.find(a => a.article_number === product.article_number);
-            if (artikel) {
-              const artikelWithQty = { ...artikel, quantity: Number(product.quantity) || 1 };
-              this.addToOrder(new Event('analyze-images'), artikelWithQty);
-              addedCount++;
-            }
-          });
+          
+          if (response.data.orderSuggestion && response.data.orderSuggestion.orderItems) {
+            console.log('📋 [BILD-UPLOAD] orderSuggestion.orderItems verfügbar:', response.data.orderSuggestion.orderItems.length);
+            
+            response.data.orderSuggestion.orderItems.forEach((orderItem: any) => {
+              // Suche den Artikel in globalArtikels nach product_id
+              let artikel = this.globalArtikels.find(a => a.id === orderItem.product_id);
+              
+              if (!artikel) {
+                // Fallback: Suche nach Artikelnummer falls product_id nicht gefunden
+                artikel = this.globalArtikels.find(a => a.article_number === orderItem.article_number);
+              }
+              
+              if (artikel) {
+                const artikelWithQty = { 
+                  ...artikel, 
+                  quantity: orderItem.quantity || 1,
+                  // Verwende zusätzliche Informationen aus der API-Response
+                  unit_price: orderItem.unit_price,
+                  notes: orderItem.notes,
+                  confidence: orderItem.confidence,
+                  match_type: orderItem.match_type
+                };
+                this.addToOrder(new Event('analyze-images'), artikelWithQty);
+                addedCount++;
+              } else {
+                console.log(`⚠️ [BILD-UPLOAD] Artikel nicht gefunden für:`, orderItem);
+              }
+            });
+          } else {
+            // Fallback: Verwende die alte Logik falls orderSuggestion nicht verfügbar
+            console.log('📋 [BILD-UPLOAD] orderSuggestion nicht verfügbar, verwende Fallback-Logik');
+            
+            let allProducts: any[] = [];
+            response.data.imageAnalyses.forEach((analysis: any, index: number) => {
+              if (analysis.products && Array.isArray(analysis.products)) {
+                console.log(`📋 [BILD-UPLOAD] Produkte in Analyse ${index}:`, analysis.products.length);
+                allProducts = allProducts.concat(analysis.products);
+              }
+            });
+            
+            console.log('📋 [BILD-UPLOAD] Alle gefundenen Produkte (Fallback):', allProducts.length);
+            
+            allProducts.forEach((product: any) => {
+              const artikel = this.globalArtikels.find(a => a.article_number === product.article_number);
+              if (artikel) {
+                const artikelWithQty = { ...artikel, quantity: Number(product.quantity) || 1 };
+                this.addToOrder(new Event('analyze-images'), artikelWithQty);
+                addedCount++;
+              }
+            });
+          }
           
           console.log('✅ [BILD-UPLOAD] Verarbeitung abgeschlossen. Hinzugefügte Artikel:', addedCount);
           
