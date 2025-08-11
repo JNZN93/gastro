@@ -67,8 +67,10 @@ export class ReportsComponent implements OnInit {
     totalProducts: number;
     gemueseProducts: { [key: string]: number };
     obstProducts: { [key: string]: number };
+    schnellverkaufProducts: { [key: string]: number };
     gemueseTotal: number;
     obstTotal: number;
+    schnellverkaufTotal: number;
     gemueseProductList: Array<{ 
       name: string; 
       quantity: number; 
@@ -81,12 +83,19 @@ export class ReportsComponent implements OnInit {
       orders: number[];
       customers: Array<{ name: string; customerNumber: string; quantity: number; orderId: number }>;
     }>;
+    schnellverkaufProductList: Array<{ 
+      name: string; 
+      quantity: number; 
+      orders: number[];
+      customers: Array<{ name: string; customerNumber: string; quantity: number; orderId: number }>;
+    }>;
     customerSummary: Array<{
       customerName: string;
       customerNumber: string;
       company: string;
       gemueseTotal: number;
       obstTotal: number;
+      schnellverkaufTotal: number;
       totalProducts: number;
       orders: number[];
     }>;
@@ -95,10 +104,13 @@ export class ReportsComponent implements OnInit {
     totalProducts: 0,
     gemueseProducts: {},
     obstProducts: {},
+    schnellverkaufProducts: {},
     gemueseTotal: 0,
     obstTotal: 0,
+    schnellverkaufTotal: 0,
     gemueseProductList: [],
     obstProductList: [],
+    schnellverkaufProductList: [],
     customerSummary: []
   };
 
@@ -244,7 +256,8 @@ export class ReportsComponent implements OnInit {
           
           if (artikel && artikel.category) {
             // Nur Artikel mit den gewünschten Kategorien hinzufügen
-            if (artikel.category === 'GEMÜSE' || artikel.category === 'OBST') {
+            if (artikel.category === 'GEMÜSE' || artikel.category === 'OBST' || 
+                artikel.category === 'SCHNELLVERKAUF') {
               allProducts.push({
                 name: item.product_name,
                 quantity: item.quantity,
@@ -269,6 +282,11 @@ export class ReportsComponent implements OnInit {
       customers: Array<{ name: string; customerNumber: string; quantity: number; orderId: number }>;
     }>();
     const obstMap = new Map<string, { 
+      quantity: number; 
+      orders: number[];
+      customers: Array<{ name: string; customerNumber: string; quantity: number; orderId: number }>;
+    }>();
+    const schnellverkaufMap = new Map<string, { 
       quantity: number; 
       orders: number[];
       customers: Array<{ name: string; customerNumber: string; quantity: number; orderId: number }>;
@@ -325,6 +343,31 @@ export class ReportsComponent implements OnInit {
             }]
           });
         }
+      } else if (product.category === 'SCHNELLVERKAUF') {
+        if (schnellverkaufMap.has(product.name)) {
+          const existing = schnellverkaufMap.get(product.name)!;
+          existing.quantity += product.quantity;
+          if (!existing.orders.includes(product.orderId)) {
+            existing.orders.push(product.orderId);
+          }
+          existing.customers.push({
+            name: product.customerName,
+            customerNumber: product.customerNumber,
+            quantity: product.quantity,
+            orderId: product.orderId
+          });
+        } else {
+          schnellverkaufMap.set(product.name, { 
+            quantity: product.quantity, 
+            orders: [product.orderId],
+            customers: [{
+              name: product.customerName,
+              customerNumber: product.customerNumber,
+              quantity: product.quantity,
+              orderId: product.orderId
+            }]
+          });
+        }
       }
     });
 
@@ -343,12 +386,24 @@ export class ReportsComponent implements OnInit {
       customers: data.customers
     }));
 
+    this.reportData.schnellverkaufProductList = Array.from(schnellverkaufMap.entries()).map(([name, data]) => ({
+      name,
+      quantity: data.quantity,
+      orders: data.orders,
+      customers: data.customers
+    }));
+
     // Gesamtmengen berechnen
     this.reportData.gemueseTotal = this.reportData.gemueseProductList.reduce(
       (sum, product) => sum + product.quantity, 0
     );
     
     this.reportData.obstTotal = this.reportData.obstProductList.reduce(
+      (sum, product) => sum + product.quantity, 0
+    );
+
+    // SCHNELLVERKAUF Gesamt berechnen
+    this.reportData.schnellverkaufTotal = this.reportData.schnellverkaufProductList.reduce(
       (sum, product) => sum + product.quantity, 0
     );
 
@@ -363,12 +418,14 @@ export class ReportsComponent implements OnInit {
       company: string;
       gemueseTotal: number;
       obstTotal: number;
+      schnellverkaufTotal: number;
       totalProducts: number;
       orders: number[];
     }>();
 
     // Alle Produkte durchgehen und Kunden-Statistiken sammeln
-    [...this.reportData.gemueseProductList, ...this.reportData.obstProductList].forEach(product => {
+    [...this.reportData.gemueseProductList, ...this.reportData.obstProductList, 
+     ...this.reportData.schnellverkaufProductList].forEach(product => {
       product.customers.forEach(customer => {
         const key = `${customer.customerNumber}-${customer.name}`;
         
@@ -385,6 +442,7 @@ export class ReportsComponent implements OnInit {
             company: this.getCustomerCompany(customer.customerNumber),
             gemueseTotal: 0,
             obstTotal: 0,
+            schnellverkaufTotal: 0,
             totalProducts: customer.quantity,
             orders: [customer.orderId]
           });
@@ -396,6 +454,8 @@ export class ReportsComponent implements OnInit {
           customerData.gemueseTotal += customer.quantity;
         } else if (this.reportData.obstProductList.some(p => p.name === product.name)) {
           customerData.obstTotal += customer.quantity;
+        } else if (this.reportData.schnellverkaufProductList.some(p => p.name === product.name)) {
+          customerData.schnellverkaufTotal += customer.quantity;
         }
       });
     });
@@ -415,10 +475,13 @@ export class ReportsComponent implements OnInit {
       totalProducts: 0,
       gemueseProducts: {},
       obstProducts: {},
+      schnellverkaufProducts: {},
       gemueseTotal: 0,
       obstTotal: 0,
+      schnellverkaufTotal: 0,
       gemueseProductList: [],
       obstProductList: [],
+      schnellverkaufProductList: [],
       customerSummary: []
     };
   }
@@ -462,6 +525,19 @@ export class ReportsComponent implements OnInit {
       rows.push([
         product.name,
         'OBST',
+        product.quantity.toString(),
+        product.orders.length.toString(),
+        product.orders.join(', '),
+        customerNumbers
+      ]);
+    });
+
+    // SCHNELLVERKAUF Produkte
+    this.reportData.schnellverkaufProductList.forEach(product => {
+      const customerNumbers = product.customers.map(c => c.customerNumber).join('; ');
+      rows.push([
+        product.name,
+        'SCHNELLVERKAUF',
         product.quantity.toString(),
         product.orders.length.toString(),
         product.orders.join(', '),
