@@ -207,8 +207,11 @@ export class ReportsComponent implements OnInit {
     }
 
     // Bestellungen für das ausgewählte Datum filtern
+    // Nur nach order_date filtern, nicht nach created_at
     this.filteredOrders = this.orders.filter(order => {
-      const orderDate = new Date(order.created_at).toISOString().split('T')[0];
+      if (!order.order_date) return false; // Überspringe Bestellungen ohne order_date
+      
+      const orderDate = new Date(order.order_date).toISOString().split('T')[0];
       return orderDate === this.selectedDate;
     });
 
