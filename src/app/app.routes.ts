@@ -17,6 +17,7 @@ import { OrderOverviewComponent } from './order-overview/order-overview.componen
 import { UserManagementComponent } from './user-management/user-management.component';
 import { CategoryDetailComponent } from './category-detail/category-detail.component';
 import { RoutePlanningComponent } from './route-planning/route-planning.component';
+import { ReportsComponent } from './reports/reports.component';
 import { AuthGuard } from './auth.guard';
 import { AdminAuthGuard } from './admin-auth.guard';
 
@@ -44,5 +45,6 @@ export const routes: Routes = [
     { path: 'order-overview', component: OrderOverviewComponent, canActivate: [AuthGuard] },
     { path: 'user-management', component: UserManagementComponent },
     { path: 'route-planning', component: RoutePlanningComponent, canActivate: [AuthGuard] },
+    { path: 'reports', component: ReportsComponent, canActivate: [AuthGuard] },
     { path: 'category/:categoryName', component: CategoryDetailComponent }
 ];

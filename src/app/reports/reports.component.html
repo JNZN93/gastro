@@ -1,0 +1,254 @@
+<div class="reports-container">
+  <!-- Header -->
+  <div class="reports-header">
+    <button class="back-button" (click)="goBack()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+      </svg>
+      Zurück zum Admin
+    </button>
+    <h1 class="reports-title">
+      <svg class="reports-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+      </svg>
+      Reports & Analysen
+    </h1>
+  </div>
+
+  <!-- Loading Screen -->
+  <div class="loading-container" *ngIf="isLoading">
+    <div class="loading-spinner"></div>
+    <p>Lade Daten...</p>
+  </div>
+
+  <!-- Main Content -->
+  <div class="reports-content" *ngIf="!isLoading">
+    <!-- Date Selection -->
+    <div class="date-selection">
+      <label for="datePicker" class="date-label">Datum auswählen:</label>
+      <input 
+        type="date" 
+        id="datePicker" 
+        [(ngModel)]="selectedDate" 
+        (change)="onDateChange()"
+        class="date-input"
+      >
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="summary-grid" *ngIf="filteredOrders.length > 0">
+      <div class="summary-card total-orders">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+        </div>
+        <div class="card-content">
+          <h3>{{ reportData.totalOrders }}</h3>
+          <p>Bestellungen am {{ selectedDate | date:'dd.MM.yyyy' }}</p>
+        </div>
+      </div>
+
+      <div class="summary-card total-products">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+          </svg>
+        </div>
+        <div class="card-content">
+          <h3>{{ reportData.totalProducts }}</h3>
+          <p>GEMÜSE & OBST Produkte</p>
+        </div>
+      </div>
+
+      <div class="summary-card gemuese-card">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+          </svg>
+        </div>
+        <div class="card-content">
+          <h3>{{ reportData.gemueseTotal }}</h3>
+          <p>GEMÜSE Gesamt</p>
+        </div>
+      </div>
+
+      <div class="summary-card obst-card">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+          </svg>
+        </div>
+        <div class="card-content">
+          <h3>{{ reportData.obstTotal }}</h3>
+          <p>OBST Gesamt</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- No Data Message -->
+    <div class="no-data" *ngIf="selectedDate && filteredOrders.length === 0">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+      </svg>
+      <h3>Keine Bestellungen gefunden</h3>
+      <p>Für das ausgewählte Datum {{ selectedDate | date:'dd.MM.yyyy' }} wurden keine Bestellungen gefunden.</p>
+    </div>
+
+    <!-- Product Details -->
+    <div class="product-details" *ngIf="filteredOrders.length > 0">
+      <!-- Export Button -->
+      <div class="export-section">
+        <button class="export-button" (click)="exportToCSV()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+          Als CSV exportieren
+        </button>
+      </div>
+
+      <!-- Customer Summary -->
+      <div class="customer-summary" *ngIf="reportData.customerSummary.length > 0">
+        <h2>Kunden-Zusammenfassung</h2>
+        <div class="customer-table-container">
+          <table class="customer-table">
+            <thead>
+              <tr>
+                <th>Kundenname</th>
+                <th>Kundennummer</th>
+                <th>Firma</th>
+                <th>GEMÜSE Menge</th>
+                <th>OBST Menge</th>
+                <th>Gesamtmenge</th>
+                <th>Anzahl Bestellungen</th>
+                <th>Bestellnummern</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let customer of reportData.customerSummary" class="customer-row">
+                <td class="customer-name">{{ customer.customerName }}</td>
+                <td class="customer-number">{{ customer.customerNumber }}</td>
+                <td class="customer-company">{{ customer.company }}</td>
+                <td class="gemuese-amount">{{ customer.gemueseTotal }}</td>
+                <td class="obst-amount">{{ customer.obstTotal }}</td>
+                <td class="total-amount">{{ customer.totalProducts }}</td>
+                <td class="order-count">{{ customer.orders.length }}</td>
+                <td class="order-ids">{{ customer.orders.join(', ') }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- GEMÜSE Products -->
+      <div class="product-category" *ngIf="reportData.gemueseProductList.length > 0">
+        <h2>GEMÜSE Produkte</h2>
+        <div class="category-table-container">
+          <table class="category-table">
+            <thead>
+              <tr>
+                <th>Produktname</th>
+                <th>Gesamtmenge</th>
+                <th>Anzahl Bestellungen</th>
+                <th>Bestellnummern</th>
+                <th>Kunden</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let product of reportData.gemueseProductList" class="gemuese-row">
+                <td class="product-name">{{ product.name }}</td>
+                <td class="product-quantity">{{ product.quantity }}</td>
+                <td class="product-orders">{{ product.orders.length }}</td>
+                <td class="product-order-ids">{{ product.orders.join(', ') }}</td>
+                <td class="product-customers">
+                  <div class="customer-list">
+                    <div *ngFor="let customer of product.customers" class="customer-item">
+                      {{ customer.name }} ({{ customer.customerNumber }}) - {{ customer.quantity }}
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- OBST Products -->
+      <div class="product-category" *ngIf="reportData.obstProductList.length > 0">
+        <h2>OBST Produkte</h2>
+        <div class="category-table-container">
+          <table class="category-table">
+            <thead>
+              <tr>
+                <th>Produktname</th>
+                <th>Gesamtmenge</th>
+                <th>Anzahl Bestellungen</th>
+                <th>Bestellnummern</th>
+                <th>Kunden</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let product of reportData.obstProductList" class="obst-row">
+                <td class="product-name">{{ product.name }}</td>
+                <td class="product-quantity">{{ product.quantity }}</td>
+                <td class="product-orders">{{ product.orders.length }}</td>
+                <td class="product-order-ids">{{ product.orders.join(', ') }}</td>
+                <td class="product-customers">
+                  <div class="customer-list">
+                    <div *ngFor="let customer of product.customers" class="customer-item">
+                      {{ customer.name }} ({{ customer.customerNumber }}) - {{ customer.quantity }}
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Detailed Orders -->
+      <div class="detailed-orders">
+        <h2>Detaillierte Bestellungen</h2>
+        <div class="orders-table-container">
+          <table class="orders-table">
+            <thead>
+              <tr>
+                <th>Bestellnummer</th>
+                <th>Kunde</th>
+                <th>Kundennummer</th>
+                <th>Firma</th>
+                <th>GEMÜSE/OBST Produkte</th>
+                <th>Bestelldatum</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let order of filteredOrders" class="order-row">
+                <td>{{ order.order_id }}</td>
+                <td>{{ order.name }}</td>
+                <td>{{ order.customer_number }}</td>
+                <td>{{ order.company || '-' }}</td>
+                <td>
+                  <div class="order-products">
+                    <ng-container *ngFor="let item of order.items">
+                      <div *ngIf="getProductCategory(item.product_name) === 'GEMÜSE' || getProductCategory(item.product_name) === 'OBST'"
+                           class="product-item"
+                           [class.gemuese]="getProductCategory(item.product_name) === 'GEMÜSE'"
+                           [class.obst]="getProductCategory(item.product_name) === 'OBST'">
+                        <span class="product-name">{{ item.product_name }}</span>
+                        <span class="product-quantity">({{ item.quantity }})</span>
+                        <span class="product-category">
+                          {{ getProductCategory(item.product_name) }}
+                        </span>
+                      </div>
+                    </ng-container>
+                  </div>
+                </td>
+                <td>{{ order.created_at | date:'dd.MM.yyyy HH:mm' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
