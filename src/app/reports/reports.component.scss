@@ -412,10 +412,14 @@
           }
 
           tbody tr {
-            transition: background-color 0.2s ease;
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
 
             &:hover {
-              background: #f9fafb;
+              background: #e0f2fe;
+              transform: translateY(-1px);
+              box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
+              border-left-color: #3b82f6;
             }
 
             &:last-child td {
@@ -512,6 +516,14 @@
     .customer-row {
       background: #f8fafc;
       border-left: 4px solid #3b82f6;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: #dbeafe;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+        border-left-width: 6px;
+      }
 
       .customer-name {
         font-weight: 600;
@@ -607,19 +619,40 @@
 .gemuese-row {
   background-color: #e8f5e8; /* Hellgrün für GEMÜSE */
   border-left: 4px solid #4caf50; /* Grüner Rand links */
+  transition: all 0.2s ease;
 }
 
 .gemuese-row:hover {
   background-color: #c8e6c9; /* Dunkleres Grün beim Hover */
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.2);
+  border-left-width: 6px;
 }
 
 .obst-row {
   background-color: #fff3e0; /* Hellorange für OBST */
   border-left: 4px solid #ff9800; /* Oranger Rand links */
+  transition: all 0.2s ease;
 }
 
 .obst-row:hover {
   background-color: #ffe0b2; /* Dunkleres Orange beim Hover */
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(255, 152, 0, 0.2);
+  border-left-width: 6px;
+}
+
+.schnellverkauf-row {
+  background-color: #f3e8ff; /* Helllila für DIVERS */
+  border-left: 4px solid #8b5cf6; /* Lila Rand links */
+  transition: all 0.2s ease;
+}
+
+.schnellverkauf-row:hover {
+  background-color: #e9d5ff; /* Dunkleres Lila beim Hover */
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.2);
+  border-left-width: 6px;
 }
 
 .gemuese-category {
@@ -629,6 +662,11 @@
 
 .obst-category {
   color: #e65100; /* Dunkelorange für OBST Text */
+  font-weight: bold;
+}
+
+.schnellverkauf-category {
+  color: #7c3aed; /* Dunkellila für DIVERS Text */
   font-weight: bold;
 }
 
