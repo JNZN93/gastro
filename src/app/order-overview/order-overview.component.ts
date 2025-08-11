@@ -504,4 +504,8 @@ export class OrderOverviewComponent implements OnInit {
     // Navigiere zur Customer Orders Seite
     this.router.navigate(['/customer-orders']);
   }
+
+  goBack(): void {
+    this.router.navigate(['/admin']);
+  }
 } 

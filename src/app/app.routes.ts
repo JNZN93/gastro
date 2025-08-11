@@ -34,7 +34,7 @@ export const routes: Routes = [
     },
     { path: 'registration', component: RegistrationComponent },
     { path: 'admin', component: AdminComponent, canActivate: [AuthGuard]},
-    { path: 'guest-link', component: GuestLinkComponent},
+    { path: 'guest-link', component: GuestLinkComponent, canActivate: [AdminAuthGuard]},
     { path: 'verify', component: VerifyComponent},
     { path: 'privacy', component: PrivacyPolicyComponent},
     { path: 'impress', component: ImpressComponent},

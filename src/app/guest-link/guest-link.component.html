@@ -1,76 +1,127 @@
-<div class="main-container">
-    <div class="content-wrapper">
-        <h1 class="title">Gastzugang erstellen</h1>
-        
-        <div class="result-section">
-            <div class="result-group">
-                <label for="name">Name des Gastes</label>
-                <div class="input-group">
-                    <input id="name" 
-                           [(ngModel)]="name" 
-                           type="text" 
-                           placeholder="Name eingeben..." 
-                           minlength="1"
-                           class="form-input">
-                </div>
-            </div>
-                        <div class="result-group">
-                <label for="role">Benutzertyp auswählen</label>
-                <div class="input-group">
-                    <select name="role" id="role" [(ngModel)]="role" class="form-input">
-                        <option value="" disabled selected hidden>Bitte auswählen</option>
-                        <option value="user">Kunde</option>
-                        <option value="employee">Mitarbeiter</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="result-group">
-                <label>Link</label>
-                <div class="input-group">
-                    <input #inputLink 
-                           [value]="newLink" 
-                           type="text" 
-                           placeholder="Hier erscheint der Link" 
-                           readonly
-                           class="form-input">
-                    <button class="icon-button" (click)="copyLink()">
-                        <img src="copy.png" alt="Copy">
-                    </button>
-                </div>
-            </div>
-
-            <div class="result-group">
-                <label>PIN</label>
-                <div class="input-group">
-                    <input #inputPin 
-                           [value]="newPin" 
-                           type="text" 
-                           placeholder="Hier erscheint PIN" 
-                           readonly
-                           class="form-input">
-                    <button class="icon-button" (click)="copyPin()">
-                        <img src="copy.png" alt="Copy">
-                    </button>
-                </div>
-            </div>
-
-            <button class="primary-button" (click)="generateLink()">
-                <i class="bi bi-plus-circle"></i>
-                Gastzugang erstellen
-            </button>
-        </div>
-
-        @if(showSnackbar) {
-            <div class="snackbar" [class.show]="showSnackbar">
-                <i class="bi bi-check-circle"></i>
-                @if(showPin) {
-                    PIN Kopiert!
-                }
-                @if(showLink) {
-                    Link Kopiert!
-                }
-            </div>
-        }
+<div class="guest-access-container">
+    <div class="hero-background"></div>
+    <div class="hero-overlay"></div>
+    
+    <!-- Zurück-Button -->
+    <div class="back-button-container">
+        <button class="back-button" (click)="goBack()">
+            <i class="bi bi-arrow-left"></i>
+            <span>Zurück</span>
+        </button>
     </div>
+    
+    <div class="content-container">
+        <div class="form-card">
+            <div class="card-header">
+                <h1 class="main-title">Gastzugang erstellen</h1>
+                <p class="subtitle">Erstellen Sie temporäre Zugänge für Gäste und Mitarbeiter</p>
+            </div>
+            
+            <form class="guest-form" (ngSubmit)="generateLink()">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="name" class="form-label">
+                            <i class="bi bi-person"></i>
+                            Name des Gastes
+                        </label>
+                        <input 
+                            id="name" 
+                            [(ngModel)]="name" 
+                            name="name"
+                            type="text" 
+                            placeholder="Name eingeben..." 
+                            minlength="1"
+                            class="form-input"
+                            required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="role" class="form-label">
+                            <i class="bi bi-shield-check"></i>
+                            Benutzertyp
+                        </label>
+                        <select 
+                            name="role" 
+                            id="role" 
+                            [(ngModel)]="role" 
+                            class="form-input"
+                            required>
+                            <option value="" disabled selected hidden>Bitte auswählen</option>
+                            <option value="user">Kunde</option>
+                            <option value="employee">Mitarbeiter</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="bi bi-link-45deg"></i>
+                            Generierter Link
+                        </label>
+                        <div class="input-with-action">
+                            <input 
+                                #inputLink 
+                                [value]="newLink" 
+                                type="text" 
+                                placeholder="Hier erscheint der Link" 
+                                readonly
+                                class="form-input readonly-input">
+                            <button 
+                                type="button"
+                                class="action-button copy-btn" 
+                                (click)="copyLink()"
+                                [disabled]="!newLink">
+                                <i class="bi bi-clipboard"></i>
+                                Kopieren
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="bi bi-key"></i>
+                            PIN-Code
+                        </label>
+                        <div class="input-with-action">
+                            <input 
+                                #inputPin 
+                                [value]="newPin" 
+                                type="text" 
+                                placeholder="Hier erscheint PIN" 
+                                readonly
+                                class="form-input readonly-input">
+                            <button 
+                                type="button"
+                                class="action-button copy-btn" 
+                                (click)="copyPin()"
+                                [disabled]="!newPin">
+                                <i class="bi bi-clipboard"></i>
+                                Kopieren
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="primary-button" [disabled]="!name || !role">
+                        <i class="bi bi-plus-circle"></i>
+                        Gastzugang erstellen
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @if(showSnackbar) {
+        <div class="snackbar" [class.show]="showSnackbar">
+            <i class="bi bi-check-circle"></i>
+            @if(showPin) {
+                PIN erfolgreich kopiert!
+            }
+            @if(showLink) {
+                Link erfolgreich kopiert!
+            }
+        </div>
+    }
 </div>

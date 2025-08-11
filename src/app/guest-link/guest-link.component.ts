@@ -2,11 +2,14 @@ import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { AuthService } from '../authentication.service';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
+import { Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-guest-link',
-  imports: [FormsModule],
+  standalone: true,
+  imports: [FormsModule, CommonModule],
   templateUrl: './guest-link.component.html',
   styleUrl: './guest-link.component.scss'
 })
@@ -23,14 +26,33 @@ export class GuestLinkComponent implements OnInit {
   @ViewChild('inputLink') inputLink!: ElementRef;
   @ViewChild('inputPin') inputPin!: ElementRef;
 
-  constructor(private http: HttpClient, private authService: AuthService, private router: Router) {
+  constructor(
+    private http: HttpClient, 
+    private authService: AuthService, 
+    private router: Router,
+    private location: Location
+  ) {
   }
   
   ngOnInit(): void {
     this.checkUserRole();
   }
 
+  goBack(): void {
+    // Versuche zur vorherigen Seite zurückzugehen
+    if (window.history.length > 1) {
+      this.location.back();
+    } else {
+      // Fallback: Zur Admin-Seite navigieren
+      this.router.navigate(['/admin']);
+    }
+  }
+
   generateLink() {
+    if (!this.name || !this.role) {
+      return;
+    }
+    
     this.authService.generateLink(this.name, this.role).subscribe({
       next: (response) => {
         console.log(response.link);
