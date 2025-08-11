@@ -2977,4 +2977,9 @@ export class EmployeesComponent implements OnInit, OnDestroy {
   private isMobileOrTabletView(): boolean {
     return window.innerWidth <= 1023;
   }
+
+  // Navigation method
+  goBack(): void {
+    this.router.navigate(['/admin']);
+  }
 }

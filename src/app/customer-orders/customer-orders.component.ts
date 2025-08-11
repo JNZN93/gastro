@@ -3299,4 +3299,9 @@ filteredArtikelData() {
       return true; // Keep this item
     });
   }
+
+  // Navigation method
+  goBack(): void {
+    this.router.navigate(['/admin']);
+  }
 }

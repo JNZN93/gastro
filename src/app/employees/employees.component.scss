@@ -9,6 +9,47 @@
   max-height: calc(100vh - 100px); // Zusätzliche Sicherheit
 }
 
+// Back Button Header
+.back-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin-bottom: 0;
+  padding: 0 16px;
+
+  // Mobile und Tablet Anpassungen
+  @media (max-width: 1023px) {
+    padding: 0 8px;
+    margin-bottom: -4px;
+  }
+
+  .back-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: #f3f4f6;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    color: #374151;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Poppins', sans-serif;
+
+    &:hover {
+      background: #e5e7eb;
+      border-color: #9ca3af;
+      transform: translateY(-1px);
+    }
+
+    svg {
+      width: 20px;
+      height: 20px;
+    }
+  }
+}
+
 .content {
   display: flex;
   flex-direction: column;
