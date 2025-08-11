@@ -140,14 +140,15 @@
         </div>
       </div>
 
-      <!-- GEMÜSE Products -->
-      <div class="product-category" *ngIf="reportData.gemueseProductList.length > 0">
-        <h2>GEMÜSE Produkte</h2>
+      <!-- GEMÜSE & OBST Products -->
+      <div class="product-category" *ngIf="reportData.gemueseProductList.length > 0 || reportData.obstProductList.length > 0">
+        <h2>GEMÜSE & OBST Produkte</h2>
         <div class="category-table-container">
           <table class="category-table">
             <thead>
               <tr>
                 <th>Produktname</th>
+                <th>Kategorie</th>
                 <th>Gesamtmenge</th>
                 <th>Anzahl Bestellungen</th>
                 <th>Bestellnummern</th>
@@ -155,8 +156,10 @@
               </tr>
             </thead>
             <tbody>
+              <!-- GEMÜSE Products -->
               <tr *ngFor="let product of reportData.gemueseProductList" class="gemuese-row">
                 <td class="product-name">{{ product.name }}</td>
+                <td class="product-category gemuese-category">GEMÜSE</td>
                 <td class="product-quantity">{{ product.quantity }}</td>
                 <td class="product-orders">{{ product.orders.length }}</td>
                 <td class="product-order-ids">{{ product.orders.join(', ') }}</td>
@@ -168,28 +171,10 @@
                   </div>
                 </td>
               </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- OBST Products -->
-      <div class="product-category" *ngIf="reportData.obstProductList.length > 0">
-        <h2>OBST Produkte</h2>
-        <div class="category-table-container">
-          <table class="category-table">
-            <thead>
-              <tr>
-                <th>Produktname</th>
-                <th>Gesamtmenge</th>
-                <th>Anzahl Bestellungen</th>
-                <th>Bestellnummern</th>
-                <th>Kunden</th>
-              </tr>
-            </thead>
-            <tbody>
+              <!-- OBST Products -->
               <tr *ngFor="let product of reportData.obstProductList" class="obst-row">
                 <td class="product-name">{{ product.name }}</td>
+                <td class="product-category obst-category">OBST</td>
                 <td class="product-quantity">{{ product.quantity }}</td>
                 <td class="product-orders">{{ product.orders.length }}</td>
                 <td class="product-order-ids">{{ product.orders.join(', ') }}</td>
@@ -206,7 +191,8 @@
         </div>
       </div>
 
-      <!-- Detailed Orders -->
+      <!-- Detailed Orders - Hidden for now -->
+      <!--
       <div class="detailed-orders">
         <h2>Detaillierte Bestellungen</h2>
         <div class="orders-table-container">
@@ -249,6 +235,7 @@
           </table>
         </div>
       </div>
+      -->
     </div>
   </div>
 </div>

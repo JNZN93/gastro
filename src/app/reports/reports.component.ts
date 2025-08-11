@@ -357,22 +357,69 @@ export class ReportsComponent implements OnInit {
   }
 
   getProductCategory(productName: string): string {
+    // Check for PFAND products (beverages, drinks, etc.) to exclude them from GEMÜSE/OBST
+    const pfandKeywords = [
+      'fanta', 'coca-cola', 'coca cola', 'pepsi', 'sprite', '7up', 'dr pepper',
+      'red bull', 'monster', 'rockstar', 'burn', 'powerade', 'gatorade',
+      'ice tea', 'eistee', 'fuze tea', 'durstlöscher', 'apfelschorle', 'orangensaft',
+      'cola', 'limonade', 'saft', 'getränk', 'getraenk', 'drink', 'beverage',
+      'bier', 'wein', 'cocktail', 'margarita', 'mojito', 'gin tonic',
+      'whiskey', 'vodka', 'rum', 'tequila', 'schnaps', 'likör', 'likoer',
+      'wasser', 'mineralwasser', 'stilles wasser', 'sprudel', 'kohlensäure',
+      'kohlensaeure', 'koffeinfrei', 'ohne koffein',
+      'dose', 'flasche', 'pet', 'glas', 'aluminium', 'blechdose', 'getränkedose',
+      'pfand', 'einweg', 'mehrweg', 'returnable', 'deposit'
+    ];
+    
     const gemueseKeywords = [
       'gemüse', 'gemuese', 'tomate', 'gurke', 'paprika', 'zwiebel', 'karotte', 
       'kartoffel', 'brokkoli', 'blumenkohl', 'spinat', 'salat', 'kohl', 'möhre',
       'lauch', 'sellerie', 'radieschen', 'rettich', 'kürbis', 'aubergine', 'zucchini',
       'möhre', 'karotte', 'kartoffel', 'zwiebel', 'knoblauch', 'ingwer', 'chili',
-      'basilikum', 'oregano', 'thymian', 'rosmarin', 'salbei', 'petersilie', 'dill'
+      'basilikum', 'oregano', 'thymian', 'rosmarin', 'salbei', 'petersilie', 'dill',
+      'kartoffeln', 'zwiebeln', 'möhren', 'karotten', 'tomaten', 'gurken', 'paprikas',
+      'salat', 'rucola', 'endivie', 'chicorée', 'chicoree', 'feldsalat', 'kopfsalat',
+      'eisbergsalat', 'romana', 'batavia', 'lollo rosso', 'lollo bionda'
     ];
     
     const obstKeywords = [
       'obst', 'apfel', 'banane', 'orange', 'birne', 'traube', 'erdbeere', 
       'himbeere', 'brombeere', 'pfirsich', 'aprikose', 'pflaume', 'kirsche',
       'ananas', 'mango', 'kiwi', 'zitrone', 'limette', 'grapefruit', 'mandarine',
-      'clementine', 'tangerine', 'pampelmuse', 'pomelo', 'blutorange', 'blutorange'
+      'clementine', 'tangerine', 'pampelmuse', 'pomelo', 'blutorange', 'blutorange',
+      'äpfel', 'bananen', 'orangen', 'birnen', 'trauben', 'erdbeeren', 'himbeeren',
+      'brombeeren', 'pfirsiche', 'aprikosen', 'pflaumen', 'kirschen', 'ananas',
+      'mangos', 'kiwis', 'zitronen', 'limetten', 'grapefruits', 'mandarinen',
+      'nectarine', 'pfirsich', 'aprikose', 'pflaume', 'kirsche', 'weintraube',
+      'stachelbeere', 'johannisbeere', 'heidelbeere', 'preiselbeere', 'cranberry'
     ];
     
     const lowerName = productName.toLowerCase();
+    
+    // First check for specific PFAND products (only the problematic ones)
+    const specificPfandProducts = [
+      'fanta mango dragonfruit', 'hot blood ice tea', 'durstlöscher zitrone', 
+      'durstlöscher eistee', 'fuze tea zitrone', 'fuze tea pfirsich'
+    ];
+    
+    if (specificPfandProducts.some(product => lowerName.includes(product))) {
+      return 'SONSTIGES';
+    }
+    
+    // Check for general PFAND keywords only if they're clearly beverages
+    if (pfandKeywords.some(keyword => lowerName.includes(keyword))) {
+      // But allow some exceptions for food products that might contain these words
+      if (lowerName.includes('saft') && (lowerName.includes('gemüse') || lowerName.includes('gemuese'))) {
+        // Gemüsesaft should be GEMÜSE
+        return 'GEMÜSE';
+      }
+      if (lowerName.includes('saft') && (lowerName.includes('obst') || lowerName.includes('frucht'))) {
+        // Obstsaft should be OBST
+        return 'OBST';
+      }
+      // For other PFAND products, exclude them
+      return 'SONSTIGES';
+    }
     
     if (gemueseKeywords.some(keyword => lowerName.includes(keyword))) {
       return 'GEMÜSE';

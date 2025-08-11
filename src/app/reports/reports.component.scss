@@ -542,6 +542,59 @@
   }
 }
 
+/* GEMÜSE und OBST Reihen farblich unterscheiden */
+.gemuese-row {
+  background-color: #e8f5e8; /* Hellgrün für GEMÜSE */
+  border-left: 4px solid #4caf50; /* Grüner Rand links */
+}
+
+.gemuese-row:hover {
+  background-color: #c8e6c9; /* Dunkleres Grün beim Hover */
+}
+
+.obst-row {
+  background-color: #fff3e0; /* Hellorange für OBST */
+  border-left: 4px solid #ff9800; /* Oranger Rand links */
+}
+
+.obst-row:hover {
+  background-color: #ffe0b2; /* Dunkleres Orange beim Hover */
+}
+
+.gemuese-category {
+  color: #2e7d32; /* Dunkelgrün für GEMÜSE Text */
+  font-weight: bold;
+}
+
+.obst-category {
+  color: #e65100; /* Dunkelorange für OBST Text */
+  font-weight: bold;
+}
+
+/* Tabellen-Styling verbessern */
+.category-table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.category-table th,
+.category-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.category-table th {
+  background-color: #f5f5f5;
+  font-weight: 600;
+  color: #333;
+}
+
+.category-table tbody tr {
+  transition: background-color 0.2s ease;
+}
+
 // Responsive Design
 @media (max-width: 768px) {
   .reports-container {
