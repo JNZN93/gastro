@@ -55,6 +55,9 @@ export class ReportsComponent implements OnInit {
   isCustomerSummaryCollapsed: boolean = true; // Initially collapsed
   isProductCategoryCollapsed: boolean = false; // Initially expanded
   
+  // Artikel-Daten für echte Kategorien
+  globalArtikels: any[] = [];
+  
   // Report-Daten
   reportData: {
     totalOrders: number;
@@ -106,7 +109,25 @@ export class ReportsComponent implements OnInit {
   ngOnInit(): void {
     this.checkUserRole();
     this.loadOrders();
+    this.loadArtikels();
     this.selectedDate = this.getTodayDate();
+  }
+
+  loadArtikels() {
+    // Lade alle Artikel für die Kategorie-Erkennung
+    this.http.get<any[]>('https://multi-mandant-ecommerce.onrender.com/api/products')
+      .subscribe({
+        next: (response) => {
+          this.globalArtikels = response || [];
+          // Wenn Bestellungen bereits geladen sind, generiere den Report
+          if (this.orders.length > 0) {
+            this.generateReport();
+          }
+        },
+        error: (error) => {
+          console.error('Fehler beim Laden der Artikel:', error);
+        }
+      });
   }
 
   getTodayDate(): string {
@@ -145,7 +166,10 @@ export class ReportsComponent implements OnInit {
         .subscribe({
           next: (response) => {
             this.orders = response.orders || [];
-            this.generateReport();
+            // Wenn Artikel bereits geladen sind, generiere den Report
+            if (this.globalArtikels.length > 0) {
+              this.generateReport();
+            }
           },
           error: (error) => {
             console.error('Fehler beim Laden der Bestellungen:', error);
@@ -193,17 +217,24 @@ export class ReportsComponent implements OnInit {
     this.filteredOrders.forEach(order => {
       if (order.items && Array.isArray(order.items)) {
         order.items.forEach((item: OrderItem) => {
-          const category = this.getProductCategory(item.product_name);
-          if (category === 'GEMÜSE' || category === 'OBST') {
-            allProducts.push({
-              name: item.product_name,
-              quantity: item.quantity,
-              orderId: order.order_id,
-              category: category,
-              customerName: order.name,
-              customerNumber: order.customer_number,
-              company: order.company
-            });
+          // Hole die echte Kategorie aus globalArtikels anstatt sie zu erraten
+          const artikel = this.globalArtikels.find(
+            a => a.article_number === item.product_article_number
+          );
+          
+          if (artikel && artikel.category) {
+            // Nur Artikel mit den gewünschten Kategorien hinzufügen
+            if (artikel.category === 'GEMÜSE' || artikel.category === 'OBST') {
+              allProducts.push({
+                name: item.product_name,
+                quantity: item.quantity,
+                orderId: order.order_id,
+                category: artikel.category, // Echte Kategorie verwenden
+                customerName: order.name,
+                customerNumber: order.customer_number,
+                company: order.company
+              });
+            }
           }
         });
       }
@@ -343,7 +374,7 @@ export class ReportsComponent implements OnInit {
         const customerData = customerMap.get(key)!;
         if (this.reportData.gemueseProductList.some(p => p.name === product.name)) {
           customerData.gemueseTotal += customer.quantity;
-        } else {
+        } else if (this.reportData.obstProductList.some(p => p.name === product.name)) {
           customerData.obstTotal += customer.quantity;
         }
       });
@@ -356,80 +387,6 @@ export class ReportsComponent implements OnInit {
   getCustomerCompany(customerNumber: string): string {
     const order = this.filteredOrders.find(o => o.customer_number === customerNumber);
     return order?.company || '-';
-  }
-
-  getProductCategory(productName: string): string {
-    // Check for PFAND products (beverages, drinks, etc.) to exclude them from GEMÜSE/OBST
-    const pfandKeywords = [
-      'fanta', 'coca-cola', 'coca cola', 'pepsi', 'sprite', '7up', 'dr pepper',
-      'red bull', 'monster', 'rockstar', 'burn', 'powerade', 'gatorade',
-      'ice tea', 'eistee', 'fuze tea', 'durstlöscher', 'apfelschorle', 'orangensaft',
-      'cola', 'limonade', 'saft', 'getränk', 'getraenk', 'drink', 'beverage',
-      'bier', 'wein', 'cocktail', 'margarita', 'mojito', 'gin tonic',
-      'whiskey', 'vodka', 'rum', 'tequila', 'schnaps', 'likör', 'likoer',
-      'wasser', 'mineralwasser', 'stilles wasser', 'sprudel', 'kohlensäure',
-      'kohlensaeure', 'koffeinfrei', 'ohne koffein',
-      'dose', 'flasche', 'pet', 'glas', 'aluminium', 'blechdose', 'getränkedose',
-      'pfand', 'einweg', 'mehrweg', 'returnable', 'deposit'
-    ];
-    
-    const gemueseKeywords = [
-      'gemüse', 'gemuese', 'tomate', 'gurke', 'paprika', 'zwiebel', 'karotte', 
-      'kartoffel', 'brokkoli', 'blumenkohl', 'spinat', 'salat', 'kohl', 'möhre',
-      'lauch', 'sellerie', 'radieschen', 'rettich', 'kürbis', 'aubergine', 'zucchini',
-      'möhre', 'karotte', 'kartoffel', 'zwiebel', 'knoblauch', 'ingwer', 'chili',
-      'basilikum', 'oregano', 'thymian', 'rosmarin', 'salbei', 'petersilie', 'dill',
-      'kartoffeln', 'zwiebeln', 'möhren', 'karotten', 'tomaten', 'gurken', 'paprikas',
-      'salat', 'rucola', 'endivie', 'chicorée', 'chicoree', 'feldsalat', 'kopfsalat',
-      'eisbergsalat', 'romana', 'batavia', 'lollo rosso', 'lollo bionda'
-    ];
-    
-    const obstKeywords = [
-      'obst', 'apfel', 'banane', 'orange', 'birne', 'traube', 'erdbeere', 
-      'himbeere', 'brombeere', 'pfirsich', 'aprikose', 'pflaume', 'kirsche',
-      'ananas', 'mango', 'kiwi', 'zitrone', 'limette', 'grapefruit', 'mandarine',
-      'clementine', 'tangerine', 'pampelmuse', 'pomelo', 'blutorange', 'blutorange',
-      'äpfel', 'bananen', 'orangen', 'birnen', 'trauben', 'erdbeeren', 'himbeeren',
-      'brombeeren', 'pfirsiche', 'aprikosen', 'pflaumen', 'kirschen', 'ananas',
-      'mangos', 'kiwis', 'zitronen', 'limetten', 'grapefruits', 'mandarinen',
-      'nectarine', 'pfirsich', 'aprikose', 'pflaume', 'kirsche', 'weintraube',
-      'stachelbeere', 'johannisbeere', 'heidelbeere', 'preiselbeere', 'cranberry'
-    ];
-    
-    const lowerName = productName.toLowerCase();
-    
-    // First check for specific PFAND products (only the problematic ones)
-    const specificPfandProducts = [
-      'fanta mango dragonfruit', 'hot blood ice tea', 'durstlöscher zitrone', 
-      'durstlöscher eistee', 'fuze tea zitrone', 'fuze tea pfirsich'
-    ];
-    
-    if (specificPfandProducts.some(product => lowerName.includes(product))) {
-      return 'SONSTIGES';
-    }
-    
-    // Check for general PFAND keywords only if they're clearly beverages
-    if (pfandKeywords.some(keyword => lowerName.includes(keyword))) {
-      // But allow some exceptions for food products that might contain these words
-      if (lowerName.includes('saft') && (lowerName.includes('gemüse') || lowerName.includes('gemuese'))) {
-        // Gemüsesaft should be GEMÜSE
-        return 'GEMÜSE';
-      }
-      if (lowerName.includes('saft') && (lowerName.includes('obst') || lowerName.includes('frucht'))) {
-        // Obstsaft should be OBST
-        return 'OBST';
-      }
-      // For other PFAND products, exclude them
-      return 'SONSTIGES';
-    }
-    
-    if (gemueseKeywords.some(keyword => lowerName.includes(keyword))) {
-      return 'GEMÜSE';
-    } else if (obstKeywords.some(keyword => lowerName.includes(keyword))) {
-      return 'OBST';
-    }
-    
-    return 'SONSTIGES';
   }
 
   resetReportData() {
