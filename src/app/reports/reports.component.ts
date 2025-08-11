@@ -486,68 +486,79 @@ export class ReportsComponent implements OnInit {
     };
   }
 
-  exportToCSV() {
+  exportToPDF() {
     if (!this.filteredOrders.length) return;
 
-    const csvContent = this.generateCSVContent();
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    
-    link.setAttribute('href', url);
-    link.setAttribute('download', `report_${this.selectedDate}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Import jsPDF dynamically
+    import('jspdf').then(({ default: jsPDF }) => {
+      import('jspdf-autotable').then(({ default: autoTable }) => {
+        this.generatePDF(jsPDF, autoTable);
+      });
+    });
   }
 
-  generateCSVContent(): string {
-    const headers = ['Produktname', 'Kategorie', 'Gesamtmenge', 'Anzahl Bestellungen', 'Bestellnummern', 'Kundennummern'];
-    const rows: string[][] = [];
-
+  private generatePDF(jsPDF: any, autoTable: any) {
+    const doc = new jsPDF();
+    
+    // Header
+    const date = new Date(this.selectedDate).toLocaleDateString('de-DE');
+    doc.setFontSize(20);
+    doc.text('Gemüse & Obst', 20, 30);
+    doc.setFontSize(14);
+    doc.text(`Datum: ${date}`, 20, 45);
+    
+    // Produktdaten für Tabelle vorbereiten
+    const tableData: any[] = [];
+    
     // GEMÜSE Produkte
     this.reportData.gemueseProductList.forEach(product => {
-      const customerNumbers = product.customers.map(c => c.customerNumber).join('; ');
-      rows.push([
+      tableData.push([
         product.name,
-        'GEMÜSE',
-        product.quantity.toString(),
-        product.orders.length.toString(),
-        product.orders.join(', '),
-        customerNumbers
+        product.quantity.toString().replace('.', ',')
       ]);
     });
-
+    
     // OBST Produkte
     this.reportData.obstProductList.forEach(product => {
-      const customerNumbers = product.customers.map(c => c.customerNumber).join('; ');
-      rows.push([
+      tableData.push([
         product.name,
-        'OBST',
-        product.quantity.toString(),
-        product.orders.length.toString(),
-        product.orders.join(', '),
-        customerNumbers
+        product.quantity.toString().replace('.', ',')
       ]);
     });
-
-    // SCHNELLVERKAUF Produkte
+    
+    // DIVERS Produkte
     this.reportData.schnellverkaufProductList.forEach(product => {
-      const customerNumbers = product.customers.map(c => c.customerNumber).join('; ');
-      rows.push([
+      tableData.push([
         product.name,
-        'SCHNELLVERKAUF',
-        product.quantity.toString(),
-        product.orders.length.toString(),
-        product.orders.join(', '),
-        customerNumbers
+        product.quantity.toString().replace('.', ',')
       ]);
     });
-
-    return [headers, ...rows]
-      .map((row: string[]) => row.map((cell: string) => `"${cell}"`).join(','))
-      .join('\n');
+    
+    // Tabelle erstellen
+    autoTable(doc, {
+      head: [['Produktname', 'Menge']],
+      body: tableData,
+      startY: 60,
+      styles: {
+        fontSize: 12,
+        cellPadding: 5
+      },
+      headStyles: {
+        fillColor: [59, 130, 246],
+        textColor: 255,
+        fontStyle: 'bold'
+      },
+      alternateRowStyles: {
+        fillColor: [248, 250, 252]
+      },
+      columnStyles: {
+        0: { cellWidth: 120 }, // Produktname (breiter ohne Kategorie)
+        1: { cellWidth: 40 }   // Menge
+      }
+    });
+    
+    // PDF speichern
+    doc.save(`produkt-report_${this.selectedDate}.pdf`);
   }
 
   toggleCustomerSummary() {
