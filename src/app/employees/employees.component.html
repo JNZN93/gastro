@@ -207,6 +207,24 @@
             </table>
           </div>
           
+          <!-- Datumsfelder -->
+          <div class="date-fields">
+            <div class="date-field">
+              <label for="orderDate">Bestellung:</label>
+              <input type="date" 
+                     id="orderDate" 
+                     [(ngModel)]="orderDate" 
+                     class="date-input">
+            </div>
+            <div class="date-field">
+              <label for="deliveryDate">Lieferung:</label>
+              <input type="date" 
+                     id="deliveryDate" 
+                     [(ngModel)]="deliveryDate" 
+                     class="date-input">
+            </div>
+          </div>
+          
           <div class="order-actions">
             <button (click)="saveOrder()" class="save-order-btn">
               <span class="material-icons">save</span>
@@ -562,6 +580,24 @@
                     <span class="total-label">Auftrag Gesamt:</span>
                     <span class="total-amount">€{{ getOrderTotal().toFixed(2) }}</span>
                   </div>
+                </div>
+              </div>
+              
+              <!-- Datumsfelder für mobile Ansicht -->
+              <div class="mobile-date-fields">
+                <div class="mobile-date-field">
+                  <label for="mobileOrderDate">Bestellung:</label>
+                  <input type="date" 
+                         id="mobileOrderDate" 
+                         [(ngModel)]="orderDate" 
+                         class="mobile-date-input">
+                </div>
+                <div class="mobile-date-field">
+                  <label for="mobileDeliveryDate">Lieferung:</label>
+                  <input type="date" 
+                         id="mobileDeliveryDate" 
+                         [(ngModel)]="deliveryDate" 
+                         class="mobile-date-input">
                 </div>
               </div>
               

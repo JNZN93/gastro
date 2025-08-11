@@ -96,6 +96,10 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   // Mobile Tab properties
   activeTab: 'search' | 'order' | 'prices' = 'search';
   
+  // Neue Properties für Datumsfelder
+  orderDate: string = '';
+  deliveryDate: string = '';
+  
   availableDevices: MediaDeviceInfo[] = [];
   selectedDevice?: MediaDeviceInfo;
   formatsEnabled: BarcodeFormat[] = [
@@ -2003,32 +2007,38 @@ filteredArtikelData() {
       return item.cost_price && sellingPrice < item.cost_price;
     });
 
+    // Bestellübersicht erstellen
+    const orderSummary = this.orderItems.map(item => 
+      `${item.quantity}x ${item.article_text} - €${((item.different_price !== undefined ? item.different_price : item.sale_price) * item.quantity).toFixed(2)}`
+    ).join('\n');
+    
+    const totalPrice = this.getOrderTotal();
+    const customerName = this.globalService.selectedCustomerForOrders.last_name_company;
+    
+    // Erweiterte Bestellübersicht mit Datumsfeldern
+    let confirmMessage = `📋 Auftrag bestätigen\n\nKunde: ${customerName}\n\nArtikel:\n${orderSummary}\n\nGesamtpreis: €${totalPrice.toFixed(2)}`;
+    
+    // Füge Datumsfelder zur Übersicht hinzu, falls ausgefüllt
+    if (this.orderDate) {
+      confirmMessage += `\nBestelldatum: ${this.orderDate}`;
+    }
+    if (this.deliveryDate) {
+      confirmMessage += `\nLieferdatum: ${this.deliveryDate}`;
+    }
+    
     if (itemsBelowCost.length > 0) {
       const itemNames = itemsBelowCost.map(item => 
         `${item.article_text} (VK: €${(item.different_price !== undefined ? item.different_price : item.sale_price).toFixed(2)} < EK: €${item.cost_price.toFixed(2)})`
       ).join('\n');
       
-      const confirmMessage = `⚠️ WARNUNG: Folgende Artikel werden unter dem Einkaufspreis verkauft:\n\n${itemNames}\n\nMöchten Sie den Auftrag trotzdem speichern?`;
-      
-      if (!confirm(confirmMessage)) {
-        console.log('❌ [SAVE-ORDER] Auftrag wegen EK-Preis-Warnung abgebrochen');
-        return;
-      }
-    } else {
-      // Allgemeine Bestätigungsabfrage für den normalen Fall
-      const orderSummary = this.orderItems.map(item => 
-        `${item.quantity}x ${item.article_text} - €${((item.different_price !== undefined ? item.different_price : item.sale_price) * item.quantity).toFixed(2)}`
-      ).join('\n');
-      
-      const totalPrice = this.getOrderTotal();
-      const customerName = this.globalService.selectedCustomerForOrders.last_name_company;
-      
-      const confirmMessage = `📋 Auftrag bestätigen\n\nKunde: ${customerName}\n\nArtikel:\n${orderSummary}\n\nGesamtpreis: €${totalPrice.toFixed(2)}\n\nMöchten Sie diesen Auftrag speichern?`;
-      
-      if (!confirm(confirmMessage)) {
-        console.log('❌ [SAVE-ORDER] Auftrag vom Benutzer abgebrochen');
-        return;
-      }
+      confirmMessage += `\n\n⚠️ WARNUNG: Folgende Artikel werden unter dem Einkaufspreis verkauft:\n\n${itemNames}`;
+    }
+    
+    confirmMessage += `\n\nMöchten Sie diesen Auftrag speichern?`;
+    
+    if (!confirm(confirmMessage)) {
+      console.log('❌ [SAVE-ORDER] Auftrag vom Benutzer abgebrochen');
+      return;
     }
 
     // Ensure description is set for all items
@@ -2055,6 +2065,14 @@ filteredArtikelData() {
       customerData.customer_postal_code = this.globalService.selectedCustomerForOrders.postal_code;
       customerData.customer_country_code = this.globalService.selectedCustomerForOrders._country_code;
       customerData.different_company_name = this.differentCompanyName;
+    }
+
+    // Datumsfelder nur mitsenden, wenn ausgefüllt
+    if (this.orderDate) {
+      customerData.order_date = this.orderDate;
+    }
+    if (this.deliveryDate) {
+      customerData.delivery_date = this.deliveryDate;
     }
 
     const completeOrder = {
@@ -2116,7 +2134,12 @@ filteredArtikelData() {
     this.editingCompanyName = '';
     console.log('✅ [CLEAR-ALL-ORDER] Kundenspezifische Preise geleert');
     
-    // 4. Setze alle Artikel auf Standard-Preise zurück
+    // 5. Leere die Datumsfelder
+    this.orderDate = '';
+    this.deliveryDate = '';
+    console.log('✅ [CLEAR-ALL-ORDER] Datumsfelder geleert');
+    
+    // 6. Setze alle Artikel auf Standard-Preise zurück
     this.globalArtikels = this.globalArtikels.map(artikel => ({
       ...artikel,
       different_price: undefined,
@@ -2124,18 +2147,18 @@ filteredArtikelData() {
     }));
     console.log('✅ [CLEAR-ALL-ORDER] Alle Artikel auf Standard-Preise zurückgesetzt');
     
-    // 5. Aktualisiere die artikelData
+    // 7. Aktualisiere die artikelData
     this.artikelData = [...this.globalArtikels];
     console.log('✅ [CLEAR-ALL-ORDER] artikelData aktualisiert');
     
-    // 6. Leere das Suchfeld und gefilterte Artikel
+    // 8. Leere das Suchfeld und gefilterte Artikel
     this.searchTerm = '';
     this.filteredArtikels = [];
     this.showDropdown = false;
     this.selectedIndex = -1;
     console.log('✅ [CLEAR-ALL-ORDER] Suchfeld und gefilterte Artikel geleert');
     
-    // 7. Leere die Modals
+    // 9. Leere die Modals
     this.isCustomerModalOpen = false;
     this.isArticlePricesModalOpen = false;
     this.customerSearchTerm = '';
@@ -2144,11 +2167,11 @@ filteredArtikelData() {
     this.filteredArticlePrices = [];
     console.log('✅ [CLEAR-ALL-ORDER] Modals geleert');
     
-    // 8. Leere localStorage
+    // 10. Leere localStorage
     this.globalService.clearCustomerOrders();
     console.log('✅ [CLEAR-ALL-ORDER] localStorage geleert');
     
-    // 9. Reset pendingCustomerForPriceUpdate
+    // 11. Reset pendingCustomerForPriceUpdate
     this.pendingCustomerForPriceUpdate = null;
     console.log('✅ [CLEAR-ALL-ORDER] pendingCustomerForPriceUpdate zurückgesetzt');
     
@@ -2182,6 +2205,11 @@ filteredArtikelData() {
     this.orderItems = [];
     // Lösche auch aus localStorage
     this.globalService.clearCustomerOrders();
+    
+    // Leere die Datumsfelder
+    this.orderDate = '';
+    this.deliveryDate = '';
+    console.log('✅ [CLEAR-ORDER] Datumsfelder geleert');
     
     // Setze die kundenspezifischen Preise in der Artikelauswahl zurück
     if (this.customerArticlePrices.length > 0) {
@@ -2335,6 +2363,11 @@ filteredArtikelData() {
     this.editingCompanyName = '';
     console.log('🧹 [SELECT-CUSTOMER] Geänderter Firmenname zurückgesetzt');
     
+    // Lösche die Datumsfelder beim Kundenwechsel
+    this.orderDate = '';
+    this.deliveryDate = '';
+    console.log('🧹 [SELECT-CUSTOMER] Datumsfelder zurückgesetzt');
+    
     // Lade Kunden-Artikel-Preise für den ausgewählten Kunden
     console.log('🔄 [SELECT-CUSTOMER] Starte loadCustomerArticlePrices für Kunde:', customer.customer_number);
     this.loadCustomerArticlePrices(customer.customer_number);
@@ -2378,6 +2411,11 @@ filteredArtikelData() {
     this.isEditingCompanyName = false;
     this.editingCompanyName = '';
     console.log('🗑️ [CLEAR-CUSTOMER] Geänderter Firmenname zurückgesetzt');
+    
+    // Lösche die Datumsfelder
+    this.orderDate = '';
+    this.deliveryDate = '';
+    console.log('🗑️ [CLEAR-CUSTOMER] Datumsfelder zurückgesetzt');
     
     // Lösche das Suchfeld und gefilterte Artikel beim Zurücksetzen des Kunden
     this.clearSearch();
