@@ -58,6 +58,9 @@ export class ReportsComponent implements OnInit {
   // Artikel-Daten für echte Kategorien
   globalArtikels: any[] = [];
   
+  // Kunden-Daten für die Zusammenfassung
+  customers: any[] = [];
+  
   // Report-Daten
   reportData: {
     totalOrders: number;
@@ -110,6 +113,7 @@ export class ReportsComponent implements OnInit {
     this.checkUserRole();
     this.loadOrders();
     this.loadArtikels();
+    this.loadCustomers();
     this.selectedDate = this.getTodayDate();
   }
 
@@ -126,6 +130,19 @@ export class ReportsComponent implements OnInit {
         },
         error: (error) => {
           console.error('Fehler beim Laden der Artikel:', error);
+        }
+      });
+  }
+
+  loadCustomers() {
+    // Lade alle Kunden für die Zusammenfassung
+    this.http.get<any[]>('https://multi-mandant-ecommerce.onrender.com/api/customers')
+      .subscribe({
+        next: (response) => {
+          this.customers = response || [];
+        },
+        error: (error) => {
+          console.error('Fehler beim Laden der Kunden:', error);
         }
       });
   }
@@ -385,8 +402,8 @@ export class ReportsComponent implements OnInit {
   }
 
   getCustomerCompany(customerNumber: string): string {
-    const order = this.filteredOrders.find(o => o.customer_number === customerNumber);
-    return order?.company || '-';
+    const customer = this.customers.find(c => c.customer_number === customerNumber);
+    return customer?.last_name_company || customer?.company || '-';
   }
 
   resetReportData() {
@@ -420,32 +437,32 @@ export class ReportsComponent implements OnInit {
   }
 
   generateCSVContent(): string {
-    const headers = ['Produktname', 'Kategorie', 'Gesamtmenge', 'Anzahl Bestellungen', 'Bestellnummern', 'Kunden'];
+    const headers = ['Produktname', 'Kategorie', 'Gesamtmenge', 'Anzahl Bestellungen', 'Bestellnummern', 'Kundennummern'];
     const rows: string[][] = [];
 
     // GEMÜSE Produkte
     this.reportData.gemueseProductList.forEach(product => {
-      const customers = product.customers.map(c => `${c.name} (${c.customerNumber})`).join('; ');
+      const customerNumbers = product.customers.map(c => c.customerNumber).join('; ');
       rows.push([
         product.name,
         'GEMÜSE',
         product.quantity.toString(),
         product.orders.length.toString(),
         product.orders.join(', '),
-        customers
+        customerNumbers
       ]);
     });
 
     // OBST Produkte
     this.reportData.obstProductList.forEach(product => {
-      const customers = product.customers.map(c => `${c.name} (${c.customerNumber})`).join('; ');
+      const customerNumbers = product.customers.map(c => c.customerNumber).join('; ');
       rows.push([
         product.name,
         'OBST',
         product.quantity.toString(),
         product.orders.length.toString(),
         product.orders.join(', '),
-        customers
+        customerNumbers
       ]);
     });
 

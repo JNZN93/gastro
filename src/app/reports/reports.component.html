@@ -56,7 +56,7 @@
           </svg>
         </div>
         <div class="card-content">
-          <h3>{{ reportData.totalProducts }}</h3>
+          <h3>{{ reportData.totalProducts % 1 === 0 ? reportData.totalProducts : reportData.totalProducts.toFixed(2).replace('.', ',') }}</h3>
           <p>GEMÜSE & OBST Produkte</p>
         </div>
       </div>
@@ -68,7 +68,7 @@
           </svg>
         </div>
         <div class="card-content">
-          <h3>{{ reportData.gemueseTotal }}</h3>
+          <h3>{{ reportData.gemueseTotal % 1 === 0 ? reportData.gemueseTotal : reportData.gemueseTotal.toFixed(2).replace('.', ',') }}</h3>
           <p>GEMÜSE Gesamt</p>
         </div>
       </div>
@@ -80,7 +80,7 @@
           </svg>
         </div>
         <div class="card-content">
-          <h3>{{ reportData.obstTotal }}</h3>
+          <h3>{{ reportData.obstTotal % 1 === 0 ? reportData.obstTotal : reportData.obstTotal.toFixed(2).replace('.', ',') }}</h3>
           <p>OBST Gesamt</p>
         </div>
       </div>
@@ -121,7 +121,6 @@
           <table class="customer-table">
             <thead>
               <tr>
-                <th>Kundenname</th>
                 <th>Kundennummer</th>
                 <th>Firma</th>
                 <th>GEMÜSE Menge</th>
@@ -133,12 +132,11 @@
             </thead>
             <tbody>
               <tr *ngFor="let customer of reportData.customerSummary" class="customer-row">
-                <td class="customer-name">{{ customer.customerName }}</td>
                 <td class="customer-number">{{ customer.customerNumber }}</td>
                 <td class="customer-company">{{ customer.company }}</td>
-                <td class="gemuese-amount">{{ customer.gemueseTotal }}</td>
-                <td class="obst-amount">{{ customer.obstTotal }}</td>
-                <td class="total-amount">{{ customer.totalProducts }}</td>
+                <td class="gemuese-amount">{{ customer.gemueseTotal % 1 === 0 ? customer.gemueseTotal : customer.gemueseTotal.toFixed(2).replace('.', ',') }}</td>
+                <td class="obst-amount">{{ customer.obstTotal % 1 === 0 ? customer.obstTotal : customer.obstTotal.toFixed(2).replace('.', ',') }}</td>
+                <td class="total-amount">{{ customer.totalProducts % 1 === 0 ? customer.totalProducts : customer.totalProducts.toFixed(2).replace('.', ',') }}</td>
                 <td class="order-count">{{ customer.orders.length }}</td>
                 <td class="order-ids">{{ customer.orders.join(', ') }}</td>
               </tr>
@@ -173,12 +171,12 @@
               <tr *ngFor="let product of reportData.gemueseProductList" class="gemuese-row">
                 <td class="product-name">{{ product.name }}</td>
                 <td class="product-category gemuese-category">GEMÜSE</td>
-                <td class="product-quantity">{{ product.quantity }}</td>
+                <td class="product-quantity">{{ product.quantity % 1 === 0 ? product.quantity : product.quantity.toFixed(2).replace('.', ',') }}</td>
                 <td class="product-order-ids">{{ product.orders.join(', ') }}</td>
                 <td class="product-customers">
                   <div class="customer-list">
                     <span *ngFor="let customer of product.customers; let last = last">
-                      {{ customer.customerNumber }}({{ customer.quantity }})<span *ngIf="!last">, </span>
+                      {{ customer.customerNumber }}({{ customer.quantity % 1 === 0 ? customer.quantity : customer.quantity.toFixed(2).replace('.', ',') }})<span *ngIf="!last">, </span>
                     </span>
                   </div>
                 </td>
@@ -187,12 +185,12 @@
               <tr *ngFor="let product of reportData.obstProductList" class="obst-row">
                 <td class="product-name">{{ product.name }}</td>
                 <td class="product-category obst-category">OBST</td>
-                <td class="product-quantity">{{ product.quantity }}</td>
+                <td class="product-quantity">{{ product.quantity % 1 === 0 ? product.quantity : product.quantity.toFixed(2).replace('.', ',') }}</td>
                 <td class="product-order-ids">{{ product.orders.join(', ') }}</td>
                 <td class="product-customers">
                   <div class="customer-list">
                     <span *ngFor="let customer of product.customers; let last = last">
-                      {{ customer.customerNumber }}({{ customer.quantity }})<span *ngIf="!last">, </span>
+                      {{ customer.customerNumber }}({{ customer.quantity % 1 === 0 ? customer.quantity : customer.quantity.toFixed(2).replace('.', ',') }})<span *ngIf="!last">, </span>
                     </span>
                   </div>
                 </td>
