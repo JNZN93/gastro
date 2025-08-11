@@ -109,8 +109,15 @@
 
       <!-- Customer Summary -->
       <div class="customer-summary" *ngIf="reportData.customerSummary.length > 0">
-        <h2>Kunden-Zusammenfassung</h2>
-        <div class="customer-table-container">
+        <div class="section-header" (click)="toggleCustomerSummary()">
+          <h2>Kunden-Zusammenfassung</h2>
+          <button class="toggle-button" [class.collapsed]="isCustomerSummaryCollapsed">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </button>
+        </div>
+        <div class="customer-table-container" [class.collapsed]="isCustomerSummaryCollapsed">
           <table class="customer-table">
             <thead>
               <tr>
@@ -142,15 +149,21 @@
 
       <!-- GEMÜSE & OBST Products -->
       <div class="product-category" *ngIf="reportData.gemueseProductList.length > 0 || reportData.obstProductList.length > 0">
-        <h2>GEMÜSE & OBST Produkte</h2>
-        <div class="category-table-container">
+        <div class="section-header" (click)="toggleProductCategory()">
+          <h2>GEMÜSE & OBST Produkte</h2>
+          <button class="toggle-button" [class.collapsed]="isProductCategoryCollapsed">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </button>
+        </div>
+        <div class="category-table-container" [class.collapsed]="isProductCategoryCollapsed">
           <table class="category-table">
             <thead>
               <tr>
                 <th>Produktname</th>
                 <th>Kategorie</th>
                 <th>Gesamtmenge</th>
-                <th>Anzahl Bestellungen</th>
                 <th>Bestellnummern</th>
                 <th>Kunden</th>
               </tr>
@@ -161,13 +174,12 @@
                 <td class="product-name">{{ product.name }}</td>
                 <td class="product-category gemuese-category">GEMÜSE</td>
                 <td class="product-quantity">{{ product.quantity }}</td>
-                <td class="product-orders">{{ product.orders.length }}</td>
                 <td class="product-order-ids">{{ product.orders.join(', ') }}</td>
                 <td class="product-customers">
                   <div class="customer-list">
-                    <div *ngFor="let customer of product.customers" class="customer-item">
-                      {{ customer.name }} ({{ customer.customerNumber }}) - {{ customer.quantity }}
-                    </div>
+                    <span *ngFor="let customer of product.customers; let last = last">
+                      {{ customer.customerNumber }}({{ customer.quantity }})<span *ngIf="!last">, </span>
+                    </span>
                   </div>
                 </td>
               </tr>
@@ -176,13 +188,12 @@
                 <td class="product-name">{{ product.name }}</td>
                 <td class="product-category obst-category">OBST</td>
                 <td class="product-quantity">{{ product.quantity }}</td>
-                <td class="product-orders">{{ product.orders.length }}</td>
                 <td class="product-order-ids">{{ product.orders.join(', ') }}</td>
                 <td class="product-customers">
                   <div class="customer-list">
-                    <div *ngFor="let customer of product.customers" class="customer-item">
-                      {{ customer.name }} ({{ customer.customerNumber }}) - {{ customer.quantity }}
-                    </div>
+                    <span *ngFor="let customer of product.customers; let last = last">
+                      {{ customer.customerNumber }}({{ customer.quantity }})<span *ngIf="!last">, </span>
+                    </span>
                   </div>
                 </td>
               </tr>

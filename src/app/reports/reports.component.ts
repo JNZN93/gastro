@@ -52,6 +52,8 @@ export class ReportsComponent implements OnInit {
   selectedDate: string = '';
   isLoading: boolean = true;
   isVisible: boolean = true;
+  isCustomerSummaryCollapsed: boolean = true; // Initially collapsed
+  isProductCategoryCollapsed: boolean = false; // Initially expanded
   
   // Report-Daten
   reportData: {
@@ -493,6 +495,14 @@ export class ReportsComponent implements OnInit {
     return [headers, ...rows]
       .map((row: string[]) => row.map((cell: string) => `"${cell}"`).join(','))
       .join('\n');
+  }
+
+  toggleCustomerSummary() {
+    this.isCustomerSummaryCollapsed = !this.isCustomerSummaryCollapsed;
+  }
+
+  toggleProductCategory() {
+    this.isProductCategoryCollapsed = !this.isProductCategoryCollapsed;
   }
 
   goBack() {
