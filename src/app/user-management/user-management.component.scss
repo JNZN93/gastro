@@ -992,7 +992,24 @@
   }
 }
 
+// Responsive Table and Cards
+.desktop-view {
+  display: block;
+}
+
+.mobile-view {
+  display: none;
+}
+
 @media (max-width: 768px) {
+  .desktop-view {
+    display: none;
+  }
+
+  .mobile-view {
+    display: block;
+  }
+
   .dashboard-header {
     padding: 1rem;
   }
@@ -1054,6 +1071,95 @@
   }
 }
 
+// Mobile Card Styles
+.cards-container {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.user-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+  transition: all 0.2s ease;
+
+  &:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+  }
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.user-info {
+  flex: 1;
+}
+
+.user-info .user-name {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.user-info .user-email {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.card-body {
+  margin-bottom: 1.5rem;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f9fafb;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.info-label {
+  font-weight: 500;
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.info-value {
+  color: #1f2937;
+  font-size: 0.875rem;
+  text-align: right;
+}
+
+.card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.card-actions .edit-btn,
+.card-actions .reset-password-btn,
+.card-actions .delete-btn {
+  width: 100%;
+  justify-content: center;
+  padding: 0.75rem;
+  font-size: 0.875rem;
+}
+
 @media (max-width: 480px) {
   .dashboard-title {
     font-size: 1.5rem;
@@ -1083,5 +1189,23 @@
 
   .edit-form {
     padding: 1rem;
+  }
+
+  .cards-container {
+    padding: 0.5rem;
+  }
+
+  .user-card {
+    padding: 1rem;
+  }
+
+  .card-header {
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: flex-start;
+  }
+
+  .card-actions {
+    gap: 0.5rem;
   }
 }
