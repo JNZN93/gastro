@@ -1086,6 +1086,15 @@
     .btn {
       max-width: none; // Volle Breite
       min-width: auto;
+      height: 36px; // Kleinere Höhe für mobile Geräte
+      padding: 8px 12px; // Reduzierter Padding
+      font-size: 12px; // Kleinere Schrift
+      gap: 6px; // Kleinerer Abstand zwischen Icon und Text
+
+      svg {
+        width: 16px; // Kleinere Icons
+        height: 16px;
+      }
     }
   }
 
@@ -1106,6 +1115,37 @@
 
     .time-input {
       width: 100%;
+    }
+  }
+}
+
+// Tablet-spezifische Anpassungen
+@media (min-width: 769px) and (max-width: 1024px) {
+  .content {
+    gap: 15px;
+  }
+
+  .customer-selection-section,
+  .route-section {
+    padding: 18px;
+  }
+
+  .route-stats {
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  }
+
+  // Tablet-spezifische Button-Anpassungen
+  .export-section .button-group {
+    .btn {
+      height: 38px; // Mittlere Höhe für Tablets
+      padding: 10px 16px; // Mittlerer Padding
+      font-size: 13px; // Mittlere Schriftgröße
+      gap: 8px; // Mittlerer Abstand
+
+      svg {
+        width: 18px; // Mittlere Icon-Größe
+        height: 18px;
+      }
     }
   }
 }
