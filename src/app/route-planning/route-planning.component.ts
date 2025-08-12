@@ -738,7 +738,7 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
         location: wp.location
       };
 
-      // Zeitfenster hinzufügen falls definiert
+      // Zeitfenster und Prioritäten hinzufügen falls definiert
       if (constraint) {
         // Nur Zeitfenster hinzufügen wenn beide Werte gesetzt sind
         if (constraint.timeWindowStart && constraint.timeWindowEnd) {
@@ -751,6 +751,27 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
           
           job.time_windows = [[startTimeSeconds, endTimeSeconds]];
         }
+        
+        // Priorität hinzufügen (numerische Werte für die API)
+        if (constraint.priority) {
+          // Konvertiere String-Prioritäten zu numerischen Werten
+          let priorityValue: number;
+          switch (constraint.priority) {
+            case 'high':
+              priorityValue = 1; // Höchste Priorität
+              break;
+            case 'medium':
+              priorityValue = 2; // Mittlere Priorität
+              break;
+            case 'low':
+              priorityValue = 3; // Niedrigste Priorität
+              break;
+            default:
+              priorityValue = 2; // Standard: mittlere Priorität
+          }
+          job.priority = priorityValue;
+        }
+        
         // Service-Zeit immer hinzufügen
         job.service = constraint.duration * 60; // Service-Zeit in Sekunden
       }
