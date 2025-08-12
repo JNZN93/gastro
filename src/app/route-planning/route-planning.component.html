@@ -15,384 +15,459 @@
     </h1>
   </div>
 
-  <div class="content">
-    <!-- Customer Selection Section -->
-    <div class="customer-selection-section">
-      <div class="section-header">
-        <h2>Kunden auswählen</h2>
-        <div class="selection-controls">
-          @if (!areAllFilteredCustomersSelected()) {
-            <button class="btn btn-select-all" (click)="selectAllCustomers()">
-              Alle auswählen
-            </button>
+  <!-- Step Navigation -->
+  <div class="step-navigation">
+    @for (step of stepsArray; track step) {
+      <div class="step-item" 
+           [class.active]="currentStep === step"
+           [class.completed]="currentStep > step"
+           (click)="goToStep(step)">
+        <div class="step-number">
+          @if (currentStep > step) {
+            ✓
+          } @else {
+            {{ step }}
           }
-          <button class="btn btn-deselect-all" (click)="confirmDeselectAllCustomers()">
-            Alle abwählen
-          </button>
         </div>
+        <div class="step-title">{{ stepTitles[step - 1] }}</div>
       </div>
+    }
+  </div>
 
-      <!-- Search -->
-      <div class="search-container">
-        <div class="search-box">
-          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-          </svg>
-          <input 
-            type="text" 
-            placeholder="Kunden durchsuchen..." 
-            [(ngModel)]="searchTerm"
-            (ngModelChange)="filterCustomers()"
-            class="search-input"
-          >
-        </div>
-      </div>
-
-      <!-- Customer List -->
-      <div class="customer-list-container">
-        @if (isLoadingCustomers) {
-          <div class="loading-container">
-            <div class="loading-spinner"></div>
-            <p>Lade Kunden...</p>
-          </div>
-        } @else {
-          <div class="customer-list">
-            @for (customer of filteredCustomers; track customer.id) {
-              <div class="customer-item" 
-                   [class.selected]="customer.selected"
-                   (click)="toggleCustomerSelection(customer)">
-                <label class="customer-checkbox" (click)="$event.stopPropagation()">
-                  <input 
-                    type="checkbox" 
-                    [checked]="customer.selected"
-                    (change)="toggleCustomerSelection(customer)"
-                  >
-                  <span class="checkmark"></span>
-                </label>
-                <div class="customer-info">
-                  <h3 class="customer-name">
-                    {{ customer.last_name_company || customer.name }}
-                    @if (customer.customer_number) {
-                      <span class="customer-number">({{ customer.customer_number }})</span>
-                    }
-                  </h3>
-                  @if (customer.name_addition) {
-                    <p class="customer-addition">{{ customer.name_addition }}</p>
-                  }
-                  <div class="customer-details">
-                    <p class="customer-address">
-                      <strong>Adresse:</strong> {{ customer.street || customer.address }}, {{ customer.postal_code }} {{ customer.city }}{{ customer.country ? ', ' + customer.country : '' }}
-                    </p>
-                    @if (customer.email) {
-                      <p class="customer-email">
-                        <strong>E-Mail:</strong> {{ customer.email }}
-                      </p>
-                    }
-                    @if (customer.phone) {
-                      <p class="customer-phone">
-                        <strong>Telefon:</strong> {{ customer.phone }}
-                      </p>
-                    }
-                  </div>
-                </div>
-              </div>
+  <div class="content">
+    <!-- Step 1: Customer Selection -->
+    @if (currentStep === 1) {
+      <div class="customer-selection-section">
+        <div class="section-header">
+          <h2>Schritt 1: Kunden auswählen</h2>
+          <p class="step-description">Wählen Sie die Kunden aus, die Sie besuchen möchten.</p>
+          <div class="selection-controls">
+            @if (!areAllFilteredCustomersSelected()) {
+              <button class="btn btn-select-all" (click)="selectAllCustomers()">
+                Alle auswählen
+              </button>
             }
-          </div>
-        }
-      </div>
-
-      <!-- Selected Customers Summary -->
-      @if (selectedCustomers.length > 0) {
-        <div class="selected-summary">
-          <h3>{{ selectedCustomers.length }} Kunden ausgewählt</h3>
-          <div class="selected-customers">
-            @for (customer of selectedCustomers; track customer.id) {
-              <span class="selected-customer-tag">
-                {{ customer.last_name_company || customer.name }}
-                @if (customer.customer_number) {
-                  <span class="tag-customer-number">({{ customer.customer_number }})</span>
-                }
-                <button class="remove-btn" (click)="toggleCustomerSelection(customer)">
-                  ×
-                </button>
-              </span>
-            }
+            <button class="btn btn-deselect-all" (click)="confirmDeselectAllCustomers()">
+              Alle abwählen
+            </button>
           </div>
         </div>
-      }
-    </div>
 
-    <!-- Route Calculation Section -->
-    <div class="route-section">
-      <div class="section-header">
-        <h2>Route berechnen</h2>
-        <div class="route-controls">
-          <div class="start-time-input">
-            <label for="startTime">Startzeit:</label>
+        <!-- Search -->
+        <div class="search-container">
+          <div class="search-box">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
             <input 
-              type="time" 
-              id="startTime"
-              [(ngModel)]="startTime"
-              class="time-input"
+              type="text" 
+              placeholder="Kunden durchsuchen..." 
+              [(ngModel)]="searchTerm"
+              (ngModelChange)="filterCustomers()"
+              class="search-input"
             >
           </div>
-          <button 
-            class="btn btn-primary" 
-            (click)="calculateRoute()"
-            [disabled]="selectedCustomers.length < 2 || isLoading"
-          >
-            @if (isLoading) {
-              <div class="btn-spinner"></div>
-            }
-            Route berechnen
-          </button>
         </div>
-      </div>
 
-      <!-- Constraints Modal -->
-      @if (showConstraintsModal) {
-        <div class="modal-overlay" (click)="closeConstraintsModal()">
-          <div class="modal-content" (click)="$event.stopPropagation()">
-            <div class="modal-header">
-              <h3>Zeitfenster und Prioritäten festlegen</h3>
-              <button class="close-btn" (click)="closeConstraintsModal()">×</button>
+        <!-- Customer List -->
+        <div class="customer-list-container">
+          @if (isLoadingCustomers) {
+            <div class="loading-container">
+              <div class="loading-spinner"></div>
+              <p>Lade Kunden...</p>
             </div>
-            
-            <div class="modal-body">
-              <p class="modal-description">
-                Legen Sie für jeden Kunden Zeitfenster und Prioritäten fest. 
-                Die Optimierung berücksichtigt diese Bedingungen bei der Routenplanung.
-              </p>
-              
-              <div class="constraints-list">
-                @for (constraint of customerConstraints; track constraint.customerId) {
-                  <div class="constraint-item">
-                    <div class="constraint-header">
-                      <h4>{{ constraint.customerName }}</h4>
-                      @if (getCustomerNumber(constraint.customerId)) {
-                        <span class="customer-number">
-                          ({{ getCustomerNumber(constraint.customerId) }})
-                        </span>
+          } @else {
+            <div class="customer-list">
+              @for (customer of filteredCustomers; track customer.id) {
+                <div class="customer-item" 
+                     [class.selected]="customer.selected"
+                     (click)="toggleCustomerSelection(customer)">
+                  <label class="customer-checkbox" (click)="$event.stopPropagation()">
+                    <input 
+                      type="checkbox" 
+                      [checked]="customer.selected"
+                      (change)="toggleCustomerSelection(customer)"
+                    >
+                    <span class="checkmark"></span>
+                  </label>
+                  <div class="customer-info">
+                    <h3 class="customer-name">
+                      {{ customer.last_name_company || customer.name }}
+                      @if (customer.customer_number) {
+                        <span class="customer-number">({{ customer.customer_number }})</span>
                       }
-                    </div>
-                    
-                    <div class="constraint-fields">
-                      <div class="field-group">
-                        <label>Zeitfenster:</label>
-                        <div class="time-inputs">
-                          <input 
-                            type="time" 
-                            [(ngModel)]="constraint.timeWindowStart"
-                            class="time-input"
-                            placeholder="--:--"
-                          >
-                          <span>bis</span>
-                          <input 
-                            type="time" 
-                            [(ngModel)]="constraint.timeWindowEnd"
-                            class="time-input"
-                            placeholder="--:--"
-                          >
-                          <button 
-                            type="button" 
-                            class="reset-btn" 
-                            (click)="resetTimeWindow(constraint)"
-                            title="Zeitfenster zurücksetzen"
-                          >
-                            ↺
-                          </button>
-                        </div>
-                      </div>
-                      
-                      <div class="field-group">
-                        <label>Priorität:</label>
-                        <select [(ngModel)]="constraint.priority" class="priority-select">
-                          <option value="1">1 - Höchste Priorität</option>
-                          <option value="2">2 - Hohe Priorität</option>
-                          <option value="3">3 - Normale Priorität</option>
-                          <option value="4">4 - Niedrige Priorität</option>
-                          <option value="5">5 - Niedrigste Priorität</option>
-                        </select>
-                      </div>
-                      
-                      <div class="field-group">
-                        <label>Aufenthaltsdauer (Minuten):</label>
-                        <input 
-                          type="number" 
-                          [(ngModel)]="constraint.stayDuration"
-                          min="5" 
-                          max="120"
-                          class="duration-input"
-                        >
-                      </div>
-                    </div>
-                  </div>
-                }
-              </div>
-            </div>
-            
-            <div class="modal-footer">
-              <button class="btn btn-secondary" (click)="closeConstraintsModal()">
-                Abbrechen
-              </button>
-              <button 
-                class="btn btn-primary" 
-                (click)="startRouteWithConstraints()"
-                [disabled]="isLoading"
-              >
-                @if (isLoading) {
-                  <div class="btn-spinner"></div>
-                }
-                Route mit Constraints berechnen
-              </button>
-            </div>
-          </div>
-        </div>
-      }
-
-      <!-- Route Results -->
-      @if (showRoute && routeData) {
-        <div class="route-results">
-          <div class="route-stats">
-            <div class="stat-card">
-              <div class="stat-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
-                </svg>
-              </div>
-              <div class="stat-content">
-                <h3>{{ formatDistance(totalDistance) }}</h3>
-                <p>Gesamtdistanz</p>
-              </div>
-            </div>
-
-            <div class="stat-card">
-              <div class="stat-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-              </div>
-              <div class="stat-content">
-                <h3>{{ formatDuration(totalDuration) }}</h3>
-                <p>Geschätzte Zeit</p>
-              </div>
-            </div>
-
-            <div class="stat-card">
-              <div class="stat-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
-                </svg>
-              </div>
-              <div class="stat-content">
-                <h3>{{ selectedCustomers.length }}</h3>
-                <p>Kunden</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Optimale Reihenfolge -->
-          <div class="optimal-order">
-            <h3>Optimale Reihenfolge</h3>
-            <div class="order-list">
-              <div class="start-point">
-                <div class="step-number start">S</div>
-                <div class="step-content">
-                  <p class="step-instruction"><strong>Startpunkt:</strong> Im Winkel 6, 67547 Worms</p>
-                  <div class="step-timing">
-                    <span class="start-time">
-                      <strong>Startzeit:</strong> {{ actualStartTime ? formatTime(actualStartTime) : startTime }}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              @for (stop of optimalOrder; track stop.position) {
-                <div class="step-item">
-                  <div class="step-number">{{ stop.position }}</div>
-                  <div class="step-content">
-                    <p class="step-instruction">
-                      <strong>{{ stop.name }}</strong>
-                      @if (stop.customerNumber) {
-                        <span class="customer-number">({{ stop.customerNumber }})</span>
+                    </h3>
+                    @if (customer.name_addition) {
+                      <p class="customer-addition">{{ customer.name_addition }}</p>
+                    }
+                    <div class="customer-details">
+                      <p class="customer-address">
+                        <strong>Adresse:</strong> {{ customer.street || customer.address }}, {{ customer.postal_code }} {{ customer.city }}{{ customer.country ? ', ' + customer.country : '' }}
+                      </p>
+                      @if (customer.email) {
+                        <p class="customer-email">
+                          <strong>E-Mail:</strong> {{ customer.email }}
+                        </p>
                       }
-                    </p>
-                    <p class="step-address">{{ stop.address }}</p>
-                    <div class="step-timing">
-                      <span class="arrival-time">
-                        <strong>Ankunft:</strong> {{ formatTime(stop.arrivalTime) }}
-                      </span>
-                      @if (stop.travelTime > 0) {
-                        <span class="travel-time">
-                          <strong>Fahrt:</strong> {{ formatDuration(stop.travelTime) }}
-                        </span>
+                      @if (customer.phone) {
+                        <p class="customer-phone">
+                          <strong>Telefon:</strong> {{ customer.phone }}
+                        </p>
                       }
-                      <span class="stay-time">
-                        <strong>Aufenthalt:</strong> {{ stop.stayDuration }} min
-                      </span>
-                      <span class="departure-time">
-                        <strong>Abfahrt:</strong> {{ formatTime(stop.departureTime) }}
-                      </span>
                     </div>
                   </div>
                 </div>
               }
-              <div class="end-point">
-                <div class="step-number end">E</div>
-                <div class="step-content">
-                  <p class="step-instruction"><strong>Endpunkt:</strong> Im Winkel 6, 67547 Worms</p>
-                  @if (endTime) {
-                    <div class="step-timing">
-                      <span class="end-time">
-                        <strong>Endzeit:</strong> {{ formatTime(endTime) }}
-                      </span>
+            </div>
+          }
+        </div>
+
+        <!-- Selected Customers Summary -->
+        @if (selectedCustomers.length > 0) {
+          <div class="selected-summary">
+            <h3>{{ selectedCustomers.length }} Kunden ausgewählt</h3>
+            <div class="selected-customers">
+              @for (customer of selectedCustomers; track customer.id) {
+                <span class="selected-customer-tag">
+                  {{ customer.last_name_company || customer.name }}
+                  @if (customer.customer_number) {
+                    <span class="tag-customer-number">({{ customer.customer_number }})</span>
+                  }
+                  <button class="remove-btn" (click)="toggleCustomerSelection(customer)">
+                    ×
+                  </button>
+                </span>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Next Step Button -->
+        <div class="step-navigation-buttons">
+          <button 
+            class="btn btn-primary btn-next" 
+            (click)="nextStep()"
+            [disabled]="!canProceedToNextStep()">
+            Weiter zu Schritt 2
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- Step 2: Route Calculation -->
+    @if (currentStep === 2) {
+      <div class="route-section">
+        <div class="section-header">
+          <h2>Schritt 2: Route berechnen</h2>
+          <p class="step-description">Berechnen Sie die optimale Route für Ihre ausgewählten Kunden.</p>
+          <div class="route-controls">
+            <div class="start-time-input">
+              <label for="startTime">Startzeit:</label>
+              <input 
+                type="time" 
+                id="startTime"
+                [(ngModel)]="startTime"
+                class="time-input"
+              >
+            </div>
+            <button 
+              class="btn btn-primary" 
+              (click)="calculateRoute()"
+              [disabled]="selectedCustomers.length < 1 || isLoading"
+            >
+              @if (isLoading) {
+                <div class="btn-spinner"></div>
+              }
+              Route berechnen
+            </button>
+          </div>
+        </div>
+
+        <!-- Constraints Modal -->
+        @if (showConstraintsModal) {
+          <div class="modal-overlay" (click)="closeConstraintsModal()">
+            <div class="modal-content" (click)="$event.stopPropagation()">
+              <div class="modal-header">
+                <h3>Zeitfenster und Prioritäten festlegen</h3>
+                <button class="close-btn" (click)="closeConstraintsModal()">×</button>
+              </div>
+              
+              <div class="modal-body">
+                <p class="modal-description">
+                  Legen Sie für jeden Kunden Zeitfenster und Prioritäten fest. 
+                  Die Optimierung berücksichtigt diese Bedingungen bei der Routenplanung.
+                </p>
+                
+                <div class="constraints-list">
+                  @for (constraint of customerConstraints; track constraint.customerId) {
+                    <div class="constraint-item">
+                      <div class="constraint-header">
+                        <h4>{{ constraint.customerName }}</h4>
+                        @if (getCustomerNumber(constraint.customerId)) {
+                          <span class="customer-number">
+                            ({{ getCustomerNumber(constraint.customerId) }})
+                          </span>
+                        }
+                      </div>
+                      
+                      <div class="constraint-fields">
+                        <div class="field-group">
+                          <label>Zeitfenster:</label>
+                          <div class="time-inputs">
+                            <input 
+                              type="time" 
+                              [(ngModel)]="constraint.timeWindowStart"
+                              class="time-input"
+                              placeholder="--:--"
+                            >
+                            <span>bis</span>
+                            <input 
+                              type="time" 
+                              [(ngModel)]="constraint.timeWindowEnd"
+                              class="time-input"
+                              placeholder="--:--"
+                            >
+                            <button 
+                              type="button" 
+                              class="reset-btn" 
+                              (click)="resetTimeWindow(constraint)"
+                              title="Zeitfenster zurücksetzen"
+                            >
+                              ↺
+                            </button>
+                          </div>
+                        </div>
+                        
+                        <div class="field-group">
+                          <label>Priorität:</label>
+                          <select [(ngModel)]="constraint.priority" class="priority-select">
+                            <option value="1">1 - Höchste Priorität</option>
+                            <option value="2">2 - Hohe Priorität</option>
+                            <option value="3">3 - Normale Priorität</option>
+                            <option value="4">4 - Niedrige Priorität</option>
+                            <option value="5">5 - Niedrigste Priorität</option>
+                          </select>
+                        </div>
+                        
+                        <div class="field-group">
+                          <label>Aufenthaltsdauer (Minuten):</label>
+                          <input 
+                            type="number" 
+                            [(ngModel)]="constraint.stayDuration"
+                            min="5" 
+                            max="120"
+                            class="duration-input"
+                          >
+                        </div>
+                      </div>
                     </div>
                   }
                 </div>
               </div>
+              
+              <div class="modal-footer">
+                <button class="btn btn-secondary" (click)="closeConstraintsModal()">
+                  Abbrechen
+                </button>
+                <button 
+                  class="btn btn-primary" 
+                  (click)="startRouteWithConstraints()"
+                  [disabled]="isLoading"
+                >
+                  @if (isLoading) {
+                    <div class="btn-spinner"></div>
+                  }
+                  Route mit Constraints berechnen
+                </button>
+              </div>
             </div>
           </div>
+        }
 
-
-
-          <!-- Map and Export Buttons -->
-          <div class="export-section">
-            <div class="button-group">
-              <button class="btn btn-secondary" (click)="toggleMap()">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 4m0 13V4m-6 3l6-3"/>
-                </svg>
-                {{ showMap ? 'Karte ausblenden' : 'Karte anzeigen' }}
-              </button>
-              <button class="btn btn-secondary" (click)="exportRoute()">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                </svg>
-                Route exportieren
-              </button>
-              <button class="btn btn-primary" (click)="copyShareLink()">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"/>
-                </svg>
-                Google Maps Link kopieren
-              </button>
-              <button class="btn btn-success" (click)="openInGoogleMaps()">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 4m0 13V4m-6 3l6-3"/>
-                </svg>
-                In Google Maps öffnen
-              </button>
-            </div>
-          </div>
-
-          <!-- Map Container -->
-          @if (showMap) {
-            <div class="map-container">
-              <div id="route-map" class="route-map"></div>
-            </div>
+        <!-- Step Navigation Buttons -->
+        <div class="step-navigation-buttons">
+          <button class="btn btn-secondary" (click)="previousStep()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+            Zurück zu Schritt 1
+          </button>
+          @if (routeData) {
+            <button class="btn btn-primary btn-next" (click)="nextStep()">
+              Weiter zu Schritt 3
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+              </svg>
+            </button>
           }
         </div>
-      }
-    </div>
+      </div>
+    }
+
+    <!-- Step 3: Route Results -->
+    @if (currentStep === 3 && showRoute && routeData) {
+      <div class="route-results">
+        <div class="section-header">
+          <h2>Schritt 3: Route-Ergebnis</h2>
+          <p class="step-description">Ihre optimale Route wurde berechnet. Hier können Sie das Ergebnis einsehen und exportieren.</p>
+        </div>
+
+        <div class="route-stats">
+          <div class="stat-card">
+            <div class="stat-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <h3>{{ formatDistance(totalDistance) }}</h3>
+              <p>Gesamtdistanz</p>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <h3>{{ formatDuration(totalDuration) }}</h3>
+              <p>Geschätzte Zeit</p>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <h3>{{ selectedCustomers.length }}</h3>
+              <p>Kunden</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Optimale Reihenfolge -->
+        <div class="optimal-order">
+          <h3>Optimale Reihenfolge</h3>
+          <div class="order-list">
+            <div class="start-point">
+              <div class="step-number start">S</div>
+              <div class="step-content">
+                <p class="step-instruction"><strong>Startpunkt:</strong> Im Winkel 6, 67547 Worms</p>
+                <div class="step-timing">
+                  <span class="start-time">
+                    <strong>Startzeit:</strong> {{ actualStartTime ? formatTime(actualStartTime) : startTime }}
+                  </span>
+                </div>
+              </div>
+            </div>
+            @for (stop of optimalOrder; track stop.position) {
+              <div class="step-item">
+                <div class="step-number">{{ stop.position }}</div>
+                <div class="step-content">
+                  <p class="step-instruction">
+                    <strong>{{ stop.name }}</strong>
+                    @if (stop.customerNumber) {
+                      <span class="customer-number">({{ stop.customerNumber }})</span>
+                    }
+                  </p>
+                  <p class="step-address">{{ stop.address }}</p>
+                  <div class="step-timing">
+                    <span class="arrival-time">
+                      <strong>Ankunft:</strong> {{ formatTime(stop.arrivalTime) }}
+                    </span>
+                    @if (stop.travelTime > 0) {
+                      <span class="travel-time">
+                        <strong>Fahrt:</strong> {{ formatDuration(stop.travelTime) }}
+                      </span>
+                    }
+                    <span class="stay-time">
+                      <strong>Aufenthalt:</strong> {{ stop.stayDuration }} min
+                    </span>
+                    <span class="departure-time">
+                      <strong>Abfahrt:</strong> {{ formatTime(stop.departureTime) }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            }
+            <div class="end-point">
+              <div class="step-number end">E</div>
+              <div class="step-content">
+                <p class="step-instruction"><strong>Endpunkt:</strong> Im Winkel 6, 67547 Worms</p>
+                @if (endTime) {
+                  <div class="step-timing">
+                    <span class="end-time">
+                      <strong>Endzeit:</strong> {{ formatTime(endTime) }}
+                    </span>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Map and Export Buttons -->
+        <div class="export-section">
+          <div class="button-group">
+            <button class="btn btn-secondary" (click)="toggleMap()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 4m0 13V4m-6 3l6-3"/>
+              </svg>
+              {{ showMap ? 'Karte ausblenden' : 'Karte anzeigen' }}
+            </button>
+            <button class="btn btn-secondary" (click)="exportRoute()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+              </svg>
+              Route exportieren
+            </button>
+            <button class="btn btn-primary" (click)="copyShareLink()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"/>
+              </svg>
+              Google Maps Link kopieren
+            </button>
+            <button class="btn btn-success" (click)="openInGoogleMaps()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 4m0 13V4m-6 3l6-3"/>
+              </svg>
+              In Google Maps öffnen
+            </button>
+          </div>
+        </div>
+
+        <!-- Map Container -->
+        @if (showMap) {
+          <div class="map-container">
+            <div id="route-map" class="route-map"></div>
+          </div>
+        }
+
+        <!-- Step Navigation Buttons -->
+        <div class="step-navigation-buttons">
+          <button class="btn btn-secondary" (click)="previousStep()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+            Zurück zu Schritt 2
+          </button>
+          <button class="btn btn-primary" (click)="startNewRoute()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+            Neue Route planen
+          </button>
+        </div>
+      </div>
+    }
   </div>
 
   <!-- Bestätigungsmodal für "Alle abwählen" -->

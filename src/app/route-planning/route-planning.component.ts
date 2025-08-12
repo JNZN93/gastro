@@ -80,6 +80,16 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
   // Neue Eigenschaften für das Bestätigungsmodal
   showDeselectConfirmModal: boolean = false;
   
+  // Neue Eigenschaften für schrittweise Navigation
+  currentStep: number = 1;
+  totalSteps: number = 3;
+  stepTitles: string[] = ['Kunden auswählen', 'Route berechnen', 'Ergebnis anzeigen'];
+  
+  // Array für die Schritt-Navigation
+  get stepsArray(): number[] {
+    return Array.from({length: this.totalSteps}, (_, i) => i + 1);
+  }
+  
   // OpenRoute Service API Key
   private readonly OPENROUTE_API_KEY = 'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6ImQ4N2IyM2NjZTA1NTQyNTNiNDZmODhhZmQ1NDE1NDBhIiwiaCI6Im11cm11cjY0In0=';
   private readonly OPENROUTE_API_URL = 'https://api.openrouteservice.org/v2/directions/driving-car';
@@ -522,6 +532,11 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
   async startRouteWithConstraints(): Promise<void> {
     this.closeConstraintsModal();
     await this.calculateRouteWithConstraints();
+    
+    // Nach erfolgreicher Berechnung zum nächsten Schritt wechseln
+    if (this.routeData) {
+      this.nextStep();
+    }
   }
 
   getCustomerNumber(customerId: number): string | undefined {
@@ -548,6 +563,11 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
 
     // Bei einem Kunden: Direkt Route berechnen
     await this.calculateRouteWithConstraints();
+    
+    // Nach erfolgreicher Berechnung zum nächsten Schritt wechseln
+    if (this.routeData) {
+      this.nextStep();
+    }
   }
 
   async calculateRouteWithConstraints(): Promise<void> {
@@ -1094,5 +1114,56 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
 
   goBack() {
     this.router.navigate(['/admin']);
+  }
+
+  // Neue Methoden für schrittweise Navigation
+  nextStep(): void {
+    if (this.currentStep < this.totalSteps) {
+      this.currentStep++;
+    }
+  }
+
+  previousStep(): void {
+    if (this.currentStep > 1) {
+      this.currentStep--;
+    }
+  }
+
+  goToStep(step: number): void {
+    if (step >= 1 && step <= this.totalSteps) {
+      this.currentStep = step;
+    }
+  }
+
+  canProceedToNextStep(): boolean {
+    switch (this.currentStep) {
+      case 1: // Kunden auswählen
+        return this.selectedCustomers.length > 0;
+      case 2: // Route berechnen
+        return this.routeData !== null;
+      default:
+        return true;
+    }
+  }
+
+  resetToFirstStep(): void {
+    this.currentStep = 1;
+    this.showRoute = false;
+    this.routeData = null;
+    this.optimalOrder = [];
+    this.waypoints = [];
+    this.totalDistance = 0;
+    this.totalDuration = 0;
+    this.routeSteps = [];
+    this.actualStartTime = null;
+    this.endTime = null;
+    this.showMap = false;
+    if (this.map) {
+      this.destroyMap();
+    }
+  }
+
+  startNewRoute(): void {
+    this.resetToFirstStep();
   }
 } 
