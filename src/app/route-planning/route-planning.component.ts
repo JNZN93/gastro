@@ -23,6 +23,7 @@ interface Customer {
   last_name_company?: string;
   name_addition?: string;
   street?: string;
+  house_number?: string;
   email?: string;
   phone?: string;
   customer_number?: string;
@@ -34,8 +35,8 @@ interface CustomerConstraint {
   customerName: string;
   timeWindowStart: string;
   timeWindowEnd: string;
-  priority: number; // 1 = höchste Priorität, 5 = niedrigste
-  stayDuration: number; // Aufenthaltsdauer in Minuten
+  priority: string; // 'low', 'medium', 'high'
+  duration: number; // Verweildauer in Minuten
 }
 
 interface RouteWaypoint {
@@ -243,7 +244,7 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
               ${stop.customerNumber ? `<p><strong>Kundennummer:</strong> ${stop.customerNumber}</p>` : ''}
               <p><strong>Reihenfolge:</strong> Stopp ${index + 1} von ${this.optimalOrder.length}</p>
               <p><strong>Ankunft:</strong> ${this.formatTime(stop.arrivalTime)}</p>
-              ${stop.stayDuration > 0 ? `<p><strong>Aufenthalt:</strong> ${stop.stayDuration} min</p>` : ''}
+              ${stop.duration > 0 ? `<p><strong>Aufenthalt:</strong> ${stop.duration} min</p>` : ''}
             </div>
           `);
         customerMarkers.push(marker);
@@ -518,8 +519,8 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
       customerName: customer.last_name_company || customer.name,
       timeWindowStart: '', // Leer - kein Standard-Zeitfenster
       timeWindowEnd: '',   // Leer - kein Standard-Zeitfenster
-      priority: 3, // Standard-Priorität
-      stayDuration: 15 // Standard-Aufenthaltsdauer
+              priority: 'medium', // Standard-Priorität
+              duration: 15 // Standard-Aufenthaltsdauer
     }));
     
     this.showConstraintsModal = true;
@@ -751,7 +752,7 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
           job.time_windows = [[startTimeSeconds, endTimeSeconds]];
         }
         // Service-Zeit immer hinzufügen
-        job.service = constraint.stayDuration * 60; // Service-Zeit in Sekunden
+        job.service = constraint.duration * 60; // Service-Zeit in Sekunden
       }
 
       return job;
@@ -848,8 +849,8 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
 
         // Berechne Fahrzeit basierend auf der tatsächlichen Distanz
         const customerConstraint = this.customerConstraints.find(c => c.customerId === customer.id);
-        const customerStayDuration = customerConstraint?.stayDuration || 15;
-        const totalTravelTime = this.totalDuration - (customerStayDuration * 60); // Gesamt - Aufenthalt
+              const customerStayDuration = customerConstraint?.duration || 15;
+      const totalTravelTime = this.totalDuration - (customerStayDuration * 60); // Gesamt - Aufenthalt
         const travelTime = Math.max(600, totalTravelTime / 2); // mindestens 10 Minuten, geteilt durch Hin- und Rückfahrt
         
         currentTime = new Date(currentTime.getTime() + travelTime * 1000);
@@ -920,7 +921,7 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
         
         // Aufenthaltsdauer aus Constraints verwenden oder Standard
         const constraint = this.customerConstraints.find(c => c.customerId === customer?.id);
-        const stayDurationMinutes = constraint?.stayDuration || 15;
+        const stayDurationMinutes = constraint?.duration || 15;
         const stayDurationMs = stayDurationMinutes * 60 * 1000;
         currentTime = new Date(currentTime.getTime() + stayDurationMs);
 

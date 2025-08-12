@@ -15,31 +15,14 @@
     </h1>
   </div>
 
-  <!-- Step Navigation -->
-  <div class="step-navigation">
-    @for (step of stepsArray; track step) {
-      <div class="step-item" 
-           [class.active]="currentStep === step"
-           [class.completed]="currentStep > step"
-           (click)="goToStep(step)">
-        <div class="step-number">
-          @if (currentStep > step) {
-            ✓
-          } @else {
-            {{ step }}
-          }
-        </div>
-        <div class="step-title">{{ stepTitles[step - 1] }}</div>
-      </div>
-    }
-  </div>
+  <!-- Step Navigation - ausgeblendet -->
 
   <div class="content">
     <!-- Step 1: Customer Selection -->
     @if (currentStep === 1) {
       <div class="customer-selection-section">
         <div class="section-header">
-          <h2>Schritt 1: Kunden auswählen</h2>
+          <h2>Kunden auswählen</h2>
           <p class="step-description">Wählen Sie die Kunden aus, die Sie besuchen möchten.</p>
           <div class="selection-controls">
             @if (!areAllFilteredCustomersSelected()) {
@@ -100,21 +83,9 @@
                     @if (customer.name_addition) {
                       <p class="customer-addition">{{ customer.name_addition }}</p>
                     }
-                    <div class="customer-details">
-                      <p class="customer-address">
-                        <strong>Adresse:</strong> {{ customer.street || customer.address }}, {{ customer.postal_code }} {{ customer.city }}{{ customer.country ? ', ' + customer.country : '' }}
-                      </p>
-                      @if (customer.email) {
-                        <p class="customer-email">
-                          <strong>E-Mail:</strong> {{ customer.email }}
-                        </p>
-                      }
-                      @if (customer.phone) {
-                        <p class="customer-phone">
-                          <strong>Telefon:</strong> {{ customer.phone }}
-                        </p>
-                      }
-                    </div>
+                    <p class="customer-address">
+                      {{ customer.street }} {{ customer.house_number }}, {{ customer.postal_code }} {{ customer.city }}
+                    </p>
                   </div>
                 </div>
               }
@@ -142,18 +113,7 @@
           </div>
         }
 
-        <!-- Next Step Button -->
-        <div class="step-navigation-buttons">
-          <button 
-            class="btn btn-primary btn-next" 
-            (click)="nextStep()"
-            [disabled]="!canProceedToNextStep()">
-            Weiter zu Schritt 2
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-            </svg>
-          </button>
-        </div>
+        <!-- Next Step Button - entfernt (Navigation ist im Footer) -->
       </div>
     }
 
@@ -161,7 +121,7 @@
     @if (currentStep === 2) {
       <div class="route-section">
         <div class="section-header">
-          <h2>Schritt 2: Route berechnen</h2>
+          <h2>Route berechnen</h2>
           <p class="step-description">Berechnen Sie die optimale Route für Ihre ausgewählten Kunden.</p>
           <div class="route-controls">
             <div class="start-time-input">
@@ -244,22 +204,22 @@
                         <div class="field-group">
                           <label>Priorität:</label>
                           <select [(ngModel)]="constraint.priority" class="priority-select">
-                            <option value="1">1 - Höchste Priorität</option>
-                            <option value="2">2 - Hohe Priorität</option>
-                            <option value="3">3 - Normale Priorität</option>
-                            <option value="4">4 - Niedrige Priorität</option>
-                            <option value="5">5 - Niedrigste Priorität</option>
+                            <option value="low">Niedrig</option>
+                            <option value="medium">Mittel</option>
+                            <option value="high">Hoch</option>
                           </select>
                         </div>
                         
                         <div class="field-group">
-                          <label>Aufenthaltsdauer (Minuten):</label>
+                          <label>Verweildauer (Minuten):</label>
                           <input 
                             type="number" 
-                            [(ngModel)]="constraint.stayDuration"
-                            min="5" 
-                            max="120"
+                            [(ngModel)]="constraint.duration"
                             class="duration-input"
+                            min="5"
+                            max="120"
+                            step="5"
+                            placeholder="15"
                           >
                         </div>
                       </div>
@@ -272,38 +232,13 @@
                 <button class="btn btn-secondary" (click)="closeConstraintsModal()">
                   Abbrechen
                 </button>
-                <button 
-                  class="btn btn-primary" 
-                  (click)="startRouteWithConstraints()"
-                  [disabled]="isLoading"
-                >
-                  @if (isLoading) {
-                    <div class="btn-spinner"></div>
-                  }
-                  Route mit Constraints berechnen
+                <button class="btn btn-primary" (click)="startRouteWithConstraints()">
+                  Route mit Einschränkungen starten
                 </button>
               </div>
             </div>
           </div>
         }
-
-        <!-- Step Navigation Buttons -->
-        <div class="step-navigation-buttons">
-          <button class="btn btn-secondary" (click)="previousStep()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-            </svg>
-            Zurück zu Schritt 1
-          </button>
-          @if (routeData) {
-            <button class="btn btn-primary btn-next" (click)="nextStep()">
-              Weiter zu Schritt 3
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-              </svg>
-            </button>
-          }
-        </div>
       </div>
     }
 
@@ -311,7 +246,7 @@
     @if (currentStep === 3 && showRoute && routeData) {
       <div class="route-results">
         <div class="section-header">
-          <h2>Schritt 3: Route-Ergebnis</h2>
+          <h2>Route-Ergebnis</h2>
           <p class="step-description">Ihre optimale Route wurde berechnet. Hier können Sie das Ergebnis einsehen und exportieren.</p>
         </div>
 
@@ -383,34 +318,28 @@
                     <span class="arrival-time">
                       <strong>Ankunft:</strong> {{ formatTime(stop.arrivalTime) }}
                     </span>
-                    @if (stop.travelTime > 0) {
-                      <span class="travel-time">
-                        <strong>Fahrt:</strong> {{ formatDuration(stop.travelTime) }}
+                    @if (stop.departureTime) {
+                      <span class="departure-time">
+                        <strong>Abfahrt:</strong> {{ formatTime(stop.departureTime) }}
                       </span>
                     }
-                    <span class="stay-time">
-                      <strong>Aufenthalt:</strong> {{ stop.stayDuration }} min
-                    </span>
-                    <span class="departure-time">
-                      <strong>Abfahrt:</strong> {{ formatTime(stop.departureTime) }}
-                    </span>
                   </div>
                 </div>
               </div>
             }
-            <div class="end-point">
-              <div class="step-number end">E</div>
-              <div class="step-content">
-                <p class="step-instruction"><strong>Endpunkt:</strong> Im Winkel 6, 67547 Worms</p>
-                @if (endTime) {
+            @if (endTime) {
+              <div class="end-point">
+                <div class="step-number end">E</div>
+                <div class="step-content">
+                  <p class="step-instruction"><strong>Endpunkt:</strong> Im Winkel 6, 67547 Worms</p>
                   <div class="step-timing">
                     <span class="end-time">
                       <strong>Endzeit:</strong> {{ formatTime(endTime) }}
                     </span>
                   </div>
-                }
+                </div>
               </div>
-            </div>
+            }
           </div>
         </div>
 
@@ -450,22 +379,57 @@
             <div id="route-map" class="route-map"></div>
           </div>
         }
+      </div>
+    }
+  </div>
 
-        <!-- Step Navigation Buttons -->
-        <div class="step-navigation-buttons">
-          <button class="btn btn-secondary" (click)="previousStep()">
+  <!-- Fixed Step Navigation Footer - Always Visible -->
+  <div class="step-navigation-footer">
+    @if (currentStep === 1) {
+      <button 
+        class="btn btn-primary btn-next" 
+        (click)="nextStep()"
+        [disabled]="!canProceedToNextStep()">
+        Weiter zu Schritt 2
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+      </button>
+    }
+
+    @if (currentStep === 2) {
+      <div class="footer-buttons">
+        <button class="btn btn-secondary" (click)="previousStep()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+          </svg>
+          Zurück zu Schritt 1
+        </button>
+        @if (routeData) {
+          <button class="btn btn-primary btn-next" (click)="nextStep()">
+            Weiter zu Schritt 3
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
             </svg>
-            Zurück zu Schritt 2
           </button>
-          <button class="btn btn-primary" (click)="startNewRoute()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-            </svg>
-            Neue Route planen
-          </button>
-        </div>
+        }
+      </div>
+    }
+
+    @if (currentStep === 3) {
+      <div class="footer-buttons">
+        <button class="btn btn-secondary" (click)="previousStep()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+          </svg>
+          Zurück zu Schritt 2
+        </button>
+        <button class="btn btn-primary" (click)="startNewRoute()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+          </svg>
+          Neue Route planen
+        </button>
       </div>
     }
   </div>
