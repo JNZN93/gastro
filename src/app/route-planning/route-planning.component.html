@@ -21,10 +21,12 @@
       <div class="section-header">
         <h2>Kunden auswählen</h2>
         <div class="selection-controls">
-          <button class="btn btn-secondary" (click)="selectAllCustomers()">
-            Alle auswählen
-          </button>
-          <button class="btn btn-secondary" (click)="deselectAllCustomers()">
+          @if (!areAllFilteredCustomersSelected()) {
+            <button class="btn btn-select-all" (click)="selectAllCustomers()">
+              Alle auswählen
+            </button>
+          }
+          <button class="btn btn-deselect-all" (click)="confirmDeselectAllCustomers()">
             Alle abwählen
           </button>
         </div>
@@ -392,4 +394,39 @@
       }
     </div>
   </div>
+
+  <!-- Bestätigungsmodal für "Alle abwählen" -->
+  @if (showDeselectConfirmModal) {
+    <div class="modal-overlay" (click)="cancelDeselectAll()">
+      <div class="modal-content confirm-modal" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Bestätigung erforderlich</h3>
+          <button class="close-btn" (click)="cancelDeselectAll()">×</button>
+        </div>
+        
+        <div class="modal-body">
+          <div class="confirm-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+            </svg>
+          </div>
+          <p class="confirm-message">
+            Sind Sie sicher, dass Sie alle ausgewählten Kunden abwählen möchten?
+          </p>
+          <p class="confirm-details">
+            Diese Aktion kann nicht rückgängig gemacht werden.
+          </p>
+        </div>
+        
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="cancelDeselectAll()">
+            Abbrechen
+          </button>
+          <button class="btn btn-deselect-all" (click)="confirmDeselectAll()">
+            Alle abwählen
+          </button>
+        </div>
+      </div>
+    </div>
+  }
 </div> 

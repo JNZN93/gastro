@@ -77,6 +77,9 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
   customerConstraints: CustomerConstraint[] = [];
   isSettingConstraints: boolean = false;
   
+  // Neue Eigenschaften für das Bestätigungsmodal
+  showDeselectConfirmModal: boolean = false;
+  
   // OpenRoute Service API Key
   private readonly OPENROUTE_API_KEY = 'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6ImQ4N2IyM2NjZTA1NTQyNTNiNDZmODhhZmQ1NDE1NDBhIiwiaCI6Im11cm11cjY0In0=';
   private readonly OPENROUTE_API_URL = 'https://api.openrouteservice.org/v2/directions/driving-car';
@@ -474,6 +477,28 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
       customer.selected = false;
     });
     this.updateSelectedCustomers();
+  }
+
+  // Neue Methode: Alle Kunden abwählen mit Bestätigung
+  confirmDeselectAllCustomers(): void {
+    this.showDeselectConfirmModal = true;
+  }
+
+  // Neue Methode: Bestätigung bestätigen
+  confirmDeselectAll(): void {
+    this.deselectAllCustomers();
+    this.showDeselectConfirmModal = false;
+  }
+
+  // Neue Methode: Bestätigung abbrechen
+  cancelDeselectAll(): void {
+    this.showDeselectConfirmModal = false;
+  }
+
+  // Neue Hilfsmethode: Prüft ob alle gefilterten Kunden ausgewählt sind
+  areAllFilteredCustomersSelected(): boolean {
+    if (this.filteredCustomers.length === 0) return false;
+    return this.filteredCustomers.every(customer => customer.selected);
   }
 
   openConstraintsModal(): void {

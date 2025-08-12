@@ -439,6 +439,14 @@
   min-width: 140px;
   height: 44px;
   white-space: nowrap;
+  flex-shrink: 0; // Verhindert Schrumpfen der Buttons
+
+  @media (max-width: 768px) {
+    min-width: 120px; // Kleinere minimale Breite auf mobilen Geräten
+    padding: 10px 16px;
+    height: 40px;
+    font-size: 13px;
+  }
 
   &.btn-primary {
     background: #667eea;
@@ -466,6 +474,43 @@
     &:hover {
       background: #e9ecef;
       border-color: #adb5bd;
+    }
+  }
+
+  // Spezielle Farben für Auswählen/Abwählen Buttons
+  &.btn-select-all {
+    background: #28a745; // Grün für "Alle auswählen"
+    color: white;
+    border: 1px solid #28a745;
+
+    &:hover {
+      background: #218838;
+      border-color: #1e7e34;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+    }
+
+    &:active {
+      background: #1e7e34;
+      transform: translateY(0);
+    }
+  }
+
+  &.btn-deselect-all {
+    background: #dc3545; // Rot für "Alle abwählen"
+    color: white;
+    border: 1px solid #dc3545;
+
+    &:hover {
+      background: #c82333;
+      border-color: #bd2130;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+    }
+
+    &:active {
+      background: #bd2130;
+      transform: translateY(0);
     }
   }
 
@@ -908,50 +953,147 @@
 // Responsive Design
 @media (max-width: 768px) {
   .route-planning-container {
-    padding: 15px;
+    padding: 10px; // Reduzierter Padding auf mobilen Geräten
   }
 
   .header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 15px;
+    gap: 12px;
+    padding: 12px; // Reduzierter Header-Padding
 
     .title {
-      font-size: 1.5rem;
+      font-size: 1.4rem; // Kleinere Schriftgröße
+      width: 100%; // Volle Breite
+    }
+
+    .back-btn {
+      align-self: flex-start; // Linksbündige Ausrichtung
     }
   }
 
   .content {
-    gap: 20px;
+    gap: 12px; // Reduzierter Abstand
   }
 
   .customer-selection-section,
   .route-section {
-    padding: 20px;
+    padding: 12px; // Deutlich reduzierter Padding auf mobilen Geräten
+    margin: 0; // Keine Margins
+    width: 100%; // Volle Breite
+    box-sizing: border-box; // Wichtig für korrekte Größenberechnung
+    overflow: hidden; // Verhindert Überlauf
   }
 
   .section-header {
     flex-direction: column;
     align-items: flex-start;
+    gap: 8px;
+    width: 100%; // Volle Breite
+
+    h2 {
+      font-size: 1.1rem; // Kleinere Überschrift auf mobilen Geräten
+      margin-bottom: 8px;
+    }
 
     .selection-controls {
       width: 100%;
-      justify-content: space-between;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap; // Buttons können umbrechen
+      justify-content: flex-start; // Linksbündige Ausrichtung
+
+      .btn {
+        flex: 1; // Buttons teilen sich den verfügbaren Platz
+        min-width: 120px; // Minimale Breite für Buttons
+        max-width: calc(50% - 4px); // Maximale Breite (2 Buttons nebeneinander)
+        font-size: 12px; // Kleinere Schrift
+        padding: 8px 12px; // Reduzierter Padding
+        height: 36px; // Kleinere Höhe
+        white-space: nowrap; // Verhindert Umbruch des Button-Texts
+      }
+    }
+
+    .route-controls {
+      width: 100%;
+      justify-content: flex-start; // Linksbündige Ausrichtung
+      gap: 8px;
+      flex-wrap: wrap;
+
+      .start-time-input {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+        width: 100%;
+
+        label {
+          font-size: 0.85rem; // Kleinere Schrift
+        }
+
+        .time-input {
+          width: 100%;
+          min-width: auto; // Entfernt minimale Breite auf mobilen Geräten
+          padding: 6px 10px; // Reduzierter Padding
+          font-size: 0.85rem; // Kleinere Schrift
+        }
+      }
     }
   }
 
+  // Suchfeld mobile Anpassungen
+  .search-container {
+    margin-bottom: 12px;
+
+    .search-box {
+      .search-input {
+        padding: 10px 15px 10px 40px; // Reduzierter Padding
+        font-size: 0.9rem; // Kleinere Schrift
+      }
+    }
+  }
+
+  // Kundenliste mobile Anpassungen
+  .customer-list-container {
+    max-height: 250px; // Kleinere Höhe auf mobilen Geräten
+    min-height: 120px;
+  }
+
+  // Buttons mobile Anpassungen
+  .btn {
+    width: 100%; // Volle Breite auf mobilen Geräten
+    justify-content: center;
+    padding: 10px 16px; // Reduzierter Padding
+    height: 40px; // Kleinere Höhe
+    font-size: 13px; // Kleinere Schrift
+    min-width: auto; // Entfernt minimale Breite
+  }
+
   .route-stats {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr; // Einzelspaltige Darstellung
+    gap: 8px;
   }
 
   .selected-customers {
-    justify-content: center;
+    justify-content: flex-start; // Linksbündige Ausrichtung
+  }
+
+  // Export-Buttons mobile Anpassungen
+  .export-section .button-group {
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+
+    .btn {
+      max-width: none; // Volle Breite
+      min-width: auto;
+    }
   }
 
   // Modal Responsive
   .modal-content {
     margin: 10px;
     max-height: 90vh;
+    width: calc(100% - 20px); // Volle Breite minus Margins
   }
 
   .constraint-fields {
@@ -981,6 +1123,12 @@
   justify-content: center;
   z-index: 1000;
   padding: 20px;
+
+  @media (max-width: 768px) {
+    padding: 10px;
+    align-items: flex-start; // Oben ausrichten auf mobilen Geräten
+    padding-top: 20px;
+  }
 }
 
 .modal-content {
@@ -991,6 +1139,47 @@
   max-height: 80vh;
   overflow-y: auto;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+
+  @media (max-width: 768px) {
+    max-height: 90vh;
+    margin: 0;
+    border-radius: 8px;
+  }
+
+  // Spezielle Styles für das Bestätigungsmodal
+  &.confirm-modal {
+    max-width: 500px; // Etwas kleiner für Bestätigungen
+
+    .confirm-icon {
+      text-align: center;
+      margin-bottom: 20px;
+
+      svg {
+        width: 60px;
+        height: 60px;
+        color: #ffc107; // Warnfarbe (Gelb)
+        stroke-width: 1.5;
+      }
+    }
+
+    .confirm-message {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #2c3e50;
+      text-align: center;
+      margin: 0 0 15px 0;
+      line-height: 1.4;
+    }
+
+    .confirm-details {
+      font-size: 0.9rem;
+      color: #6c757d;
+      text-align: center;
+      margin: 0;
+      line-height: 1.4;
+      font-style: italic;
+    }
+  }
 }
 
 .modal-header {
