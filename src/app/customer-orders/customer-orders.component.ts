@@ -10,9 +10,11 @@ import { ZXingScannerComponent, ZXingScannerModule } from '@zxing/ngx-scanner';
 import { BarcodeFormat } from '@zxing/browser';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MyDialogComponent } from '../my-dialog/my-dialog.component';
+import { RecentImagesModalComponent } from '../recent-images-modal/recent-images-modal.component';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
+import { IndexedDBService } from '../indexeddb.service';
 
 @Component({
   selector: 'app-customer-orders',
@@ -30,6 +32,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   @ViewChild('imageInput') imageInput!: any;
   private artikelService = inject(ArtikelDataService);
   private http = inject(HttpClient);
+  private indexedDBService = inject(IndexedDBService);
   artikelData: any[] = [];
   orderItems: any[] = [];
   searchTerm: string = '';
@@ -248,6 +251,9 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       });
     }
     
+    // Speichere Bilder in IndexedDB
+    this.storeImagesInIndexedDB(files);
+    
     const formData = new FormData();
     for (let i = 0; i < files.length; i++) {
       formData.append('images', files[i]);
@@ -411,7 +417,22 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     });
   }
 
-
+  // Speichere Bilder in IndexedDB
+  private async storeImagesInIndexedDB(files: FileList): Promise<void> {
+    try {
+      const customerNumber = this.globalService.selectedCustomerForOrders?.customer_number;
+      
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        await this.indexedDBService.storeImage(file, customerNumber);
+        console.log('💾 [INDEXEDDB] Bild gespeichert:', file.name);
+      }
+      
+      console.log('✅ [INDEXEDDB] Alle Bilder erfolgreich gespeichert');
+    } catch (error) {
+      console.error('❌ [INDEXEDDB] Fehler beim Speichern der Bilder:', error);
+    }
+  }
 
   // Lade gespeicherte Daten aus localStorage
   private loadStoredData(): void {
@@ -2371,6 +2392,20 @@ filteredArtikelData() {
     // Lade Kunden-Artikel-Preise für den ausgewählten Kunden
     console.log('🔄 [SELECT-CUSTOMER] Starte loadCustomerArticlePrices für Kunde:', customer.customer_number);
     this.loadCustomerArticlePrices(customer.customer_number);
+  }
+
+  // Öffne Modal mit den letzten hochgeladenen Bildern
+  openRecentImagesModal(): void {
+    const dialogRef = this.dialog.open(RecentImagesModalComponent, {
+      width: '98vw',
+      maxWidth: '1400px',
+      height: '95vh',
+      data: {}
+    });
+
+    dialogRef.afterClosed().subscribe(() => {
+      console.log('📷 [RECENT-IMAGES] Modal geschlossen');
+    });
   }
 
   // Neue Methode für Bestätigungs-Modal beim Zurücksetzen des Kunden
