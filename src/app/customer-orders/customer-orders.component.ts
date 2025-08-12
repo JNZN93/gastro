@@ -2575,31 +2575,43 @@ filteredArtikelData() {
 
   // Neue Hilfsmethode zur Überprüfung der Verfügbarkeit in globalArtikels
   private isArticleAvailableInGlobal(customerPrice: any): boolean {
+    // Normalisierung für robuste Vergleiche (Kleinbuchstaben, ß→ss, Diakritika entfernen)
+    const normalize = (v: any) => (v ?? '')
+      .toString()
+      .trim()
+      .toLowerCase()
+      .replace(/ß/g, 'ss')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+
     // Suche nach verschiedenen Feldern in globalArtikels
     const foundInGlobal = this.globalArtikels.some(globalArtikel => {
-      // 1. Suche nach product_id
-      if (customerPrice.product_id && globalArtikel.article_number == customerPrice.product_id) {
+      const gaArticleNumber = normalize(globalArtikel.article_number);
+      // Wir matchen bewusst NICHT mehr über globale product_id oder id, um False-Positives zu vermeiden
+      const gaEan = normalize(globalArtikel.ean);
+
+      const cpArticleNumber = normalize(customerPrice.article_number);
+      const cpProductId = normalize(customerPrice.product_id);
+      const cpEan = normalize(customerPrice.ean);
+
+      // 1. product_id (vom Preis) ↔ article_number (global)
+      if (cpProductId && gaArticleNumber && gaArticleNumber === cpProductId) {
         return true;
       }
-      
-      // 2. Suche nach article_number
-      if (customerPrice.article_number && globalArtikel.article_number == customerPrice.article_number) {
+
+      // 2. article_number ↔ article_number
+      if (cpArticleNumber && gaArticleNumber && gaArticleNumber === cpArticleNumber) {
         return true;
       }
-      
-      // 3. Suche nach id
-      if (customerPrice.id && globalArtikel.id == customerPrice.id) {
+
+      // 3. ean ↔ ean
+      if (cpEan && gaEan && gaEan === cpEan) {
         return true;
       }
-      
-      // 4. Suche nach EAN (falls vorhanden)
-      if (customerPrice.ean && globalArtikel.ean == customerPrice.ean) {
-        return true;
-      }
-      
+
       return false;
     });
-    
+
     return foundInGlobal;
   }
 
@@ -2731,16 +2743,34 @@ filteredArtikelData() {
     console.log('   - id:', customerPrice.id);
     console.log('📊 [ARTICLE-PRICES-MODAL] Anzahl globaler Artikel:', this.globalArtikels.length);
     
-    // Erweiterte Suche: Versuche verschiedene Felder zu finden
-    let artikel = null;
-    
-    // 1. Suche nach article_number
-    if (customerPrice.product_id) {
-      artikel = this.globalArtikels.find(art => art.article_number == customerPrice.product_id);
+    // Einheitliche, robuste Suche (wie der Filter): diakritik- und case-insensitiv
+    const normalize = (v: any) => (v ?? '')
+      .toString()
+      .trim()
+      .toLowerCase()
+      .replace(/ß/g, 'ss')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
 
-      if (artikel) {
-        console.log('✅ [ARTICLE-PRICES-MODAL] Artikel gefunden über article_number:', artikel.article_number);
-      }
+    let artikel = null;
+
+    const cpArticleNumber = normalize(customerPrice.article_number);
+    const cpProductId = normalize(customerPrice.product_id);
+    const cpEan = normalize(customerPrice.ean);
+
+    artikel = this.globalArtikels.find(art => {
+      const gaArticleNumber = normalize(art.article_number);
+      const gaEan = normalize(art.ean);
+      return (cpArticleNumber && gaArticleNumber === cpArticleNumber) ||
+             (cpProductId && gaArticleNumber === cpProductId) ||
+             (cpEan && gaEan && gaEan === cpEan);
+    }) || null;
+
+    if (artikel) {
+      console.log('✅ [ARTICLE-PRICES-MODAL] Artikel gefunden:', {
+        article_number: artikel.article_number,
+        ean: artikel.ean
+      });
     }
     
     if (artikel) {
@@ -2926,8 +2956,8 @@ filteredArtikelData() {
     })
     .then(data => {
       console.log('📊 [CUSTOMER-ARTICLE-PRICES] Empfangene Daten:', data);
-      console.log('📊 [CUSTOMER-ARTICLE-PRICES] Anzahl Artikel-Preise:', Array.isArray(data) ? data.length : 'Kein Array');
-      
+      console.log('📊 [CUSTOMER-ARTICLE-PRICES] Anzahl Artikel-Preise (roh):', Array.isArray(data) ? data.length : 'Kein Array');
+
       if (Array.isArray(data)) {
         console.log('📊 [CUSTOMER-ARTICLE-PRICES] Erste 3 Artikel-Preise:', data.slice(0, 3));
         if (data.length > 0) {
@@ -2939,13 +2969,27 @@ filteredArtikelData() {
           console.log('🔍 [CUSTOMER-ARTICLE-PRICES] unit_price_net:', data[0].unit_price_net);
         }
       }
-      
-      this.customerArticlePrices = data;
-      console.log('💾 [CUSTOMER-ARTICLE-PRICES] Daten in customerArticlePrices gespeichert');
-      
+
+      // Filtere direkt nach globaler Verfügbarkeit, damit nicht-verfügbare Artikel
+      // weder gezählt noch im Modal angezeigt werden
+      const filteredCustomerPrices = Array.isArray(data)
+        ? data.filter((price: any) => this.isArticleAvailableInGlobal(price))
+        : [];
+
+      this.customerArticlePrices = filteredCustomerPrices;
+      console.log('💾 [CUSTOMER-ARTICLE-PRICES] Gefilterte Daten gespeichert', {
+        originalCount: Array.isArray(data) ? data.length : 0,
+        filteredCount: filteredCustomerPrices.length,
+      });
+
       // Aktualisiere die Artikel mit den kundenspezifischen Preisen
       console.log('🔄 [CUSTOMER-ARTICLE-PRICES] Starte updateArtikelsWithCustomerPrices...');
       this.updateArtikelsWithCustomerPrices();
+
+      // Wenn Modal offen ist, Anzeige aktualisieren
+      if (this.isArticlePricesModalOpen) {
+        this.filterArticlePrices();
+      }
     })
     .catch(error => {
       console.error('❌ [CUSTOMER-ARTICLE-PRICES] Fehler beim API-Aufruf:', error);
