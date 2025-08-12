@@ -2586,16 +2586,31 @@ filteredArtikelData() {
 
     const customer = this.globalService.selectedCustomerForOrders;
     const doc = new jsPDF();
+    
+    // Konstanten für das Layout - DIN A4 Portrait optimiert
+    // Verfügbarer Platz: A4 = 297mm hoch, Header braucht ~35mm, Footer ~20mm
+    // Rest für Tabelle: ~240mm. Bei durchschnittlich 18mm pro Zeile (inkl. lange Namen)
+    // 12 Artikel + Tabellen-Header = 13 Zeilen à 18mm = 234mm + Sicherheitspuffer
+    const itemsPerPage = 12; // Optimiert für A4 Format mit Platz für lange Artikelnamen
+    const totalPages = Math.ceil(prices.length / itemsPerPage);
 
-    // Header
-    doc.setFontSize(16);
-    doc.text('Bestellformular', 14, 20);
-    
-    doc.setFontSize(11);
-    doc.text(`Kunde: ${customer.last_name_company || ''}`, 14, 30);
-    doc.text(`Kundennummer: ${customer.customer_number || ''}`, 14, 37);
-    
-    doc.text('Datum:', 14, 44);
+    // Funktion zum Hinzufügen der Kundendaten auf jeder Seite
+    const addCustomerHeader = (pageNumber: number, totalPages: number) => {
+      // Header mit Kundendaten - kompakt gestaltet
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Bestellformular', 14, 15);
+      
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Kunde: ${customer.last_name_company || ''}`, 14, 25);
+      doc.text(`Kundennummer: ${customer.customer_number || ''}`, 14, 32);
+      doc.text(`Seite ${pageNumber} von ${totalPages}`, 14, 39);
+      
+      // Trennlinie unter Header
+      doc.setLineWidth(0.5);
+      doc.line(14, 42, 196, 42);
+    };
 
     // Daten für die Tabelle vorbereiten (ohne Preis-Spalte)
     const tableData = prices.map((p: any) => [
@@ -2606,35 +2621,58 @@ filteredArtikelData() {
 
     // Excel-ähnliche Tabelle mit jsPDF-AutoTable
     import('jspdf-autotable').then(({ default: autoTable }) => {
-      autoTable(doc, {
-        startY: 55,
-        head: [['Artikel', 'Art.-Nr.', 'Menge']],
-        body: tableData,
-        theme: 'grid',
-        styles: {
-          fontSize: 10,
-          cellPadding: 5,
-          lineWidth: 0.1,
-          lineColor: [0, 0, 0]
-        },
-        headStyles: {
-          fillColor: [51, 51, 51],
-          textColor: [255, 255, 255],
-          fontStyle: 'bold',
-          fontSize: 11
-        },
-        alternateRowStyles: {
-          fillColor: [245, 245, 245]
-        },
-        columnStyles: {
-          0: { cellWidth: 120, halign: 'left' }, // Artikel (breiter für mehr Platz)
-          1: { cellWidth: 50, halign: 'left' }, // Art.-Nr. (etwas breiter)
-          2: { cellWidth: 40, halign: 'center' } // Menge (etwas breiter)
-        },
-        margin: { left: 14, right: 14 }
-      });
-
-      // Öffne Druck-Dialog erst nach dem Zeichnen der Tabelle
+      // Alle Seiten manuell erstellen
+      for (let page = 0; page < totalPages; page++) {
+        if (page > 0) {
+          doc.addPage();
+        }
+        
+        // Header auf jede Seite setzen
+        addCustomerHeader(page + 1, totalPages);
+        
+        // Artikel für diese Seite
+        const startIndex = page * itemsPerPage;
+        const endIndex = Math.min(startIndex + itemsPerPage, tableData.length);
+        const pageData = tableData.slice(startIndex, endIndex);
+        
+        // Tabelle auf diese Seite zeichnen - WICHTIG: pageBreak deaktivieren
+        // startY nach Header positioniert (Header endet bei Y=42, +8px Abstand = 50)
+        autoTable(doc, {
+          startY: 50,
+          head: [['Artikel', 'Art.-Nr.', 'Menge']],
+          body: pageData,
+          theme: 'grid',
+          pageBreak: 'avoid', // Verhindert automatische Seitenumbrüche
+          tableWidth: 'wrap',
+          styles: {
+            fontSize: 10,
+            cellPadding: 5,
+            lineWidth: 0.1,
+            lineColor: [0, 0, 0]
+          },
+          headStyles: {
+            fillColor: [51, 51, 51],
+            textColor: [255, 255, 255],
+            fontStyle: 'bold',
+            fontSize: 11
+          },
+          alternateRowStyles: {
+            fillColor: [245, 245, 245]
+          },
+          columnStyles: {
+            0: { cellWidth: 100, halign: 'left' }, // Artikel (noch schmaler)
+            1: { cellWidth: 40, halign: 'left' }, // Art.-Nr. (noch schmaler)
+            2: { cellWidth: 30, halign: 'center' } // Menge (noch schmaler)
+          },
+          margin: { left: 25, right: 25 }, // Noch größere Ränder für perfekte Zentrierung
+          // Callback um sicherzustellen, dass nicht automatisch eine neue Seite erstellt wird
+          didDrawPage: (data: any) => {
+            // Nichts tun - wir kontrollieren Seiten manuell
+          }
+        });
+      }
+      
+      // Öffne Druck-Dialog erst nach dem Zeichnen aller Tabellen
       try {
         const blobUrl = doc.output('bloburl');
         const win = window.open(blobUrl, '_blank');
