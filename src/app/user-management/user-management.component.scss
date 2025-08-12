@@ -1069,11 +1069,15 @@
   .edit-btn, .reset-password-btn {
     width: 100px;
   }
+
+  /* Kartenraster nur in der mobilen Ansicht aktivieren */
+  .mobile-view.cards-container {
+    display: grid;
+  }
 }
 
 // Mobile Card Styles
 .cards-container {
-  display: grid;
   gap: 1rem;
   padding: 1rem;
 }

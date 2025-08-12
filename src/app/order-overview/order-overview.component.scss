@@ -1020,7 +1020,7 @@
 
 // Mobile Card Styles
 .cards-container {
-  display: grid;
+  /* display nicht global setzen, damit Desktop .mobile-view versteckt bleibt */
   gap: 1rem;
   padding: 1rem;
   width: 100%;
@@ -1182,6 +1182,11 @@
 
   .mobile-view {
     display: block;
+  }
+
+  /* Kartenraster nur in der mobilen Ansicht aktivieren */
+  .mobile-view.cards-container {
+    display: grid;
   }
 
   .order-overview-container {
