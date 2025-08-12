@@ -292,4 +292,9 @@ export class UserManagementComponent implements OnInit {
       }
     });
   }
+
+  // Navigation method
+  goBack() {
+    this.router.navigate(['/admin']);
+  }
 }
