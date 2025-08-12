@@ -27,8 +27,17 @@ export class AppComponent implements OnInit, OnDestroy {
       .pipe(filter(event => event instanceof NavigationEnd))
       .subscribe((event: NavigationEnd) => {
         this.isCategoryDetailRoute = event.url.includes('/category/');
-        // Footer auch auf Gast-Link-Route ausblenden
-        this.shouldHideFooter = event.url.includes('/category/') || event.url.includes('/guest-link');
+        // Footer auf Gast-Link-Route, Admin-Routen (außer Kundenansicht) und Category-Routen ausblenden
+        this.shouldHideFooter = event.url.includes('/category/') || 
+                                event.url.includes('/guest-link') || 
+                                event.url.includes('/admin') ||
+                                event.url.includes('/product-management') ||
+                                event.url.includes('/employees') ||
+                                event.url.includes('/label-management') ||
+                                event.url.includes('/order-overview') ||
+                                event.url.includes('/user-management') ||
+                                event.url.includes('/route-planning') ||
+                                event.url.includes('/reports');
       });
   }
 
