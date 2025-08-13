@@ -368,7 +368,8 @@ export class ProductManagementComponent implements OnInit, OnDestroy, AfterViewI
     this.http.get('https://multi-mandant-ecommerce.onrender.com/api/products').subscribe({
       next: (data: any) => {
         this.products = data;
-        this.filteredProducts = [...this.products];
+        // Initial: keine Produkte anzeigen, bis Suche erfolgt
+        this.filteredProducts = [];
         this.isVisible = false; // Verstecke Loading-Screen nach erfolgreichem Laden
         
         // Scroll to top after products are loaded
@@ -403,14 +404,28 @@ export class ProductManagementComponent implements OnInit, OnDestroy, AfterViewI
     }
 
     // Apply search filter
-    if (this.searchTerm.trim()) {
+    const trimmedSearch = this.searchTerm.trim();
+    if (!trimmedSearch) {
+      // Ohne Suchbegriff: nur Bild-Filter anwenden; 'all' zeigt nichts an
+      this.filteredProducts = this.imageFilter === 'all' ? [] : filtered;
+      return;
+    }
+
+    if (trimmedSearch) {
       // Check if search term is an 8 or 13 digit EAN code
-      const isEanSearch = /^\d{8}$|^\d{13}$/.test(this.searchTerm.trim());
+      const isEanSearch = /^\d{8}$|^\d{13}$/.test(trimmedSearch);
+
+      // Only start normal text search from 3rd character
+      if (!isEanSearch && trimmedSearch.length < 3) {
+        // Bei <3 Zeichen: nur Bild-Filter anzeigen; 'all' zeigt nichts
+        this.filteredProducts = this.imageFilter === 'all' ? [] : filtered;
+        return;
+      }
       
       if (isEanSearch) {
         // EAN-Suche: Zuerst in lokalen Produkten suchen
         const localEanResults = filtered.filter(product =>
-          product.ean?.toLowerCase() === this.searchTerm.toLowerCase()
+          product.ean?.toLowerCase() === trimmedSearch.toLowerCase()
         );
         
         if (localEanResults.length > 0) {
@@ -418,12 +433,12 @@ export class ProductManagementComponent implements OnInit, OnDestroy, AfterViewI
           filtered = localEanResults;
         } else {
           // EAN nicht in lokalen Produkten gefunden - API-Suche
-          this.searchEanInApi(this.searchTerm.trim());
+          this.searchEanInApi(trimmedSearch);
           return; // Warte auf API-Ergebnis
         }
       } else {
         // Normale Text-Suche
-        const terms = this.searchTerm.toLowerCase().split(/\s+/);
+        const terms = trimmedSearch.toLowerCase().split(/\s+/);
         filtered = filtered.filter(product =>
           terms.every((term) =>
             product.article_text?.toLowerCase().includes(term) ||
@@ -434,7 +449,7 @@ export class ProductManagementComponent implements OnInit, OnDestroy, AfterViewI
         
         // Sortiere nach Prioritätsreihenfolge
         filtered = filtered.sort((a, b) => {
-          const searchTermLower = this.searchTerm.toLowerCase();
+          const searchTermLower = trimmedSearch.toLowerCase();
           
           // Prüfe exakte Übereinstimmungen für jede Prioritätsstufe
           const aArticleNumberExact = a.article_number?.toLowerCase() === searchTermLower;
