@@ -1041,36 +1041,75 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
   }
 
   exportRoute() {
-    if (!this.routeData) return;
+    if (!this.routeData || !this.optimalOrder.length) return;
 
-    const routeInfo = {
-      customers: this.selectedCustomers.map(c => ({
-        id: c.id,
-        name: c.last_name_company || c.name,
-        customer_number: c.customer_number,
-        address: `${c.street || c.address}, ${c.postal_code} ${c.city}`,
-        email: c.email,
-        phone: c.phone
-      })),
-      route: {
-        totalDistance: this.formatDistance(this.totalDistance),
-        totalDuration: this.formatDuration(this.totalDuration),
-        steps: this.routeSteps
-      },
-      metadata: {
-        timestamp: new Date().toISOString(),
-        waypoints: this.selectedCustomers.length,
-        api: 'OpenRoute Service'
+    // Dynamisch laden, um Bundle-Größe klein zu halten
+    import('jspdf').then(({ default: jsPDF }) => {
+      import('jspdf-autotable').then(({ default: autoTable }) => {
+        this.generateRoutePDF(jsPDF, autoTable);
+      });
+    });
+  }
+
+  private generateRoutePDF(jsPDF: any, autoTable: any) {
+    const doc = new jsPDF();
+
+    // Header
+    doc.setFontSize(18);
+    doc.text('Route-Ergebnis', 14, 18);
+
+    doc.setFontSize(12);
+    const dateStr = new Date().toLocaleDateString('de-DE');
+    const startTimeStr = this.actualStartTime
+      ? this.formatTime(this.actualStartTime)
+      : this.startTime;
+    const endTimeStr = this.endTime ? this.formatTime(this.endTime) : '-';
+
+    doc.text(`Datum: ${dateStr}`, 14, 26);
+    doc.text(`Startzeit: ${startTimeStr}`, 14, 32);
+    doc.text(`Endzeit: ${endTimeStr}`, 14, 38);
+    doc.text(`Gesamtdistanz: ${this.formatDistance(this.totalDistance)}`, 120, 26);
+    doc.text(`Gesamtzeit: ${this.formatDuration(this.totalDuration)}`, 120, 32);
+
+    // Tabelle der Stopps
+    const tableBody = this.optimalOrder.map(stop => [
+      String(stop.position),
+      stop.name || '',
+      stop.customerNumber || '',
+      stop.address || '',
+      this.formatTime(stop.arrivalTime),
+      stop.departureTime ? this.formatTime(stop.departureTime) : '-',
+      `${stop.stayDuration ?? 0} min`,
+      `${Math.max(0, Math.round((stop.travelTime || 0) / 60))} min`
+    ]);
+
+    autoTable(doc, {
+      head: [['Stopp', 'Kunde', 'Kundennr.', 'Adresse', 'Ankunft', 'Abfahrt', 'Aufenthalt', 'Fahrtzeit']],
+      body: tableBody,
+      startY: 46,
+      styles: { fontSize: 10, cellPadding: 3 },
+      headStyles: { fillColor: [59, 130, 246], textColor: 255, fontStyle: 'bold' },
+      columnStyles: {
+        0: { cellWidth: 14 },
+        1: { cellWidth: 42 },
+        2: { cellWidth: 22 },
+        3: { cellWidth: 60 },
+        4: { cellWidth: 22 },
+        5: { cellWidth: 22 },
+        6: { cellWidth: 22 },
+        7: { cellWidth: 22 }
       }
-    };
+    });
 
-    const blob = new Blob([JSON.stringify(routeInfo, null, 2)], { type: 'application/json' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `route_${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    window.URL.revokeObjectURL(url);
+    // PDF speichern
+    const filename = `route_${new Date().toISOString().split('T')[0]}.pdf`;
+    try {
+      doc.save(filename);
+    } catch (_) {
+      // Fallback: in neuem Tab öffnen
+      const pdfUrl = doc.output('bloburl');
+      window.open(pdfUrl, '_blank');
+    }
   }
 
   generateShareLink(): string {
