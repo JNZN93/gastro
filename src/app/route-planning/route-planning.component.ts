@@ -1106,14 +1106,15 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
       }
     });
 
-    // PDF speichern
+    // Direktdruck anstoßen
     const filename = `route_${new Date().toISOString().split('T')[0]}.pdf`;
     try {
-      doc.save(filename);
-    } catch (_) {
-      // Fallback: in neuem Tab öffnen
+      doc.autoPrint();
       const pdfUrl = doc.output('bloburl');
       window.open(pdfUrl, '_blank');
+    } catch (_) {
+      // Fallback: Speichern
+      try { doc.save(filename); } catch {}
     }
   }
 
@@ -1166,10 +1167,12 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
 
       const filename = `route_${new Date().toISOString().split('T')[0]}.pdf`;
       try {
-        pdf.save(filename);
-      } catch (_) {
+        pdf.autoPrint();
         const pdfUrl = pdf.output('bloburl');
         window.open(pdfUrl, '_blank');
+      } catch (_) {
+        // Fallback: Speichern, falls autoPrint/Tab-Öffnen blockiert ist
+        try { pdf.save(filename); } catch {}
       } finally {
         container.classList.remove('exporting');
       }
