@@ -295,8 +295,11 @@
               <button (click)="startScanner()" [disabled]="isScanning" class="scanner-btn">
                 <span class="material-symbols-outlined">barcode</span>
               </button>
-              <button (click)="imageInput.click()" class="upload-images-btn" [disabled]="isAnalyzingImages">
-                <span class="material-icons">image</span>
+               <button (click)="imageInput.click()" class="upload-images-btn" [disabled]="isAnalyzingImages">
+                <span class="material-icons">cloud_upload</span>
+              </button>
+              <button (click)="openRecentImagesModal()" class="recent-images-btn" title="Zuletzt hochgeladene Bilder anzeigen">
+                <span class="material-icons">photo_library</span>
               </button>
             </div>
           </div>
@@ -434,7 +437,10 @@
                     <span class="material-symbols-outlined">barcode</span>
                   </button>
                   <button (click)="imageInput.click()" class="upload-images-btn" [disabled]="isAnalyzingImages">
-                    <span class="material-icons">image</span>
+                    <span class="material-icons">cloud_upload</span>
+                  </button>
+                  <button (click)="openRecentImagesModal()" class="recent-images-btn" title="Zuletzt hochgeladene Bilder anzeigen">
+                    <span class="material-icons">photo_library</span>
                   </button>
                 </div>
               </div>

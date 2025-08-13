@@ -13,6 +13,8 @@ import { MyDialogComponent } from '../my-dialog/my-dialog.component';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
+import { IndexedDBService } from '../indexeddb.service';
+import { RecentImagesModalComponent } from '../recent-images-modal/recent-images-modal.component';
 
 @Component({
   selector: 'app-employees',
@@ -30,6 +32,7 @@ export class EmployeesComponent implements OnInit, OnDestroy {
   @ViewChild('imageInput') imageInput!: any;
   private artikelService = inject(ArtikelDataService);
   private http = inject(HttpClient);
+  private indexedDBService = inject(IndexedDBService);
   artikelData: any[] = [];
   orderItems: any[] = [];
   searchTerm: string = '';
@@ -236,6 +239,9 @@ export class EmployeesComponent implements OnInit, OnDestroy {
       });
     }
     
+    // Speichere Bilder in IndexedDB
+    this.storeImagesInIndexedDB(files);
+
     const formData = new FormData();
     for (let i = 0; i < files.length; i++) {
       formData.append('images', files[i]);
@@ -367,6 +373,37 @@ export class EmployeesComponent implements OnInit, OnDestroy {
         (event.target as HTMLInputElement).value = '';
       }
     });
+  }
+
+  // Modal mit den letzten hochgeladenen Bildern öffnen
+  openRecentImagesModal(): void {
+    const dialogRef = this.dialog.open(RecentImagesModalComponent, {
+      width: '98vw',
+      maxWidth: '1400px',
+      height: '95vh',
+      data: {}
+    });
+
+    dialogRef.afterClosed().subscribe(() => {
+      console.log('📷 [RECENT-IMAGES] Modal geschlossen');
+    });
+  }
+
+  // Speichere Bilder in IndexedDB
+  private async storeImagesInIndexedDB(files: FileList): Promise<void> {
+    try {
+      const customerNumber = this.globalService.selectedCustomerForOrders?.customer_number;
+      
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        await this.indexedDBService.storeImage(file, customerNumber);
+        console.log('💾 [INDEXEDDB] Bild gespeichert:', file.name);
+      }
+      
+      console.log('✅ [INDEXEDDB] Alle Bilder erfolgreich gespeichert');
+    } catch (error) {
+      console.error('❌ [INDEXEDDB] Fehler beim Speichern der Bilder:', error);
+    }
   }
 
   // Footer verstecken
