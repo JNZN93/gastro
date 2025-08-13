@@ -475,6 +475,14 @@
     padding: 1.25rem;
     max-height: 68vh;
   }
+
+  // Beim PDF-Export (Screenshot/Render) Schatten und Begrenzung aufheben, volle Höhe zulassen
+  &.exporting {
+    box-shadow: none !important;
+    max-height: none !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+  }
 }
 
 .route-stats {

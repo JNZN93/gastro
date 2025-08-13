@@ -1042,12 +1042,17 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
 
   exportRoute() {
     if (!this.routeData || !this.optimalOrder.length) return;
+    const container = document.querySelector('.route-results') as HTMLElement | null;
+    if (!container) return;
 
-    // Dynamisch laden, um Bundle-Größe klein zu halten
-    import('jspdf').then(({ default: jsPDF }) => {
-      import('jspdf-autotable').then(({ default: autoTable }) => {
-        this.generateRoutePDF(jsPDF, autoTable);
-      });
+    // Dynamisch laden (kleinere Bundle-Größe): html2canvas für HTML -> Canvas, jsPDF für PDF-Erstellung
+    Promise.all([
+      import('html2canvas'),
+      import('jspdf')
+    ]).then(([html2canvasModule, jsPDFModule]) => {
+      const html2canvas = html2canvasModule.default as any;
+      const jsPDF = jsPDFModule.default as any;
+      this.exportRouteAsStyledPDF(container, html2canvas, jsPDF);
     });
   }
 
@@ -1110,6 +1115,71 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
       const pdfUrl = doc.output('bloburl');
       window.open(pdfUrl, '_blank');
     }
+  }
+
+  // Exportiert die Route-Ergebnisse als PDF, indem der gestylte HTML-Bereich gerendert wird
+  private exportRouteAsStyledPDF(container: HTMLElement, html2canvas: any, jsPDF: any): void {
+    // Optional: temporär eine Klasse setzen, um UI-Elemente für den Export zu optimieren
+    container.classList.add('exporting');
+
+    // Elemente ignorieren, die nicht im PDF erscheinen sollen (Buttons, Karte)
+    const ignoreElement = (el: Element) => {
+      const classList = (el as HTMLElement).classList || { contains: () => false } as any;
+      return (
+        classList.contains('export-section') ||
+        classList.contains('step-navigation-footer') ||
+        classList.contains('map-container') ||
+        classList.contains('btn')
+      );
+    };
+
+    // Mit höherem Scale rendern für schärfere Ausgabe
+    html2canvas(container, {
+      scale: 2,
+      backgroundColor: '#ffffff',
+      useCORS: true,
+      ignoreElements: ignoreElement
+    }).then((canvas: HTMLCanvasElement) => {
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 10; // mm
+
+      const imgWidth = pageWidth - margin * 2;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const imgData = canvas.toDataURL('image/png');
+
+      let heightLeft = imgHeight;
+      let position = margin;
+
+      // Erste Seite
+      pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight, undefined, 'FAST');
+      heightLeft -= (pageHeight - margin * 2);
+
+      // Weitere Seiten (Bild mit negativem Offset platzieren, Seitenrand berücksichtigen)
+      while (heightLeft > 0) {
+        pdf.addPage();
+        position = margin - (imgHeight - heightLeft);
+        pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight, undefined, 'FAST');
+        heightLeft -= (pageHeight - margin * 2);
+      }
+
+      const filename = `route_${new Date().toISOString().split('T')[0]}.pdf`;
+      try {
+        pdf.save(filename);
+      } catch (_) {
+        const pdfUrl = pdf.output('bloburl');
+        window.open(pdfUrl, '_blank');
+      } finally {
+        container.classList.remove('exporting');
+      }
+    }).catch(() => {
+      container.classList.remove('exporting');
+      // Fallback auf tabellarischen Export falls HTML-Render fehlschlägt
+      import('jspdf-autotable').then(({ default: autoTable }) => {
+        this.generateRoutePDF(jsPDF, autoTable);
+      });
+    });
   }
 
   generateShareLink(): string {
