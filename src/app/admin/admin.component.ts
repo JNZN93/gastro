@@ -518,6 +518,58 @@ formatDate(dateString: string): string {
       differentCompanyName: order.company || ''
     };
 
+    // PFAND-Regelung: Füge automatisch PFAND-Artikel hinzu
+    const enhancedItems: any[] = [];
+    
+    // Hole alle PFAND-Artikel aus dem GlobalService
+    const pfandArtikels = this.globalService.getPfandArtikels();
+    
+    if (pfandArtikels && pfandArtikels.length > 0) {
+      console.log('🔍 [LOAD-ORDER] PFAND-Regelung: Prüfe auf PFAND-Artikel...');
+      
+      // Durchlaufe alle Artikel und füge jeden Artikel + PFAND hinzu
+      orderData.items.forEach((item: any) => {
+        // Füge zuerst den ursprünglichen Artikel hinzu
+        enhancedItems.push(item);
+        
+        // Dann füge den PFAND-Artikel direkt darunter hinzu
+        // Suche nach einem passenden PFAND-Artikel
+        const matchingPfand = pfandArtikels.find(pfand => {
+          // Hier können verschiedene Matching-Strategien implementiert werden
+          // Für jetzt: Verwende den ersten verfügbaren PFAND-Artikel
+          // Später kann dies verfeinert werden basierend auf der tatsächlichen PFAND-Logik
+          return true; // Nimm den ersten PFAND-Artikel
+        });
+        
+        if (matchingPfand) {
+          // PFAND-Artikel für diesen Artikel hinzufügen (immer, auch bei Duplikaten)
+          const pfandItem = {
+            id: matchingPfand.id,
+            article_number: matchingPfand.article_number,
+            article_text: matchingPfand.article_text,
+            sale_price: matchingPfand.sale_price,
+            quantity: item.quantity, // Gleiche Menge wie der ursprüngliche Artikel
+            different_price: undefined,
+            description: matchingPfand.article_text,
+            cost_price: matchingPfand.cost_price || 0,
+            original_price: matchingPfand.sale_price
+          };
+          
+          enhancedItems.push(pfandItem);
+          console.log('✅ [LOAD-ORDER] PFAND-Artikel hinzugefügt:', matchingPfand.article_text, 'Menge:', item.quantity, 'für Artikel:', item.article_text);
+        }
+      });
+      
+      console.log(`📦 [LOAD-ORDER] PFAND-Regelung abgeschlossen. Artikel vorher: ${orderData.items.length}, nachher: ${enhancedItems.length}`);
+    } else {
+      console.log('ℹ️ [LOAD-ORDER] Keine PFAND-Artikel verfügbar, überspringe PFAND-Regelung');
+      // Wenn keine PFAND-Artikel verfügbar sind, verwende die ursprünglichen Artikel
+      enhancedItems.push(...orderData.items);
+    }
+    
+    // Aktualisiere die Items mit den erweiterten Artikeln
+    orderData.items = enhancedItems;
+
     // Check: Prüfe ob alle Artikel in globalArtikels vorhanden sind
     // Hinweis: globalArtikels sind in der Admin-Komponente nicht verfügbar
     // Der Check wird in der Customer Orders Komponente durchgeführt
