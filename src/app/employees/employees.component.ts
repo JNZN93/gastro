@@ -2272,31 +2272,42 @@ export class EmployeesComponent implements OnInit, OnDestroy {
 
   // Neue Hilfsmethode zur Überprüfung der Verfügbarkeit in globalArtikels
   private isArticleAvailableInGlobal(customerPrice: any): boolean {
-    // Suche nach verschiedenen Feldern in globalArtikels
+    // Normalisierung für robuste Vergleiche (Kleinbuchstaben, ß→ss, Diakritika entfernen)
+    const normalize = (v: any) => (v ?? '')
+      .toString()
+      .trim()
+      .toLowerCase()
+      .replace(/ß/g, 'ss')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+
     const foundInGlobal = this.globalArtikels.some(globalArtikel => {
-      // 1. Suche nach product_id
-      if (customerPrice.product_id && globalArtikel.article_number == customerPrice.product_id) {
+      const gaArticleNumber = normalize(globalArtikel.article_number);
+      // bewusst kein Match über globale product_id oder id
+      const gaEan = normalize(globalArtikel.ean);
+
+      const cpArticleNumber = normalize(customerPrice.article_number);
+      const cpProductId = normalize(customerPrice.product_id);
+      const cpEan = normalize(customerPrice.ean);
+
+      // product_id (vom Preis) ↔ article_number (global)
+      if (cpProductId && gaArticleNumber && gaArticleNumber === cpProductId) {
         return true;
       }
-      
-      // 2. Suche nach article_number
-      if (customerPrice.article_number && globalArtikel.article_number == customerPrice.article_number) {
+
+      // article_number ↔ article_number
+      if (cpArticleNumber && gaArticleNumber && gaArticleNumber === cpArticleNumber) {
         return true;
       }
-      
-      // 3. Suche nach id
-      if (customerPrice.id && globalArtikel.id == customerPrice.id) {
+
+      // ean ↔ ean
+      if (cpEan && gaEan && gaEan === cpEan) {
         return true;
       }
-      
-      // 4. Suche nach EAN (falls vorhanden)
-      if (customerPrice.ean && globalArtikel.ean == customerPrice.ean) {
-        return true;
-      }
-      
+
       return false;
     });
-    
+
     return foundInGlobal;
   }
 
@@ -2631,8 +2642,14 @@ export class EmployeesComponent implements OnInit, OnDestroy {
         }
       }
       
-      this.customerArticlePrices = data;
-      console.log('💾 [CUSTOMER-ARTICLE-PRICES] Daten in customerArticlePrices gespeichert');
+      // Filtere kundenspezifische Artikel, die nicht mehr in globalArtikels vorhanden sind (wie in Customer Orders)
+      const filteredCustomerPrices = Array.isArray(data)
+        ? data.filter((price: any) => this.isArticleAvailableInGlobal(price))
+        : [];
+      
+      console.log('📊 [CUSTOMER-ARTICLE-PRICES] Verfügbare (gefilterte) Artikel-Preise:', filteredCustomerPrices.length);
+      this.customerArticlePrices = filteredCustomerPrices;
+      console.log('💾 [CUSTOMER-ARTICLE-PRICES] Gefilterte Daten in customerArticlePrices gespeichert');
       
       // Aktualisiere die Artikel mit den kundenspezifischen Preisen
       console.log('🔄 [CUSTOMER-ARTICLE-PRICES] Starte updateArtikelsWithCustomerPrices...');
