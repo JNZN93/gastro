@@ -319,9 +319,11 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
 
         // Koordinaten umkehren: [lng, lat] -> [lat, lng]
         const arrowCoords: [number, number] = [current[1], current[0]];
-        L.marker(arrowCoords, { icon: arrowIcon })
-          .addTo(this.map)
-          .setRotationAngle(angle);
+        const arrowMarker = L.marker(arrowCoords, { icon: arrowIcon }).addTo(this.map);
+        // Only rotate if rotated marker plugin is present
+        if (typeof arrowMarker.setRotationAngle === 'function') {
+          arrowMarker.setRotationAngle(angle);
+        }
       }
     }
   }

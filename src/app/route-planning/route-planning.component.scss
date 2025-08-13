@@ -1552,3 +1552,162 @@
   .content {
     padding-bottom: 120px; // Space for fixed footer
   } 
+ 
+
+/* Leaflet custom markers and map UI styling */
+:host ::ng-deep .leaflet-div-icon {
+  background: transparent;
+  border: none;
+}
+
+/* Generic custom marker container */
+:host ::ng-deep .custom-marker {
+  z-index: 1000;
+
+  .marker-content {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 8px;
+    min-width: 40px;
+    min-height: 40px;
+    border-radius: 10px;
+    background: #ffffff;
+    border: 2px solid #e2e8f0;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+    color: #1e293b;
+    font-weight: 700;
+    line-height: 1.1;
+    text-align: center;
+    transform: translateY(-6px);
+  }
+
+  .marker-label {
+    display: inline-block;
+    margin-top: 4px;
+    padding: 2px 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #475569;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    max-width: 160px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+/* Start (depot) marker styling */
+:host ::ng-deep .start-marker {
+  .marker-content {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+
+  .marker-label {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.35);
+    color: #ffffff;
+  }
+}
+
+/* Customer marker styling */
+:host ::ng-deep .customer-marker {
+  .marker-content {
+    background: #ffffff;
+    border-color: #c7d2fe;
+  }
+
+  .marker-label {
+    background: #eef2ff;
+    border-color: #c7d2fe;
+    color: #4338ca;
+  }
+}
+
+/* Route label tooltip */
+:host ::ng-deep .leaflet-tooltip.route-label {
+  background: rgba(102, 126, 234, 0.9);
+  color: #ffffff;
+  border: none;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-weight: 700;
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.25);
+}
+
+/* Popup content styling */
+:host ::ng-deep .leaflet-popup-content .popup-content {
+  h4 {
+    margin: 0 0 6px 0;
+    font-size: 14px;
+    color: #1e293b;
+  }
+
+  p {
+    margin: 4px 0;
+    font-size: 12px;
+    color: #475569;
+  }
+}
+
+/* Legend styling */
+:host ::ng-deep .map-legend {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  min-width: 160px;
+
+  h4 {
+    margin: 0 0 8px 0;
+    font-size: 13px;
+    font-weight: 700;
+    color: #1e293b;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+    font-size: 12px;
+    color: #475569;
+  }
+
+  .legend-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    font-weight: 700;
+    color: #1e293b;
+  }
+
+  .start-icon {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.35);
+  }
+
+  .customer-icon {
+    background: #eef2ff;
+    color: #4338ca;
+    border-color: #c7d2fe;
+  }
+}
+
+/* Route arrow markers (emoji) */
+:host ::ng-deep .route-arrow {
+  font-size: 16px;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
