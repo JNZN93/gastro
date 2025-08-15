@@ -4863,31 +4863,67 @@
       color: #666;
     }
 
-    .mobile-print-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: #2563eb;
-      color: #fff;
-      border: none;
-      padding: 8px 12px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 14px;
-      font-weight: 500;
-      transition: background-color 0.2s ease;
-      box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+    .mobile-prices-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 8px;
 
-      &:hover {
-        background: #1d4ed8;
+      .mobile-qr-code-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #10b981;
+        color: #fff;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        transition: background-color 0.2s ease;
+        box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+
+        &:hover {
+          background: #059669;
+        }
+
+        &:active {
+          background: #047857;
+        }
+
+        .material-icons {
+          font-size: 16px;
+        }
       }
 
-      &:active {
-        background: #1e40af;
-      }
+      .mobile-print-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #2563eb;
+        color: #fff;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        transition: background-color 0.2s ease;
+        box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
 
-      .material-icons {
-        font-size: 16px;
+        &:hover {
+          background: #1d4ed8;
+        }
+
+        &:active {
+          background: #1e40af;
+        }
+
+        .material-icons {
+          font-size: 16px;
+        }
       }
     }
   }
@@ -5147,6 +5183,30 @@
     }
   }
 
+  // Mobile spezifische Kundenpreise Styles
+  .mobile-customer-prices {
+    .prices-header {
+      .mobile-prices-actions {
+        gap: 6px;
+        flex-direction: column;
+        width: 100%;
+        max-width: 200px;
+        
+        .mobile-qr-code-btn,
+        .mobile-print-btn {
+          width: 100%;
+          justify-content: center;
+          padding: 10px 12px;
+          font-size: 14px;
+          
+          .material-icons {
+            font-size: 16px;
+          }
+        }
+      }
+    }
+  }
+
   // Mobile/Tablet Artikelsuche Preis-Styles
   .mobile-articles-dropdown {
     .mobile-article-dropdown-item {
@@ -5264,6 +5324,25 @@
                 color: #28a745 !important; // Placeholder auch in grün
               }
             }
+          }
+        }
+      }
+    }
+  }
+
+  // Tablet spezifische Kundenpreise Styles
+  .mobile-customer-prices {
+    .prices-header {
+      .mobile-prices-actions {
+        gap: 10px;
+        
+        .mobile-qr-code-btn,
+        .mobile-print-btn {
+          padding: 10px 14px;
+          font-size: 15px;
+          
+          .material-icons {
+            font-size: 18px;
           }
         }
       }
