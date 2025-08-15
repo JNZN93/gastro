@@ -2761,66 +2761,93 @@ filteredArtikelData() {
       const orderUrl = `${baseUrl}/customer-order/${customer.customer_number}`;
       console.log('🔍 [QR-CODE] Generierte URL:', orderUrl);
       
-      // QR-Code als Data URL generieren
+      // QR-Code als Data URL generieren (höhere Auflösung für bessere Qualität)
       const qrCodeDataUrl = await QRCode.toDataURL(orderUrl, {
-        width: 200,
-        margin: 2,
+        width: 300, // Höhere Auflösung für bessere Qualität
+        margin: 1,  // Kleinerer Rand für mehr Inhalt
         color: {
-          dark: '#000000',
-          light: '#FFFFFF'
-        }
+          dark: '#1a365d',  // Dunkelblau statt schwarz - professioneller
+          light: '#f7fafc'  // Sehr helles Blau statt weiß - subtiler
+        },
+        errorCorrectionLevel: 'H' // Höchste Fehlerkorrektur für bessere Lesbarkeit
       });
       
       // Neue PDF erstellen
       const doc = new jsPDF();
       
-      // Header
+      // Header mit professionelleren Farben
       doc.setFontSize(24);
       doc.setFont('helvetica', 'bold');
-      doc.text('🛒 Online Bestellung', 105, 30, { align: 'center' });
+      doc.setTextColor(26, 54, 93); // Dunkelblau
+      doc.text('Online Bestellung', 105, 30, { align: 'center' });
       
       // Kundendaten
       doc.setFontSize(14);
       doc.setFont('helvetica', 'normal');
+      doc.setTextColor(66, 153, 225); // Hellblau
       doc.text('Kundendaten:', 20, 50);
       
       doc.setFontSize(12);
+      doc.setTextColor(26, 54, 93); // Dunkelblau
       doc.text(`Firma: ${customer.last_name_company || ''}`, 20, 65);
       doc.text(`Kundennummer: ${customer.customer_number || ''}`, 20, 75);
       if (customer.name_addition) {
         doc.text(`Zusatz: ${customer.name_addition}`, 20, 85);
       }
       
-      // QR-Code (groß und zentral)
-      doc.addImage(qrCodeDataUrl, 'PNG', 85, 100, 80, 80);
+      // QR-Code (größer und professioneller)
+      const qrSize = 100; // Größerer QR-Code
+      const qrX = 105 - (qrSize / 2); // Zentriert
+      const qrY = 110;
       
-      // Rahmen um QR-Code
-      doc.setDrawColor(0, 0, 0);
+      // Schönerer Rahmen mit abgerundeten Ecken (simuliert durch mehrere Rechtecke)
+      const framePadding = 10;
+      const frameSize = qrSize + (framePadding * 2);
+      
+      // Hintergrund für den QR-Code (weiß)
+      doc.setFillColor(255, 255, 255);
+      doc.rect(qrX - framePadding, qrY - framePadding, frameSize, frameSize, 'F');
+      
+      // Äußerer Rahmen (dunkelblau)
+      doc.setDrawColor(26, 54, 93); // #1a365d
       doc.setLineWidth(2);
-      doc.rect(80, 95, 90, 90);
+      doc.rect(qrX - framePadding, qrY - framePadding, frameSize, frameSize);
       
-      // Anleitung
+      // Innerer Rahmen (hellblau)
+      doc.setDrawColor(66, 153, 225); // #4299e1
+      doc.setLineWidth(1);
+      doc.rect(qrX - framePadding + 3, qrY - framePadding + 3, frameSize - 6, frameSize - 6);
+      
+      // QR-Code einfügen
+      doc.addImage(qrCodeDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
+      
+      // Anleitung mit professionelleren Farben
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
-      doc.text('Anleitung:', 20, 210);
+      doc.setTextColor(26, 54, 93); // Dunkelblau
+      doc.text('Anleitung:', 20, 230);
       
       doc.setFontSize(12);
       doc.setFont('helvetica', 'normal');
-      doc.text('1. QR-Code mit dem Handy scannen', 20, 225);
-      doc.text('2. Oder den Link unten kopieren', 20, 235);
-      doc.text('3. Direkt auf der Webseite bestellen', 20, 245);
+      doc.setTextColor(66, 153, 225); // Hellblau
+      doc.text('1. QR-Code mit dem Handy scannen', 20, 245);
+      doc.text('2. Oder den Link unten kopieren', 20, 255);
+      doc.text('3. Direkt auf der Webseite bestellen', 20, 265);
       
       // URL
       doc.setFontSize(10);
       doc.setFont('helvetica', 'bold');
-      doc.text('Direkter Link:', 20, 265);
+      doc.setTextColor(26, 54, 93); // Dunkelblau
+      doc.text('Direkter Link:', 20, 285);
       doc.setFontSize(8);
       doc.setFont('helvetica', 'normal');
-      doc.text(orderUrl, 20, 275);
+      doc.setTextColor(66, 153, 225); // Hellblau
+      doc.text(orderUrl, 20, 295);
       
       // Datum
       doc.setFontSize(10);
-      doc.text(`Generiert am: ${new Date().toLocaleString('de-DE')}`, 20, 290);
+      doc.setTextColor(26, 54, 93); // Dunkelblau
+      doc.text(`Generiert am: ${new Date().toLocaleString('de-DE')}`, 20, 310);
       
       // PDF öffnen und automatisch drucken
       const pdfBlob = doc.output('blob');
@@ -2850,15 +2877,16 @@ filteredArtikelData() {
       const orderUrl = `${baseUrl}/customer-order/${customerId}`;
       console.log('🔍 [QR-CODE] Generierte URL:', orderUrl);
       
-      // QR-Code als Data URL generieren
+      // QR-Code als Data URL generieren (höhere Auflösung für bessere Qualität)
       console.log('🔍 [QR-CODE] Generiere QR-Code...');
       const qrCodeDataUrl = await QRCode.toDataURL(orderUrl, {
-        width: 80,
-        margin: 2,
+        width: 200, // Höhere Auflösung für bessere Qualität
+        margin: 1,  // Kleinerer Rand für mehr Inhalt
         color: {
-          dark: '#000000',
-          light: '#FFFFFF'
-        }
+          dark: '#1a365d',  // Dunkelblau statt schwarz - professioneller
+          light: '#f7fafc'  // Sehr helles Blau statt weiß - subtiler
+        },
+        errorCorrectionLevel: 'H' // Höchste Fehlerkorrektur für bessere Lesbarkeit
       });
       console.log('🔍 [QR-CODE] QR-Code erfolgreich generiert, Länge:', qrCodeDataUrl.length);
       
@@ -2866,27 +2894,66 @@ filteredArtikelData() {
       console.log('🔍 [QR-CODE] Füge QR-Code ins PDF ein...');
       
       // Position: Rechts oben, aber garantiert sichtbar
-      const qrX = 150;  // X-Position (von links)
-      const qrY = 20;   // Y-Position (von oben)
-      const qrSize = 60; // Größe des QR-Codes
+      const qrX = 140;  // X-Position (von links) - etwas nach links verschoben
+      const qrY = 15;   // Y-Position (von oben) - etwas nach oben verschoben
+      const qrSize = 80; // Größerer QR-Code für bessere Lesbarkeit
       
-      // Rahmen um den QR-Code zeichnen (damit er garantiert sichtbar ist)
-      doc.setDrawColor(0, 0, 0); // Schwarze Farbe
-      doc.setLineWidth(2); // Dicke Linie
-      doc.rect(qrX - 5, qrY - 5, qrSize + 10, qrSize + 10); // Rahmen um QR-Code
+      // Schönerer Rahmen mit abgerundeten Ecken (simuliert durch mehrere Rechtecke)
+      const framePadding = 8;
+      const frameSize = qrSize + (framePadding * 2);
       
+      // Hintergrund für den QR-Code (weiß mit subtiler Schattierung)
+      doc.setFillColor(255, 255, 255);
+      doc.rect(qrX - framePadding, qrY - framePadding, frameSize, frameSize, 'F');
+      
+      // Äußerer Rahmen (dunkelblau)
+      doc.setDrawColor(26, 54, 93); // #1a365d
+      doc.setLineWidth(1.5);
+      doc.rect(qrX - framePadding, qrY - framePadding, frameSize, frameSize);
+      
+      // Innerer Rahmen (hellblau)
+      doc.setDrawColor(66, 153, 225); // #4299e1
+      doc.setLineWidth(0.5);
+      doc.rect(qrX - framePadding + 2, qrY - framePadding + 2, frameSize - 4, frameSize - 4);
+      
+      // QR-Code einfügen
       doc.addImage(qrCodeDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
       console.log('🔍 [QR-CODE] QR-Code erfolgreich ins PDF eingefügt bei Position:', qrX, qrY, 'Größe:', qrSize);
       
-      // Beschriftung unter dem QR-Code
-      doc.setFontSize(12);
+      // Professionelle Beschriftung unter dem QR-Code
+      const textX = qrX + (qrSize / 2); // Zentriert unter dem QR-Code
+      
+      // Haupttitel
+      doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
-      doc.text('ONLINE BESTELLEN', qrX, qrY + qrSize + 15);
-      doc.setFontSize(10);
+      doc.setTextColor(26, 54, 93); // Dunkelblau
+      const mainTitle = 'ONLINE BESTELLEN';
+      const mainTitleWidth = doc.getTextWidth(mainTitle);
+      doc.text(mainTitle, textX - (mainTitleWidth / 2), qrY + qrSize + 20);
+      
+      // Untertitel
+      doc.setFontSize(11);
       doc.setFont('helvetica', 'normal');
-      doc.text('QR-Code scannen', qrX, qrY + qrSize + 25);
-      doc.text('Direkt bestellen', qrX, qrY + qrSize + 35);
-      console.log('🔍 [QR-CODE] Beschriftung hinzugefügt');
+      doc.setTextColor(66, 153, 225); // Hellblau
+      const subtitle1 = 'QR-Code scannen';
+      const subtitle1Width = doc.getTextWidth(subtitle1);
+      doc.text(subtitle1, textX - (subtitle1Width / 2), qrY + qrSize + 35);
+      
+      const subtitle2 = 'Direkt bestellen';
+      const subtitle2Width = doc.getTextWidth(subtitle2);
+      doc.text(subtitle2, textX - (subtitle2Width / 2), qrY + qrSize + 48);
+      
+      // Zusätzliche visuelle Elemente
+      // Kleine dekorative Linien links und rechts vom Titel
+      const lineLength = 15;
+      const lineY = qrY + qrSize + 28;
+      
+      doc.setDrawColor(66, 153, 225); // Hellblau
+      doc.setLineWidth(1);
+      doc.line(textX - (mainTitleWidth / 2) - lineLength - 5, lineY, textX - (mainTitleWidth / 2) - 5, lineY);
+      doc.line(textX + (mainTitleWidth / 2) + 5, lineY, textX + (mainTitleWidth / 2) + lineLength + 5, lineY);
+      
+      console.log('🔍 [QR-CODE] Beschriftung und Dekoration hinzugefügt');
       
     } catch (error: any) {
       console.error('❌ [QR-CODE] Fehler beim Generieren des QR-Codes:', error);
@@ -2895,6 +2962,7 @@ filteredArtikelData() {
       // Fallback: Text statt QR-Code
       doc.setFontSize(8);
       doc.setFont('helvetica', 'normal');
+      doc.setTextColor(26, 54, 93); // Dunkelblau
       doc.text('Online bestellen:', 160, 25);
       doc.text('QR-Code verfügbar', 160, 30);
       console.log('🔍 [QR-CODE] Fallback-Text hinzugefügt');
