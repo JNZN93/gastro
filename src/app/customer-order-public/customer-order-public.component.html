@@ -29,12 +29,52 @@
     <div *ngIf="!isLoading && !error && customerArticlePrices.length > 0" class="catalog">
       <h2>Verfügbare Artikel</h2>
       
-      <div class="products-table">
+      <!-- Mobile Cards View -->
+      <div class="products-cards">
+        <div *ngFor="let article of customerArticlePrices" class="product-card">
+          <div class="card-header">
+            <div class="article-info">
+              <div class="article-text">{{ article.article_text }}</div>
+              <div class="article-number">Art.-Nr.: {{ article.article_number || article.product_id }}</div>
+            </div>
+            <div class="article-price">€{{ toNumber(article.unit_price_net).toFixed(2) }}</div>
+          </div>
+          
+          <div class="card-actions">
+            <div class="quantity-controls">
+              <button 
+                class="btn-quantity btn-decrease"
+                (click)="decreaseQuantity(article)"
+                [disabled]="!article.tempQuantity || article.tempQuantity <= 1"
+              >
+                −
+              </button>
+              
+              <input 
+                type="number" 
+                [(ngModel)]="article.tempQuantity"
+                min="0"
+                placeholder="0"
+                class="quantity-input"
+              >
+              
+              <button 
+                class="btn-quantity btn-increase"
+                (click)="increaseQuantity(article)"
+              >
+                +
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Desktop Table View (hidden on mobile) -->
+      <div class="products-table desktop-only">
         <div class="table-header">
           <div class="col-desc">Artikel</div>
           <div class="col-price">Preis</div>
           <div class="col-qty">Menge</div>
-          <div class="col-action">Aktion</div>
         </div>
         
         <div *ngFor="let article of customerArticlePrices" class="table-row">
@@ -47,54 +87,19 @@
             <input 
               type="number" 
               [(ngModel)]="article.tempQuantity"
-              min="1"
+              min="0"
               placeholder="0"
               class="quantity-input"
             >
-          </div>
-          <div class="col-action">
-            <button 
-              class="btn-add"
-              (click)="addToOrder(article)"
-              [disabled]="!article.tempQuantity || article.tempQuantity <= 0"
-            >
-              +
-            </button>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Order Summary -->
-    <div *ngIf="orderItems.length > 0" class="order-summary">
-      <h2>Ihre Bestellung</h2>
+    <div *ngIf="!isLoading && !error && customerArticlePrices.length > 0" class="order-summary">
+      <h2>Bestellung abschließen</h2>
       
-      <div class="order-table">
-        <div class="table-header">
-          <div class="col-desc">Artikel</div>
-          <div class="col-qty">Menge</div>
-          <div class="col-price">Preis</div>
-          <div class="col-action">Aktion</div>
-        </div>
-        
-        <div *ngFor="let item of orderItems; let i = index" class="table-row">
-          <div class="col-desc">{{ item.article_text }}</div>
-          <div class="col-qty">
-            <input 
-              type="number" 
-              [value]="item.quantity"
-              (change)="updateQuantity(i, $event)"
-              min="1"
-              class="quantity-input"
-            >
-          </div>
-          <div class="col-price">€{{ toNumber(item.total_price).toFixed(2) }}</div>
-          <div class="col-action">
-            <button class="btn-remove" (click)="removeFromOrder(i)">×</button>
-          </div>
-        </div>
-      </div>
-
       <div class="order-total">
         <h3>Gesamtpreis: €{{ toNumber(getOrderTotal()).toFixed(2) }}</h3>
       </div>
@@ -103,7 +108,7 @@
         <button 
           class="btn-submit"
           (click)="submitOrder()"
-          [disabled]="isSubmitting"
+          [disabled]="isSubmitting || !hasAnyQuantity()"
         >
           <span *ngIf="!isSubmitting">Bestellung absenden</span>
           <span *ngIf="isSubmitting">Wird gesendet...</span>
@@ -116,13 +121,6 @@
       <div class="empty-icon">📦</div>
       <h3>Keine Artikel verfügbar</h3>
       <p>Für diesen Kunden sind derzeit keine Artikel verfügbar.</p>
-    </div>
-
-    <!-- Empty Cart State -->
-    <div *ngIf="!isLoading && !error && customerArticlePrices.length > 0 && orderItems.length === 0" class="empty-cart">
-      <div class="empty-icon">🛒</div>
-      <h3>Ihr Warenkorb ist leer</h3>
-      <p>Fügen Sie Artikel aus dem Katalog hinzu, um eine Bestellung aufzugeben.</p>
     </div>
   </div>
 

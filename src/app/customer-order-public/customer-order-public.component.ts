@@ -19,7 +19,6 @@ export class CustomerOrderPublicComponent implements OnInit {
   customerNumber: string = '';
   customer: any = null;
   customerArticlePrices: any[] = [];
-  orderItems: any[] = [];
   isLoading: boolean = true;
   error: string = '';
   isSubmitting: boolean = false;
@@ -50,7 +49,10 @@ export class CustomerOrderPublicComponent implements OnInit {
           if (Array.isArray(data)) {
             this.customerArticlePrices = data.filter((price: any) => {
               return price.article_text && price.unit_price_net;
-            });
+            }).map((price: any) => ({
+              ...price,
+              tempQuantity: null  // Initialisiere tempQuantity mit null
+            }));
             
             // Erstelle einen minimalen Kunden mit der Kundennummer aus dem ersten Artikel
             if (this.customerArticlePrices.length > 0) {
@@ -108,58 +110,21 @@ export class CustomerOrderPublicComponent implements OnInit {
       });
   }
 
-  addToOrder(article: any) {
-    if (!article.tempQuantity || article.tempQuantity <= 0) {
-      alert('Bitte geben Sie eine gültige Menge ein.');
-      return;
-    }
-
-    const existingItem = this.orderItems.find(item => item.product_id === article.product_id);
-    
-    if (existingItem) {
-      existingItem.quantity += parseInt(article.tempQuantity);
-      existingItem.total_price = existingItem.unit_price * existingItem.quantity;
-    } else {
-              this.orderItems.push({
-          product_id: article.product_id,
-          article_text: article.article_text,
-          article_number: article.article_number,
-          quantity: parseInt(article.tempQuantity),
-          unit_price: Number(article.unit_price_net) || 0,
-          total_price: (Number(article.unit_price_net) || 0) * parseInt(article.tempQuantity)
-        });
-    }
-
-    // Reset temp quantity
-    article.tempQuantity = '';
-  }
-
-  removeFromOrder(index: number) {
-    this.orderItems.splice(index, 1);
-  }
-
-  updateQuantity(index: number, event: any) {
-    const newQuantity = parseInt(event.target?.value || '0');
-    if (newQuantity <= 0) {
-      this.removeFromOrder(index);
-    } else {
-      this.orderItems[index].quantity = newQuantity;
-      this.orderItems[index].total_price = this.orderItems[index].unit_price * newQuantity;
-    }
-  }
-
-  getOrderTotal(): number {
-    return this.orderItems.reduce((total, item) => total + item.total_price, 0);
-  }
-
-  // Hilfsmethode zum Konvertieren von Strings zu Zahlen
-  toNumber(value: any): number {
-    return Number(value) || 0;
-  }
-
   submitOrder() {
-    if (this.orderItems.length === 0) {
-      alert('Bitte fügen Sie Artikel zur Bestellung hinzu.');
+    // Sammle alle Artikel mit Mengen > 0
+    const itemsWithQuantity = this.customerArticlePrices
+      .filter(article => article.tempQuantity && article.tempQuantity > 0)
+      .map(article => ({
+        product_id: article.product_id,
+        article_text: article.article_text,
+        article_number: article.article_number,
+        quantity: Number(article.tempQuantity),
+        unit_price: Number(article.unit_price_net) || 0,
+        total_price: (Number(article.unit_price_net) || 0) * Number(article.tempQuantity)
+      }));
+
+    if (itemsWithQuantity.length === 0) {
+      alert('Bitte geben Sie mindestens eine Menge für einen Artikel ein.');
       return;
     }
 
@@ -176,13 +141,13 @@ export class CustomerOrderPublicComponent implements OnInit {
       customer_notes: '',
       shipping_address: '',
       fulfillment_type: 'delivery',
-      total_price: this.getOrderTotal(),
+      total_price: itemsWithQuantity.reduce((total, item) => total + item.total_price, 0),
       delivery_date: new Date().toISOString().split('T')[0] // Heute als Standard
     };
 
     const completeOrder = {
       orderData: orderData,
-      orderItems: this.orderItems.map(item => ({
+      orderItems: itemsWithQuantity.map(item => ({
         id: item.product_id,
         quantity: item.quantity,
         sale_price: item.unit_price,
@@ -194,7 +159,12 @@ export class CustomerOrderPublicComponent implements OnInit {
     this.http.post('https://multi-mandant-ecommerce.onrender.com/api/orders/without-auth', completeOrder).subscribe({
       next: (response: any) => {
         this.successMessage = 'Bestellung erfolgreich eingereicht! Vielen Dank für Ihre Bestellung.';
-        this.orderItems = [];
+        
+        // Alle Mengen zurücksetzen
+        this.customerArticlePrices.forEach(article => {
+          article.tempQuantity = null;
+        });
+        
         this.isSubmitting = false;
         
         // Nach 3 Sekunden zur Bestätigungsseite weiterleiten
@@ -212,5 +182,45 @@ export class CustomerOrderPublicComponent implements OnInit {
 
   goBack() {
     this.router.navigate(['/']);
+  }
+
+  // Plus-Button: Menge erhöhen
+  increaseQuantity(article: any) {
+    if (!article.tempQuantity || article.tempQuantity <= 0) {
+      article.tempQuantity = 1;
+    } else {
+      article.tempQuantity = Number(article.tempQuantity) + 1;
+    }
+  }
+
+  // Minus-Button: Menge verringern
+  decreaseQuantity(article: any) {
+    if (article.tempQuantity && article.tempQuantity > 1) {
+      article.tempQuantity = Number(article.tempQuantity) - 1;
+    } else {
+      article.tempQuantity = null;
+    }
+  }
+
+  getOrderTotal(): number {
+    return this.customerArticlePrices
+      .filter(article => article.tempQuantity && article.tempQuantity > 0)
+      .reduce((total, article) => {
+        const quantity = Number(article.tempQuantity) || 0;
+        const price = Number(article.unit_price_net) || 0;
+        return total + (price * quantity);
+      }, 0);
+  }
+
+  // Hilfsmethode zum Konvertieren von Strings zu Zahlen
+  toNumber(value: any): number {
+    return Number(value) || 0;
+  }
+
+  // Prüft, ob mindestens ein Artikel eine Menge hat
+  hasAnyQuantity(): boolean {
+    return this.customerArticlePrices.some(article => 
+      article.tempQuantity && article.tempQuantity > 0
+    );
   }
 }
