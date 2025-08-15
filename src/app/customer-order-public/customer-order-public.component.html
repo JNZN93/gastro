@@ -113,6 +113,150 @@
           </div>
         </div>
       </div>
+
+      <!-- Custom Article Form -->
+      <div *ngIf="showCustomArticleForm" class="custom-article-form">
+        <h3>Eigenen Artikel hinzufügen</h3>
+        
+        <!-- Mobile Cards View -->
+        <div class="products-cards">
+          <div class="product-card custom-article-card">
+            <div class="card-header">
+              <div class="article-info">
+                <input 
+                  type="text" 
+                  [(ngModel)]="customArticle.article_text"
+                  placeholder="Artikelbeschreibung eingeben..."
+                  class="custom-article-input"
+                  maxlength="100"
+                >
+                <div class="article-number custom-article-label">Eigener Artikel</div>
+              </div>
+              <div class="article-price">€0.00</div>
+            </div>
+            
+            <div class="card-actions">
+              <div class="quantity-controls">
+                <button 
+                  class="btn-quantity btn-decrease"
+                  (click)="decreaseCustomQuantity()"
+                  [disabled]="!customArticle.tempQuantity || customArticle.tempQuantity <= 0"
+                >
+                  −
+                </button>
+                
+                <input 
+                  type="number" 
+                  [(ngModel)]="customArticle.tempQuantity"
+                  min="0"
+                  placeholder="0"
+                  class="quantity-input"
+                >
+                
+                <button 
+                  class="btn-quantity btn-increase"
+                  (click)="increaseCustomQuantity()"
+                >
+                  +
+                </button>
+              </div>
+              
+              <div class="custom-article-actions">
+                <button 
+                  class="btn-save-custom"
+                  (click)="saveCustomArticle()"
+                  [disabled]="!customArticle.article_text || !customArticle.tempQuantity"
+                >
+                  Speichern
+                </button>
+                <button 
+                  class="btn-cancel-custom"
+                  (click)="cancelCustomArticle()"
+                >
+                  Abbrechen
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Desktop Table View -->
+        <div class="products-table desktop-only">
+          <div class="table-header">
+            <div class="col-desc">Artikel</div>
+            <div class="col-price">Preis</div>
+            <div class="col-qty">Menge</div>
+          </div>
+          
+          <div class="table-row custom-article-row">
+            <div class="col-desc">
+              <input 
+                type="text" 
+                [(ngModel)]="customArticle.article_text"
+                placeholder="Artikelbeschreibung eingeben..."
+                class="custom-article-input"
+                maxlength="100"
+              >
+              <div class="article-number custom-article-label">Eigener Artikel</div>
+            </div>
+            <div class="col-price">€0.00</div>
+            <div class="col-qty">
+              <div class="quantity-controls">
+                <button 
+                  class="btn-quantity btn-decrease"
+                  (click)="decreaseCustomQuantity()"
+                  [disabled]="!customArticle.tempQuantity || customArticle.tempQuantity <= 0"
+                >
+                  −
+                </button>
+                
+                <input 
+                  type="number" 
+                  [(ngModel)]="customArticle.tempQuantity"
+                  min="0"
+                  placeholder="0"
+                  class="quantity-input"
+                >
+                
+                <button 
+                  class="btn-quantity btn-increase"
+                  (click)="increaseCustomQuantity()"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="custom-article-actions desktop-actions">
+            <button 
+              class="btn-save-custom"
+              (click)="saveCustomArticle()"
+              [disabled]="!customArticle.article_text || !customArticle.tempQuantity"
+            >
+              Speichern
+            </button>
+            <button 
+              class="btn-cancel-custom"
+              (click)="cancelCustomArticle()"
+            >
+              Abbrechen
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Add Custom Article Button -->
+      <div class="add-custom-article">
+        <button 
+          class="btn-add-custom"
+          (click)="addCustomArticle()"
+          *ngIf="!showCustomArticleForm"
+        >
+          <span class="plus-icon">+</span>
+          Eigenen Artikel hinzufügen
+        </button>
+      </div>
     </div>
 
     <!-- Order Summary -->
@@ -140,7 +284,8 @@
       <h3>Keine Artikel verfügbar</h3>
       <p>Für diesen Kunden sind derzeit keine Artikel verfügbar.</p>
     </div>
-  </div>
+
+
 
 </div>
 

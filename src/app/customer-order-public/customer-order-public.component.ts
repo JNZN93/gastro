@@ -24,6 +24,12 @@ export class CustomerOrderPublicComponent implements OnInit {
   isSubmitting: boolean = false;
   successMessage: string = '';
   showOrderModal: boolean = false;
+  showCustomArticleForm: boolean = false;
+  customArticle: any = {
+    article_text: '',
+    tempQuantity: null,
+    isCustom: true
+  };
 
   ngOnInit() {
     this.route.params.subscribe(params => {
@@ -205,11 +211,12 @@ export class CustomerOrderPublicComponent implements OnInit {
       .map(article => ({
         product_id: article.product_id,
         article_text: article.article_text,
-        article_number: article.article_number,
+        article_number: article.article_number || (article.isCustom ? 'Eigener Artikel' : ''),
         quantity: Number(article.tempQuantity),
         unit_price: Number(article.unit_price_net) || 0,
-        total_price: (Number(article.unit_price_net) || 0) * Number(article.tempQuantity),
-        invoice_date: article.invoice_date
+        total_price: (Number(article.tempQuantity) || 0) * (Number(article.unit_price_net) || 0),
+        invoice_date: article.invoice_date,
+        isCustom: article.isCustom || false
       }));
   }
 
@@ -251,5 +258,68 @@ export class CustomerOrderPublicComponent implements OnInit {
     return this.customerArticlePrices.some(article => 
       article.tempQuantity && article.tempQuantity > 0
     );
+  }
+
+  // Benutzerdefinierte Artikel Methoden
+  addCustomArticle() {
+    this.showCustomArticleForm = true;
+    this.customArticle = {
+      article_text: '',
+      tempQuantity: null,
+      isCustom: true
+    };
+  }
+
+  increaseCustomQuantity() {
+    if (!this.customArticle.tempQuantity || this.customArticle.tempQuantity <= 0) {
+      this.customArticle.tempQuantity = 1;
+    } else {
+      this.customArticle.tempQuantity = Number(this.customArticle.tempQuantity) + 1;
+    }
+  }
+
+  decreaseCustomQuantity() {
+    if (this.customArticle.tempQuantity && this.customArticle.tempQuantity > 0) {
+      this.customArticle.tempQuantity = Number(this.customArticle.tempQuantity) - 1;
+    } else {
+      this.customArticle.tempQuantity = null;
+    }
+  }
+
+  saveCustomArticle() {
+    if (this.customArticle.article_text && this.customArticle.tempQuantity && this.customArticle.tempQuantity > 0) {
+      // Erstelle einen neuen benutzerdefinierten Artikel
+      const newCustomArticle = {
+        product_id: `custom_${Date.now()}`, // Eindeutige ID für benutzerdefinierte Artikel
+        article_text: this.customArticle.article_text,
+        article_number: 'Eigener Artikel',
+        unit_price_net: 0, // Preis ist 0 für benutzerdefinierte Artikel
+        tempQuantity: this.customArticle.tempQuantity,
+        isCustom: true,
+        invoice_date: null
+      };
+
+      // Füge den Artikel zur Liste hinzu
+      this.customerArticlePrices.push(newCustomArticle);
+
+      // Verstecke das Formular
+      this.showCustomArticleForm = false;
+      
+      // Setze das benutzerdefinierte Artikel-Objekt zurück
+      this.customArticle = {
+        article_text: '',
+        tempQuantity: null,
+        isCustom: true
+      };
+    }
+  }
+
+  cancelCustomArticle() {
+    this.showCustomArticleForm = false;
+    this.customArticle = {
+      article_text: '',
+      tempQuantity: null,
+      isCustom: true
+    };
   }
 }
