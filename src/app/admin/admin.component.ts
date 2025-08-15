@@ -8,6 +8,7 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../authentication.service';
 import { UploadLoadingComponent } from "../upload-loading/upload-loading.component";
 import { GlobalService } from '../global.service';
+import { ArtikelDataService } from '../artikel-data.service';
 
 @Component({
   selector: 'app-admin',
@@ -34,18 +35,46 @@ export class AdminComponent implements OnInit {
   selectedCustomerFile: string = '';
   selectedCustomerArticlePricesFile: string = '';
   selectedArticlesFile: string = '';
+  
+  // Globale Artikel für die Überprüfung von custom_field_1
+  globalArtikels: any[] = [];
+  // Alle Artikel inkl. PFAND für die custom_field_1 Überprüfung
+  allArtikels: any[] = [];
 
   constructor(
     private router: Router,
     private orderService: OrderService,
     private http: HttpClient,
     private authService: AuthService,
-    public globalService: GlobalService
+    public globalService: GlobalService,
+    private artikelService: ArtikelDataService
   ) { }
 
   ngOnInit(): void {
     this.checkUserRole();
     this.loadOrders();
+    this.loadGlobalArtikels();
+  }
+
+  // Methode zum Laden der globalen Artikel
+  loadGlobalArtikels(): void {
+    this.artikelService.getData().subscribe({
+      next: (response) => {
+        // Alle Artikel inkl. PFAND für die custom_field_1 Überprüfung
+        this.allArtikels = response;
+        
+        // SCHNELLVERKAUF-Artikel basierend auf Benutzerrolle filtern (für normale Anzeige)
+        this.globalArtikels = this.globalService.filterSchnellverkaufArticles(response);
+        // PFAND-Artikel aus der Hauptliste filtern
+        this.globalArtikels = this.globalArtikels.filter((artikel: any) => artikel.category !== 'PFAND' && artikel.category !== 'SCHNELLVERKAUF');
+        
+        console.log('✅ [ADMIN] Alle Artikel geladen (inkl. PFAND):', this.allArtikels.length);
+        console.log('✅ [ADMIN] Gefilterte Artikel (ohne PFAND):', this.globalArtikels.length);
+      },
+      error: (error) => {
+        console.error('❌ [ADMIN] Fehler beim Laden der globalen Artikel:', error);
+      }
+    });
   }
 
   // Getter für gefilterte Bestellungen
@@ -518,8 +547,79 @@ formatDate(dateString: string): string {
       differentCompanyName: order.company || ''
     };
 
-    // Keine PFAND-Regelung mehr - verwende die ursprünglichen Artikel direkt
-    console.log('📦 [LOAD-ORDER] Keine PFAND-Regelung - verwende ursprüngliche Artikel');
+    // Custom Field 1 Überprüfung: Füge Artikel mit custom_field_1 hinzu
+    console.log('🔍 [LOAD-ORDER] Starte Custom Field 1 Überprüfung...');
+    console.log('🔍 [LOAD-ORDER] Anzahl alle Artikel (inkl. PFAND):', this.allArtikels.length);
+    console.log('🔍 [LOAD-ORDER] Anzahl Bestellartikel:', orderData.items.length);
+    
+    if (this.allArtikels && this.allArtikels.length > 0) {
+      const enhancedItems: any[] = [];
+      
+      // Durchlaufe alle Artikel der Bestellung
+      orderData.items.forEach((item: any, index: number) => {
+        console.log(`\n📦 [LOAD-ORDER] Verarbeite Bestellartikel ${index + 1}:`, JSON.stringify(item, null, 2));
+        
+        // Füge den ursprünglichen Artikel hinzu
+        enhancedItems.push(item);
+        
+        // Suche nach dem Artikel in allen Artikeln (inkl. PFAND) basierend auf article_number
+        console.log(`🔍 [LOAD-ORDER] Suche nach Artikel mit article_number: "${item.article_number}" in allen Artikeln...`);
+        
+        const globalArtikel = this.allArtikels.find(artikel => 
+          artikel.article_number === item.article_number
+        );
+        
+        if (globalArtikel) {
+          console.log(`✅ [LOAD-ORDER] Artikel in globalArtikels gefunden:`, JSON.stringify(globalArtikel, null, 2));
+          console.log(`🔍 [LOAD-ORDER] custom_field_1 Wert: "${globalArtikel.custom_field_1}"`);
+          
+          if (globalArtikel.custom_field_1) {
+            console.log(`🔍 [LOAD-ORDER] Artikel ${item.article_text} (${item.article_number}) hat custom_field_1: ${globalArtikel.custom_field_1}`);
+            
+            // Suche nach dem Artikel, der in custom_field_1 referenziert wird
+            console.log(`🔍 [LOAD-ORDER] Suche nach Artikel mit article_number: "${globalArtikel.custom_field_1}" in allen Artikeln...`);
+            
+            const customFieldArtikel = this.allArtikels.find(artikel => 
+              artikel.article_number === globalArtikel.custom_field_1
+            );
+            
+            if (customFieldArtikel) {
+              console.log(`✅ [LOAD-ORDER] Custom Field Artikel gefunden:`, JSON.stringify(customFieldArtikel, null, 2));
+              
+              // Erstelle einen neuen Artikel-Eintrag mit der gleichen Menge
+              const newItem = {
+                id: customFieldArtikel.id,
+                article_number: customFieldArtikel.article_number,
+                article_text: customFieldArtikel.article_text,
+                sale_price: customFieldArtikel.sale_price,
+                quantity: item.quantity, // Gleiche Menge wie der ursprüngliche Artikel
+                different_price: undefined,
+                description: customFieldArtikel.article_text,
+                cost_price: customFieldArtikel.cost_price || 0,
+                original_price: customFieldArtikel.sale_price
+              };
+              
+              console.log(`✅ [LOAD-ORDER] Neuer Artikel wird hinzugefügt:`, JSON.stringify(newItem, null, 2));
+              
+              enhancedItems.push(newItem);
+              console.log(`✅ [LOAD-ORDER] Artikel ${customFieldArtikel.article_text} (${customFieldArtikel.article_number}) mit Menge ${item.quantity} hinzugefügt`);
+            } else {
+              console.warn(`⚠️ [LOAD-ORDER] Artikel mit custom_field_1 ${globalArtikel.custom_field_1} nicht in globalArtikels gefunden`);
+            }
+          } else {
+            console.log(`ℹ️ [LOAD-ORDER] Artikel ${item.article_text} (${item.article_number}) hat kein custom_field_1`);
+          }
+        } else {
+          console.warn(`⚠️ [LOAD-ORDER] Artikel mit article_number "${item.article_number}" nicht in allen Artikeln gefunden`);
+        }
+      });
+      
+      // Aktualisiere die Items mit den erweiterten Artikeln
+      orderData.items = enhancedItems;
+      console.log(`📦 [LOAD-ORDER] Custom Field 1 Überprüfung abgeschlossen. Artikel vorher: ${orderData.items.length}, nachher: ${enhancedItems.length}`);
+    } else {
+      console.log('⚠️ [LOAD-ORDER] Keine Artikel verfügbar, überspringe Custom Field 1 Überprüfung');
+    }
 
     // Check: Prüfe ob alle Artikel in globalArtikels vorhanden sind
     // Hinweis: globalArtikels sind in der Admin-Komponente nicht verfügbar
