@@ -43,6 +43,10 @@ export class CustomerOrderPublicComponent implements OnInit {
     isCustom: true
   };
 
+  // Gruppierung nach Kategorien
+  groupedArticles: { [category: string]: any[] } = {};
+  orderedCategories: string[] = [];
+
   ngOnInit() {
     this.route.params.subscribe(params => {
       this.customerNumber = params['customerNumber'];
@@ -74,9 +78,11 @@ export class CustomerOrderPublicComponent implements OnInit {
   filterArticlesByProducts() {
     if (this.allProducts.length === 0) {
       console.log('🔍 [PUBLIC-ORDER] Keine Produkte geladen, verwende alle Artikel');
+      // Keine Filterung möglich, aber trotzdem gruppieren
+      this.buildGroups();
       // Loading beenden, da keine weiteren API-Calls mehr erfolgen
       this.isLoading = false;
-      return; // Keine Filterung möglich
+      return;
     }
 
     console.log('🔍 [PUBLIC-ORDER] Filtere Artikel basierend auf Produktliste...');
@@ -110,8 +116,46 @@ export class CustomerOrderPublicComponent implements OnInit {
     
     console.log(`🔍 [PUBLIC-ORDER] Artikel gefiltert: ${originalCount} → ${this.customerArticlePrices.length}`);
     
+    // Nach dem Filtern gruppieren
+    this.buildGroups();
+
     // Loading beenden, da alle Daten geladen und gefiltert wurden
     this.isLoading = false;
+  }
+
+  private normalizeCategoryName(name: any): string {
+    return (name ?? '').toString().trim();
+  }
+
+  private getCategoryForArticle(article: any): string {
+    // Eigene (neu hinzugefügte) Artikel in eigene Kategorie
+    if (article?.isCustom || (typeof article?.product_id === 'string' && article.product_id.startsWith('custom_'))) {
+      return 'NEU HINZUGEFÜGT';
+    }
+    const category = this.normalizeCategoryName(article?.product_category || article?.category || 'Sonstiges');
+    return category || 'Sonstiges';
+  }
+
+  private buildGroups(): void {
+    const groups: { [key: string]: any[] } = {};
+    for (const article of this.customerArticlePrices) {
+      const category = this.getCategoryForArticle(article);
+      if (!groups[category]) groups[category] = [];
+      groups[category].push(article);
+    }
+
+    // Kategorien sortieren (NEU HINZUGEFÜGT nur anzeigen wenn Artikel vorhanden, Rest alphabetisch)
+    const allCategories = Object.keys(groups).sort((a, b) => a.localeCompare(b, 'de', { sensitivity: 'base' }));
+    const NEW_CAT = 'NEU HINZUGEFÜGT';
+    
+    // Nur NEU HINZUGEFÜGT Kategorie anzeigen wenn Artikel vorhanden
+    if (groups[NEW_CAT] && groups[NEW_CAT].length > 0) {
+      this.orderedCategories = allCategories.filter(c => c !== NEW_CAT).concat(NEW_CAT);
+    } else {
+      this.orderedCategories = allCategories;
+    }
+    
+    this.groupedArticles = groups;
   }
 
   loadCustomerData() {
@@ -473,6 +517,9 @@ export class CustomerOrderPublicComponent implements OnInit {
 
       // Füge den Artikel zur Liste hinzu
       this.customerArticlePrices.push(newCustomArticle);
+
+      // Gruppen aktualisieren
+      this.buildGroups();
 
       // Verstecke das Formular
       this.showCustomArticleForm = false;

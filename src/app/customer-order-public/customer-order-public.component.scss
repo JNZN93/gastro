@@ -104,6 +104,66 @@
   }
 }
 
+/* Category Headers */
+.category-title {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  margin: 2rem 0 1rem 0;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+}
+
+/* Desktop Category Headers */
+.category-header {
+  margin: 2rem 0 1rem 0;
+  
+  .category-title {
+    background: linear-gradient(135deg, #2c3e50, #34495e);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(44, 62, 80, 0.3);
+    margin: 0;
+  }
+}
+
+/* Mobile Category Spacing */
+@media (max-width: 768px) {
+  .category-title {
+    margin: 1.5rem 0 0.75rem 0;
+    padding: 0.625rem 1.25rem;
+    font-size: 1rem;
+  }
+  
+  .category-header .category-title {
+    margin: 1.5rem 0 0.75rem 0;
+    padding: 0.625rem 1.25rem;
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .category-title {
+    margin: 1.25rem 0 0.5rem 0;
+    padding: 0.5rem 1rem;
+    font-size: 0.95rem;
+    font-size: 0.95rem;
+  }
+  
+  .category-header .category-title {
+    margin: 1.25rem 0 0.5rem 0;
+    padding: 0.5rem 1rem;
+    font-size: 0.95rem;
+  }
+}
+
 /* Mobile Cards View */
 .products-cards {
   display: none; // Hidden by default on desktop
