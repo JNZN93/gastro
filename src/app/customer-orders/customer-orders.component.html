@@ -882,6 +882,10 @@
       </div>
 
       <div class="article-prices-actions" style="margin-top: 12px; display: flex; gap: 8px; justify-content: flex-end;">
+        <button (click)="showQRCode()" class="qr-code-btn" title="QR-Code für Online-Bestellung anzeigen" style="display: inline-flex; align-items: center; gap: 6px; background: #10b981; color: #fff; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer;">
+          <span class="material-icons">qr_code</span>
+          QR-Code
+        </button>
         <button (click)="printCustomerPrices()" class="print-article-prices-btn" title="Kundenpreise drucken" style="display: inline-flex; align-items: center; gap: 6px; background: #2563eb; color: #fff; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer;">
           <span class="material-icons">print</span>
           Drucken

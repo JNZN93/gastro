@@ -15,6 +15,7 @@ import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import { IndexedDBService } from '../indexeddb.service';
+import * as QRCode from 'qrcode';
 
 @Component({
   selector: 'app-customer-orders',
@@ -2642,7 +2643,7 @@ filteredArtikelData() {
     const totalPages = Math.ceil(prices.length / itemsPerPage);
 
     // Funktion zum Hinzufügen der Kundendaten auf jeder Seite
-    const addCustomerHeader = (pageNumber: number, totalPages: number) => {
+    const addCustomerHeader = async (pageNumber: number, totalPages: number) => {
       // Header mit Kundendaten - kompakt gestaltet
       doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
@@ -2653,6 +2654,11 @@ filteredArtikelData() {
       doc.text(`Kunde: ${customer.last_name_company || ''}`, 14, 25);
       doc.text(`Kundennummer: ${customer.customer_number || ''}`, 14, 32);
       doc.text(`Seite ${pageNumber} von ${totalPages}`, 14, 39);
+      
+      // QR-Code für Online-Bestellung hinzufügen (nur auf der ersten Seite)
+      if (pageNumber === 1) {
+        await this.addQRCodeToPDF(doc, customer.id);
+      }
       
       // Trennlinie unter Header
       doc.setLineWidth(0.5);
@@ -2737,6 +2743,175 @@ filteredArtikelData() {
         doc.save(`Kundenpreise_${customer.customer_number || ''}.pdf`);
       }
     });
+  }
+
+  // QR-Code separat anzeigen (neue Methode)
+  async showQRCode(): Promise<void> {
+    if (!this.globalService.selectedCustomerForOrders) {
+      alert('Bitte wählen Sie zuerst einen Kunden aus.');
+      return;
+    }
+
+    try {
+      const customer = this.globalService.selectedCustomerForOrders;
+      console.log('🔍 [QR-CODE] Generiere QR-Code für Kunde:', customer.id);
+      
+      // URL für die öffentliche Bestellseite generieren
+      const baseUrl = window.location.origin;
+      const orderUrl = `${baseUrl}/customer-order/${customer.id}`;
+      console.log('🔍 [QR-CODE] Generierte URL:', orderUrl);
+      
+      // QR-Code als Data URL generieren
+      const qrCodeDataUrl = await QRCode.toDataURL(orderUrl, {
+        width: 200,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        }
+      });
+      
+      // QR-Code in einem neuen Fenster anzeigen
+      const qrWindow = window.open('', '_blank', 'width=400,height=500');
+      if (qrWindow) {
+        qrWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>QR-Code für Online-Bestellung</title>
+            <style>
+              body { 
+                font-family: Arial, sans-serif; 
+                text-align: center; 
+                padding: 20px;
+                background: #f5f5f5;
+              }
+              .qr-container {
+                background: white;
+                padding: 30px;
+                border-radius: 10px;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+                max-width: 350px;
+                margin: 0 auto;
+              }
+              .qr-code {
+                margin: 20px 0;
+              }
+              .customer-info {
+                margin: 20px 0;
+                padding: 15px;
+                background: #f8f9fa;
+                border-radius: 8px;
+                border-left: 4px solid #007bff;
+              }
+              .instructions {
+                margin: 20px 0;
+                color: #666;
+                font-size: 14px;
+              }
+              .url {
+                background: #e9ecef;
+                padding: 10px;
+                border-radius: 5px;
+                font-family: monospace;
+                font-size: 12px;
+                word-break: break-all;
+                margin: 15px 0;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="qr-container">
+              <h2>🛒 Online Bestellung</h2>
+              <div class="customer-info">
+                <strong>Kunde:</strong> ${customer.last_name_company || ''}<br>
+                <strong>Kundennummer:</strong> ${customer.customer_number || ''}
+              </div>
+              <div class="qr-code">
+                <img src="${qrCodeDataUrl}" alt="QR-Code für Online-Bestellung" style="max-width: 200px;">
+              </div>
+              <div class="instructions">
+                <strong>Anleitung:</strong><br>
+                1. QR-Code mit dem Handy scannen<br>
+                2. Oder den Link unten kopieren<br>
+                3. Direkt auf der Webseite bestellen
+              </div>
+              <div class="url">
+                ${orderUrl}
+              </div>
+              <p><small>QR-Code generiert am ${new Date().toLocaleString('de-DE')}</small></p>
+            </div>
+          </body>
+          </html>
+        `);
+        qrWindow.document.close();
+      }
+      
+    } catch (error: any) {
+      console.error('❌ [QR-CODE] Fehler beim Generieren des QR-Codes:', error);
+      alert('Fehler beim Generieren des QR-Codes: ' + (error?.message || 'Unbekannter Fehler'));
+    }
+  }
+
+  // QR-Code für Online-Bestellung zum PDF hinzufügen
+  private async addQRCodeToPDF(doc: any, customerId: string): Promise<void> {
+    try {
+      console.log('🔍 [QR-CODE] Starte QR-Code Generierung für Kunde:', customerId);
+      
+      // URL für die öffentliche Bestellseite generieren
+      const baseUrl = window.location.origin;
+      const orderUrl = `${baseUrl}/customer-order/${customerId}`;
+      console.log('🔍 [QR-CODE] Generierte URL:', orderUrl);
+      
+      // QR-Code als Data URL generieren
+      console.log('🔍 [QR-CODE] Generiere QR-Code...');
+      const qrCodeDataUrl = await QRCode.toDataURL(orderUrl, {
+        width: 80,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        }
+      });
+      console.log('🔍 [QR-CODE] QR-Code erfolgreich generiert, Länge:', qrCodeDataUrl.length);
+      
+      // QR-Code rechts oben im Header platzieren (größer und sichtbarer)
+      console.log('🔍 [QR-CODE] Füge QR-Code ins PDF ein...');
+      
+      // Position: Rechts oben, aber garantiert sichtbar
+      const qrX = 150;  // X-Position (von links)
+      const qrY = 20;   // Y-Position (von oben)
+      const qrSize = 60; // Größe des QR-Codes
+      
+      // Rahmen um den QR-Code zeichnen (damit er garantiert sichtbar ist)
+      doc.setDrawColor(0, 0, 0); // Schwarze Farbe
+      doc.setLineWidth(2); // Dicke Linie
+      doc.rect(qrX - 5, qrY - 5, qrSize + 10, qrSize + 10); // Rahmen um QR-Code
+      
+      doc.addImage(qrCodeDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
+      console.log('🔍 [QR-CODE] QR-Code erfolgreich ins PDF eingefügt bei Position:', qrX, qrY, 'Größe:', qrSize);
+      
+      // Beschriftung unter dem QR-Code
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('ONLINE BESTELLEN', qrX, qrY + qrSize + 15);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text('QR-Code scannen', qrX, qrY + qrSize + 25);
+      doc.text('Direkt bestellen', qrX, qrY + qrSize + 35);
+      console.log('🔍 [QR-CODE] Beschriftung hinzugefügt');
+      
+    } catch (error: any) {
+      console.error('❌ [QR-CODE] Fehler beim Generieren des QR-Codes:', error);
+      console.error('❌ [QR-CODE] Fehler Details:', error?.message, error?.stack);
+      
+      // Fallback: Text statt QR-Code
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Online bestellen:', 160, 25);
+      doc.text('QR-Code verfügbar', 160, 30);
+      console.log('🔍 [QR-CODE] Fallback-Text hinzugefügt');
+    }
   }
 
   addArticleFromPricesModal(customerPrice: any) {
