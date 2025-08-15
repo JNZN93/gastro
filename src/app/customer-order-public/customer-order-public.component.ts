@@ -127,7 +127,20 @@ export class CustomerOrderPublicComponent implements OnInit {
         article_number: article.article_number,
         quantity: Number(article.tempQuantity),
         unit_price: Number(article.unit_price_net) || 0,
-        total_price: (Number(article.unit_price_net) || 0) * Number(article.tempQuantity)
+        total_price: (Number(article.unit_price_net) || 0) * Number(article.tempQuantity),
+        // Alle zusätzlichen Felder aus der API-Response hinzufügen
+        category: article.category,
+        created_at: article.created_at,
+        customer_id: article.customer_id,
+        id: article.id,
+        invoice_date: article.invoice_date,
+        invoice_id: article.invoice_id,
+        product_category: article.product_category,
+        product_database_id: article.product_database_id,
+        product_name: article.product_name,
+        unit_price_gross: article.unit_price_gross,
+        vat_percentage: article.vat_percentage,
+        updated_at: article.updated_at
       }));
 
     if (itemsWithQuantity.length === 0) {
@@ -143,7 +156,7 @@ export class CustomerOrderPublicComponent implements OnInit {
       customer_country_code: this.customer._country_code || 'DE',
       customer_postal_code: this.customer.postal_code || '',
       customer_city: this.customer.city || '',
-      different_company_name: this.customer.last_name_company || '',
+      different_company_name: null,
       status: 'open',
       customer_notes: '',
       shipping_address: '',
@@ -155,16 +168,43 @@ export class CustomerOrderPublicComponent implements OnInit {
     const completeOrder = {
       orderData: orderData,
       orderItems: itemsWithQuantity.map(item => ({
-        id: item.product_id,
+        article_number: item.product_id,
         quantity: item.quantity,
         sale_price: item.unit_price,
-        description: item.article_text
+        description: item.article_text,
+        // Alle zusätzlichen Felder aus der API-Response hinzufügen
+        article_text: item.article_text,
+        category: item.category,
+        created_at: item.created_at,
+        customer_id: item.customer_id,
+        article_id: item.id,
+        invoice_date: item.invoice_date,
+        invoice_id: item.invoice_id,
+        product_category: item.product_category,
+        id: item.product_database_id,
+        product_name: item.product_name,
+        unit_price_gross: item.unit_price_gross,
+        unit_price_net: item.unit_price,
+        vat_percentage: item.vat_percentage,
+        updated_at: item.updated_at,
+        total_price: item.total_price
       }))
     };
+
+    // 🔍 PAYLOAD LOGGING - Bestellung wird abgesendet
+    console.log('🚀 [PUBLIC-ORDER] Bestellung wird abgesendet:');
+    console.log('📋 [PUBLIC-ORDER] Vollständiges Order-Payload:', JSON.stringify(completeOrder, null, 2));
+    console.log('💰 [PUBLIC-ORDER] Gesamtpreis:', completeOrder.orderData.total_price);
+    console.log('📦 [PUBLIC-ORDER] Anzahl Artikel:', completeOrder.orderItems.length);
+    console.log('👤 [PUBLIC-ORDER] Kunde:', completeOrder.orderData.customer_number);
+    console.log('📅 [PUBLIC-ORDER] Lieferdatum:', completeOrder.orderData.delivery_date);
+    console.log('📍 [PUBLIC-ORDER] Lieferart:', completeOrder.orderData.fulfillment_type);
+    console.log('🌐 [PUBLIC-ORDER] Endpoint:', 'https://multi-mandant-ecommerce.onrender.com/api/orders/without-auth');
 
     // Verwende den neuen Endpoint ohne Auth
     this.http.post('https://multi-mandant-ecommerce.onrender.com/api/orders/without-auth', completeOrder).subscribe({
       next: (response: any) => {
+        console.log('✅ [PUBLIC-ORDER] Bestellung erfolgreich abgesendet! Response:', response);
         this.successMessage = 'Bestellung erfolgreich eingereicht! Vielen Dank für Ihre Bestellung.';
         
         // Alle Mengen zurücksetzen
@@ -180,7 +220,8 @@ export class CustomerOrderPublicComponent implements OnInit {
         }, 3000);
       },
       error: (error: any) => {
-        console.error('Fehler beim Absenden der Bestellung:', error);
+        console.error('❌ [PUBLIC-ORDER] Fehler beim Absenden der Bestellung:', error);
+        console.error('❌ [PUBLIC-ORDER] Fehler Details:', error?.message, error?.status, error?.statusText);
         alert('Fehler beim Absenden der Bestellung. Bitte versuchen Sie es erneut.');
         this.isSubmitting = false;
       }
@@ -216,7 +257,19 @@ export class CustomerOrderPublicComponent implements OnInit {
         unit_price: Number(article.unit_price_net) || 0,
         total_price: (Number(article.tempQuantity) || 0) * (Number(article.unit_price_net) || 0),
         invoice_date: article.invoice_date,
-        isCustom: article.isCustom || false
+        isCustom: article.isCustom || false,
+        // Alle zusätzlichen Felder aus der API-Response hinzufügen
+        category: article.category,
+        created_at: article.created_at,
+        customer_id: article.customer_id,
+        id: article.id,
+        invoice_id: article.invoice_id,
+        product_category: article.product_category,
+        product_database_id: article.product_database_id,
+        product_name: article.product_name,
+        unit_price_gross: article.unit_price_gross,
+        vat_percentage: article.vat_percentage,
+        updated_at: article.updated_at
       }));
   }
 

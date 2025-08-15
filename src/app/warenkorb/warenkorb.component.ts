@@ -74,7 +74,7 @@ export class WarenkorbComponent implements OnInit {
     });
     
     // Kundendaten hinzufügen, falls ein Kunde ausgewählt wurde
-    let customerData = {};
+    let customerData: any = {};
     if (this.globalService.selectedCustomer) {
       customerData = {
         customer_id: this.globalService.selectedCustomer.id,
@@ -82,7 +82,8 @@ export class WarenkorbComponent implements OnInit {
         customer_name: this.globalService.selectedCustomer.last_name_company,
         customer_addition: this.globalService.selectedCustomer.name_addition,
         customer_city: this.globalService.selectedCustomer.city,
-        customer_email: this.globalService.selectedCustomer.email
+        customer_email: this.globalService.selectedCustomer.email,
+        different_company_name: this.globalService.selectedCustomer.last_name_company || ''
       };
     }
     
@@ -99,8 +100,22 @@ export class WarenkorbComponent implements OnInit {
   };
     const getToken = localStorage.getItem("token");
 
+    // 🔍 PAYLOAD LOGGING - Bestellung wird abgesendet
+    console.log('🚀 [WARENKORB] Bestellung wird abgesendet:');
+    console.log('📋 [WARENKORB] Vollständiges Order-Payload:', JSON.stringify(completeOrder, null, 2));
+    console.log('💰 [WARENKORB] Gesamtpreis:', completeOrder.orderData.total_price);
+    console.log('📦 [WARENKORB] Anzahl Artikel:', completeOrder.orderItems.length);
+    console.log('👤 [WARENKORB] Kunde:', customerData.customer_id ? `ID: ${customerData.customer_id}` : 'Kein Kunde ausgewählt');
+    console.log('📅 [WARENKORB] Lieferdatum:', completeOrder.orderData.delivery_date);
+    console.log('📍 [WARENKORB] Lieferart:', completeOrder.orderData.fulfillment_type);
+    console.log('🏠 [WARENKORB] Lieferadresse:', completeOrder.orderData.shipping_address);
+    console.log('📝 [WARENKORB] Anmerkungen:', completeOrder.orderData.customer_notes);
+    console.log('🔑 [WARENKORB] Token vorhanden:', !!getToken);
+    console.log('🌐 [WARENKORB] Endpoint:', 'https://multi-mandant-ecommerce.onrender.com/api/orders');
+
     this.orderService.placeOrder(completeOrder, getToken).subscribe({
       next: (response) => {
+        console.log('✅ [WARENKORB] Bestellung erfolgreich abgesendet! Response:', response);
         this.showOrderCompletedDialog();
         // Warenkorb leeren
         this.globalService.warenkorb = [];
@@ -110,6 +125,8 @@ export class WarenkorbComponent implements OnInit {
         this.globalService.clearSelectedCustomer();
       },
       error: (error) => {
+        console.error('❌ [WARENKORB] Fehler beim Absenden der Bestellung:', error);
+        console.error('❌ [WARENKORB] Fehler Details:', error?.message, error?.status, error?.statusText);
         this.showOrderErrorDialog();
         // Ausgewählten Kunden auch bei Fehler löschen
         this.globalService.clearSelectedCustomer();

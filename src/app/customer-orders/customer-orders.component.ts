@@ -2109,6 +2109,25 @@ filteredArtikelData() {
 
     const token = localStorage.getItem('token');
 
+    // 🔍 PAYLOAD LOGGING - Bestellung wird abgesendet
+    console.log('🚀 [CUSTOMER-ORDERS] Bestellung wird abgesendet:');
+    console.log('📋 [CUSTOMER-ORDERS] Vollständiges Order-Payload:', JSON.stringify(completeOrder, null, 2));
+    console.log('💰 [CUSTOMER-ORDERS] Gesamtpreis:', completeOrder.orderData.total_price);
+    console.log('📦 [CUSTOMER-ORDERS] Anzahl Artikel:', completeOrder.orderItems.length);
+    console.log('👤 [CUSTOMER-ORDERS] Kunde:', completeOrder.orderData.customer_name);
+    console.log('🆔 [CUSTOMER-ORDERS] Kunden-ID:', completeOrder.orderData.customer_id);
+    console.log('📅 [CUSTOMER-ORDERS] Bestelldatum:', completeOrder.orderData.order_date || 'Nicht gesetzt');
+    console.log('🚚 [CUSTOMER-ORDERS] Lieferdatum:', completeOrder.orderData.delivery_date || 'Nicht gesetzt');
+    console.log('🏢 [CUSTOMER-ORDERS] Firmenname geändert:', !!completeOrder.orderData.different_company_name);
+    console.log('🔑 [CUSTOMER-ORDERS] Token vorhanden:', !!token);
+    console.log('🌐 [CUSTOMER-ORDERS] Endpoint:', 'https://multi-mandant-ecommerce.onrender.com/api/orders');
+    console.log('📊 [CUSTOMER-ORDERS] Artikel-Details:', completeOrder.orderItems.map(item => ({
+      artikel: item.article_text,
+      menge: item.quantity,
+      preis: item.different_price !== undefined ? item.different_price : item.sale_price,
+      beschreibung: item.description
+    })));
+
     console.log('💾 [SAVE-ORDER] Auftrag wird gespeichert:', completeOrder);
     
     fetch('https://multi-mandant-ecommerce.onrender.com/api/orders', {

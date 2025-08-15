@@ -1847,6 +1847,25 @@ export class EmployeesComponent implements OnInit, OnDestroy {
 
     const token = localStorage.getItem('token');
 
+    // 🔍 PAYLOAD LOGGING - Bestellung wird abgesendet
+    console.log('🚀 [EMPLOYEES] Bestellung wird abgesendet:');
+    console.log('📋 [EMPLOYEES] Vollständiges Order-Payload:', JSON.stringify(completeOrder, null, 2));
+    console.log('💰 [EMPLOYEES] Gesamtpreis:', completeOrder.orderData.total_price);
+    console.log('📦 [EMPLOYEES] Anzahl Artikel:', completeOrder.orderItems.length);
+    console.log('👤 [EMPLOYEES] Kunde:', completeOrder.orderData.customer_name);
+    console.log('🆔 [EMPLOYEES] Kunden-ID:', completeOrder.orderData.customer_id);
+    console.log('📅 [EMPLOYEES] Bestelldatum:', completeOrder.orderData.order_date || 'Nicht gesetzt');
+    console.log('🚚 [EMPLOYEES] Lieferdatum:', completeOrder.orderData.delivery_date || 'Nicht gesetzt');
+    console.log('🏢 [EMPLOYEES] Firmenname geändert:', !!completeOrder.orderData.different_company_name);
+    console.log('🔑 [EMPLOYEES] Token vorhanden:', !!token);
+    console.log('🌐 [EMPLOYEES] Endpoint:', 'https://multi-mandant-ecommerce.onrender.com/api/orders');
+    console.log('📊 [EMPLOYEES] Artikel-Details:', completeOrder.orderItems.map(item => ({
+      artikel: item.article_text,
+      menge: item.quantity,
+      preis: item.different_price !== undefined ? item.different_price : item.sale_price,
+      beschreibung: item.description
+    })));
+
     console.log('💾 [SAVE-ORDER] Auftrag wird gespeichert:', completeOrder);
     
     fetch('https://multi-mandant-ecommerce.onrender.com/api/orders', {
