@@ -2666,6 +2666,11 @@ filteredArtikelData() {
       '' // Leere Menge zum Ausfüllen
     ]);
 
+    // Füge 10 leere Zeilen am Ende hinzu für handschriftliche Einträge
+    for (let i = 0; i < 10; i++) {
+      tableData.push(['', '', '']); // Leere Artikel, leere Artikelnummer, leere Menge
+    }
+
     // Excel-ähnliche Tabelle mit jsPDF-AutoTable
     import('jspdf-autotable').then(({ default: autoTable }) => {
       // Alle Seiten manuell erstellen
