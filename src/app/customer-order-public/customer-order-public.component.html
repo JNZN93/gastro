@@ -84,13 +84,30 @@
           </div>
           <div class="col-price">€{{ toNumber(article.unit_price_net).toFixed(2) }}</div>
           <div class="col-qty">
-            <input 
-              type="number" 
-              [(ngModel)]="article.tempQuantity"
-              min="0"
-              placeholder="0"
-              class="quantity-input"
-            >
+            <div class="quantity-controls">
+              <button 
+                class="btn-quantity btn-decrease"
+                (click)="decreaseQuantity(article)"
+                [disabled]="!article.tempQuantity || article.tempQuantity <= 1"
+              >
+                −
+              </button>
+              
+              <input 
+                type="number" 
+                [(ngModel)]="article.tempQuantity"
+                min="0"
+                placeholder="0"
+                class="quantity-input"
+              >
+              
+              <button 
+                class="btn-quantity btn-increase"
+                (click)="increaseQuantity(article)"
+              >
+                +
+              </button>
+            </div>
           </div>
         </div>
       </div>
