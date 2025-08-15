@@ -25,6 +25,17 @@ export class CustomerOrderPublicComponent implements OnInit {
   successMessage: string = '';
   showOrderModal: boolean = false;
   showCustomArticleForm: boolean = false;
+  showResponseModal: boolean = false;
+  responseModalData: {
+    isSuccess: boolean;
+    title: string;
+    message: string;
+    details?: string;
+  } = {
+    isSuccess: false,
+    title: '',
+    message: ''
+  };
   customArticle: any = {
     article_text: '',
     tempQuantity: null,
@@ -205,7 +216,6 @@ export class CustomerOrderPublicComponent implements OnInit {
     this.http.post('https://multi-mandant-ecommerce.onrender.com/api/orders/without-auth', completeOrder).subscribe({
       next: (response: any) => {
         console.log('✅ [PUBLIC-ORDER] Bestellung erfolgreich abgesendet! Response:', response);
-        this.successMessage = 'Bestellung erfolgreich eingereicht! Vielen Dank für Ihre Bestellung.';
         
         // Alle Mengen zurücksetzen
         this.customerArticlePrices.forEach(article => {
@@ -214,16 +224,27 @@ export class CustomerOrderPublicComponent implements OnInit {
         
         this.isSubmitting = false;
         
-        // Nach 3 Sekunden zur Bestätigungsseite weiterleiten
-        setTimeout(() => {
-          this.router.navigate(['/']);
-        }, 3000);
+        // Response-Modal bei Erfolg anzeigen
+        this.showResponseModalSuccess();
       },
       error: (error: any) => {
         console.error('❌ [PUBLIC-ORDER] Fehler beim Absenden der Bestellung:', error);
         console.error('❌ [PUBLIC-ORDER] Fehler Details:', error?.message, error?.status, error?.statusText);
-        alert('Fehler beim Absenden der Bestellung. Bitte versuchen Sie es erneut.');
+        
         this.isSubmitting = false;
+        
+        // Response-Modal bei Fehler anzeigen
+        let errorMessage = 'Ein unbekannter Fehler ist aufgetreten. Bitte versuchen Sie es erneut.';
+        
+        if (error?.status === 400) {
+          errorMessage = 'Ungültige Bestelldaten. Bitte überprüfen Sie Ihre Eingaben.';
+        } else if (error?.status === 500) {
+          errorMessage = 'Server-Fehler. Bitte versuchen Sie es später erneut.';
+        } else if (error?.message) {
+          errorMessage = error.message;
+        }
+        
+        this.showResponseModalError(errorMessage);
       }
     });
   }
@@ -239,6 +260,36 @@ export class CustomerOrderPublicComponent implements OnInit {
 
   closeOrderModal() {
     this.showOrderModal = false;
+  }
+
+  showResponseModalSuccess() {
+    this.responseModalData = {
+      isSuccess: true,
+      title: 'Bestellung erfolgreich! 🎉',
+      message: 'Ihre Bestellung wurde erfolgreich eingereicht und wird von unserem Team bearbeitet.',
+      details: 'Sie erhalten in Kürze eine Bestätigung per E-Mail. Vielen Dank für Ihr Vertrauen!'
+    };
+    this.showResponseModal = true;
+  }
+
+  showResponseModalError(errorMessage: string) {
+    this.responseModalData = {
+      isSuccess: false,
+      title: 'Fehler beim Absenden ❌',
+      message: 'Es ist ein Fehler beim Absenden Ihrer Bestellung aufgetreten.',
+      details: errorMessage
+    };
+    this.showResponseModal = true;
+  }
+
+  closeResponseModal() {
+    this.showResponseModal = false;
+    // Bei Erfolg zur Startseite weiterleiten
+    if (this.responseModalData.isSuccess) {
+      setTimeout(() => {
+        this.router.navigate(['/']);
+      }, 1000);
+    }
   }
 
   confirmAndSubmitOrder() {
