@@ -23,6 +23,7 @@ export class CustomerOrderPublicComponent implements OnInit {
   error: string = '';
   isSubmitting: boolean = false;
   successMessage: string = '';
+  showOrderModal: boolean = false;
 
   ngOnInit() {
     this.route.params.subscribe(params => {
@@ -184,6 +185,34 @@ export class CustomerOrderPublicComponent implements OnInit {
     this.router.navigate(['/']);
   }
 
+  // Modal-Methoden
+  showOrderConfirmation() {
+    this.showOrderModal = true;
+  }
+
+  closeOrderModal() {
+    this.showOrderModal = false;
+  }
+
+  confirmAndSubmitOrder() {
+    this.closeOrderModal();
+    this.submitOrder();
+  }
+
+  getOrderItems() {
+    return this.customerArticlePrices
+      .filter(article => article.tempQuantity && article.tempQuantity > 0)
+      .map(article => ({
+        product_id: article.product_id,
+        article_text: article.article_text,
+        article_number: article.article_number,
+        quantity: Number(article.tempQuantity),
+        unit_price: Number(article.unit_price_net) || 0,
+        total_price: (Number(article.unit_price_net) || 0) * Number(article.tempQuantity),
+        invoice_date: article.invoice_date
+      }));
+  }
+
   // Plus-Button: Menge erhöhen
   increaseQuantity(article: any) {
     if (!article.tempQuantity || article.tempQuantity <= 0) {
@@ -195,7 +224,7 @@ export class CustomerOrderPublicComponent implements OnInit {
 
   // Minus-Button: Menge verringern
   decreaseQuantity(article: any) {
-    if (article.tempQuantity && article.tempQuantity > 1) {
+    if (article.tempQuantity && article.tempQuantity > 0) {
       article.tempQuantity = Number(article.tempQuantity) - 1;
     } else {
       article.tempQuantity = null;

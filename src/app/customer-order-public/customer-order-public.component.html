@@ -27,7 +27,7 @@
 
     <!-- Product Catalog -->
     <div *ngIf="!isLoading && !error && customerArticlePrices.length > 0" class="catalog">
-      <h2>Verfügbare Artikel</h2>
+      <h2>Deine Artikel</h2>
       
       <!-- Mobile Cards View -->
       <div class="products-cards">
@@ -36,6 +36,7 @@
             <div class="article-info">
               <div class="article-text">{{ article.article_text }}</div>
               <div class="article-number">Art.-Nr.: {{ article.article_number || article.product_id }}</div>
+              <div class="article-date" *ngIf="article.invoice_date">Zuletzt gekauft am: {{ article.invoice_date | date:'dd.MM.yyyy' }}</div>
             </div>
             <div class="article-price">€{{ toNumber(article.unit_price_net).toFixed(2) }}</div>
           </div>
@@ -45,7 +46,7 @@
               <button 
                 class="btn-quantity btn-decrease"
                 (click)="decreaseQuantity(article)"
-                [disabled]="!article.tempQuantity || article.tempQuantity <= 1"
+                [disabled]="!article.tempQuantity || article.tempQuantity <= 0"
               >
                 −
               </button>
@@ -81,17 +82,18 @@
           <div class="col-desc">
             <div class="article-text">{{ article.article_text }}</div>
             <div class="article-number">Art.-Nr.: {{ article.article_number || article.product_id }}</div>
+            <div class="article-date" *ngIf="article.invoice_date">Zuletzt gekauft am: {{ article.invoice_date | date:'dd.MM.yyyy' }}</div>
           </div>
           <div class="col-price">€{{ toNumber(article.unit_price_net).toFixed(2) }}</div>
           <div class="col-qty">
             <div class="quantity-controls">
-              <button 
-                class="btn-quantity btn-decrease"
-                (click)="decreaseQuantity(article)"
-                [disabled]="!article.tempQuantity || article.tempQuantity <= 1"
-              >
-                −
-              </button>
+                          <button 
+              class="btn-quantity btn-decrease"
+              (click)="decreaseQuantity(article)"
+              [disabled]="!article.tempQuantity || article.tempQuantity <= 0"
+            >
+              −
+            </button>
               
               <input 
                 type="number" 
@@ -124,11 +126,10 @@
       <div class="order-actions">
         <button 
           class="btn-submit"
-          (click)="submitOrder()"
-          [disabled]="isSubmitting || !hasAnyQuantity()"
+          (click)="showOrderConfirmation()"
+          [disabled]="!hasAnyQuantity()"
         >
-          <span *ngIf="!isSubmitting">Bestellung absenden</span>
-          <span *ngIf="isSubmitting">Wird gesendet...</span>
+          Bestellung überprüfen
         </button>
       </div>
     </div>
@@ -147,4 +148,73 @@
       <p>&copy; 2024 Gastro Bestellsystem. Alle Rechte vorbehalten.</p>
     </div>
   </footer>
+</div>
+
+<!-- Fullscreen Order Confirmation Modal -->
+<div *ngIf="showOrderModal" class="order-confirmation-modal">
+  <div class="modal-content">
+    <!-- Modal Header -->
+    <div class="modal-header">
+      <h2>Bestellung bestätigen</h2>
+      <button class="btn-close" (click)="closeOrderModal()">×</button>
+    </div>
+    
+    <!-- Modal Body -->
+    <div class="modal-body">
+      <!-- Customer Info -->
+      <div class="customer-section">
+        <h3>Kundeninformationen</h3>
+        <div class="customer-details">
+          <div class="detail-row">
+            <span class="label">Kundennummer:</span>
+            <span class="value">{{ customer?.customer_number }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Firma:</span>
+            <span class="value">{{ customer?.last_name_company }}</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Order Items -->
+      <div class="order-items-section">
+        <h3>Bestellte Artikel</h3>
+        <div class="order-items">
+          <div *ngFor="let item of getOrderItems()" class="order-item">
+            <div class="item-info">
+              <div class="item-name">{{ item.article_text }}</div>
+              <div class="item-number">Art.-Nr.: {{ item.article_number || item.product_id }}</div>
+              <div class="item-date" *ngIf="item.invoice_date">Zuletzt gekauft am: {{ item.invoice_date | date:'dd.MM.yyyy' }}</div>
+            </div>
+            <div class="item-details">
+              <div class="item-quantity">{{ item.quantity }}x</div>
+              <div class="item-price">€{{ item.unit_price.toFixed(2) }}</div>
+              <div class="item-total">€{{ item.total_price.toFixed(2) }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Order Summary -->
+      <div class="order-summary-section">
+        <div class="summary-row">
+          <span class="label">Gesamtpreis:</span>
+          <span class="value total-price">€{{ toNumber(getOrderTotal()).toFixed(2) }}</span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Modal Footer -->
+    <div class="modal-footer">
+      <button class="btn-cancel" (click)="closeOrderModal()">Abbrechen</button>
+      <button 
+        class="btn-confirm" 
+        (click)="confirmAndSubmitOrder()"
+        [disabled]="isSubmitting"
+      >
+        <span *ngIf="!isSubmitting">Bestellung bestätigen & absenden</span>
+        <span *ngIf="isSubmitting">Wird gesendet...</span>
+      </button>
+    </div>
+  </div>
 </div>

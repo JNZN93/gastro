@@ -18,6 +18,7 @@ export class AppComponent implements OnInit, OnDestroy {
   title = 'Gastro Depot Worms';
   isCategoryDetailRoute = false;
   shouldHideFooter = false;
+  shouldHideHeader = false;
   private routerSubscription?: Subscription;
 
   constructor(public globalService: GlobalService, private router: Router) {}
@@ -38,6 +39,9 @@ export class AppComponent implements OnInit, OnDestroy {
                                 event.url.includes('/user-management') ||
                                 event.url.includes('/route-planning') ||
                                 event.url.includes('/reports');
+        
+        // Header auf customer-order Route ausblenden
+        this.shouldHideHeader = event.url.includes('/customer-order/');
       });
   }
 
