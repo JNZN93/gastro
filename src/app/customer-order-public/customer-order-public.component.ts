@@ -19,6 +19,7 @@ export class CustomerOrderPublicComponent implements OnInit {
   customerNumber: string = '';
   customer: any = null;
   customerArticlePrices: any[] = [];
+  allProducts: any[] = []; // Neue Eigenschaft für alle Produkte
   isLoading: boolean = true;
   error: string = '';
   isSubmitting: boolean = false;
@@ -47,6 +48,70 @@ export class CustomerOrderPublicComponent implements OnInit {
       this.customerNumber = params['customerNumber'];
       this.loadCustomerData();
     });
+  }
+
+  // Neue Methode zum Laden aller Produkte
+  loadAllProducts() {
+    console.log('🔍 [PUBLIC-ORDER] Lade alle Produkte von api/products...');
+    
+    this.http.get('https://multi-mandant-ecommerce.onrender.com/api/products').subscribe({
+      next: (products: any) => {
+        this.allProducts = products;
+        console.log('🔍 [PUBLIC-ORDER] Alle Produkte geladen:', this.allProducts.length);
+        
+        // Nach dem Laden der Produkte die Artikel filtern
+        this.filterArticlesByProducts();
+      },
+      error: (error: any) => {
+        console.error('❌ [PUBLIC-ORDER] Fehler beim Laden der Produkte:', error);
+        // Bei Fehler trotzdem mit den ursprünglichen Artikeln fortfahren
+        this.filterArticlesByProducts();
+      }
+    });
+  }
+
+  // Neue Methode zum Filtern der Artikel basierend auf der Produktliste
+  filterArticlesByProducts() {
+    if (this.allProducts.length === 0) {
+      console.log('🔍 [PUBLIC-ORDER] Keine Produkte geladen, verwende alle Artikel');
+      // Loading beenden, da keine weiteren API-Calls mehr erfolgen
+      this.isLoading = false;
+      return; // Keine Filterung möglich
+    }
+
+    console.log('🔍 [PUBLIC-ORDER] Filtere Artikel basierend auf Produktliste...');
+    
+    // Erstelle ein Set aller verfügbaren article_numbers aus der Produktliste
+    const availableArticleNumbers = new Set(
+      this.allProducts.map(product => product.article_number)
+    );
+    
+    console.log('🔍 [PUBLIC-ORDER] Verfügbare Artikelnummern:', Array.from(availableArticleNumbers));
+    
+    // Filtere die customerArticlePrices
+    const originalCount = this.customerArticlePrices.length;
+    this.customerArticlePrices = this.customerArticlePrices.filter(article => {
+      const productId = article.product_id;
+      
+      // Benutzerdefinierte Artikel (custom_*) immer anzeigen
+      if (productId && productId.toString().startsWith('custom_')) {
+        console.log(`🔍 [PUBLIC-ORDER] Benutzerdefinierter Artikel beibehalten: ${article.article_text}`);
+        return true;
+      }
+      
+      const isAvailable = availableArticleNumbers.has(productId);
+      
+      if (!isAvailable) {
+        console.log(`🔍 [PUBLIC-ORDER] Artikel gefiltert: ${article.article_text} (product_id: ${productId})`);
+      }
+      
+      return isAvailable;
+    });
+    
+    console.log(`🔍 [PUBLIC-ORDER] Artikel gefiltert: ${originalCount} → ${this.customerArticlePrices.length}`);
+    
+    // Loading beenden, da alle Daten geladen und gefiltert wurden
+    this.isLoading = false;
   }
 
   loadCustomerData() {
@@ -103,11 +168,13 @@ export class CustomerOrderPublicComponent implements OnInit {
             
             console.log('🔍 [PUBLIC-ORDER] Kunde erstellt:', this.customer);
             console.log('🔍 [PUBLIC-ORDER] Artikel geladen:', this.customerArticlePrices.length);
+            
+            // Nach dem Laden der Kundendaten alle Produkte laden und Artikel filtern
+            this.loadAllProducts();
           } else {
             this.error = 'Ungültige API-Response: Artikel fehlen';
+            this.isLoading = false;
           }
-          
-          this.isLoading = false;
         },
         error: (error: any) => {
           console.error('❌ [PUBLIC-ORDER] Fehler beim Laden der Daten:', error);
