@@ -2754,7 +2754,7 @@ filteredArtikelData() {
 
     try {
       const customer = this.globalService.selectedCustomerForOrders;
-      console.log('🔍 [QR-CODE] Generiere QR-Code für Kunde:', customer.id);
+      console.log('🔍 [QR-CODE] Generiere QR-Code PDF für Kunde:', customer.id);
       
       // URL für die öffentliche Bestellseite generieren
       const baseUrl = window.location.origin;
@@ -2771,85 +2771,72 @@ filteredArtikelData() {
         }
       });
       
-      // QR-Code in einem neuen Fenster anzeigen
-      const qrWindow = window.open('', '_blank', 'width=400,height=500');
-      if (qrWindow) {
-        qrWindow.document.write(`
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <title>QR-Code für Online-Bestellung</title>
-            <style>
-              body { 
-                font-family: Arial, sans-serif; 
-                text-align: center; 
-                padding: 20px;
-                background: #f5f5f5;
-              }
-              .qr-container {
-                background: white;
-                padding: 30px;
-                border-radius: 10px;
-                box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-                max-width: 350px;
-                margin: 0 auto;
-              }
-              .qr-code {
-                margin: 20px 0;
-              }
-              .customer-info {
-                margin: 20px 0;
-                padding: 15px;
-                background: #f8f9fa;
-                border-radius: 8px;
-                border-left: 4px solid #007bff;
-              }
-              .instructions {
-                margin: 20px 0;
-                color: #666;
-                font-size: 14px;
-              }
-              .url {
-                background: #e9ecef;
-                padding: 10px;
-                border-radius: 5px;
-                font-family: monospace;
-                font-size: 12px;
-                word-break: break-all;
-                margin: 15px 0;
-              }
-            </style>
-          </head>
-          <body>
-            <div class="qr-container">
-              <h2>🛒 Online Bestellung</h2>
-              <div class="customer-info">
-                <strong>Kunde:</strong> ${customer.last_name_company || ''}<br>
-                <strong>Kundennummer:</strong> ${customer.customer_number || ''}
-              </div>
-              <div class="qr-code">
-                <img src="${qrCodeDataUrl}" alt="QR-Code für Online-Bestellung" style="max-width: 200px;">
-              </div>
-              <div class="instructions">
-                <strong>Anleitung:</strong><br>
-                1. QR-Code mit dem Handy scannen<br>
-                2. Oder den Link unten kopieren<br>
-                3. Direkt auf der Webseite bestellen
-              </div>
-              <div class="url">
-                ${orderUrl}
-              </div>
-              <p><small>QR-Code generiert am ${new Date().toLocaleString('de-DE')}</small></p>
-            </div>
-          </body>
-          </html>
-        `);
-        qrWindow.document.close();
+      // Neue PDF erstellen
+      const doc = new jsPDF();
+      
+      // Header
+      doc.setFontSize(24);
+      doc.setFont('helvetica', 'bold');
+      doc.text('🛒 Online Bestellung', 105, 30, { align: 'center' });
+      
+      // Kundendaten
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Kundendaten:', 20, 50);
+      
+      doc.setFontSize(12);
+      doc.text(`Firma: ${customer.last_name_company || ''}`, 20, 65);
+      doc.text(`Kundennummer: ${customer.customer_number || ''}`, 20, 75);
+      if (customer.name_addition) {
+        doc.text(`Zusatz: ${customer.name_addition}`, 20, 85);
+      }
+      
+      // QR-Code (groß und zentral)
+      doc.addImage(qrCodeDataUrl, 'PNG', 85, 100, 80, 80);
+      
+      // Rahmen um QR-Code
+      doc.setDrawColor(0, 0, 0);
+      doc.setLineWidth(2);
+      doc.rect(80, 95, 90, 90);
+      
+      // Anleitung
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Anleitung:', 20, 210);
+      
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+      doc.text('1. QR-Code mit dem Handy scannen', 20, 225);
+      doc.text('2. Oder den Link unten kopieren', 20, 235);
+      doc.text('3. Direkt auf der Webseite bestellen', 20, 245);
+      
+      // URL
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Direkter Link:', 20, 265);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.text(orderUrl, 20, 275);
+      
+      // Datum
+      doc.setFontSize(10);
+      doc.text(`Generiert am: ${new Date().toLocaleString('de-DE')}`, 20, 290);
+      
+      // PDF öffnen und automatisch drucken
+      const pdfBlob = doc.output('blob');
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+      
+      const printWindow = window.open(pdfUrl, '_blank');
+      if (printWindow) {
+        // Automatischer Druck nach kurzer Verzögerung
+        setTimeout(() => {
+          printWindow.print();
+        }, 500);
       }
       
     } catch (error: any) {
-      console.error('❌ [QR-CODE] Fehler beim Generieren des QR-Codes:', error);
-      alert('Fehler beim Generieren des QR-Codes: ' + (error?.message || 'Unbekannter Fehler'));
+      console.error('❌ [QR-CODE] Fehler beim Generieren des QR-Code PDFs:', error);
+      alert('Fehler beim Generieren des QR-Code PDFs: ' + (error?.message || 'Unbekannter Fehler'));
     }
   }
 
