@@ -2758,7 +2758,7 @@ filteredArtikelData() {
       
       // URL für die öffentliche Bestellseite generieren
       const baseUrl = window.location.origin;
-      const orderUrl = `${baseUrl}/customer-order/${customer.id}`;
+      const orderUrl = `${baseUrl}/customer-order/${customer.customer_number}`;
       console.log('🔍 [QR-CODE] Generierte URL:', orderUrl);
       
       // QR-Code als Data URL generieren
