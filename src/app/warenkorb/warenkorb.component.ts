@@ -66,6 +66,13 @@ export class WarenkorbComponent implements OnInit {
 
     this.globalService.orderData.total_price = this.globalService.totalPrice
     
+    // Ensure description is set for all items (wie in Customer Orders)
+    this.globalService.warenkorb.forEach(item => {
+      if (!item.description && item.article_text) {
+        item.description = item.article_text;
+      }
+    });
+    
     // Kundendaten hinzufügen, falls ein Kunde ausgewählt wurde
     let customerData = {};
     if (this.globalService.selectedCustomer) {
