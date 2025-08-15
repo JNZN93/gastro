@@ -29,10 +29,10 @@
     <div *ngIf="!isLoading && !error && customerArticlePrices.length > 0" class="catalog">
       <h2>Deine Artikel</h2>
 
-      <!-- Grouped: Mobile Cards View -->
-      <ng-container *ngFor="let category of orderedCategories">
-        <h3 class="category-title">{{ category }}</h3>
-        <div class="products-cards">
+      <!-- Mobile Cards View (hidden on desktop) -->
+      <div class="products-cards">
+        <ng-container *ngFor="let category of orderedCategories">
+          <h3 class="category-title">{{ category }}</h3>
           <div *ngFor="let article of groupedArticles[category]" class="product-card">
             <div class="card-header">
               <div class="article-info">
@@ -70,54 +70,56 @@
               </div>
             </div>
           </div>
-        </div>
-      </ng-container>
+        </ng-container>
+      </div>
 
-      <!-- Grouped: Desktop Table View (hidden on mobile) -->
-      <div class="products-table desktop-only" *ngFor="let category of orderedCategories">
-        <div class="category-header">
-          <h3 class="category-title">{{ category }}</h3>
-        </div>
+      <!-- Desktop Table View (hidden on mobile) -->
+      <div class="products-table desktop-only">
         <div class="table-header">
           <div class="col-desc">Artikel</div>
           <div class="col-price">Preis</div>
           <div class="col-qty">Menge</div>
         </div>
         
-        <div *ngFor="let article of groupedArticles[category]" class="table-row">
-          <div class="col-desc">
-            <div class="article-text">{{ article.article_text }}</div>
-            <div class="article-number">Art.-Nr.: {{ article.article_number || article.product_id }}</div>
-            <div class="article-date" *ngIf="article.invoice_date">Zuletzt gekauft am: {{ article.invoice_date | date:'dd.MM.yyyy' }}</div>
+        <ng-container *ngFor="let category of orderedCategories">
+          <div class="category-header">
+            <h3 class="category-title">{{ category }}</h3>
           </div>
-          <div class="col-price">€{{ toNumber(article.unit_price_net).toFixed(2) }}</div>
-          <div class="col-qty">
-            <div class="quantity-controls">
-              <button 
-                class="btn-quantity btn-decrease"
-                (click)="decreaseQuantity(article)"
-                [disabled]="!article.tempQuantity || article.tempQuantity <= 0"
-              >
-                −
-              </button>
-              
-              <input 
-                type="number" 
-                [(ngModel)]="article.tempQuantity"
-                min="0"
-                placeholder="0"
-                class="quantity-input"
-              >
-              
-              <button 
-                class="btn-quantity btn-increase"
-                (click)="increaseQuantity(article)"
-              >
-                +
-              </button>
+          <div *ngFor="let article of groupedArticles[category]" class="table-row">
+            <div class="col-desc">
+              <div class="article-text">{{ article.article_text }}</div>
+              <div class="article-number">Art.-Nr.: {{ article.article_number || article.product_id }}</div>
+              <div class="article-date" *ngIf="article.invoice_date">Zuletzt gekauft am: {{ article.invoice_date | date:'dd.MM.yyyy' }}</div>
+            </div>
+            <div class="col-price">€{{ toNumber(article.unit_price_net).toFixed(2) }}</div>
+            <div class="col-qty">
+              <div class="quantity-controls">
+                <button 
+                  class="btn-quantity btn-decrease"
+                  (click)="decreaseQuantity(article)"
+                  [disabled]="!article.tempQuantity || article.tempQuantity <= 0"
+                >
+                  −
+                </button>
+                
+                <input 
+                  type="number" 
+                  [(ngModel)]="article.tempQuantity"
+                  min="0"
+                  placeholder="0"
+                  class="quantity-input"
+                >
+                
+                <button 
+                  class="btn-quantity btn-increase"
+                  (click)="increaseQuantity(article)"
+                >
+                  +
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        </ng-container>
       </div>
 
       <!-- Custom Article Form -->
