@@ -349,7 +349,8 @@ export class CustomerOrderPublicComponent implements OnInit {
         unit_price_net: 0, // Preis ist 0 für benutzerdefinierte Artikel
         tempQuantity: this.customArticle.tempQuantity,
         isCustom: true,
-        invoice_date: null
+        invoice_date: null,
+        product_database_id: 571 // Eigene Artikel bekommen immer product_database_id 571
       };
 
       // Füge den Artikel zur Liste hinzu
