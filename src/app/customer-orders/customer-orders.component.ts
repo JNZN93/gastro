@@ -2692,26 +2692,24 @@ filteredArtikelData() {
           pageBreak: 'avoid', // Verhindert automatische Seitenumbrüche
           tableWidth: 'wrap',
           styles: {
-            fontSize: 10,
+            fontSize: 11, // Größere Schrift für bessere OCR-Erkennung der Tabellendaten
             cellPadding: 5,
-            lineWidth: 0.1,
-            lineColor: [0, 0, 0]
+            lineWidth: 0.3, // Dickere Linien für bessere OCR-Erkennung
+            lineColor: [100, 100, 100], // Dunkleres Grau für besseren Kontrast (OCR-optimal)
+            fillColor: [255, 255, 255] // Weißer Hintergrund für alle Zeilen
           },
           headStyles: {
-            fillColor: [51, 51, 51],
-            textColor: [255, 255, 255],
+            fillColor: [0, 0, 0], // Schwarzer Hintergrund für maximalen Kontrast (OCR-optimal)
+            textColor: [255, 255, 255], // Weißer Text für maximalen Kontrast
             fontStyle: 'bold',
-            fontSize: 11
-          },
-          alternateRowStyles: {
-            fillColor: [245, 245, 245]
+            fontSize: 12 // Größere Schrift für bessere OCR-Erkennung
           },
           columnStyles: {
-            0: { cellWidth: 100, halign: 'left' }, // Artikel (noch schmaler)
-            1: { cellWidth: 40, halign: 'left' }, // Art.-Nr. (noch schmaler)
-            2: { cellWidth: 30, halign: 'center' } // Menge (noch schmaler)
+            0: { cellWidth: 90, halign: 'left' }, // Artikel (schmaler für mehr Platz)
+            1: { cellWidth: 60, halign: 'left' }, // Art.-Nr. (breiter für mehr Platz)
+            2: { cellWidth: 30, halign: 'center' } // Menge (bleibt gleich)
           },
-          margin: { left: 25, right: 25 }, // Noch größere Ränder für perfekte Zentrierung
+          margin: { left: 15, right: 35 }, // Tabelle weiter links, rechter Rand größer
           // Callback um sicherzustellen, dass nicht automatisch eine neue Seite erstellt wird
           didDrawPage: (data: any) => {
             // Nichts tun - wir kontrollieren Seiten manuell
