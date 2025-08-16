@@ -48,6 +48,12 @@
                   <div class="article-number">Art.-Nr.: {{ article.article_number || article.product_id }}</div>
                   <div class="article-date" *ngIf="article.invoice_date">Zuletzt gekauft am: {{ article.invoice_date | date:'dd.MM.yyyy' }}</div>
                 </div>
+                <div class="article-image">
+                  <img *ngIf="article.main_image_url" [src]="article.main_image_url" [alt]="article.article_text" class="product-image">
+                  <div *ngIf="!article.main_image_url" class="image-placeholder">
+                    <span class="placeholder-icon">📦</span>
+                  </div>
+                </div>
                 <div class="article-price">€{{ toNumber(article.unit_price_net).toFixed(2) }}</div>
               </div>
               
@@ -103,9 +109,19 @@
           <div *ngIf="categoryStates[category]" class="category-content">
             <div *ngFor="let article of groupedArticles[category]" class="table-row">
               <div class="col-desc">
-                <div class="article-text">{{ article.article_text }}</div>
-                <div class="article-number">Art.-Nr.: {{ article.article_number || article.product_id }}</div>
-                <div class="article-date" *ngIf="article.invoice_date">Zuletzt gekauft am: {{ article.invoice_date | date:'dd.MM.yyyy' }}</div>
+                                  <div class="article-info-with-image">
+                    <div class="article-image">
+                      <img *ngIf="article.main_image_url" [src]="article.main_image_url" [alt]="article.article_text" class="product-image">
+                      <div *ngIf="!article.main_image_url" class="image-placeholder">
+                        <span class="placeholder-icon">📦</span>
+                      </div>
+                    </div>
+                    <div class="article-details">
+                    <div class="article-text">{{ article.article_text }}</div>
+                    <div class="article-number">Art.-Nr.: {{ article.article_number || article.product_id }}</div>
+                    <div class="article-date" *ngIf="article.invoice_date">Zuletzt gekauft am: {{ article.invoice_date | date:'dd.MM.yyyy' }}</div>
+                  </div>
+                </div>
               </div>
               <div class="col-price">€{{ toNumber(article.unit_price_net).toFixed(2) }}</div>
               <div class="col-qty">
@@ -349,9 +365,19 @@
         <div class="order-items">
           <div *ngFor="let item of getOrderItems()" class="order-item">
             <div class="item-info">
-              <div class="item-name">{{ item.article_text }}</div>
-              <div class="item-number">Art.-Nr.: {{ item.article_number || item.product_id }}</div>
-              <div class="item-date" *ngIf="item.invoice_date">Zuletzt gekauft am: {{ item.invoice_date | date:'dd.MM.yyyy' }}</div>
+                              <div class="item-info-with-image">
+                  <div class="item-image">
+                    <img *ngIf="item.main_image_url" [src]="item.main_image_url" [alt]="item.article_text" class="product-image">
+                    <div *ngIf="!item.main_image_url" class="image-placeholder">
+                      <span class="placeholder-icon">📦</span>
+                    </div>
+                  </div>
+                  <div class="item-details">
+                  <div class="item-name">{{ item.article_text }}</div>
+                  <div class="item-number">Art.-Nr.: {{ item.article_number || item.product_id }}</div>
+                  <div class="item-date" *ngIf="item.invoice_date">Zuletzt gekauft am: {{ item.invoice_date | date:'dd.MM.yyyy' }}</div>
+                </div>
+              </div>
             </div>
             <div class="item-details">
               <div class="item-quantity">{{ item.quantity }}x</div>

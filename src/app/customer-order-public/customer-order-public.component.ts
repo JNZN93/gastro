@@ -269,7 +269,7 @@ export class CustomerOrderPublicComponent implements OnInit {
     
     console.log('🔍 [PUBLIC-ORDER] Verfügbare Artikelnummern:', Array.from(availableArticleNumbers));
     
-    // Filtere die customerArticlePrices
+    // Filtere die customerArticlePrices und füge Bilder hinzu
     const originalCount = this.customerArticlePrices.length;
     this.customerArticlePrices = this.customerArticlePrices.filter(article => {
       const productId = article.product_id;
@@ -284,6 +284,13 @@ export class CustomerOrderPublicComponent implements OnInit {
       
       if (!isAvailable) {
         console.log(`🔍 [PUBLIC-ORDER] Artikel gefiltert: ${article.article_text} (product_id: ${productId})`);
+      } else {
+        // Füge das Bild zum Artikel hinzu
+        const matchingProduct = this.allProducts.find(product => product.article_number === productId);
+        if (matchingProduct && matchingProduct.main_image_url) {
+          article.main_image_url = matchingProduct.main_image_url;
+          console.log(`🔍 [PUBLIC-ORDER] Bild hinzugefügt für Artikel: ${article.article_text}`);
+        }
       }
       
       return isAvailable;
@@ -609,6 +616,7 @@ export class CustomerOrderPublicComponent implements OnInit {
         total_price: (Number(article.tempQuantity) || 0) * (Number(article.unit_price_net) || 0),
         invoice_date: article.invoice_date,
         isCustom: article.isCustom || false,
+        main_image_url: article.main_image_url, // Bild-URL hinzufügen
         // Alle zusätzlichen Felder aus der API-Response hinzufügen
         category: article.category,
         created_at: article.created_at,
