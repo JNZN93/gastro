@@ -2872,50 +2872,23 @@ filteredArtikelData() {
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(66, 153, 225); // Hellblau
       doc.text('1. QR-Code mit dem Handy scannen', 20, 215);
-      doc.text('2. Oder den Link unten kopieren', 20, 230);
-      doc.text('3. Direkt auf der Webseite bestellen', 20, 245);
+      doc.text('2. Direkt auf der Webseite bestellen', 20, 230);
       
       // Wichtiger Hinweis zum Datenschutz
       doc.setFontSize(12);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(220, 38, 38); // Rot für Aufmerksamkeit
-      doc.text('⚠️ Wichtiger Hinweis:', 20, 265);
+      doc.text('Wichtiger Hinweis:', 20, 250);
       
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(220, 38, 38); // Rot für Aufmerksamkeit
-      doc.text('Bitte QR-Code nicht weitergeben - enthält persönliche Bestelldaten', 20, 280);
-      
-      // URL - EINFACHE LÖSUNG die garantiert funktioniert
-      doc.setFontSize(12);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(26, 54, 93); // Dunkelblau
-      doc.text('Direkter Link:', 20, 300);
-      
-      // URL direkt in einer Zeile (falls sie zu lang ist, wird sie automatisch abgeschnitten)
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(66, 153, 225); // Hellblau
-      
-      // URL in mehreren Zeilen mit fester Aufteilung
-      const urlPart1 = orderUrl.substring(0, 60);
-      const urlPart2 = orderUrl.substring(60, 120);
-      const urlPart3 = orderUrl.substring(120);
-      
-      // URL-Teile ins PDF einfügen
-      doc.text(urlPart1, 20, 315);
-      if (urlPart2) {
-        doc.text(urlPart2, 20, 325);
-      }
-      if (urlPart3) {
-        doc.text(urlPart3, 20, 335);
-      }
+      doc.text('Bitte QR-Code nicht weitergeben - enthält persönliche Bestelldaten', 20, 265);
       
       // Datum
       doc.setFontSize(10);
       doc.setTextColor(26, 54, 93); // Dunkelblau
-      const finalUrlY = urlPart3 ? 320 : (urlPart2 ? 340 : 330);
-      doc.text(`Generiert am: ${new Date().toLocaleString('de-DE')}`, 20, finalUrlY);
+      doc.text(`Generiert am: ${new Date().toLocaleString('de-DE')}`, 20, 285);
       
       // PDF öffnen und automatisch drucken
       const pdfBlob = doc.output('blob');
