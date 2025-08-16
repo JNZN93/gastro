@@ -16,6 +16,7 @@ import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import { IndexedDBService } from '../indexeddb.service';
 import * as QRCode from 'qrcode';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-customer-orders',
@@ -2777,10 +2778,29 @@ filteredArtikelData() {
       const customer = this.globalService.selectedCustomerForOrders;
       console.log('🔍 [QR-CODE] Generiere QR-Code PDF für Kunde:', customer.id);
       
-      // URL für die öffentliche Bestellseite generieren
+      // Token für den Kunden generieren
+      const token = await this.generateCustomerToken(customer.customer_number);
+      if (!token) {
+        console.error('❌ [QR-CODE] Fehler beim Generieren des Tokens für Kunde:', customer.customer_number);
+        alert('Fehler beim Generieren des Tokens. Bitte versuchen Sie es erneut.');
+        return;
+      }
+      
+      console.log('🔍 [QR-CODE] Token erfolgreich generiert für Kunde:', customer.customer_number);
+      console.log('🔍 [QR-CODE] Kunde Details:', {
+        id: customer.id,
+        customer_number: customer.customer_number,
+        last_name_company: customer.last_name_company
+      });
+      
+      // URL für die öffentliche Bestellseite generieren (mit Token)
       const baseUrl = window.location.origin;
-      const orderUrl = `${baseUrl}/customer-order/${customer.customer_number}`;
-      console.log('🔍 [QR-CODE] Generierte URL:', orderUrl);
+      const orderUrl = `${baseUrl}/customer-order/${token}`;
+      console.log('🔍 [QR-CODE] Generierte URL mit Token:', orderUrl);
+      console.log('🔍 [QR-CODE] Token Länge:', token.length);
+      console.log('🔍 [QR-CODE] Token (erste 20 Zeichen):', token.substring(0, 20) + '...');
+      console.log('🔍 [QR-CODE] Base URL:', baseUrl);
+      console.log('🔍 [QR-CODE] Vollständige URL:', orderUrl);
       
       // QR-Code als Data URL generieren (höhere Auflösung für bessere Qualität)
       const qrCodeDataUrl = await QRCode.toDataURL(orderUrl, {
@@ -2888,15 +2908,83 @@ filteredArtikelData() {
     }
   }
 
+  // Token für Kunden generieren
+  private async generateCustomerToken(customerNumber: string): Promise<string | null> {
+    try {
+      console.log('🔍 [TOKEN] Generiere Token für Kunde:', customerNumber);
+      console.log('🔍 [TOKEN] API URL:', 'https://multi-mandant-ecommerce.onrender.com/api/auth/generate-customer-token');
+      console.log('🔍 [TOKEN] Request Body:', { customerNumber: customerNumber });
+      console.log('🔍 [TOKEN] Aktuelle URL:', window.location.href);
+      
+      const response = await firstValueFrom(this.http.post('https://multi-mandant-ecommerce.onrender.com/api/auth/generate-customer-token', {
+        customerNumber: customerNumber
+      }));
+      
+      console.log('🔍 [TOKEN] API Response erhalten:', response);
+      console.log('🔍 [TOKEN] Response Typ:', typeof response);
+      console.log('🔍 [TOKEN] Response Keys:', response ? Object.keys(response) : 'keine');
+      
+      if (response && (response as any).token) {
+              console.log('🔍 [TOKEN] Token erfolgreich generiert:', (response as any).token);
+      console.log('🔍 [TOKEN] Token Länge:', (response as any).token.length);
+      console.log('🔍 [TOKEN] Token (erste 20 Zeichen):', (response as any).token.substring(0, 20) + '...');
+      console.log('🔍 [TOKEN] Token erfolgreich zurückgegeben');
+      return (response as any).token;
+      } else {
+        console.error('❌ [TOKEN] Kein Token in der Response erhalten:', response);
+        return null;
+      }
+    } catch (error: any) {
+      console.error('❌ [TOKEN] Fehler beim Generieren des Tokens:', error);
+      console.error('❌ [TOKEN] Fehler Status:', error?.status);
+      console.error('❌ [TOKEN] Fehler Message:', error?.message);
+      console.error('❌ [TOKEN] Fehler Details:', error);
+      return null;
+    }
+  }
+
   // QR-Code für Online-Bestellung zum PDF hinzufügen
   private async addQRCodeToPDF(doc: any, customerId: string): Promise<void> {
     try {
       console.log('🔍 [QR-CODE] Starte QR-Code Generierung für Kunde:', customerId);
       
-      // URL für die öffentliche Bestellseite generieren
+      // Token für den Kunden generieren
+      const token = await this.generateCustomerToken(customerId);
+      if (!token) {
+        console.error('❌ [QR-CODE] Konnte keinen Token generieren, verwende Fallback');
+        // Fallback: Verwende die ursprüngliche URL ohne Token
+        const baseUrl = window.location.origin;
+        const orderUrl = `${baseUrl}/customer-order/${customerId}`;
+        console.log('🔍 [QR-CODE] Fallback URL:', orderUrl);
+        
+        // QR-Code mit Fallback-URL generieren
+        const qrCodeDataUrl = await QRCode.toDataURL(orderUrl, {
+          width: 200,
+          margin: 1,
+          color: {
+            dark: '#1a365d',
+            light: '#f7fafc'
+          },
+          errorCorrectionLevel: 'H'
+        });
+        
+        // QR-Code ins PDF einfügen (vereinfachte Version)
+        const qrX = 140;
+        const qrY = 15;
+        const qrSize = 80;
+        doc.addImage(qrCodeDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
+        console.log('🔍 [QR-CODE] Fallback QR-Code ins PDF eingefügt');
+        return;
+      }
+      
+      console.log('🔍 [QR-CODE] Token erfolgreich generiert für Kunde:', customerId);
+      
+      // URL für die öffentliche Bestellseite generieren (mit Token)
       const baseUrl = window.location.origin;
-      const orderUrl = `${baseUrl}/customer-order/${customerId}`;
-      console.log('🔍 [QR-CODE] Generierte URL:', orderUrl);
+      const orderUrl = `${baseUrl}/customer-order/${token}`;
+      console.log('🔍 [QR-CODE] Generierte URL mit Token:', orderUrl);
+      console.log('🔍 [QR-CODE] Token Länge:', token.length);
+      console.log('🔍 [QR-CODE] Token (erste 20 Zeichen):', token.substring(0, 20) + '...');
       
       // QR-Code als Data URL generieren (höhere Auflösung für bessere Qualität)
       console.log('🔍 [QR-CODE] Generiere QR-Code...');

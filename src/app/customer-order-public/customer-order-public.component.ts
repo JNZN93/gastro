@@ -16,6 +16,7 @@ export class CustomerOrderPublicComponent implements OnInit {
   private router = inject(Router);
   private http = inject(HttpClient);
 
+  token: string = '';
   customerNumber: string = '';
   customer: any = null;
   customerArticlePrices: any[] = [];
@@ -57,8 +58,83 @@ export class CustomerOrderPublicComponent implements OnInit {
 
   ngOnInit() {
     this.route.params.subscribe(params => {
-      this.customerNumber = params['customerNumber'];
-      this.loadCustomerData();
+      this.token = params['token'];
+      console.log('🔍 [PUBLIC-ORDER] Token aus URL extrahiert:', this.token);
+      
+      // Zeige Token in der Konsole für Debugging
+      if (this.token) {
+        console.log('🔍 [PUBLIC-ORDER] Token Länge:', this.token.length);
+        console.log('🔍 [PUBLIC-ORDER] Token (erste 20 Zeichen):', this.token.substring(0, 20) + '...');
+        console.log('🔍 [PUBLIC-ORDER] Vollständige URL:', window.location.href);
+        console.log('🔍 [PUBLIC-ORDER] URL Parameter:', params);
+      } else {
+        console.error('❌ [PUBLIC-ORDER] Kein Token in der URL gefunden');
+        console.error('❌ [PUBLIC-ORDER] Alle URL Parameter:', params);
+      }
+      
+      this.decodeTokenAndLoadData();
+    });
+  }
+
+  // Token dekodieren und Kundendaten laden
+  private decodeTokenAndLoadData() {
+    if (!this.token) {
+      console.error('❌ [PUBLIC-ORDER] Kein Token in der URL gefunden');
+      this.error = 'Kein Token in der URL gefunden. Bitte überprüfen Sie den QR-Code.';
+      this.isLoading = false;
+      return;
+    }
+    
+          console.log('🔍 [PUBLIC-ORDER] Starte Token-Dekodierung...');
+      console.log('🔍 [PUBLIC-ORDER] Aktuelle URL:', window.location.href);
+      console.log('🔍 [PUBLIC-ORDER] Token aus URL:', this.token);
+      
+      console.log('🔍 [PUBLIC-ORDER] Sende Token an API:', this.token);
+      console.log('🔍 [PUBLIC-ORDER] API URL:', 'https://multi-mandant-ecommerce.onrender.com/api/auth/decode-customer-token');
+      console.log('🔍 [PUBLIC-ORDER] Request Body:', { token: this.token });
+    
+    this.http.post('https://multi-mandant-ecommerce.onrender.com/api/auth/decode-customer-token', {
+      token: this.token
+    }).subscribe({
+      next: (response: any) => {
+        console.log('🔍 [PUBLIC-ORDER] Token erfolgreich dekodiert:', response);
+        
+        if (response && response.customerNumber) {
+          this.customerNumber = response.customerNumber;
+          console.log('🔍 [PUBLIC-ORDER] Kundennummer aus Token extrahiert:', this.customerNumber);
+          console.log('🔍 [PUBLIC-ORDER] Response vollständig:', response);
+          console.log('🔍 [PUBLIC-ORDER] Token erfolgreich dekodiert für Kundennummer:', this.customerNumber);
+          console.log('🔍 [PUBLIC-ORDER] Starte Laden der Kundendaten...');
+          console.log('🔍 [PUBLIC-ORDER] Token war gültig und wurde erfolgreich verarbeitet');
+          
+          // Nach der Token-Dekodierung die Kundendaten laden
+          this.loadCustomerData();
+        } else {
+          console.error('❌ [PUBLIC-ORDER] Keine Kundennummer im Token gefunden');
+          console.error('❌ [PUBLIC-ORDER] Response:', response);
+          console.error('❌ [PUBLIC-ORDER] Response Typ:', typeof response);
+          console.error('❌ [PUBLIC-ORDER] Response Keys:', response ? Object.keys(response) : 'keine');
+          console.error('❌ [PUBLIC-ORDER] Token war ungültig oder fehlerhaft');
+          this.error = 'Ungültiger Token. Kundennummer konnte nicht ermittelt werden.';
+          this.isLoading = false;
+        }
+      },
+              error: (error: any) => {
+          console.error('❌ [PUBLIC-ORDER] Fehler beim Dekodieren des Tokens:', error);
+          console.error('❌ [PUBLIC-ORDER] Fehler Status:', error?.status);
+          console.error('❌ [PUBLIC-ORDER] Fehler Message:', error?.message);
+          console.error('❌ [PUBLIC-ORDER] Fehler Details:', error);
+          
+          if (error?.status === 400) {
+            this.error = 'Ungültiger Token. Bitte überprüfen Sie den QR-Code.';
+          } else if (error?.status === 500) {
+            this.error = 'Server-Fehler beim Verarbeiten des Tokens. Bitte versuchen Sie es später erneut.';
+          } else {
+            this.error = `Fehler beim Verarbeiten des Tokens: ${error?.message || 'Unbekannter Fehler'}`;
+          }
+          
+          this.isLoading = false;
+        }
     });
   }
 
@@ -236,11 +312,14 @@ export class CustomerOrderPublicComponent implements OnInit {
         error: (error: any) => {
           console.error('❌ [PUBLIC-ORDER] Fehler beim Laden der Daten:', error);
           console.error('❌ [PUBLIC-ORDER] Fehler Details:', error?.message, error?.status, error?.statusText);
+          console.error('❌ [PUBLIC-ORDER] Fehler vollständig:', error);
           
           if (error?.status === 404) {
             this.error = `Kunde mit Nummer ${this.customerNumber} nicht gefunden.`;
           } else if (error?.status === 400) {
             this.error = 'Ungültige Anfrage. Bitte überprüfen Sie die Kundennummer.';
+          } else if (error?.status === 401) {
+            this.error = 'Ungültiger Token. Bitte überprüfen Sie den QR-Code.';
           } else if (error?.status === 500) {
             this.error = 'Server-Fehler. Bitte versuchen Sie es später erneut.';
           } else {

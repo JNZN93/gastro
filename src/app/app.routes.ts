@@ -49,7 +49,7 @@ export const routes: Routes = [
     { path: 'category/:categoryName', component: CategoryDetailComponent },
     // Neue Route für kundenspezifische Bestellungen (öffentlich zugänglich)
     { 
-        path: 'customer-order/:customerNumber', 
+        path: 'customer-order/:token', 
         loadComponent: () => import('./customer-order-public/customer-order-public.component').then(m => m.CustomerOrderPublicComponent)
     }
 ];
