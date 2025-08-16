@@ -86,6 +86,7 @@ export class CustomerOrderPublicComponent implements OnInit {
       scrollPosition: { scrollTop: window.scrollY, scrollLeft: window.scrollX },
       lastOpenedArticleId: this.lastOpenedArticleId,
       activeCategory: this.getActiveCategory(),
+      fromImageViewer: true, // Markierung dass der State vom Image-Viewer kommt
       savedAt: new Date().toISOString()
     };
     this.stateService.saveStateMemory(completeState);
@@ -389,8 +390,8 @@ export class CustomerOrderPublicComponent implements OnInit {
       }
       
       const savedState = this.stateService.getState();
-      if (savedState && savedState.token === this.token) {
-        console.log('🔄 [PUBLIC-ORDER] Restauriere gespeicherten State (ohne API-Calls)');
+      if (savedState && savedState.token === this.token && savedState.fromImageViewer) {
+        console.log('🔄 [PUBLIC-ORDER] Restauriere gespeicherten State vom Image-Viewer (ohne API-Calls)');
         this.restoreFromState(savedState);
         if (this.stateService.hasMemoryState()) {
           this.stateService.clearState();
