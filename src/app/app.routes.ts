@@ -51,5 +51,13 @@ export const routes: Routes = [
     { 
         path: 'customer-order/:token', 
         loadComponent: () => import('./customer-order-public/customer-order-public.component').then(m => m.CustomerOrderPublicComponent)
+    },
+    {
+        path: 'customer-order/:token/review',
+        loadComponent: () => import('./public-order-review/public-order-review.component').then(m => m.PublicOrderReviewComponent)
+    },
+    {
+        path: 'customer-order/:token/image/:articleNumber',
+        loadComponent: () => import('./public-image-viewer/public-image-viewer.component').then(m => m.PublicImageViewerComponent)
     }
 ];

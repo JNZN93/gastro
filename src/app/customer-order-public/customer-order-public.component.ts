@@ -28,6 +28,7 @@ export class CustomerOrderPublicComponent implements OnInit {
   showOrderModal: boolean = false;
   showCustomArticleForm: boolean = false;
   showResponseModal: boolean = false;
+  pendingSubmit: boolean = false;
   responseModalData: {
     isSuccess: boolean;
     title: string;
@@ -79,6 +80,12 @@ export class CustomerOrderPublicComponent implements OnInit {
       
       this.decodeTokenAndLoadData();
     });
+
+    // Prüfen, ob von der Review-Seite mit Submit-Flag zurück navigiert wurde
+    const state = history.state || {};
+    if (state.submitNow) {
+      this.pendingSubmit = true;
+    }
   }
 
   // localStorage Methoden
@@ -257,6 +264,7 @@ export class CustomerOrderPublicComponent implements OnInit {
       this.buildGroups();
       // Loading beenden, da keine weiteren API-Calls mehr erfolgen
       this.isLoading = false;
+      this.triggerPendingSubmitIfReady();
       return;
     }
 
@@ -304,6 +312,7 @@ export class CustomerOrderPublicComponent implements OnInit {
 
     // Loading beenden, da alle Daten geladen und gefiltert wurden
     this.isLoading = false;
+    this.triggerPendingSubmitIfReady();
   }
 
   private normalizeCategoryName(name: any): string {
@@ -409,6 +418,7 @@ export class CustomerOrderPublicComponent implements OnInit {
           } else {
             this.error = 'Ungültige API-Response: Artikel fehlen';
             this.isLoading = false;
+            this.triggerPendingSubmitIfReady();
           }
         },
         error: (error: any) => {
@@ -429,8 +439,19 @@ export class CustomerOrderPublicComponent implements OnInit {
           }
           
           this.isLoading = false;
+          this.triggerPendingSubmitIfReady();
         }
       });
+  }
+
+  private triggerPendingSubmitIfReady() {
+    if (this.pendingSubmit && !this.isLoading) {
+      this.pendingSubmit = false;
+      // Sicherheit: nur senden, wenn es Artikel gibt
+      if (this.hasAnyQuantity()) {
+        this.submitOrder();
+      }
+    }
   }
 
   submitOrder() {
@@ -563,7 +584,16 @@ export class CustomerOrderPublicComponent implements OnInit {
 
   // Modal-Methoden
   showOrderConfirmation() {
-    this.showOrderModal = true;
+    // Statt Modal zu öffnen, zur öffentlichen Review-Seite navigieren
+    if (this.token) {
+      this.router.navigate([`/customer-order/${this.token}/review`], {
+        state: {
+          customer: this.customer,
+          items: this.getOrderItems(),
+          total: this.getOrderTotal()
+        }
+      });
+    }
   }
 
   closeOrderModal() {
@@ -683,6 +713,16 @@ export class CustomerOrderPublicComponent implements OnInit {
     return this.customerArticlePrices.some(article => 
       article.tempQuantity && article.tempQuantity > 0
     );
+  }
+
+  openImage(article: any) {
+    if (!article) return;
+    const articleNumber = article.article_number || article.product_id;
+    const imageUrl = article.main_image_url;
+    const title = article.article_text;
+    this.router.navigate([`/customer-order/${this.token}/image/${articleNumber}`], {
+      state: { imageUrl, title }
+    });
   }
 
   // Benutzerdefinierte Artikel Methoden

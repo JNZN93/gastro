@@ -48,7 +48,7 @@
                   <div class="article-number">Art.-Nr.: {{ article.article_number || article.product_id }}</div>
                   <div class="article-date" *ngIf="article.invoice_date">Zuletzt gekauft am: {{ article.invoice_date | date:'dd.MM.yyyy' }}</div>
                 </div>
-                <div class="article-image">
+                <div class="article-image" (click)="article.main_image_url && openImage(article)" style="cursor: pointer;">
                   <img *ngIf="article.main_image_url" [src]="article.main_image_url" [alt]="article.article_text" class="product-image">
                   <div *ngIf="!article.main_image_url" class="image-placeholder">
                     <span class="placeholder-icon">📦</span>
@@ -110,7 +110,7 @@
             <div *ngFor="let article of groupedArticles[category]" class="table-row">
               <div class="col-desc">
                                   <div class="article-info-with-image">
-                    <div class="article-image">
+                    <div class="article-image" (click)="article.main_image_url && openImage(article)" style="cursor: pointer;">
                       <img *ngIf="article.main_image_url" [src]="article.main_image_url" [alt]="article.article_text" class="product-image">
                       <div *ngIf="!article.main_image_url" class="image-placeholder">
                         <span class="placeholder-icon">📦</span>
