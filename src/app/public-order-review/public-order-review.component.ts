@@ -40,7 +40,6 @@ import { ActivatedRoute, Router } from '@angular/router';
       </div>
 
       <div class="bottombar" *ngIf="items && items.length">
-        <div class="total">Gesamt: <strong>€{{ (total || 0).toFixed(2) }}</strong></div>
         <button class="submit" (click)="submitOrder()" [disabled]="isSubmitting">
           <span *ngIf="!isSubmitting">Bestellung absenden</span>
           <span *ngIf="isSubmitting">Sende...</span>
@@ -68,14 +67,12 @@ import { ActivatedRoute, Router } from '@angular/router';
     .qty { color: #111827; font-weight: 600; background: #f3f4f6; padding: 4px 8px; border-radius: 6px; }
     .empty { max-width: 1000px; margin: 40px auto; text-align: center; color: #6b7280; }
     .bottombar { max-width: 1000px; margin: 0 auto; padding: 16px; background: #fff; border: 1px solid #eee; border-radius: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); }
-    .total { font-size: 18px; color: #111827; margin-bottom: 16px; text-align: center; }
     .submit { width: 100%; appearance: none; border: none; background: #ff7a00; color: #fff; padding: 14px 20px; border-radius: 12px; font-weight: 700; cursor: pointer; box-shadow: 0 6px 16px rgba(255,122,0,0.35); font-size: 16px; }
     .submit[disabled] { opacity: 0.6; cursor: not-allowed; box-shadow: none; }
     @media (min-width: 768px) {
       .item-card { grid-template-columns: 88px 1fr auto; padding: 14px 16px; }
       .media { width: 88px; height: 88px; }
       .heading h1 { font-size: 22px; }
-      .total { font-size: 20px; }
     }
   `]
 })
