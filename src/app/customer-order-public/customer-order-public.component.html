@@ -41,7 +41,7 @@
             </div>
           </div>
           <div *ngIf="categoryStates[category]" class="category-content">
-            <div *ngFor="let article of groupedArticles[category]" class="product-card">
+            <div *ngFor="let article of groupedArticles[category]" class="product-card" [attr.data-article-id]="article.article_number || article.product_id">
               <div class="card-header">
                 <div class="article-info">
                   <div class="article-text">{{ article.article_text }}</div>
@@ -107,7 +107,7 @@
             </div>
           </div>
           <div *ngIf="categoryStates[category]" class="category-content">
-            <div *ngFor="let article of groupedArticles[category]" class="table-row">
+            <div *ngFor="let article of groupedArticles[category]" class="table-row" [attr.data-article-id]="article.article_number || article.product_id">
               <div class="col-desc">
                                   <div class="article-info-with-image">
                     <div class="article-image" (click)="article.main_image_url && openImage(article)" style="cursor: pointer;">
@@ -411,6 +411,41 @@
     </div>
   </div>
 </div>
+
+            <!-- State Restore Loading Modal -->
+            <div *ngIf="showStateRestoreModal" class="state-restore-modal">
+              <div class="modal-content">
+                <div class="loading-container">
+                  <div class="loading-icon">📋</div>
+                  <h3>Wiederherstellung läuft...</h3>
+                  <p>Artikel und Position werden geladen</p>
+                  
+                  <!-- Fortschrittsbalken -->
+                  <div class="progress-container">
+                    <div class="progress-bar">
+                      <div class="progress-fill" [style.width.%]="loadingProgress"></div>
+                    </div>
+                    <div class="progress-text">{{ loadingProgress }}%</div>
+                  </div>
+                  
+                  <!-- Lade-Status -->
+                  <div class="loading-steps">
+                    <div class="step" [class.active]="currentStep >= 1">
+                      <span class="step-icon">✓</span>
+                      <span class="step-text">State geladen</span>
+                    </div>
+                    <div class="step" [class.active]="currentStep >= 2">
+                      <span class="step-icon">✓</span>
+                      <span class="step-text">Artikel wiederhergestellt</span>
+                    </div>
+                    <div class="step" [class.active]="currentStep >= 3">
+                      <span class="step-icon">✓</span>
+                      <span class="step-text">Position gesetzt</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
 
 <!-- Response Modal -->
 <div *ngIf="showResponseModal" class="response-modal">
