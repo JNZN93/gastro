@@ -96,6 +96,11 @@ export class PublicOrderReviewComponent implements OnInit {
     this.items = state.items || [];
     this.total = state.total || 0;
     this.customer = state.customer || null;
+
+    // Automatisch nach oben scrollen, damit die Artikelliste sichtbar ist
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 100);
   }
 
   goBack() {

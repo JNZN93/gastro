@@ -15,6 +15,7 @@ import { ActivatedRoute, Router } from '@angular/router';
       <div class="viewer-content">
         <img *ngIf="imageUrl" [src]="imageUrl" [alt]="title || 'Produktbild'" />
         <div *ngIf="!imageUrl" class="no-image">Kein Bild verfügbar</div>
+        <button class="back-btn-bottom" (click)="goBack()">← Zurück zur Bestellung</button>
       </div>
     </div>
   `,
@@ -23,9 +24,10 @@ import { ActivatedRoute, Router } from '@angular/router';
     .viewer-header { display: flex; align-items: center; padding: 12px; background: #000; }
     .back-btn { background: #fff; color: #000; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; }
     .title { margin-left: 12px; font-weight: 600; }
-    .viewer-content { flex: 1; display: flex; align-items: center; justify-content: center; }
-    img { max-width: 100%; max-height: 90vh; object-fit: contain; }
+    .viewer-content { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; }
+    img { max-width: 100%; max-height: 70vh; object-fit: contain; }
     .no-image { color: #bbb; }
+    .back-btn-bottom { appearance: none; border: 1px solid #ddd; background: #fff; color: #333; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 500; }
   `]
 })
 export class PublicImageViewerComponent implements OnInit {
