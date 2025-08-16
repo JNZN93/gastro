@@ -2836,13 +2836,13 @@ filteredArtikelData() {
         doc.text(`Zusatz: ${customer.name_addition}`, 20, 85);
       }
       
-      // QR-Code (größer und professioneller)
-      const qrSize = 100; // Größerer QR-Code
+      // QR-Code (kleiner, damit mehr Platz für Text bleibt)
+      const qrSize = 80; // Kleinerer QR-Code
       const qrX = 105 - (qrSize / 2); // Zentriert
-      const qrY = 110;
+      const qrY = 100;
       
       // Schönerer Rahmen mit abgerundeten Ecken (simuliert durch mehrere Rechtecke)
-      const framePadding = 10;
+      const framePadding = 8;
       const frameSize = qrSize + (framePadding * 2);
       
       // Hintergrund für den QR-Code (weiß)
@@ -2862,33 +2862,60 @@ filteredArtikelData() {
       // QR-Code einfügen
       doc.addImage(qrCodeDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
       
-      // Anleitung mit professionelleren Farben
+      // Anleitung (rechts neben dem QR-Code)
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(26, 54, 93); // Dunkelblau
-      doc.text('Anleitung:', 20, 230);
+      doc.text('Anleitung:', 20, 200);
       
       doc.setFontSize(12);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(66, 153, 225); // Hellblau
-      doc.text('1. QR-Code mit dem Handy scannen', 20, 245);
-      doc.text('2. Oder den Link unten kopieren', 20, 255);
-      doc.text('3. Direkt auf der Webseite bestellen', 20, 265);
+      doc.text('1. QR-Code mit dem Handy scannen', 20, 215);
+      doc.text('2. Oder den Link unten kopieren', 20, 230);
+      doc.text('3. Direkt auf der Webseite bestellen', 20, 245);
       
-      // URL
+      // Wichtiger Hinweis zum Datenschutz
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(220, 38, 38); // Rot für Aufmerksamkeit
+      doc.text('⚠️ Wichtiger Hinweis:', 20, 265);
+      
       doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(220, 38, 38); // Rot für Aufmerksamkeit
+      doc.text('Bitte QR-Code nicht weitergeben - enthält persönliche Bestelldaten', 20, 280);
+      
+      // URL - EINFACHE LÖSUNG die garantiert funktioniert
+      doc.setFontSize(12);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(26, 54, 93); // Dunkelblau
-      doc.text('Direkter Link:', 20, 285);
-      doc.setFontSize(8);
+      doc.text('Direkter Link:', 20, 300);
+      
+      // URL direkt in einer Zeile (falls sie zu lang ist, wird sie automatisch abgeschnitten)
+      doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(66, 153, 225); // Hellblau
-      doc.text(orderUrl, 20, 295);
+      
+      // URL in mehreren Zeilen mit fester Aufteilung
+      const urlPart1 = orderUrl.substring(0, 60);
+      const urlPart2 = orderUrl.substring(60, 120);
+      const urlPart3 = orderUrl.substring(120);
+      
+      // URL-Teile ins PDF einfügen
+      doc.text(urlPart1, 20, 315);
+      if (urlPart2) {
+        doc.text(urlPart2, 20, 325);
+      }
+      if (urlPart3) {
+        doc.text(urlPart3, 20, 335);
+      }
       
       // Datum
       doc.setFontSize(10);
       doc.setTextColor(26, 54, 93); // Dunkelblau
-      doc.text(`Generiert am: ${new Date().toLocaleString('de-DE')}`, 20, 310);
+      const finalUrlY = urlPart3 ? 320 : (urlPart2 ? 340 : 330);
+      doc.text(`Generiert am: ${new Date().toLocaleString('de-DE')}`, 20, finalUrlY);
       
       // PDF öffnen und automatisch drucken
       const pdfBlob = doc.output('blob');
@@ -2973,6 +3000,35 @@ filteredArtikelData() {
         const qrY = 15;
         const qrSize = 80;
         doc.addImage(qrCodeDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
+        
+        // Wichtiger Hinweis zum Datenschutz auch im Fallback
+        const textX = qrX + (qrSize / 2);
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(220, 38, 38); // Rot für Aufmerksamkeit
+        const warningText = '⚠️ Bitte QR-Code nicht weitergeben - enthält persönliche Bestelldaten';
+        const warningWidth = doc.getTextWidth(warningText);
+        doc.text(warningText, textX - (warningWidth / 2), qrY + qrSize + 65);
+        
+        // URL mit Zeilenumbrüchen auch im Fallback anzeigen
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(100, 100, 100); // Grau für URL
+        const urlLabel = 'Direktlink:';
+        const urlLabelWidth = doc.getTextWidth(urlLabel);
+        doc.text(urlLabel, textX - (urlLabelWidth / 2), qrY + qrSize + 80);
+        
+        // URL in mehrere Zeilen aufteilen
+        const maxLineLength = 35; // Maximale Zeichen pro Zeile
+        const urlLines = this.splitUrlIntoLines(orderUrl, maxLineLength);
+        let urlY = qrY + qrSize + 90;
+        
+        urlLines.forEach((line: string) => {
+          const lineWidth = doc.getTextWidth(line);
+          doc.text(line, textX - (lineWidth / 2), urlY);
+          urlY += 5; // Abstand zwischen den Zeilen
+        });
+        
         console.log('🔍 [QR-CODE] Fallback QR-Code ins PDF eingefügt');
         return;
       }
@@ -3051,6 +3107,33 @@ filteredArtikelData() {
       const subtitle2 = 'Direkt bestellen';
       const subtitle2Width = doc.getTextWidth(subtitle2);
       doc.text(subtitle2, textX - (subtitle2Width / 2), qrY + qrSize + 48);
+      
+      // Wichtiger Hinweis zum Datenschutz
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(220, 38, 38); // Rot für Aufmerksamkeit
+      const warningText = '⚠️ Bitte QR-Code nicht weitergeben - enthält persönliche Bestelldaten';
+      const warningWidth = doc.getTextWidth(warningText);
+      doc.text(warningText, textX - (warningWidth / 2), qrY + qrSize + 65);
+      
+      // URL mit Zeilenumbrüchen anzeigen
+      doc.setFontSize(7);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100, 100, 100); // Grau für URL
+      const urlLabel = 'Direktlink:';
+      const urlLabelWidth = doc.getTextWidth(urlLabel);
+      doc.text(urlLabel, textX - (urlLabelWidth / 2), qrY + qrSize + 80);
+      
+      // URL in mehrere Zeilen aufteilen
+      const maxLineLength = 35; // Maximale Zeichen pro Zeile
+      const urlLines = this.splitUrlIntoLines(orderUrl, maxLineLength);
+      let urlY = qrY + qrSize + 90;
+      
+      urlLines.forEach((line: string) => {
+        const lineWidth = doc.getTextWidth(line);
+        doc.text(line, textX - (lineWidth / 2), urlY);
+        urlY += 5; // Abstand zwischen den Zeilen
+      });
       
       // Zusätzliche visuelle Elemente
       // Kleine dekorative Linien links und rechts vom Titel
@@ -3762,5 +3845,25 @@ filteredArtikelData() {
   // Navigation method
   goBack(): void {
     this.router.navigate(['/admin']);
+  }
+
+  // Hilfsfunktion um lange URLs in mehrere Zeilen aufzuteilen
+  private splitUrlIntoLines(url: string, maxLineLength: number): string[] {
+    if (url.length <= maxLineLength) {
+      return [url];
+    }
+
+    const lines: string[] = [];
+    let startIndex = 0;
+    
+    // URL nach fester Zeichenanzahl umbrechen
+    while (startIndex < url.length) {
+      const endIndex = Math.min(startIndex + maxLineLength, url.length);
+      const line = url.substring(startIndex, endIndex);
+      lines.push(line);
+      startIndex = endIndex;
+    }
+    
+    return lines;
   }
 }
