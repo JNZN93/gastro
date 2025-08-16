@@ -298,6 +298,7 @@ export class CustomerOrderPublicComponent implements OnInit {
     
     console.log(`🔍 [PUBLIC-ORDER] Artikel gefiltert: ${originalCount} → ${this.customerArticlePrices.length}`);
     
+    
     // Nach dem Filtern gruppieren
     this.buildGroups();
 
