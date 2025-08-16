@@ -54,7 +54,7 @@ import { ActivatedRoute, Router } from '@angular/router';
     .back { appearance: none; border: 1px solid #ddd; background: #fff; padding: 8px 12px; border-radius: 10px; cursor: pointer; font-weight: 500; }
     .heading h1 { margin: 0; font-size: 20px; }
     .customer { color: #6b7280; font-size: 12px; margin-top: 2px; }
-    .content { max-width: 1000px; margin: 0 auto; padding: 16px; }
+    .content { max-width: 1000px; margin: 0 auto; padding: 16px; height: calc(100vh - 120px); overflow-y: auto; }
     .items { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
     .item-card { display: grid; grid-template-columns: 72px 1fr auto; gap: 12px; align-items: center; background: #fff; border: 1px solid #eee; border-radius: 14px; padding: 10px 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); }
     .media { width: 72px; height: 72px; border-radius: 10px; background: #f2f2f2; display: flex; align-items: center; justify-content: center; overflow: hidden; }
@@ -99,7 +99,10 @@ export class PublicOrderReviewComponent implements OnInit {
 
     // Automatisch nach oben scrollen, damit die Artikelliste sichtbar ist
     setTimeout(() => {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      const contentElement = document.querySelector('.content');
+      if (contentElement) {
+        contentElement.scrollTop = 0;
+      }
     }, 100);
   }
 
