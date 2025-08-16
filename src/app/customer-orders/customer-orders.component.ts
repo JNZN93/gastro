@@ -2109,6 +2109,8 @@ filteredArtikelData() {
 
     const token = localStorage.getItem('token');
 
+    console.log('🚀 [CUSTOMER-ORDERS] Bestellung wird abgesendet:');
+
     // 🔍 PAYLOAD LOGGING - Bestellung wird abgesendet
     console.log('🚀 [CUSTOMER-ORDERS] Bestellung wird abgesendet:');
     console.log('📋 [CUSTOMER-ORDERS] Vollständiges Order-Payload:', JSON.stringify(completeOrder, null, 2));
