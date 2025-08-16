@@ -120,6 +120,13 @@
 /* Desktop Category Headers */
 .category-header {
   margin: 2rem 0 1rem 0;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(44, 62, 80, 0.4);
+  }
   
   .category-title {
     background: linear-gradient(135deg, #2c3e50, #34495e);
@@ -131,6 +138,82 @@
     text-align: center;
     box-shadow: 0 4px 12px rgba(44, 62, 80, 0.3);
     margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  
+  .category-name {
+    flex: 1;
+    text-align: center;
+  }
+  
+  .category-toggle-icon {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: white;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+  }
+}
+
+/* Mobile Category Headers */
+.category-header-mobile {
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin: 2rem 0 1rem 0;
+  
+  &:hover {
+    transform: translateY(-1px);
+  }
+  
+  .category-title {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  
+  .category-name {
+    flex: 1;
+    text-align: center;
+  }
+  
+  .category-toggle-icon {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: white;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+  }
+}
+
+/* Category Content Animation */
+.category-content {
+  animation: slideDown 0.3s ease-out;
+  overflow: hidden;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    max-height: 2000px; // Ausreichend groß für alle Artikel
+    transform: translateY(0);
   }
 }
 
@@ -146,6 +229,22 @@
     margin: 1.5rem 0 0.75rem 0;
     padding: 0.625rem 1.25rem;
     font-size: 1rem;
+    gap: 0.75rem;
+  }
+  
+  .category-header-mobile .category-title {
+    margin: 1.5rem 0 0.75rem 0;
+    padding: 0.625rem 1.25rem;
+    font-size: 1rem;
+    gap: 0.75rem;
+  }
+  
+  .category-toggle-icon {
+    font-size: 1rem;
+  }
+  
+  .category-name {
+    font-size: 1rem;
   }
 }
 
@@ -154,12 +253,27 @@
     margin: 1.25rem 0 0.5rem 0;
     padding: 0.5rem 1rem;
     font-size: 0.95rem;
-    font-size: 0.95rem;
   }
   
   .category-header .category-title {
     margin: 1.25rem 0 0.5rem 0;
     padding: 0.5rem 1rem;
+    font-size: 0.95rem;
+    gap: 0.5rem;
+  }
+  
+  .category-header-mobile .category-title {
+    margin: 1.25rem 0 0.5rem 0;
+    padding: 0.5rem 1rem;
+    font-size: 0.95rem;
+    gap: 0.5rem;
+  }
+  
+  .category-toggle-icon {
+    font-size: 0.9rem;
+  }
+  
+  .category-name {
     font-size: 0.95rem;
   }
 }
@@ -216,13 +330,7 @@
     }
     
     .article-price {
-      font-weight: 700;
-      color: #2c3e50; // Dunkelblau statt rot - professioneller
-      font-size: 1.1rem;
-      white-space: nowrap; // Preis bleibt in einer Zeile
-      margin-left: 0.5rem;
-      flex-shrink: 0; // Preis wird nicht kleiner gemacht
-      min-width: fit-content; // Preis behält seine natürliche Breite
+      display: none; // Preis wird nicht angezeigt
     }
   }
   
@@ -338,7 +446,7 @@
   
   .table-header {
     display: grid;
-    grid-template-columns: 1fr auto auto;
+    grid-template-columns: 1fr auto; // Preis-Spalte entfernt
     gap: 0.5rem;
     background: #27ae60;
     color: white;
@@ -349,7 +457,7 @@
   
   .table-row {
     display: grid;
-    grid-template-columns: 1fr auto auto;
+    grid-template-columns: 1fr auto; // Preis-Spalte entfernt
     gap: 0.5rem;
     padding: 0.75rem;
     border-bottom: 1px solid #eee;
@@ -386,11 +494,7 @@
   }
   
   .col-price {
-    text-align: center;
-    font-weight: 600;
-    color: #2c3e50; // Dunkelblau statt rot - professioneller
-    white-space: nowrap;
-    flex-shrink: 0;
+    display: none; // Preis-Spalte wird nicht angezeigt
   }
   
   .col-qty {
@@ -524,12 +628,7 @@
 }
 
 .order-total {
-  text-align: center;
-  background: white;
-  padding: 1rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  margin-bottom: 1rem;
+  display: none; // Gesamtpreis wird nicht angezeigt
   
   h3 {
     margin: 0;
@@ -741,14 +840,11 @@
       }
       
       .item-price {
-        color: #7f8c8d;
-        min-width: 60px;
+        display: none; // Einzelpreis wird nicht angezeigt
       }
       
       .item-total {
-        font-weight: 700;
-        color: #27ae60;
-        min-width: 80px;
+        display: none; // Gesamtpreis wird nicht angezeigt
       }
     }
   }
@@ -761,9 +857,7 @@
   border: 2px solid #ecf0f1;
   
   .summary-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    display: none; // Gesamtpreis wird nicht angezeigt
     
     .label {
       font-size: 1.1rem;

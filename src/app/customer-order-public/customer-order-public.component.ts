@@ -46,6 +46,14 @@ export class CustomerOrderPublicComponent implements OnInit {
   // Gruppierung nach Kategorien
   groupedArticles: { [category: string]: any[] } = {};
   orderedCategories: string[] = [];
+  
+  // Neue Eigenschaft für den Zustand der Kategorien (aufgeklappt/zugeklappt)
+  categoryStates: { [category: string]: boolean } = {};
+
+  // Methode zum Umschalten des Zustands einer Kategorie
+  toggleCategory(category: string): void {
+    this.categoryStates[category] = !this.categoryStates[category];
+  }
 
   ngOnInit() {
     this.route.params.subscribe(params => {
@@ -156,6 +164,11 @@ export class CustomerOrderPublicComponent implements OnInit {
     }
     
     this.groupedArticles = groups;
+    
+    // Alle Kategorien initial als zugeklappt setzen
+    this.orderedCategories.forEach(category => {
+      this.categoryStates[category] = false;
+    });
   }
 
   loadCustomerData() {
