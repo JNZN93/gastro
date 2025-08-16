@@ -64,6 +64,7 @@
                   <input 
                     type="number" 
                     [(ngModel)]="article.tempQuantity"
+                    (input)="onQuantityChange()"
                     min="0"
                     placeholder="0"
                     class="quantity-input"
@@ -120,6 +121,7 @@
                   <input 
                     type="number" 
                     [(ngModel)]="article.tempQuantity"
+                    (input)="onQuantityChange()"
                     min="0"
                     placeholder="0"
                     class="quantity-input"
@@ -159,31 +161,32 @@
               <div class="article-price">€0.00</div>
             </div>
             
-            <div class="card-actions">
-              <div class="quantity-controls">
-                <button 
-                  class="btn-quantity btn-decrease"
-                  (click)="decreaseCustomQuantity()"
-                  [disabled]="!customArticle.tempQuantity || customArticle.tempQuantity <= 0"
-                >
-                  −
-                </button>
-                
-                <input 
-                  type="number" 
-                  [(ngModel)]="customArticle.tempQuantity"
-                  min="0"
-                  placeholder="0"
-                  class="quantity-input"
-                >
-                
-                <button 
-                  class="btn-quantity btn-increase"
-                  (click)="increaseCustomQuantity()"
-                >
-                  +
-                </button>
-              </div>
+                          <div class="card-actions">
+                <div class="quantity-controls">
+                  <button 
+                    class="btn-quantity btn-decrease"
+                    (click)="decreaseCustomQuantity()"
+                    [disabled]="!customArticle.tempQuantity || customArticle.tempQuantity <= 0"
+                  >
+                    −
+                  </button>
+                  
+                  <input 
+                    type="number" 
+                    [(ngModel)]="customArticle.tempQuantity"
+                    (input)="onQuantityChange()"
+                    min="0"
+                    placeholder="0"
+                    class="quantity-input"
+                  >
+                  
+                  <button 
+                    class="btn-quantity btn-increase"
+                    (click)="increaseCustomQuantity()"
+                  >
+                    +
+                  </button>
+                </div>
               
               <div class="custom-article-actions">
                 <button 
@@ -237,6 +240,7 @@
                 <input 
                   type="number" 
                   [(ngModel)]="customArticle.tempQuantity"
+                  (input)="onQuantityChange()"
                   min="0"
                   placeholder="0"
                   class="quantity-input"
