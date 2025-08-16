@@ -58,7 +58,6 @@ export class CustomerOrderPublicComponent implements OnInit {
   // Loading-Modal für State-Wiederherstellung
   showStateRestoreModal: boolean = false;
   loadingProgress: number = 0;
-  currentStep: number = 0;
 
   // localStorage Key für diesen Kunden
   private get localStorageKey(): string {
@@ -108,11 +107,9 @@ export class CustomerOrderPublicComponent implements OnInit {
     // Loading-Modal anzeigen und Fortschritt zurücksetzen
     this.showStateRestoreModal = true;
     this.loadingProgress = 0;
-    this.currentStep = 0;
     
-    // Schritt 1: State laden (0-30%)
-    this.loadingProgress = 10;
-    this.currentStep = 1;
+    // State laden (0-30%)
+    this.loadingProgress = 30;
     
     this.customer = state.customer;
     this.customerNumber = state.customerNumber;
@@ -134,11 +131,10 @@ export class CustomerOrderPublicComponent implements OnInit {
     this.lastOpenedArticleId = state.lastOpenedArticleId || null;
 
     this.buildGroups();
-    
-    // Schritt 2: Artikel wiederherstellen (30-70%)
+
     setTimeout(() => {
-      this.loadingProgress = 40;
-      this.currentStep = 2;
+      // Artikel wiederherstellen (30-70%)
+      this.loadingProgress = 70;
       
       this.restoreScrollPosition(state.scrollPosition);
       this.restoreViewportState(state.activeCategory);
@@ -146,32 +142,25 @@ export class CustomerOrderPublicComponent implements OnInit {
         this.scrollToArticle(this.lastOpenedArticleId);
       }
       
-      // Schritt 3: Position setzen (70-100%)
+      // Position setzen (70-100%)
       setTimeout(() => {
-        this.loadingProgress = 80;
-        this.currentStep = 3;
+        this.loadingProgress = 100;
         
-        // Finale Schritte
+        // Länger warten und weicheren Übergang
         setTimeout(() => {
-          this.loadingProgress = 100;
+          // Fade-Out-Effekt starten
+          const modal = document.querySelector('.state-restore-modal');
+          if (modal) {
+            modal.classList.add('fade-out');
+          }
           
-          // Länger warten und weicheren Übergang
+          // Nach dem Fade-Out das Modal komplett ausblenden
           setTimeout(() => {
-            // Fade-Out-Effekt starten
-            const modal = document.querySelector('.state-restore-modal');
-            if (modal) {
-              modal.classList.add('fade-out');
-            }
-            
-            // Nach dem Fade-Out das Modal komplett ausblenden
-            setTimeout(() => {
-              this.showStateRestoreModal = false;
-              // Reset der Werte
-              this.loadingProgress = 0;
-              this.currentStep = 0;
-            }, 500); // 500ms für den Fade-Out
-          }, 800); // Länger warten für weicheren Übergang
-        }, 300); // Kurze Verzögerung für 100%
+            this.showStateRestoreModal = false;
+            // Reset des Fortschritts
+            this.loadingProgress = 0;
+          }, 500); // 500ms für den Fade-Out
+        }, 800); // Länger warten für weicheren Übergang
       }, 500); // Länger warten für DOM rendering
     }, 500); // Länger warten für DOM rendering
   }

@@ -83,127 +83,34 @@
     color: white;
 
     .loading-container {
-      .loading-icon {
-        font-size: 3rem;
+      .loading-bar {
+        width: 200px;
+        height: 6px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 3px;
+        overflow: hidden;
         margin: 0 auto 1.5rem;
-        animation: bounce 2s ease-in-out infinite;
-      }
-
-      h3 {
-        margin: 0 0 0.5rem 0;
-        font-size: 1.5rem;
-        font-weight: 600;
-        color: white;
+        
+        .loading-fill {
+          height: 100%;
+          background: #3498db;
+          border-radius: 3px;
+          transition: width 0.3s ease-in-out;
+        }
       }
 
       p {
-        margin: 0 0 2rem 0;
+        margin: 0;
         font-size: 1rem;
         opacity: 0.8;
         color: white;
-      }
-
-      .progress-container {
-        margin-bottom: 2rem;
-        
-        .progress-bar {
-          width: 100%;
-          height: 8px;
-          background: rgba(255, 255, 255, 0.2);
-          border-radius: 4px;
-          overflow: hidden;
-          margin-bottom: 0.5rem;
-          
-          .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #3498db, #2ecc71);
-            border-radius: 4px;
-            transition: width 0.3s ease-in-out;
-            position: relative;
-            
-            &::after {
-              content: '';
-              position: absolute;
-              top: 0;
-              left: 0;
-              right: 0;
-              bottom: 0;
-              background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-              animation: shimmer 2s infinite;
-            }
-          }
-        }
-        
-        .progress-text {
-          font-size: 0.9rem;
-          color: #3498db;
-          font-weight: 600;
-        }
-      }
-
-      .loading-steps {
-        .step {
-          display: flex;
-          align-items: center;
-          margin-bottom: 0.8rem;
-          opacity: 0.4;
-          transition: all 0.3s ease-in-out;
-          
-          &.active {
-            opacity: 1;
-            transform: translateX(10px);
-            
-            .step-icon {
-              background: #2ecc71;
-              transform: scale(1.1);
-            }
-          }
-          
-          .step-icon {
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 0.8rem;
-            font-size: 0.8rem;
-            color: white;
-            transition: all 0.3s ease-in-out;
-          }
-          
-          .step-text {
-            font-size: 0.9rem;
-            color: white;
-          }
-        }
+        text-align: center;
       }
     }
   }
 }
 
-/* Animationen */
-@keyframes bounce {
-  0%, 20%, 50%, 80%, 100% {
-    transform: translateY(0);
-  }
-  40% {
-    transform: translateY(-10px);
-  }
-  60% {
-    transform: translateY(-5px);
-  }
-}
 
-@keyframes shimmer {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(100%);
-  }
-}
 
 /* Error & Success */
 .error, .success {
