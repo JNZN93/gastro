@@ -614,9 +614,9 @@ export class PublicOrderReviewComponent implements OnInit {
       const completeOrder = {
         orderData: orderData,
         orderItems: this.items.map(item => ({
-          article_number: item.product_id,
+          article_number: item.article_number || item.product_id,
           quantity: item.quantity,
-          sale_price: item.unit_price || 0,
+          sale_price: (item.unit_price ?? item.sale_price ?? 0),
           description: item.article_text,
           article_text: item.article_text,
           category: item.category,
@@ -629,10 +629,10 @@ export class PublicOrderReviewComponent implements OnInit {
           id: item.product_database_id,
           product_name: item.product_name,
           unit_price_gross: item.unit_price_gross,
-          unit_price_net: item.unit_price,
+          unit_price_net: (item.unit_price ?? item.sale_price ?? 0),
           vat_percentage: item.vat_percentage,
           updated_at: item.updated_at,
-          total_price: item.total_price,
+          total_price: (item.quantity * (item.unit_price ?? item.sale_price ?? 0)),
           product_custom_field_1: item.product_custom_field_1
         }))
       };
@@ -679,8 +679,13 @@ export class PublicOrderReviewComponent implements OnInit {
     this.loadPfandArticles().then(pfandArticles => {
       console.log('📦 [PUBLIC-PFAND-LOGIC] Verfügbare PFAND-Artikel geladen:', pfandArticles);
       
-      // Erstelle eine Kopie der Artikel für die Verarbeitung
-      const itemsCopy = [...this.items];
+      // Entferne vorhandene PFAND-Artikel, um Duplikate zu vermeiden
+      const baseItems = this.items.filter(i => !i.is_pfand);
+      // Setze die Liste zunächst auf die Basisartikel ohne PFAND
+      this.items = [...baseItems];
+
+      // Erstelle eine Kopie der Basisartikel für die Verarbeitung
+      const itemsCopy = [...baseItems];
       const newItems: any[] = [];
       
       // Durchlaufe alle Artikel
@@ -712,32 +717,10 @@ export class PublicOrderReviewComponent implements OnInit {
               item: pfandItem,
               insertAfterIndex: index
             });
-            
-            console.log(`➕ [PUBLIC-PFAND-LOGIC] Echter PFAND-Artikel wird hinzugefügt: ${pfandItem.article_text}, Menge: ${pfandItem.quantity}, Preis: ${pfandItem.sale_price}€`);
+            console.log(`➕ [PUBLIC-PFAND-LOGIC] Echter PFAND-Artikel wird hinzugefügt: ${pfandItem.article_text}, Menge: ${pfandItem.quantity}, Preis: ${pfandItem.sale_price ?? pfandItem.unit_price ?? 0}€`);
           } else {
-            console.log(`❌ [PUBLIC-PFAND-LOGIC] Kein echter PFAND-Artikel gefunden für Referenz: ${artikel.product_custom_field_1}`);
-            console.log(`🔍 [PUBLIC-PFAND-LOGIC] Verfügbare PFAND-Artikel:`, pfandArticles);
-            
-            // Fallback: Erstelle einen simulierten PFAND-Artikel
-            const fallbackPfandItem = {
-              article_text: `PFAND ${artikel.article_text}`,
-              article_number: artikel.product_custom_field_1,
-              quantity: artikel.quantity,
-              sale_price: 0.25, // Standard PFAND-Preis
-              main_image_url: artikel.main_image_url, // Gleiches Bild
-              category: 'PFAND',
-              product_custom_field_1: null,
-              parent_article_number: artikel.article_number || artikel.product_id,
-              is_pfand: true,
-              description: `Pfand für ${artikel.article_text} (simuliert)`
-            };
-            
-            newItems.push({
-              item: fallbackPfandItem,
-              insertAfterIndex: index
-            });
-            
-            console.log(`⚠️ [PUBLIC-PFAND-LOGIC] Simulierter PFAND-Artikel als Fallback hinzugefügt: ${fallbackPfandItem.article_text}`);
+            // Kein PFAND-Artikel gefunden: nichts hinzufügen
+            console.log(`❌ [PUBLIC-PFAND-LOGIC] Kein echter PFAND-Artikel gefunden für Referenz: ${artikel.product_custom_field_1}. Es wird kein PFAND hinzugefügt.`);
           }
         } else {
           console.log(`ℹ️ [PUBLIC-PFAND-LOGIC] Artikel ${artikel.article_text} hat kein product_custom_field_1`);
