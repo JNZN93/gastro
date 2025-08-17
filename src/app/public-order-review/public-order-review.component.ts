@@ -50,15 +50,15 @@ import { ActivatedRoute, Router } from '@angular/router';
   styles: [`
     :host { display: block; }
     .review-page { 
-      min-height: 100vh; 
+      height: 100vh; 
       background: #f8f9fb; 
       display: flex; 
       flex-direction: column;
-      position: relative;
+      overflow: hidden;
     }
     .topbar { 
-      position: sticky; 
-      top: 0; 
+      height: var(--header-height, 80px); /* Fallback to 80px if not set */
+      flex-shrink: 0;
       z-index: 5; 
       display: flex; 
       align-items: center; 
@@ -66,7 +66,6 @@ import { ActivatedRoute, Router } from '@angular/router';
       padding: 12px 16px; 
       background: linear-gradient(180deg, #ffffff 0%, #fafafa 100%); 
       border-bottom: 1px solid #eee; 
-      flex-shrink: 0;
     }
     .back { 
       appearance: none; 
@@ -87,13 +86,14 @@ import { ActivatedRoute, Router } from '@angular/router';
       margin-top: 2px; 
     }
     .content { 
-      flex: 1;
+      height: var(--content-height, calc(100vh - 160px)); /* Fallback to desktop height */
       max-width: 1000px; 
       margin: 0 auto; 
       padding: 16px; 
-      padding-bottom: 100px; /* Add bottom padding to ensure content isn't hidden behind sticky button */
       overflow-y: auto; 
-      -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+      -webkit-overflow-scrolling: touch;
+      width: 100%;
+      box-sizing: border-box;
     }
     .items { 
       display: flex; 
@@ -162,10 +162,8 @@ import { ActivatedRoute, Router } from '@angular/router';
       color: #6b7280; 
     }
     .bottombar { 
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
+      height: var(--button-height, 80px); /* Fallback to 80px if not set */
+      flex-shrink: 0;
       max-width: 1000px; 
       margin: 0 auto; 
       padding: 16px; 
@@ -173,6 +171,10 @@ import { ActivatedRoute, Router } from '@angular/router';
       border-top: 1px solid #eee; 
       box-shadow: 0 -4px 12px rgba(0,0,0,0.1); 
       z-index: 10;
+      width: 100%;
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
     }
     .submit { 
       width: 100%; 
@@ -195,22 +197,18 @@ import { ActivatedRoute, Router } from '@angular/router';
     
     /* Mobile-specific improvements */
     @media (max-width: 767px) {
-      .review-page {
-        padding-bottom: 0;
+      .topbar {
+        padding: 12px;
       }
       .content {
-        padding: 12px;
-        padding-bottom: 100px;
-      }
-      .topbar {
         padding: 12px;
       }
       .bottombar {
         padding: 12px 16px;
-        padding-bottom: calc(12px + env(safe-area-inset-bottom)); /* iOS safe area support */
+        padding-bottom: calc(12px + env(safe-area-inset-bottom));
       }
       .submit {
-        padding: 16px 20px; /* Larger touch target on mobile */
+        padding: 16px 20px;
         font-size: 16px;
       }
     }
@@ -226,13 +224,6 @@ import { ActivatedRoute, Router } from '@angular/router';
       }
       .heading h1 { 
         font-size: 22px; 
-      }
-      .bottombar {
-        position: sticky;
-        bottom: 0;
-        margin-top: auto;
-        border-radius: 14px;
-        margin: 16px auto 16px auto;
       }
     }
   `]
@@ -258,6 +249,9 @@ export class PublicOrderReviewComponent implements OnInit {
     this.total = state.total || 0;
     this.customer = state.customer || null;
 
+    // Gerätespezifische Höhenanpassung
+    this.adjustHeightForDevice();
+
     // Automatisch nach oben scrollen, damit die Artikelliste sichtbar ist
     setTimeout(() => {
       const contentElement = document.querySelector('.content');
@@ -265,6 +259,29 @@ export class PublicOrderReviewComponent implements OnInit {
         contentElement.scrollTop = 0;
       }
     }, 100);
+  }
+
+  private adjustHeightForDevice() {
+    const userAgent = navigator.userAgent.toLowerCase();
+    const isIOS = /iphone|ipad|ipod/.test(userAgent);
+    const isAndroid = /android/.test(userAgent);
+    
+    if (isIOS) {
+      // iPhone-spezifische Höhen - Content noch kleiner für bessere Sichtbarkeit
+      document.documentElement.style.setProperty('--header-height', '70px');
+      document.documentElement.style.setProperty('--button-height', '70px');
+      document.documentElement.style.setProperty('--content-height', 'calc(100vh - 240px)'); // Noch kleiner gemacht
+    } else if (isAndroid) {
+      // Android-spezifische Höhen - bleiben wie sie sind
+      document.documentElement.style.setProperty('--header-height', '75px');
+      document.documentElement.style.setProperty('--button-height', '75px');
+      document.documentElement.style.setProperty('--content-height', 'calc(100vh - 150px)');
+    } else {
+      // Desktop-Fallback
+      document.documentElement.style.setProperty('--header-height', '80px');
+      document.documentElement.style.setProperty('--button-height', '80px');
+      document.documentElement.style.setProperty('--content-height', 'calc(100vh - 160px)');
+    }
   }
 
   goBack() {
