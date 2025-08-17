@@ -62,10 +62,22 @@ import { CustomerOrderStateService } from '../customer-order-state.service';
       </div>
 
       <div class="bottombar" *ngIf="items && items.length">
-        <button class="submit" (click)="submitOrder()" [disabled]="isSubmitting">
+        <button class="submit" (click)="openConfirmModal()" [disabled]="isSubmitting">
           <span *ngIf="!isSubmitting">Bestellung absenden</span>
           <span *ngIf="isSubmitting">Sende...</span>
         </button>
+      </div>
+      
+      <!-- Confirmation Modal -->
+      <div class="confirm-backdrop" *ngIf="showConfirmModal">
+        <div class="confirm-modal">
+          <h2>Bestellung absenden?</h2>
+          <p>Möchten Sie die Bestellung jetzt absenden?</p>
+          <div class="confirm-actions">
+            <button class="btn-cancel" (click)="closeConfirmModal()">Abbrechen</button>
+            <button class="btn-confirm" (click)="confirmSubmit()" [disabled]="isSubmitting">Ja, absenden</button>
+          </div>
+        </div>
       </div>
     </div>
   `,
@@ -364,6 +376,60 @@ import { CustomerOrderStateService } from '../customer-order-state.service';
         font-size: 12px;
       }
     }
+
+    /* Confirmation modal */
+    .confirm-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+    }
+    .confirm-modal {
+      width: 90%;
+      max-width: 420px;
+      background: #fff;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    }
+    .confirm-modal h2 {
+      margin: 0 0 8px 0;
+      font-size: 18px;
+    }
+    .confirm-modal p {
+      margin: 0 0 16px 0;
+      color: #374151;
+      font-size: 14px;
+    }
+    .confirm-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+    .btn-cancel {
+      appearance: none;
+      border: 1px solid #d1d5db;
+      background: #fff;
+      color: #374151;
+      padding: 10px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .btn-confirm {
+      appearance: none;
+      border: none;
+      background: #ff7a00;
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 700;
+      box-shadow: 0 6px 16px rgba(255,122,0,0.35);
+    }
   `]
 })
 export class PublicOrderReviewComponent implements OnInit {
@@ -377,6 +443,7 @@ export class PublicOrderReviewComponent implements OnInit {
   total = 0;
   isSubmitting = false;
   customer: any = null;
+  showConfirmModal = false;
 
   ngOnInit(): void {
     this.route.params.subscribe(params => {
@@ -404,17 +471,59 @@ export class PublicOrderReviewComponent implements OnInit {
     if (!this.token) return;
     
     try {
-      const items = localStorage.getItem(`review_items_${this.token}`);
-      const customer = localStorage.getItem(`review_customer_${this.token}`);
-      const total = localStorage.getItem(`review_total_${this.token}`);
-      
-      if (items) {
-        this.items = JSON.parse(items);
-        this.customer = customer ? JSON.parse(customer) : null;
-        this.total = total ? parseFloat(total) : 0;
+      let customerNumber = this.customer?.customer_number || this.customer?.customer_id || null;
+      let orderData: any = null;
+
+      // Versuche primär über bekannte Kundennummer
+      if (customerNumber) {
+        const storageKey = `customer_order_${customerNumber}`;
+        const storedData = localStorage.getItem(storageKey);
+        if (storedData) {
+          orderData = JSON.parse(storedData);
+        }
+      }
+
+      // Fallback: Scanne localStorage nach dem Eintrag mit passendem Token
+      if (!orderData) {
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith('customer_order_')) {
+            try {
+              const val = localStorage.getItem(key);
+              if (!val) continue;
+              const parsed = JSON.parse(val);
+              if (parsed && parsed.token === this.token) {
+                orderData = parsed;
+                customerNumber = parsed.customerNumber;
+                break;
+              }
+            } catch {}
+          }
+        }
+      }
+
+      if (orderData) {
+        // Setze minimalen Customer, falls noch nicht vorhanden
+        if (!this.customer && customerNumber) {
+          this.customer = { customer_number: customerNumber };
+        }
+        let entries: any[] = [];
+        if (Array.isArray(orderData.articles)) {
+          entries = orderData.articles;
+        } else if (orderData.items && typeof orderData.items === 'object') {
+          entries = Object.values(orderData.items);
+        }
+
+        // Konvertiere tempQuantity -> quantity und stelle unit_price für Total sicher
+        this.items = entries.map((article: any) => ({
+          ...article,
+          quantity: article.tempQuantity || article.quantity || 0,
+          unit_price: article.unit_price ?? article.unit_price_net ?? article.sale_price ?? 0
+        }));
+        this.total = this.calculateTotal();
         console.log('📱 Artikel aus localStorage geladen:', this.items.length);
       } else {
-        console.log('⚠️ Keine Artikel im localStorage gefunden');
+        console.log('⚠️ Keine Bestellung im localStorage gefunden');
       }
     } catch (error) {
       console.error('❌ Fehler beim Laden aus localStorage:', error);
@@ -425,50 +534,92 @@ export class PublicOrderReviewComponent implements OnInit {
     if (!this.token) return;
     
     try {
-      localStorage.setItem(`review_items_${this.token}`, JSON.stringify(this.items));
-      localStorage.setItem(`review_total_${this.token}`, this.total.toString());
-      console.log('💾 Änderungen in localStorage gespeichert');
+      const customerNumber = this.customer?.customer_number || this.customer?.customer_id;
+      if (!customerNumber) return;
+      
+      const storageKey = `customer_order_${customerNumber}`;
+      const storedRaw = localStorage.getItem(storageKey);
+      let stored: any = storedRaw ? JSON.parse(storedRaw) : {};
+      if (!stored || typeof stored !== 'object') stored = {};
+      if (!stored.items || typeof stored.items !== 'object') stored.items = {};
+
+      // Metadaten updaten
+      stored.customerNumber = String(customerNumber);
+      stored.token = this.token;
+
+      // Nur notwendige Felder speichern und Mengen updaten
+      const presentKeys = new Set<string>();
+      for (const item of this.items) {
+        const quantity = Number(item.quantity);
+        const key = String(item.article_number || item.product_id);
+
+        if (!quantity || quantity <= 0 || isNaN(quantity)) {
+          // wird ggf. im Prune-Schritt entfernt
+          continue;
+        }
+
+        presentKeys.add(key);
+        stored.items[key] = {
+          product_id: item.product_id,
+          article_number: item.article_number,
+          article_text: item.article_text,
+          unit_price_net: Number(item.unit_price ?? item.sale_price ?? 0) || 0,
+          main_image_url: item.main_image_url,
+          product_custom_field_1: item.product_custom_field_1,
+          isCustom: !!item.isCustom,
+          tempQuantity: quantity
+        };
+      }
+
+      // Entferne alle Einträge, die nicht mehr vorhanden sind
+      const keys = Object.keys(stored.items);
+      for (const k of keys) {
+        if (!presentKeys.has(k)) {
+          delete stored.items[k];
+        }
+      }
+
+      stored.timestamp = new Date().toISOString();
+
+      localStorage.setItem(storageKey, JSON.stringify(stored));
+      console.log('💾 Kompakte Bestellung gespeichert (Review):', stored);
     } catch (error) {
       console.error('❌ Fehler beim Speichern in localStorage:', error);
     }
   }
 
+  // Neue Methode: Berechne den Gesamtpreis
+  private calculateTotal(): number {
+    if (this.items.length === 0) return 0;
+    
+    return this.items.reduce((sum, item) => {
+      const price = item.sale_price || item.unit_price || 0;
+      return sum + (price * item.quantity);
+    }, 0);
+  }
 
-  // Synchronisiere Änderungen zurück in den Haupt-Warenkorb-Speicher der Public-Order-Seite
-  private syncToMainLocalStorage(): void {
+  // Neue Methode: Lösche alle localStorage-Einträge für diesen Kunden
+  private clearAllLocalStorage() {
     try {
       const customerNumber = this.customer?.customer_number || this.customer?.customer_id;
-      if (!customerNumber || !this.token) {
-        return;
-      }
-
+      if (!customerNumber) return;
+      
+      // Lösche nur den einen Key: customer_order_<customer_number>
       const storageKey = `customer_order_${customerNumber}`;
-
-      const orderData = {
-        customerNumber: String(customerNumber),
-        token: this.token,
-        articles: this.items
-          // PFAND-Artikel nicht zurück synchronisieren
-          .filter(item => !item.is_pfand)
-          .map(item => ({
-            product_id: item.product_id || item.article_number,
-            article_number: item.article_number || item.product_id,
-            article_text: item.article_text,
-            tempQuantity: item.quantity,
-            isCustom: !!item.isCustom,
-            product_custom_field_1: item.product_custom_field_1,
-            category: item.category
-          })),
-        timestamp: new Date().toISOString()
-      };
-
-      localStorage.setItem(storageKey, JSON.stringify(orderData));
-      console.log('🔄 Haupt-Warenkorb synchronisiert:', orderData);
+      localStorage.removeItem(storageKey);
+      
+      console.log('🗑️ localStorage geleert für Kunde:', customerNumber);
     } catch (error) {
-      console.error('❌ Fehler beim Synchronisieren des Haupt-Warenkorbs:', error);
+      console.error('❌ Fehler beim Löschen der localStorage-Einträge:', error);
     }
   }
 
+  // Synchronisiere Änderungen zurück in den Haupt-Warenkorb-Speicher der Public-Order-Seite
+  private syncToMainLocalStorage(): void {
+    // Nicht mehr nötig, da wir jetzt den gleichen Key verwenden
+    // Die saveToLocalStorage() Methode speichert bereits in den richtigen Key
+    console.log('🔄 Synchronisation nicht mehr nötig - verwende bereits den gleichen Key');
+  }
 
 
   private adjustHeightForDevice() {
@@ -540,34 +691,38 @@ export class PublicOrderReviewComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
+  openConfirmModal() {
+    this.showConfirmModal = true;
+    this.cdr.markForCheck();
+  }
+
+  closeConfirmModal() {
+    this.showConfirmModal = false;
+    this.cdr.markForCheck();
+  }
+
+  confirmSubmit() {
+    this.showConfirmModal = false;
+    this.cdr.markForCheck();
+    this.submitOrder();
+  }
+
   goBack() {
     // Vor dem Zurück-Navigieren synchronisieren
     this.syncToMainLocalStorage();
     this.router.navigate([`/customer-order/${this.token}`]);
   }
 
-  clearCart() {
+    clearCart() {
     // Bestätigungsabfrage
     if (confirm('Sind Sie sicher, dass Sie den gesamten Warenkorb leeren möchten? Alle ausgewählten Artikel werden entfernt.')) {
       // Alle Artikel entfernen
       this.items = [];
       this.total = 0;
       
-      // localStorage für diesen Kunden leeren
-      if (this.customer?.customer_id || this.customer?.customer_number) {
-        const localStorageKey = `customer_order_${this.customer.customer_id || this.customer.customer_number}`;
-        localStorage.removeItem(localStorageKey);
-        console.log('🗑️ Warenkorb geleert und localStorage gelöscht für Kunde:', this.customer.customer_id || this.customer.customer_number);
-      }
+      // Alle localStorage-Einträge für diesen Kunden löschen
+      this.clearAllLocalStorage();
       
-      // Review-spezifischen localStorage auch leeren
-      if (this.token) {
-        localStorage.removeItem(`review_items_${this.token}`);
-        localStorage.removeItem(`review_customer_${this.token}`);
-        localStorage.removeItem(`review_total_${this.token}`);
-        console.log('🗑️ Review localStorage geleert');
-      }
-
       // Haupt-Warenkorb auch leeren (Synchronisation)
       this.syncToMainLocalStorage();
       
@@ -650,12 +805,8 @@ export class PublicOrderReviewComponent implements OnInit {
         console.log('✅ Bestellung erfolgreich abgesendet:', data);
         this.isSubmitting = false;
         
-        // localStorage für diesen Kunden leeren
-        if (this.customer?.customer_id || this.customer?.customer_number) {
-          const localStorageKey = `customer_order_${this.customer.customer_id || this.customer.customer_number}`;
-          localStorage.removeItem(localStorageKey);
-          console.log('🗑️ localStorage geleert für Kunde:', this.customer.customer_id || this.customer.customer_number);
-        }
+        // Alle localStorage-Einträge für diesen Kunden löschen
+        this.clearAllLocalStorage();
         
         // Erfolgreich - zur Startseite weiterleiten
         setTimeout(() => {

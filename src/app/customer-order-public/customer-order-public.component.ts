@@ -413,7 +413,33 @@ export class CustomerOrderPublicComponent implements OnInit {
     if (!this.token) return null;
     
     try {
-      // Durchsuche alle localStorage-Einträge nach einem passenden Token
+      // Verwende nur noch den einen Key: customer_order_<customer_number>
+      const customerNumber = this.extractCustomerNumberFromToken();
+      if (customerNumber) {
+        const storageKey = `customer_order_${customerNumber}`;
+        const storedData = localStorage.getItem(storageKey);
+        
+        if (storedData) {
+          const orderData = JSON.parse(storedData);
+          // Prüfe ob der Token übereinstimmt
+          if (orderData.token === this.token) {
+            console.log('📱 [PUBLIC-ORDER] Passende Bestellung in localStorage gefunden:', orderData);
+            return orderData;
+          }
+        }
+      }
+      
+      console.log('📱 [PUBLIC-ORDER] Keine passende Bestellung in localStorage gefunden');
+    } catch (error) {
+      console.error('❌ [PUBLIC-ORDER] Fehler beim Laden aus localStorage:', error);
+    }
+    return null;
+  }
+
+  // Neue Methode: Extrahiere Kundennummer aus dem Token
+  private extractCustomerNumberFromToken(): string | null {
+    try {
+      // Prüfe alle localStorage-Einträge nach einem passenden Token
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (key && key.startsWith('customer_order_')) {
@@ -422,8 +448,8 @@ export class CustomerOrderPublicComponent implements OnInit {
             if (storedData) {
               const orderData = JSON.parse(storedData);
               if (orderData.token === this.token) {
-                console.log('📱 [PUBLIC-ORDER] Passende Bestellung in localStorage gefunden:', orderData);
-                return orderData;
+                // Token gefunden, gib die Kundennummer zurück
+                return orderData.customerNumber;
               }
             }
           } catch (error) {
@@ -432,15 +458,11 @@ export class CustomerOrderPublicComponent implements OnInit {
           }
         }
       }
-      
-      console.log('📱 [PUBLIC-ORDER] Keine passende Bestellung in localStorage gefunden für Token:', this.token);
     } catch (error) {
-      console.error('❌ [PUBLIC-ORDER] Fehler beim Laden aus localStorage:', error);
+      console.error('❌ [PUBLIC-ORDER] Fehler beim Extrahieren der Kundennummer aus Token:', error);
     }
     return null;
   }
-
-
 
   // Neue Methode zum Wiederherstellen aus localStorage
   private restoreFromLocalStorage(localStorageData: any) {
@@ -454,28 +476,51 @@ export class CustomerOrderPublicComponent implements OnInit {
     this.loadCustomerData();
   }
 
-  // localStorage Methoden
+  // localStorage Methoden (kompakte Speicherung und inkrementelle Updates)
   private saveToLocalStorage(): void {
     if (!this.customerNumber || !this.token) return;
-    
-    const orderData = {
-      customerNumber: this.customerNumber,
-      token: this.token, // Token hinzufügen für bessere Identifikation
-      articles: this.customerArticlePrices.map(article => ({
-        product_id: article.product_id,
-        tempQuantity: article.tempQuantity,
-        isCustom: article.isCustom,
-        article_text: article.article_text, // Für benutzerdefinierte Artikel
-        product_custom_field_1: article.product_custom_field_1, // PFAND-Referenz hinzufügen
-        category: article.category, // Kategorie für bessere Identifikation
-        article_number: article.article_number // Artikelnummer für bessere Identifikation
-      })),
-      timestamp: new Date().toISOString()
-    };
-    
+
     try {
-      localStorage.setItem(this.localStorageKey, JSON.stringify(orderData));
-      console.log('💾 [PUBLIC-ORDER] Bestellung in localStorage gespeichert:', orderData);
+      // Bestehenden Speicher lesen (Kompatibilität mit Altformat)
+      const storedRaw = localStorage.getItem(this.localStorageKey);
+      let stored: any = storedRaw ? JSON.parse(storedRaw) : {};
+      if (!stored || typeof stored !== 'object') stored = {};
+      if (!stored.items || typeof stored.items !== 'object') stored.items = {};
+
+      // Metadaten setzen/aktualisieren
+      stored.customerNumber = this.customerNumber;
+      stored.token = this.token;
+
+      // Pro Artikel nur notwendige Felder speichern und Mengen inkrementell updaten
+      for (const article of this.customerArticlePrices) {
+        const quantity = Number(article.tempQuantity);
+        const key = String(article.article_number || article.product_id);
+
+        if (!quantity || quantity <= 0 || isNaN(quantity)) {
+          // Menge 0/null -> Eintrag entfernen
+          if (stored.items[key]) delete stored.items[key];
+          continue;
+        }
+
+        stored.items[key] = {
+          // Identifikation
+          product_id: article.product_id,
+          article_number: article.article_number,
+          // Anzeige-/Logik-Felder (nur nötigste)
+          article_text: article.article_text,
+          unit_price_net: Number(article.unit_price_net) || 0,
+          main_image_url: article.main_image_url,
+          product_custom_field_1: article.product_custom_field_1,
+          isCustom: !!article.isCustom,
+          // Menge
+          tempQuantity: quantity
+        };
+      }
+
+      stored.timestamp = new Date().toISOString();
+
+      localStorage.setItem(this.localStorageKey, JSON.stringify(stored));
+      console.log('💾 [PUBLIC-ORDER] Kompakte Bestellung gespeichert:', stored);
     } catch (error) {
       console.error('❌ [PUBLIC-ORDER] Fehler beim Speichern in localStorage:', error);
     }
@@ -493,8 +538,15 @@ export class CustomerOrderPublicComponent implements OnInit {
         if (orderData.customerNumber === this.customerNumber) {
           console.log('📱 [PUBLIC-ORDER] Gespeicherte Bestellung aus localStorage geladen:', orderData);
           
+          // Unterstütze Altformat (articles: []) und neues Format (items: {})
+          const storedEntries: any[] = Array.isArray(orderData.articles)
+            ? orderData.articles
+            : orderData.items && typeof orderData.items === 'object'
+              ? Object.values(orderData.items)
+              : [];
+
           // Stelle die Mengen für alle Artikel wieder her
-          orderData.articles.forEach((storedArticle: any) => {
+          storedEntries.forEach((storedArticle: any) => {
             // Suche nach dem Artikel basierend auf verschiedenen Feldern
             let article = this.customerArticlePrices.find(a => a.product_id === storedArticle.product_id);
             
@@ -509,7 +561,12 @@ export class CustomerOrderPublicComponent implements OnInit {
             }
             
             if (article) {
-              article.tempQuantity = storedArticle.tempQuantity;
+              // Verwende tempQuantity aus dem localStorage, falls vorhanden
+              if (storedArticle.tempQuantity !== undefined && storedArticle.tempQuantity !== null) {
+                article.tempQuantity = storedArticle.tempQuantity;
+                console.log(`🔄 [PUBLIC-ORDER] Menge wiederhergestellt für ${article.article_text}: ${storedArticle.tempQuantity}`);
+              }
+              
               article.isCustom = storedArticle.isCustom || false;
               
               // Stelle auch product_custom_field_1 wieder her (falls vorhanden)
@@ -517,37 +574,31 @@ export class CustomerOrderPublicComponent implements OnInit {
                 article.product_custom_field_1 = storedArticle.product_custom_field_1;
                 console.log(`🔄 [PUBLIC-ORDER] PFAND-Referenz wiederhergestellt für ${article.article_text}: ${storedArticle.product_custom_field_1}`);
               }
-              
-              console.log(`🔄 [PUBLIC-ORDER] Menge wiederhergestellt für ${article.article_text}: ${storedArticle.tempQuantity}`);
             } else {
-              console.log(`⚠️ [PUBLIC-ORDER] Artikel nicht gefunden für localStorage-Daten:`, storedArticle);
+              // Falls Custom-Artikel: neu hinzufügen
+              if (storedArticle?.isCustom && (storedArticle.tempQuantity || 0) > 0) {
+                const newCustomArticle = {
+                  product_id: storedArticle.product_id || `custom_${Date.now()}`,
+                  article_text: storedArticle.article_text || 'Eigener Artikel',
+                  article_number: 'Eigener Artikel',
+                  unit_price_net: Number(storedArticle.unit_price_net) || 0,
+                  tempQuantity: storedArticle.tempQuantity,
+                  isCustom: true,
+                  invoice_date: null,
+                  product_database_id: 571,
+                  category: 'NEU HINZUGEFÜGT',
+                  product_category: 'NEU HINZUGEFÜGT',
+                  main_image_url: storedArticle.main_image_url
+                };
+                this.customerArticlePrices.push(newCustomArticle);
+                console.log(`🔄 [PUBLIC-ORDER] Custom-Artikel rekonstruiert: ${newCustomArticle.article_text}`);
+              } else {
+                console.log(`⚠️ [PUBLIC-ORDER] Artikel nicht gefunden für localStorage-Daten:`, storedArticle);
+              }
             }
           });
           
-          // Stelle auch benutzerdefinierte Artikel wieder her
-          const customArticles = orderData.articles.filter((a: any) => a.isCustom);
-          customArticles.forEach((storedCustom: any) => {
-            const existingCustom = this.customerArticlePrices.find(a => 
-              a.product_id === storedCustom.product_id && a.isCustom
-            );
-            if (!existingCustom && storedCustom.tempQuantity > 0) {
-              // Füge den benutzerdefinierten Artikel wieder hinzu
-              const newCustomArticle = {
-                product_id: storedCustom.product_id,
-                article_text: storedCustom.article_text || 'Eigener Artikel',
-                article_number: 'Eigener Artikel',
-                unit_price_net: 0,
-                tempQuantity: storedCustom.tempQuantity,
-                isCustom: true,
-                invoice_date: null,
-                product_database_id: 571,
-                category: 'NEU HINZUGEFÜGT',
-                product_category: 'NEU HINZUGEFÜGT'
-              };
-              this.customerArticlePrices.push(newCustomArticle);
-              console.log(`🔄 [PUBLIC-ORDER] Benutzerdefinierten Artikel wiederhergestellt: ${storedCustom.article_text}`);
-            }
-          });
+          // Custom-Artikel wurden oben bereits rekonstruiert, falls nötig
           
           // Gruppen neu aufbauen nach der Wiederherstellung
           this.buildGroups();
@@ -562,29 +613,8 @@ export class CustomerOrderPublicComponent implements OnInit {
     if (!this.customerNumber || !this.token) return;
     
     try {
-      // Lösche den spezifischen localStorage-Eintrag für diesen Kunden
+      // Lösche nur den einen Key: customer_order_<customer_number>
       localStorage.removeItem(this.localStorageKey);
-      
-      // Lösche auch alle anderen localStorage-Einträge mit dem gleichen Token
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith('customer_order_')) {
-          try {
-            const storedData = localStorage.getItem(key);
-            if (storedData) {
-              const orderData = JSON.parse(storedData);
-              if (orderData.token === this.token) {
-                localStorage.removeItem(key);
-                console.log(`🗑️ [PUBLIC-ORDER] Zusätzlichen localStorage-Eintrag gelöscht: ${key}`);
-              }
-            }
-          } catch (error) {
-            // Ignoriere ungültige localStorage-Einträge
-            continue;
-          }
-        }
-      }
-      
       console.log('🗑️ [PUBLIC-ORDER] localStorage für Kunde geleert:', this.customerNumber);
     } catch (error) {
       console.error('❌ [PUBLIC-ORDER] Fehler beim Leeren des localStorage:', error);
@@ -1039,13 +1069,8 @@ export class CustomerOrderPublicComponent implements OnInit {
   showOrderConfirmation() {
     // Statt Modal zu öffnen, zur öffentlichen Review-Seite navigieren
     if (this.token) {
-      // Artikel in localStorage speichern für Refresh-Sicherheit
-      const reviewItems = this.getOrderItems();
-      const reviewTotal = this.getOrderTotal();
-      
-      localStorage.setItem(`review_items_${this.token}`, JSON.stringify(reviewItems));
-      localStorage.setItem(`review_customer_${this.token}`, JSON.stringify(this.customer));
-      localStorage.setItem(`review_total_${this.token}`, reviewTotal.toString());
+      // Stelle sicher, dass die aktuelle Auswahl im einheitlichen Key gespeichert ist
+      this.saveToLocalStorage();
       
       this.router.navigate([`/customer-order/${this.token}/review`]);
     }
