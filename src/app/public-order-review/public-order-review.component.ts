@@ -19,7 +19,7 @@ import { ActivatedRoute, Router } from '@angular/router';
       <div class="content">
         <ng-container *ngIf="items && items.length; else empty">
           <div class="items">
-            <div class="item-card" *ngFor="let item of items">
+            <div class="item-card" *ngFor="let item of items; trackBy: trackByItem">
               <div class="media">
                 <img *ngIf="item.main_image_url" [src]="item.main_image_url" [alt]="item.article_text" />
                 <div *ngIf="!item.main_image_url" class="placeholder">📦</div>
@@ -28,8 +28,25 @@ import { ActivatedRoute, Router } from '@angular/router';
                 <div class="name">{{ item.article_text }}</div>
                 <div class="meta">Art.-Nr.: {{ item.article_number || item.product_id }}</div>
               </div>
-              <div class="numbers">
-                <div class="qty">{{ item.quantity }}x</div>
+              <div class="actions">
+                <div class="quantity-controls">
+                  <button class="qty-btn minus" (click)="reduceQuantity(item)" [disabled]="item.quantity <= 1">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/>
+                    </svg>
+                  </button>
+                  <span class="qty-display">{{ item.quantity }}</span>
+                  <button class="qty-btn plus" (click)="increaseQuantity(item)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                  </button>
+                </div>
+                <button class="remove-btn" (click)="removeItem(item)" title="Entfernen">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                  </svg>
+                </button>
               </div>
             </div>
           </div>
@@ -57,7 +74,7 @@ import { ActivatedRoute, Router } from '@angular/router';
       overflow: hidden;
     }
     .topbar { 
-      height: var(--header-height, 80px); /* Fallback to 80px if not set */
+      height: var(--header-height, 80px);
       flex-shrink: 0;
       z-index: 5; 
       display: flex; 
@@ -86,7 +103,7 @@ import { ActivatedRoute, Router } from '@angular/router';
       margin-top: 2px; 
     }
     .content { 
-      height: var(--content-height, calc(100vh - 160px)); /* Fallback to desktop height */
+      height: var(--content-height, calc(100vh - 160px));
       max-width: 1000px; 
       margin: 0 auto; 
       padding: 16px; 
@@ -137,23 +154,83 @@ import { ActivatedRoute, Router } from '@angular/router';
       font-weight: 600; 
       color: #111827; 
       word-break: break-word; 
+      font-size: 14px;
+      line-height: 1.3;
     }
     .meta { 
       color: #6b7280; 
-      font-size: 12px; 
+      font-size: 11px; 
       margin-top: 2px; 
     }
-    .numbers { 
-      display: flex; 
-      align-items: center; 
-      gap: 8px; 
+    .actions {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
     }
-    .qty { 
-      color: #111827; 
-      font-weight: 600; 
-      background: #f3f4f6; 
-      padding: 4px 8px; 
-      border-radius: 6px; 
+    .quantity-controls {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 2px;
+    }
+    .qty-btn {
+      appearance: none;
+      border: none;
+      background: #fff;
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      transition: all 0.2s;
+    }
+    .qty-btn:hover:not(:disabled) {
+      background: #f3f4f6;
+      transform: translateY(-1px);
+    }
+    .qty-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .qty-btn svg {
+      width: 16px;
+      height: 16px;
+      stroke: #374151;
+    }
+    .qty-display {
+      min-width: 24px;
+      text-align: center;
+      font-weight: 600;
+      color: #111827;
+      font-size: 14px;
+    }
+    .remove-btn {
+      appearance: none;
+      border: none;
+      background: #fee2e2;
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .remove-btn:hover {
+      background: #fecaca;
+      transform: translateY(-1px);
+    }
+    .remove-btn svg {
+      width: 14px;
+      height: 14px;
+      stroke: #dc2626;
     }
     .empty { 
       max-width: 1000px; 
@@ -162,7 +239,7 @@ import { ActivatedRoute, Router } from '@angular/router';
       color: #6b7280; 
     }
     .bottombar { 
-      height: var(--button-height, 80px); /* Fallback to 80px if not set */
+      height: var(--button-height, 80px);
       flex-shrink: 0;
       max-width: 1000px; 
       margin: 0 auto; 
@@ -211,6 +288,37 @@ import { ActivatedRoute, Router } from '@angular/router';
         padding: 16px 20px;
         font-size: 16px;
       }
+      .item-card {
+        grid-template-columns: 64px 1fr auto;
+        gap: 10px;
+        padding: 8px 10px;
+      }
+      .media {
+        width: 64px;
+        height: 64px;
+      }
+      .name {
+        font-size: 13px;
+      }
+      .meta {
+        font-size: 10px;
+      }
+      .qty-btn {
+        width: 26px;
+        height: 26px;
+      }
+      .qty-btn svg {
+        width: 14px;
+        height: 14px;
+      }
+      .remove-btn {
+        width: 26px;
+        height: 26px;
+      }
+      .remove-btn svg {
+        width: 12px;
+        height: 12px;
+      }
     }
     
     @media (min-width: 768px) {
@@ -224,6 +332,12 @@ import { ActivatedRoute, Router } from '@angular/router';
       }
       .heading h1 { 
         font-size: 22px; 
+      }
+      .name {
+        font-size: 15px;
+      }
+      .meta {
+        font-size: 12px;
       }
     }
   `]
@@ -281,6 +395,44 @@ export class PublicOrderReviewComponent implements OnInit {
       document.documentElement.style.setProperty('--header-height', '80px');
       document.documentElement.style.setProperty('--button-height', '80px');
       document.documentElement.style.setProperty('--content-height', 'calc(100vh - 160px)');
+    }
+  }
+
+  trackByItem(index: number, item: any): string {
+    return item.article_number || item.product_id || index.toString();
+  }
+
+  reduceQuantity(item: any) {
+    if (item.quantity > 1) {
+      item.quantity--;
+      this.updateItems();
+    }
+  }
+
+  increaseQuantity(item: any) {
+    item.quantity++;
+    this.updateItems();
+  }
+
+  removeItem(item: any) {
+    // Bestätigungsabfrage vor dem Entfernen
+    if (confirm(`Möchten Sie "${item.article_text}" wirklich aus der Bestellung entfernen?`)) {
+      this.items = this.items.filter(i => 
+        (i.article_number || i.product_id) !== (item.article_number || item.product_id)
+      );
+      this.updateItems();
+    }
+  }
+
+  private updateItems() {
+    // Neue Referenz setzen, damit Angular das UI aktualisiert
+    this.items = [...this.items];
+    
+    // Gesamtpreis neu berechnen falls vorhanden
+    if (this.items.length > 0 && this.items[0].sale_price) {
+      this.total = this.items.reduce((sum, item) => {
+        return sum + (item.sale_price * item.quantity);
+      }, 0);
     }
   }
 
