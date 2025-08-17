@@ -105,13 +105,7 @@ export class CustomerOrderPublicComponent implements OnInit {
   }
 
   private restoreFromState(state: any) {
-    // Loading-Modal anzeigen und Fortschritt zurücksetzen
-    this.showStateRestoreModal = true;
-    this.loadingProgress = 0;
-    
-    // State laden (0-30%)
-    this.loadingProgress = 30;
-    
+    // State direkt laden ohne Loading-Modal
     this.customer = state.customer;
     this.customerNumber = state.customerNumber;
     this.token = state.token;
@@ -133,42 +127,22 @@ export class CustomerOrderPublicComponent implements OnInit {
 
     this.buildGroups();
 
+    // Kurze Verzögerung für DOM-Rendering, dann sofort smooth scrollen
     setTimeout(() => {
-      // Artikel wiederherstellen (30-70%)
-      this.loadingProgress = 70;
-      
+      // Scroll-Position und Viewport-State wiederherstellen
       this.restoreScrollPosition(state.scrollPosition);
       this.restoreViewportState(state.activeCategory);
-      if (this.lastOpenedArticleId) {
-        this.scrollToArticle(this.lastOpenedArticleId);
-      }
       
-      // Position setzen (70-100%)
-      setTimeout(() => {
-        this.loadingProgress = 100;
-        
-        // Länger warten und weicheren Übergang
-        setTimeout(() => {
-          // Fade-Out-Effekt starten
-          const modal = document.querySelector('.state-restore-modal');
-          if (modal) {
-            modal.classList.add('fade-out');
-          }
-          
-          // Nach dem Fade-Out das Modal komplett ausblenden
-          setTimeout(() => {
-            this.showStateRestoreModal = false;
-            // Reset des Fortschritts
-            this.loadingProgress = 0;
-          }, 500); // 500ms für den Fade-Out
-        }, 800); // Länger warten für weicheren Übergang
-      }, 500); // Länger warten für DOM rendering
-    }, 500); // Länger warten für DOM rendering
+      // Sofort smooth zum Artikel scrollen
+      if (this.lastOpenedArticleId) {
+        this.scrollToArticle(this.lastOpenedArticleId!);
+      }
+    }, 100); // Nur kurze Verzögerung für DOM-Rendering
   }
 
   private restoreScrollPosition(scrollData: any) {
     if (scrollData && typeof scrollData.scrollTop === 'number') {
-      window.scrollTo({ top: scrollData.scrollTop, left: scrollData.scrollLeft || 0, behavior: 'instant' });
+      window.scrollTo({ top: scrollData.scrollTop, left: scrollData.scrollLeft || 0, behavior: 'smooth' });
     }
   }
 
@@ -188,8 +162,8 @@ export class CustomerOrderPublicComponent implements OnInit {
   private scrollToElement(element: HTMLElement) {
     // Mehrere Scroll-Strategien versuchen
     try {
-      // Strategie 1: scrollIntoView mit instant
-      element.scrollIntoView({ behavior: 'instant', block: 'center' });
+      // Strategie 1: scrollIntoView mit smooth
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
       
       // Verifiziere die Position nach dem Scroll
       setTimeout(() => {
@@ -233,8 +207,8 @@ export class CustomerOrderPublicComponent implements OnInit {
   private correctScrollPosition(element: HTMLElement) {
     // Versuche mehrere Korrektur-Strategien
     try {
-      // Strategie 1: Direkte scrollIntoView mit center
-      element.scrollIntoView({ behavior: 'instant', block: 'center' });
+      // Strategie 1: Direkte scrollIntoView mit smooth
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
       
       // Warte kurz und verifiziere
       setTimeout(() => {

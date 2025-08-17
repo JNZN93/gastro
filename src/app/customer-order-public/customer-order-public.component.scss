@@ -65,8 +65,9 @@
   background: rgba(0, 0, 0, 1); /* Komplett undurchsichtig schwarz */
   z-index: 9999;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
+  padding-top: 15vh; /* Ladebalken weiter von oben entfernt */
   opacity: 1;
   transition: opacity 0.5s ease-in-out;
   
@@ -84,27 +85,31 @@
 
     .loading-container {
       .loading-bar {
-        width: 200px;
-        height: 6px;
-        background: rgba(255, 255, 255, 0.2);
-        border-radius: 3px;
+        width: 300px; /* Breiter Ladebalken für bessere Sichtbarkeit */
+        height: 8px; /* Höherer Ladebalken */
+        background: rgba(255, 255, 255, 0.3); /* Hellerer Hintergrund */
+        border-radius: 4px;
         overflow: hidden;
         margin: 0 auto 1.5rem;
+        border: 1px solid rgba(255, 255, 255, 0.5); /* Weißer Rand für bessere Sichtbarkeit */
         
         .loading-fill {
           height: 100%;
-          background: #3498db;
-          border-radius: 3px;
+          background: linear-gradient(90deg, #3498db, #2ecc71); /* Farbverlauf für bessere Sichtbarkeit */
+          border-radius: 4px;
           transition: width 0.3s ease-in-out;
+          box-shadow: 0 0 10px rgba(52, 152, 219, 0.5); /* Glühen für bessere Sichtbarkeit */
         }
       }
 
       p {
         margin: 0;
-        font-size: 1rem;
-        opacity: 0.8;
+        font-size: 1.1rem; /* Größere Schrift */
+        opacity: 0.9; /* Höhere Opazität */
         color: white;
         text-align: center;
+        font-weight: 500; /* Etwas fetter */
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5); /* Schatten für bessere Lesbarkeit */
       }
     }
   }
