@@ -58,6 +58,10 @@ export class WarenkorbComponent implements OnInit {
 
   confirmOrder() {
     this.getTotalPrice();
+    
+    // PFAND-Artikel automatisch hinzufügen BEVOR die Bestellung abgesendet wird
+    this.addPfandArticlesToOrder();
+    
     const newAddress = this.city + '$' + this.zipCode + '$' + this.street;
     // save address for next orders
     localStorage.setItem('city', this.city ? this.city : '')
@@ -142,6 +146,78 @@ export class WarenkorbComponent implements OnInit {
   cancelOrder() {
     this.showOrderConfirmation = false;
   }
+
+  // Neue Methode: PFAND-Artikel automatisch zur Bestellung hinzufügen
+  addPfandArticlesToOrder() {
+    console.log('🔄 [PFAND-LOGIC] Starte PFAND-Artikel Logik...');
+    
+    // Hole alle PFAND-Artikel aus dem GlobalService
+    const pfandArtikels = this.globalService.getPfandArtikels();
+    console.log('📦 [PFAND-LOGIC] Verfügbare PFAND-Artikel:', pfandArtikels.length);
+    
+    if (pfandArtikels.length === 0) {
+      console.log('⚠️ [PFAND-LOGIC] Keine PFAND-Artikel verfügbar');
+      return;
+    }
+    
+    // Erstelle eine Kopie des Warenkorbs für die Verarbeitung
+    const warenkorbCopy = [...this.globalService.warenkorb];
+    const newItems: any[] = [];
+    
+    // Durchlaufe alle Artikel im Warenkorb
+    warenkorbCopy.forEach((artikel, index) => {
+      // Prüfe, ob der Artikel ein custom_field_1 hat (PFAND-Referenz)
+      if (artikel.custom_field_1) {
+        console.log(`🔍 [PFAND-LOGIC] Artikel ${artikel.article_text} hat custom_field_1: ${artikel.custom_field_1}`);
+        
+        // Suche nach dem passenden PFAND-Artikel
+        const matchingPfand = pfandArtikels.find(pfand => 
+          pfand.article_number === artikel.custom_field_1
+        );
+        
+        if (matchingPfand) {
+          console.log(`✅ [PFAND-LOGIC] PFAND-Artikel gefunden: ${matchingPfand.article_text}`);
+          
+          // Erstelle den PFAND-Artikel mit der gleichen Menge wie der Hauptartikel
+          const pfandItem = {
+            ...matchingPfand,
+            quantity: artikel.quantity,
+            description: matchingPfand.article_text,
+            parent_article_number: artikel.article_number, // Referenz zum Hauptartikel
+            is_pfand: true // Markierung als PFAND-Artikel
+          };
+          
+          // Füge den PFAND-Artikel zur Liste der neuen Artikel hinzu
+          newItems.push({
+            item: pfandItem,
+            insertAfterIndex: index
+          });
+          
+          console.log(`➕ [PFAND-LOGIC] PFAND-Artikel wird hinzugefügt: ${pfandItem.article_text}, Menge: ${pfandItem.quantity}`);
+        } else {
+          console.log(`❌ [PFAND-LOGIC] Kein passender PFAND-Artikel gefunden für custom_field_1: ${artikel.custom_field_1}`);
+        }
+      } else {
+        console.log(`ℹ️ [PFAND-LOGIC] Artikel ${artikel.article_text} hat kein custom_field_1`);
+      }
+    });
+    
+    // Füge alle PFAND-Artikel in umgekehrter Reihenfolge hinzu (damit die Indizes stimmen)
+    newItems.reverse().forEach(({ item, insertAfterIndex }) => {
+      this.globalService.warenkorb.splice(insertAfterIndex + 1, 0, item);
+    });
+    
+    console.log(`🎯 [PFAND-LOGIC] PFAND-Logik abgeschlossen. ${newItems.length} PFAND-Artikel hinzugefügt.`);
+    console.log(`📋 [PFAND-LOGIC] Neuer Warenkorb:`, this.globalService.warenkorb);
+    
+    // Aktualisiere den Warenkorb im localStorage
+    localStorage.setItem('warenkorb', JSON.stringify(this.globalService.warenkorb));
+    
+    // Aktualisiere den Gesamtpreis
+    this.getTotalPrice();
+  }
+
+
 
   getTotalPrice() {
     this.globalService.totalPrice = this.globalService.warenkorb.reduce((summe, artikel) => {

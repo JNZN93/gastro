@@ -113,12 +113,13 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
               this.globalService.isAdmin = true;
             }
             
+            // PFAND-Artikel BEVOR der Filterung speichern (damit sie in anderen Komponenten verfügbar sind)
+            this.globalService.setPfandArtikels(res);
+            
             // SCHNELLVERKAUF-Artikel basierend auf Benutzerrolle filtern
             this.globalArtikels = this.globalService.filterSchnellverkaufArticles(res);
             // PFAND und SCHNELLVERKAUF-Artikel aus der Hauptliste filtern
             this.globalArtikels = this.globalArtikels.filter((artikel: any) => artikel.category !== 'PFAND' && artikel.category !== 'SCHNELLVERKAUF');
-            // Erstelle zusätzliches pfand-array für Artikel mit category "PFAND" (nur initial, da PFAND-Artikel statisch sind)
-            this.globalService.setPfandArtikels(this.globalArtikels);
             this.artikelData = this.globalArtikels;
             
             // Keine Kategorie ausgewählt - Hauptseite wird angezeigt
@@ -150,10 +151,11 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
     this.globalService.isAdmin = false;
     
     this.artikelService.getData().subscribe((res) => {
+      // PFAND-Artikel BEVOR der Filterung speichern (damit sie in anderen Komponenten verfügbar sind)
+      this.globalService.setPfandArtikels(res);
+      
       // Für Gäste nur normale Artikel anzeigen (keine SCHNELLVERKAUF und keine PFAND)
       this.globalArtikels = res.filter((artikel: any) => artikel.category !== 'SCHNELLVERKAUF' && artikel.category !== 'PFAND');
-      // Erstelle zusätzliches pfand-array für Artikel mit category "PFAND" (nur initial, da PFAND-Artikel statisch sind)
-      this.globalService.setPfandArtikels(this.globalArtikels);
       this.artikelData = this.globalArtikels;
       
       // Keine Kategorie ausgewählt - Hauptseite wird angezeigt
