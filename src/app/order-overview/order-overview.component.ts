@@ -567,8 +567,9 @@ export class OrderOverviewComponent implements OnInit {
                 
                 console.log(`✅ [LOAD-ORDER] Neuer Artikel wird hinzugefügt:`, JSON.stringify(newItem, null, 2));
                 
+                // Füge den custom_field_1 Artikel direkt nach dem Hauptartikel hinzu
                 enhancedItems.push(newItem);
-                console.log(`✅ [LOAD-ORDER] Artikel ${customFieldArtikel.article_text} (${customFieldArtikel.article_number}) mit Menge ${item.quantity} hinzugefügt`);
+                console.log(`✅ [LOAD-ORDER] Artikel ${customFieldArtikel.article_text} (${customFieldArtikel.article_number}) mit Menge ${item.quantity} direkt nach ${item.article_text} hinzugefügt`);
               } else {
                 console.warn(`⚠️ [LOAD-ORDER] Artikel mit custom_field_1 ${globalArtikel.custom_field_1} nicht in globalArtikels gefunden`);
               }
@@ -583,11 +584,16 @@ export class OrderOverviewComponent implements OnInit {
         // Aktualisiere die Items mit den erweiterten Artikeln
         orderData.items = enhancedItems;
         console.log(`📦 [LOAD-ORDER] Custom Field 1 Überprüfung abgeschlossen. Artikel vorher: ${orderData.items.length}, nachher: ${enhancedItems.length}`);
+        
+        // Sortiere Artikel nach Kategorien für Kundenbestellungen
+        console.log('📂 [LOAD-ORDER] Sortiere Artikel nach Kategorien...');
+        orderData.items = this.sortItemsByCategory(orderData.items);
+        console.log('✅ [LOAD-ORDER] Artikel nach Kategorien sortiert');
       } else {
         console.log('⚠️ [LOAD-ORDER] Keine Artikel verfügbar, überspringe Custom Field 1 Überprüfung');
       }
     } else {
-      console.log('ℹ️ [LOAD-ORDER] Sachbearbeiter-Bestellung erkannt - überspringe Custom Field 1 Überprüfung');
+      console.log('ℹ️ [LOAD-ORDER] Sachbearbeiter-Bestellung erkannt - überspringe Custom Field 1 Überprüfung und Kategorie-Sortierung');
     }
 
     console.log('📦 [LOAD-ORDER] Artikel werden zur Customer Orders Komponente weitergeleitet');
@@ -603,6 +609,164 @@ export class OrderOverviewComponent implements OnInit {
     
     // Navigiere zur Customer Orders Seite
     this.router.navigate(['/customer-orders']);
+  }
+
+  /**
+   * Sortiert Artikel nach Kategorien basierend auf den globalen Artikeldaten
+   * @param items Array der zu sortierenden Artikel
+   * @returns Nach Kategorien sortiertes Array
+   */
+  private sortItemsByCategory(items: any[]): any[] {
+    if (!this.allArtikels || this.allArtikels.length === 0) {
+      console.log('⚠️ [SORT-CATEGORY] Keine globalen Artikel verfügbar, überspringe Sortierung');
+      return items;
+    }
+
+    // Definiere die gewünschte Reihenfolge der Kategorien
+    const categoryOrder = [
+      'GEMÜSE',
+      'OBST', 
+      'MILCHPRODUKTE',
+      'FLEISCH',
+      'FISCH',
+      'BROT & GEBÄCK',
+      'GETRÄNKE',
+      'GEWÜRZE',
+      'KONSERVEN',
+      'TIEFKÜHL',
+      'HYGIENE',
+      'KÜCHENBEDARF',
+      'PFAND',
+      'SCHNELLVERKAUF',
+      'Sonstiges'
+    ];
+
+    // Erweitere jeden Artikel um seine Kategorie
+    const itemsWithCategory = items.map(item => {
+      const globalArtikel = this.allArtikels.find(artikel => 
+        artikel.article_number === item.article_number
+      );
+      
+      if (globalArtikel && globalArtikel.category) {
+        return {
+          ...item,
+          category: globalArtikel.category
+        };
+      } else {
+        return {
+          ...item,
+          category: 'Sonstiges'
+        };
+      }
+    });
+
+    // Gruppiere zusammengehörige Artikel (Hauptartikel + custom_field_1)
+    const groupedItems: any[] = [];
+    const processedIndices = new Set<number>();
+
+    for (let i = 0; i < itemsWithCategory.length; i++) {
+      if (processedIndices.has(i)) continue;
+
+      const currentItem = itemsWithCategory[i];
+      const currentGlobalArtikel = this.allArtikels.find(artikel => 
+        artikel.article_number === currentItem.article_number
+      );
+
+      // Prüfe, ob der aktuelle Artikel ein custom_field_1 hat
+      if (currentGlobalArtikel && currentGlobalArtikel.custom_field_1) {
+        // Suche nach dem custom_field_1 Artikel in den nächsten Artikeln
+        let customFieldItem: any = null;
+        let customFieldIndex = -1;
+
+        // Suche in den nächsten Artikeln nach dem custom_field_1
+        for (let j = i + 1; j < itemsWithCategory.length; j++) {
+          if (itemsWithCategory[j].article_number === currentGlobalArtikel.custom_field_1) {
+            customFieldItem = itemsWithCategory[j];
+            customFieldIndex = j;
+            break;
+          }
+        }
+
+        if (customFieldItem) {
+          // Füge Hauptartikel und custom_field_1 als Gruppe hinzu
+          groupedItems.push({
+            ...currentItem,
+            isGroup: true,
+            groupId: i,
+            sortCategory: currentItem.category
+          });
+          groupedItems.push({
+            ...customFieldItem,
+            isGroup: true,
+            groupId: i,
+            sortCategory: currentItem.category // Verwende die Kategorie des Hauptartikels
+          });
+          
+          // Markiere beide als verarbeitet
+          processedIndices.add(i);
+          processedIndices.add(customFieldIndex);
+          
+          console.log(`📦 [SORT-CATEGORY] Gruppe erstellt: ${currentItem.article_text} + ${customFieldItem.article_text} (Kategorie: ${currentItem.category})`);
+        } else {
+          // Kein custom_field_1 gefunden, füge nur den Hauptartikel hinzu
+          groupedItems.push({
+            ...currentItem,
+            isGroup: false,
+            groupId: null,
+            sortCategory: currentItem.category
+          });
+          processedIndices.add(i);
+        }
+      } else {
+        // Kein custom_field_1, füge den Artikel normal hinzu
+        groupedItems.push({
+          ...currentItem,
+          isGroup: false,
+          groupId: null,
+          sortCategory: currentItem.category
+        });
+        processedIndices.add(i);
+      }
+    }
+
+    // Sortiere nach der definierten Kategoriereihenfolge, aber behalte Gruppen zusammen
+    const sortedItems = groupedItems.sort((a, b) => {
+      const indexA = categoryOrder.indexOf(a.sortCategory);
+      const indexB = categoryOrder.indexOf(b.sortCategory);
+      
+      // Wenn beide Kategorien in der definierten Reihenfolge sind
+      if (indexA !== -1 && indexB !== -1) {
+        // Wenn beide zur gleichen Gruppe gehören, behalte die Reihenfolge bei
+        if (a.isGroup && b.isGroup && a.groupId === b.groupId) {
+          return 0; // Keine Änderung der Reihenfolge innerhalb der Gruppe
+        }
+        return indexA - indexB;
+      }
+      
+      // Wenn nur eine Kategorie in der definierten Reihenfolge ist
+      if (indexA !== -1) return -1;
+      if (indexB !== -1) return 1;
+      
+      // Wenn beide Kategorien nicht in der definierten Reihenfolge sind, alphabetisch sortieren
+      return a.sortCategory.localeCompare(b.sortCategory);
+    });
+
+    // Entferne die temporären Sortierfelder
+    const finalItems = sortedItems.map(item => {
+      const { isGroup, groupId, sortCategory, ...cleanItem } = item;
+      return cleanItem;
+    });
+
+    console.log('📂 [SORT-CATEGORY] Artikel nach Kategorien sortiert (Gruppen beibehalten):');
+    finalItems.forEach((item, index) => {
+      const globalArtikel = this.allArtikels.find(artikel => 
+        artikel.article_number === item.article_number
+      );
+      const category = globalArtikel?.category || 'Sonstiges';
+      console.log(`  ${index + 1}. ${item.article_text} - Kategorie: ${category}`);
+    });
+
+    return finalItems;
   }
 
   goBack(): void {
