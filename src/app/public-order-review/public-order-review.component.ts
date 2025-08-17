@@ -58,6 +58,14 @@ import { ActivatedRoute, Router } from '@angular/router';
       </div>
 
       <div class="bottombar" *ngIf="items && items.length">
+        <!-- Test Button für PFAND-Logik -->
+        <button class="test-button" (click)="testPfandLogic()" title="PFAND-Logik testen (ohne Bestellung abzusenden)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+          </svg>
+          <span>PFAND-Logik testen</span>
+        </button>
+        
         <button class="submit" (click)="submitOrder()" [disabled]="isSubmitting">
           <span *ngIf="!isSubmitting">Bestellung absenden</span>
           <span *ngIf="isSubmitting">Sende...</span>
@@ -272,6 +280,42 @@ import { ActivatedRoute, Router } from '@angular/router';
       cursor: not-allowed; 
       box-shadow: none; 
     }
+
+    // Test Button für PFAND-Logik
+    .test-button {
+      width: 100%;
+      appearance: none;
+      border: none;
+      background: #3b82f6;
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+      font-size: 14px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.3s ease;
+
+      &:hover {
+        background: #1d4ed8;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+      }
+
+      &:active {
+        transform: translateY(0);
+      }
+
+      svg {
+        width: 18px;
+        height: 18px;
+      }
+    }
     
     /* Mobile-specific improvements */
     @media (max-width: 767px) {
@@ -365,6 +409,8 @@ export class PublicOrderReviewComponent implements OnInit {
     this.total = state.total || 0;
     this.customer = state.customer || null;
 
+
+
     // Gerätespezifische Höhenanpassung
     this.adjustHeightForDevice();
 
@@ -375,6 +421,8 @@ export class PublicOrderReviewComponent implements OnInit {
         contentElement.scrollTop = 0;
       }
     }, 100);
+
+
   }
 
   private adjustHeightForDevice() {
@@ -428,9 +476,11 @@ export class PublicOrderReviewComponent implements OnInit {
 
   private updateTotal() {
     // Nur den Gesamtpreis aktualisieren, nicht das komplette Array kopieren
-    if (this.items.length > 0 && this.items[0].sale_price) {
+    if (this.items.length > 0) {
       this.total = this.items.reduce((sum, item) => {
-        return sum + (item.sale_price * item.quantity);
+        // Verwende sale_price falls vorhanden, sonst 0 (für PFAND-Artikel)
+        const price = item.sale_price || 0;
+        return sum + (price * item.quantity);
       }, 0);
     }
     
@@ -443,12 +493,146 @@ export class PublicOrderReviewComponent implements OnInit {
   }
 
   submitOrder() {
+    // PFAND-Artikel automatisch hinzufügen BEVOR die Bestellung abgesendet wird
+    this.addPfandArticlesToOrder();
+    
     // In dieser öffentlichen Version triggert die Review-Seite die Absendelogik nicht selbst,
     // sondern navigiert zurück und sendet ein Event. Alternativ: Direkt POSTen.
     // Für Einfachheit navigieren wir zurück und setzen einen Flag über state.
     this.isSubmitting = true;
     this.router.navigate([`/customer-order/${this.token}`], { state: { submitNow: true } });
   }
+
+    // Neue Methode: PFAND-Artikel automatisch zur Bestellung hinzufügen
+  addPfandArticlesToOrder() {
+    console.log('🔄 [PUBLIC-PFAND-LOGIC] Starte PFAND-Artikel Logik...');
+    
+    // Lade alle verfügbaren PFAND-Artikel vom api/products Endpoint
+    this.loadPfandArticles().then(pfandArticles => {
+      console.log('📦 [PUBLIC-PFAND-LOGIC] Verfügbare PFAND-Artikel geladen:', pfandArticles);
+      
+      // Erstelle eine Kopie der Artikel für die Verarbeitung
+      const itemsCopy = [...this.items];
+      const newItems: any[] = [];
+      
+      // Durchlaufe alle Artikel
+      itemsCopy.forEach((artikel, index) => {
+        // Prüfe, ob der Artikel ein product_custom_field_1 hat (PFAND-Referenz)
+        if (artikel.product_custom_field_1) {
+          console.log(`🔍 [PUBLIC-PFAND-LOGIC] Artikel ${artikel.article_text} hat product_custom_field_1: ${artikel.product_custom_field_1}`);
+          
+          // Suche nach dem echten PFAND-Artikel in den geladenen PFAND-Artikeln
+          const realPfandArticle = pfandArticles.find(pfand => 
+            pfand.article_number === artikel.product_custom_field_1 || 
+            pfand.product_id === artikel.product_custom_field_1
+          );
+          
+          if (realPfandArticle) {
+            console.log(`✅ [PUBLIC-PFAND-LOGIC] Echten PFAND-Artikel gefunden: ${realPfandArticle.article_text}`);
+            
+            // Erstelle einen PFAND-Artikel basierend auf dem echten PFAND-Artikel
+            const pfandItem = {
+              ...realPfandArticle, // Alle echten PFAND-Daten übernehmen
+              quantity: artikel.quantity, // Menge vom Hauptartikel übernehmen
+              parent_article_number: artikel.article_number || artikel.product_id, // Referenz zum Hauptartikel
+              is_pfand: true, // Markierung als PFAND-Artikel
+              description: `Pfand für ${artikel.article_text}` // Beschreibung anpassen
+            };
+            
+            // Füge den echten PFAND-Artikel zur Liste der neuen Artikel hinzu
+            newItems.push({
+              item: pfandItem,
+              insertAfterIndex: index
+            });
+            
+            console.log(`➕ [PUBLIC-PFAND-LOGIC] Echter PFAND-Artikel wird hinzugefügt: ${pfandItem.article_text}, Menge: ${pfandItem.quantity}, Preis: ${pfandItem.sale_price}€`);
+          } else {
+            console.log(`❌ [PUBLIC-PFAND-LOGIC] Kein echter PFAND-Artikel gefunden für Referenz: ${artikel.product_custom_field_1}`);
+            console.log(`🔍 [PUBLIC-PFAND-LOGIC] Verfügbare PFAND-Artikel:`, pfandArticles);
+            
+            // Fallback: Erstelle einen simulierten PFAND-Artikel
+            const fallbackPfandItem = {
+              article_text: `PFAND ${artikel.article_text}`,
+              article_number: artikel.product_custom_field_1,
+              quantity: artikel.quantity,
+              sale_price: 0.25, // Standard PFAND-Preis
+              main_image_url: artikel.main_image_url, // Gleiches Bild
+              category: 'PFAND',
+              product_custom_field_1: null,
+              parent_article_number: artikel.article_number || artikel.product_id,
+              is_pfand: true,
+              description: `Pfand für ${artikel.article_text} (simuliert)`
+            };
+            
+            newItems.push({
+              item: fallbackPfandItem,
+              insertAfterIndex: index
+            });
+            
+            console.log(`⚠️ [PUBLIC-PFAND-LOGIC] Simulierter PFAND-Artikel als Fallback hinzugefügt: ${fallbackPfandItem.article_text}`);
+          }
+        } else {
+          console.log(`ℹ️ [PUBLIC-PFAND-LOGIC] Artikel ${artikel.article_text} hat kein product_custom_field_1`);
+        }
+      });
+      
+      // Füge alle PFAND-Artikel in umgekehrter Reihenfolge hinzu (damit die Indizes stimmen)
+      newItems.reverse().forEach(({ item, insertAfterIndex }) => {
+        this.items.splice(insertAfterIndex + 1, 0, item);
+      });
+      
+      console.log(`🎯 [PUBLIC-PFAND-LOGIC] PFAND-Logik abgeschlossen. ${newItems.length} PFAND-Artikel hinzugefügt.`);
+      console.log(`📋 [PUBLIC-PFAND-LOGIC] Neuer Artikel-Array:`, this.items);
+      
+      // Aktualisiere den Gesamtpreis
+      this.updateTotal();
+      
+      // Manuell Change Detection triggern
+      this.cdr.detectChanges();
+    });
+  }
+
+  // Neue Methode: Lade alle PFAND-Artikel vom api/products Endpoint
+  private async loadPfandArticles(): Promise<any[]> {
+    try {
+      console.log('📡 [PUBLIC-PFAND-LOGIC] Lade PFAND-Artikel von api/products...');
+      
+      // Lade alle Produkte und filtere nach PFAND-Kategorie
+      const response = await fetch('https://multi-mandant-ecommerce.onrender.com/api/products');
+      const allProducts = await response.json();
+      
+      // Filtere nur PFAND-Artikel
+      const pfandArticles = allProducts.filter((product: any) => product.category === 'PFAND');
+      
+      console.log(`📦 [PUBLIC-PFAND-LOGIC] ${pfandArticles.length} PFAND-Artikel gefunden:`, pfandArticles);
+      
+      return pfandArticles;
+    } catch (error) {
+      console.error('❌ [PUBLIC-PFAND-LOGIC] Fehler beim Laden der PFAND-Artikel:', error);
+      return [];
+    }
+  }
+
+
+
+  // Test-Methode: PFAND-Logik testen ohne Bestellung abzusenden
+  testPfandLogic() {
+    console.log('🧪 [PUBLIC-PFAND-TEST] Test-Button geklickt - Starte PFAND-Logik Test...');
+    console.log('📋 [PUBLIC-PFAND-TEST] Aktuelle Artikel vor PFAND-Logik:', this.items);
+    
+
+    
+    // Führe die PFAND-Logik aus
+    this.addPfandArticlesToOrder();
+    
+    console.log('🧪 [PUBLIC-PFAND-TEST] PFAND-Logik Test abgeschlossen!');
+    console.log('📋 [PUBLIC-PFAND-TEST] Artikel nach PFAND-Logik:', this.items);
+    
+    // Zeige eine Benachrichtigung an den Benutzer
+    alert(`PFAND-Logik Test abgeschlossen!\n\nNeue Artikel hinzugefügt: ${this.items.length - this.items.filter(item => !item.is_pfand).length}\nNeuer Gesamtpreis: ${this.total.toFixed(2)}€`);
+  }
+
+
 }
 
 

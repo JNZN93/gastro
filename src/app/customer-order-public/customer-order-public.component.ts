@@ -410,7 +410,10 @@ export class CustomerOrderPublicComponent implements OnInit {
         product_id: article.product_id,
         tempQuantity: article.tempQuantity,
         isCustom: article.isCustom,
-        article_text: article.article_text // Für benutzerdefinierte Artikel
+        article_text: article.article_text, // Für benutzerdefinierte Artikel
+        product_custom_field_1: article.product_custom_field_1, // PFAND-Referenz hinzufügen
+        category: article.category, // Kategorie für bessere Identifikation
+        article_number: article.article_number // Artikelnummer für bessere Identifikation
       })),
       timestamp: new Date().toISOString()
     };
@@ -441,6 +444,12 @@ export class CustomerOrderPublicComponent implements OnInit {
             if (article) {
               article.tempQuantity = storedArticle.tempQuantity;
               article.isCustom = storedArticle.isCustom || false;
+              
+              // Stelle auch product_custom_field_1 wieder her (falls vorhanden)
+              if (storedArticle.product_custom_field_1) {
+                article.product_custom_field_1 = storedArticle.product_custom_field_1;
+                console.log(`🔄 [PUBLIC-ORDER] PFAND-Referenz wiederhergestellt für ${article.article_text}: ${storedArticle.product_custom_field_1}`);
+              }
             }
           });
           
@@ -605,11 +614,20 @@ export class CustomerOrderPublicComponent implements OnInit {
       if (!isAvailable) {
         console.log(`🔍 [PUBLIC-ORDER] Artikel gefiltert: ${article.article_text} (product_id: ${productId})`);
       } else {
-        // Füge das Bild zum Artikel hinzu
+        // Füge das Bild und custom_field_1 zum Artikel hinzu
         const matchingProduct = this.allProducts.find(product => product.article_number === productId);
-        if (matchingProduct && matchingProduct.main_image_url) {
-          article.main_image_url = matchingProduct.main_image_url;
-          console.log(`🔍 [PUBLIC-ORDER] Bild hinzugefügt für Artikel: ${article.article_text}`);
+        if (matchingProduct) {
+          // Bild hinzufügen
+          if (matchingProduct.main_image_url) {
+            article.main_image_url = matchingProduct.main_image_url;
+            console.log(`🔍 [PUBLIC-ORDER] Bild hinzugefügt für Artikel: ${article.article_text}`);
+          }
+          
+          // product_custom_field_1 anreichern (für PFAND-Logik), aber niemals vorhandenen API-Wert überschreiben
+          if (!article.product_custom_field_1 && matchingProduct.product_custom_field_1) {
+            article.product_custom_field_1 = matchingProduct.product_custom_field_1;
+            console.log(`🔍 [PUBLIC-ORDER] product_custom_field_1 ergänzt für Artikel: ${article.article_text}: ${matchingProduct.product_custom_field_1}`);
+          }
         }
       }
       
@@ -692,13 +710,21 @@ export class CustomerOrderPublicComponent implements OnInit {
         next: (data: any) => {
           console.log('🔍 [PUBLIC-ORDER] API Response erhalten:', data);
           
+          // Logge die ersten Artikel um zu sehen, welche Felder verfügbar sind
+          if (Array.isArray(data) && data.length > 0) {
+            console.log('🔍 [PUBLIC-ORDER] Erster Artikel vom API:', data[0]);
+            console.log('🔍 [PUBLIC-ORDER] Verfügbare Felder im ersten Artikel:', Object.keys(data[0]));
+            console.log('🔍 [PUBLIC-ORDER] product_custom_field_1 vom API:', data[0].product_custom_field_1);
+          }
+          
           // Extrahiere Artikel (der Endpoint gibt ein Array von Artikeln zurück)
           if (Array.isArray(data)) {
             this.customerArticlePrices = data.filter((price: any) => {
               return price.article_text && price.unit_price_net;
             }).map((price: any) => ({
               ...price,
-              tempQuantity: null  // Initialisiere tempQuantity mit null
+              tempQuantity: null,  // Initialisiere tempQuantity mit null
+              product_custom_field_1: price.product_custom_field_1 || null // Stelle sicher, dass PFAND-Referenz gesetzt wird
             }));
             
             // Erstelle einen minimalen Kunden mit der Kundennummer aus dem ersten Artikel
@@ -800,7 +826,8 @@ export class CustomerOrderPublicComponent implements OnInit {
         product_name: article.product_name,
         unit_price_gross: article.unit_price_gross,
         vat_percentage: article.vat_percentage,
-        updated_at: article.updated_at
+        updated_at: article.updated_at,
+        product_custom_field_1: article.product_custom_field_1 // PFAND-Referenz hinzufügen
       }));
 
     if (itemsWithQuantity.length === 0) {
@@ -847,7 +874,8 @@ export class CustomerOrderPublicComponent implements OnInit {
         unit_price_net: item.unit_price,
         vat_percentage: item.vat_percentage,
         updated_at: item.updated_at,
-        total_price: item.total_price
+        total_price: item.total_price,
+        product_custom_field_1: item.product_custom_field_1 // PFAND-Referenz hinzufügen
       }))
     };
 
@@ -984,7 +1012,8 @@ export class CustomerOrderPublicComponent implements OnInit {
         product_name: article.product_name,
         unit_price_gross: article.unit_price_gross,
         vat_percentage: article.vat_percentage,
-        updated_at: article.updated_at
+        updated_at: article.updated_at,
+        product_custom_field_1: article.product_custom_field_1 // PFAND-Referenz hinzufügen! ✅
       }));
   }
 
