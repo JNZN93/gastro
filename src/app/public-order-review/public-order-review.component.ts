@@ -1,11 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 @Component({
   selector: 'app-public-order-review',
   standalone: true,
   imports: [CommonModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="review-page">
       <div class="topbar">
@@ -345,6 +346,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 export class PublicOrderReviewComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private cdr = inject(ChangeDetectorRef);
 
   token = '';
   items: any[] = [];
@@ -405,13 +407,13 @@ export class PublicOrderReviewComponent implements OnInit {
   reduceQuantity(item: any) {
     if (item.quantity > 1) {
       item.quantity--;
-      this.updateItems();
+      this.updateTotal(); // Nur den Total aktualisieren, nicht das komplette Array
     }
   }
 
   increaseQuantity(item: any) {
     item.quantity++;
-    this.updateItems();
+    this.updateTotal(); // Nur den Total aktualisieren, nicht das komplette Array
   }
 
   removeItem(item: any) {
@@ -420,20 +422,20 @@ export class PublicOrderReviewComponent implements OnInit {
       this.items = this.items.filter(i => 
         (i.article_number || i.product_id) !== (item.article_number || item.product_id)
       );
-      this.updateItems();
+      this.updateTotal(); // Total nach dem Entfernen aktualisieren
     }
   }
 
-  private updateItems() {
-    // Neue Referenz setzen, damit Angular das UI aktualisiert
-    this.items = [...this.items];
-    
-    // Gesamtpreis neu berechnen falls vorhanden
+  private updateTotal() {
+    // Nur den Gesamtpreis aktualisieren, nicht das komplette Array kopieren
     if (this.items.length > 0 && this.items[0].sale_price) {
       this.total = this.items.reduce((sum, item) => {
         return sum + (item.sale_price * item.quantity);
       }, 0);
     }
+    
+    // Manuell Change Detection triggern für bessere Performance
+    this.cdr.detectChanges();
   }
 
   goBack() {

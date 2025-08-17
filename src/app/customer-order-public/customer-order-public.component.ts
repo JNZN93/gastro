@@ -29,18 +29,7 @@ export class CustomerOrderPublicComponent implements OnInit {
   successMessage: string = '';
   showOrderModal: boolean = false;
   showCustomArticleForm: boolean = false;
-  showResponseModal: boolean = false;
   pendingSubmit: boolean = false;
-  responseModalData: {
-    isSuccess: boolean;
-    title: string;
-    message: string;
-    details?: string;
-  } = {
-    isSuccess: false,
-    title: '',
-    message: ''
-  };
   customArticle: any = {
     article_text: '',
     tempQuantity: null,
@@ -58,10 +47,18 @@ export class CustomerOrderPublicComponent implements OnInit {
   // Loading-Modal für State-Wiederherstellung
   showStateRestoreModal: boolean = false;
   loadingProgress: number = 0;
+  
+  // Neues Modal für das Scrollen zurück zur Position
+  showScrollModal: boolean = false;
 
   // localStorage Key für diesen Kunden
   private get localStorageKey(): string {
     return `customer_order_${this.customerNumber}`;
+  }
+
+  // Methode zum Verstecken des Scroll-Modals
+  private hideScrollModal() {
+    this.showScrollModal = false;
   }
 
   private saveCompleteState() {
@@ -80,8 +77,6 @@ export class CustomerOrderPublicComponent implements OnInit {
       error: this.error,
       successMessage: this.successMessage,
       showOrderModal: this.showOrderModal,
-      showResponseModal: this.showResponseModal,
-      responseModalData: this.responseModalData,
       pendingSubmit: this.pendingSubmit,
       scrollPosition: { scrollTop: window.scrollY, scrollLeft: window.scrollX },
       lastOpenedArticleId: this.lastOpenedArticleId,
@@ -120,12 +115,15 @@ export class CustomerOrderPublicComponent implements OnInit {
     this.error = state.error || '';
     this.successMessage = state.successMessage || '';
     this.showOrderModal = !!state.showOrderModal;
-    this.showResponseModal = !!state.showResponseModal;
-    this.responseModalData = state.responseModalData || this.responseModalData;
     this.pendingSubmit = !!state.pendingSubmit;
     this.lastOpenedArticleId = state.lastOpenedArticleId || null;
 
     this.buildGroups();
+
+    // Zeige das Scroll-Modal, wenn der State vom Image-Viewer kommt
+    if (state.fromImageViewer) {
+      this.showScrollModal = true;
+    }
 
     // Kurze Verzögerung für DOM-Rendering, dann sofort smooth scrollen
     setTimeout(() => {
@@ -137,12 +135,22 @@ export class CustomerOrderPublicComponent implements OnInit {
       if (this.lastOpenedArticleId) {
         this.scrollToArticle(this.lastOpenedArticleId!);
       }
+      
+      // Verstecke das Scroll-Modal nach dem Scrollen
+      setTimeout(() => {
+        this.hideScrollModal();
+      }, 1500); // 1.5 Sekunden nach dem Scrollen verstecken
     }, 100); // Nur kurze Verzögerung für DOM-Rendering
   }
 
   private restoreScrollPosition(scrollData: any) {
     if (scrollData && typeof scrollData.scrollTop === 'number') {
       window.scrollTo({ top: scrollData.scrollTop, left: scrollData.scrollLeft || 0, behavior: 'smooth' });
+      
+      // Verstecke das Scroll-Modal nach dem Wiederherstellen der Scroll-Position
+      setTimeout(() => {
+        this.hideScrollModal();
+      }, 800);
     }
   }
 
@@ -201,6 +209,9 @@ export class CustomerOrderPublicComponent implements OnInit {
     // Falls nicht zentriert, versuche es nochmal mit einer anderen Strategie
     if (!isCentered) {
       this.correctScrollPosition(element);
+    } else {
+      // Position erreicht - verstecke das Scroll-Modal
+      this.hideScrollModal();
     }
   }
 
@@ -260,6 +271,8 @@ export class CustomerOrderPublicComponent implements OnInit {
       
     } catch (error) {
       // Alle Scroll-Strategien fehlgeschlagen
+      // Verstecke das Scroll-Modal trotzdem
+      this.hideScrollModal();
     }
   }
 
@@ -340,6 +353,11 @@ export class CustomerOrderPublicComponent implements OnInit {
       
       // Direkt scrollen
       this.scrollToElement(el as HTMLElement);
+      
+      // Verstecke das Scroll-Modal nach dem Scrollen zum Artikel
+      setTimeout(() => {
+        this.hideScrollModal();
+      }, 1000);
     }
   }
   // Methode zum Umschalten des Zustands einer Kategorie
@@ -858,8 +876,10 @@ export class CustomerOrderPublicComponent implements OnInit {
         
         this.isSubmitting = false;
         
-        // Response-Modal bei Erfolg anzeigen
-        this.showResponseModalSuccess();
+        // Bestellung erfolgreich - zur Startseite weiterleiten
+        setTimeout(() => {
+          this.router.navigate(['/']);
+        }, 1000);
       },
       error: (error: any) => {
         console.error('❌ [PUBLIC-ORDER] Fehler beim Absenden der Bestellung:', error);
@@ -867,7 +887,7 @@ export class CustomerOrderPublicComponent implements OnInit {
         
         this.isSubmitting = false;
         
-        // Response-Modal bei Fehler anzeigen
+        // Fehler in der Konsole loggen
         let errorMessage = 'Ein unbekannter Fehler ist aufgetreten. Bitte versuchen Sie es erneut.';
         
         if (error?.status === 400) {
@@ -878,7 +898,7 @@ export class CustomerOrderPublicComponent implements OnInit {
           errorMessage = error.message;
         }
         
-        this.showResponseModalError(errorMessage);
+        console.error('Fehler beim Absenden der Bestellung:', errorMessage);
       }
     });
   }
@@ -905,35 +925,35 @@ export class CustomerOrderPublicComponent implements OnInit {
     this.showOrderModal = false;
   }
 
-  showResponseModalSuccess() {
-    this.responseModalData = {
-      isSuccess: true,
-      title: 'Bestellung erfolgreich! 🎉',
-      message: 'Ihre Bestellung wurde erfolgreich eingereicht und wird von unserem Team bearbeitet.',
-      details: 'Sie erhalten in Kürze eine Bestätigung per E-Mail. Vielen Dank für Ihr Vertrauen!'
-    };
-    this.showResponseModal = true;
-  }
+  // showResponseModalSuccess() { // Entferne Response Modal Methoden
+  //   this.responseModalData = {
+  //     isSuccess: true,
+  //     title: 'Bestellung erfolgreich! 🎉',
+  //     message: 'Ihre Bestellung wurde erfolgreich eingereicht und wird von unserem Team bearbeitet.',
+  //     details: 'Sie erhalten in Kürze eine Bestätigung per E-Mail. Vielen Dank für Ihr Vertrauen!'
+  //   };
+  //   this.showResponseModal = true;
+  // }
 
-  showResponseModalError(errorMessage: string) {
-    this.responseModalData = {
-      isSuccess: false,
-      title: 'Fehler beim Absenden ❌',
-      message: 'Es ist ein Fehler beim Absenden Ihrer Bestellung aufgetreten.',
-      details: errorMessage
-    };
-    this.showResponseModal = true;
-  }
+  // showResponseModalError(errorMessage: string) { // Entferne Response Modal Methoden
+  //   this.responseModalData = {
+  //     isSuccess: false,
+  //     title: 'Fehler beim Absenden ❌',
+  //     message: 'Es ist ein Fehler beim Absenden Ihrer Bestellung aufgetreten.',
+  //     details: errorMessage
+  //   };
+  //   this.showResponseModal = true;
+  // }
 
-  closeResponseModal() {
-    this.showResponseModal = false;
-    // Bei Erfolg zur Startseite weiterleiten
-    if (this.responseModalData.isSuccess) {
-      setTimeout(() => {
-        this.router.navigate(['/']);
-      }, 1000);
-    }
-  }
+  // closeResponseModal() { // Entferne Response Modal Methoden
+  //   this.showResponseModal = false;
+  //   // Bei Erfolg zur Startseite weiterleiten
+  //   if (this.responseModalData.isSuccess) {
+  //     setTimeout(() => {
+  //       this.router.navigate(['/']);
+  //     }, 1000);
+  //   }
+  // }
 
   confirmAndSubmitOrder() {
     this.closeOrderModal();
