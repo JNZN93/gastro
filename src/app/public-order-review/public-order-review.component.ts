@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { CustomerOrderStateService } from '../customer-order-state.service';
 
 @Component({
   selector: 'app-public-order-review',
@@ -15,6 +16,9 @@ import { ActivatedRoute, Router } from '@angular/router';
           <h1>Bestellübersicht</h1>
           <div class="customer" *ngIf="customer?.last_name_company">für {{ customer.last_name_company }}</div>
         </div>
+        <button class="clear-cart" (click)="clearCart()" *ngIf="items && items.length > 0">
+          Warenkorb leeren
+        </button>
       </div>
 
       <div class="content">
@@ -58,14 +62,6 @@ import { ActivatedRoute, Router } from '@angular/router';
       </div>
 
       <div class="bottombar" *ngIf="items && items.length">
-        <!-- Test Button für PFAND-Logik -->
-        <button class="test-button" (click)="testPfandLogic()" title="PFAND-Logik testen (ohne Bestellung abzusenden)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-          </svg>
-          <span>PFAND-Logik testen</span>
-        </button>
-        
         <button class="submit" (click)="submitOrder()" [disabled]="isSubmitting">
           <span *ngIf="!isSubmitting">Bestellung absenden</span>
           <span *ngIf="isSubmitting">Sende...</span>
@@ -92,6 +88,7 @@ import { ActivatedRoute, Router } from '@angular/router';
       padding: 12px 16px; 
       background: linear-gradient(180deg, #ffffff 0%, #fafafa 100%); 
       border-bottom: 1px solid #eee; 
+      justify-content: space-between;
     }
     .back { 
       appearance: none; 
@@ -105,6 +102,22 @@ import { ActivatedRoute, Router } from '@angular/router';
     .heading h1 { 
       margin: 0; 
       font-size: 20px; 
+    }
+    .clear-cart {
+      appearance: none;
+      border: 1px solid #dc2626;
+      background: #fff;
+      color: #dc2626;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+    .clear-cart:hover {
+      background: #dc2626;
+      color: #fff;
     }
     .customer { 
       color: #6b7280; 
@@ -281,41 +294,7 @@ import { ActivatedRoute, Router } from '@angular/router';
       box-shadow: none; 
     }
 
-    // Test Button für PFAND-Logik
-    .test-button {
-      width: 100%;
-      appearance: none;
-      border: none;
-      background: #3b82f6;
-      color: #fff;
-      padding: 12px 20px;
-      border-radius: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
-      font-size: 14px;
-      margin-bottom: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      transition: all 0.3s ease;
 
-      &:hover {
-        background: #1d4ed8;
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
-      }
-
-      &:active {
-        transform: translateY(0);
-      }
-
-      svg {
-        width: 18px;
-        height: 18px;
-      }
-    }
     
     /* Mobile-specific improvements */
     @media (max-width: 767px) {
@@ -403,11 +382,8 @@ export class PublicOrderReviewComponent implements OnInit {
       this.token = params['token'];
     });
 
-    // Daten aus history.state übernehmen
-    const state = history.state || {};
-    this.items = state.items || [];
-    this.total = state.total || 0;
-    this.customer = state.customer || null;
+    // Artikel aus localStorage laden
+    this.loadFromLocalStorage();
 
 
 
@@ -421,9 +397,42 @@ export class PublicOrderReviewComponent implements OnInit {
         contentElement.scrollTop = 0;
       }
     }, 100);
-
-
   }
+
+  private loadFromLocalStorage() {
+    if (!this.token) return;
+    
+    try {
+      const items = localStorage.getItem(`review_items_${this.token}`);
+      const customer = localStorage.getItem(`review_customer_${this.token}`);
+      const total = localStorage.getItem(`review_total_${this.token}`);
+      
+      if (items) {
+        this.items = JSON.parse(items);
+        this.customer = customer ? JSON.parse(customer) : null;
+        this.total = total ? parseFloat(total) : 0;
+        console.log('📱 Artikel aus localStorage geladen:', this.items.length);
+      } else {
+        console.log('⚠️ Keine Artikel im localStorage gefunden');
+      }
+    } catch (error) {
+      console.error('❌ Fehler beim Laden aus localStorage:', error);
+    }
+  }
+
+  private saveToLocalStorage() {
+    if (!this.token) return;
+    
+    try {
+      localStorage.setItem(`review_items_${this.token}`, JSON.stringify(this.items));
+      localStorage.setItem(`review_total_${this.token}`, this.total.toString());
+      console.log('💾 Änderungen in localStorage gespeichert');
+    } catch (error) {
+      console.error('❌ Fehler beim Speichern in localStorage:', error);
+    }
+  }
+
+
 
   private adjustHeightForDevice() {
     const userAgent = navigator.userAgent.toLowerCase();
@@ -456,12 +465,14 @@ export class PublicOrderReviewComponent implements OnInit {
     if (item.quantity > 1) {
       item.quantity--;
       this.updateTotal(); // Nur den Total aktualisieren, nicht das komplette Array
+      this.saveToLocalStorage(); // Änderungen in localStorage speichern
     }
   }
 
   increaseQuantity(item: any) {
     item.quantity++;
     this.updateTotal(); // Nur den Total aktualisieren, nicht das komplette Array
+    this.saveToLocalStorage(); // Änderungen in localStorage speichern
   }
 
   removeItem(item: any) {
@@ -471,6 +482,7 @@ export class PublicOrderReviewComponent implements OnInit {
         (i.article_number || i.product_id) !== (item.article_number || item.product_id)
       );
       this.updateTotal(); // Total nach dem Entfernen aktualisieren
+      this.saveToLocalStorage(); // Änderungen in localStorage speichern
     }
   }
 
@@ -492,15 +504,117 @@ export class PublicOrderReviewComponent implements OnInit {
     this.router.navigate([`/customer-order/${this.token}`]);
   }
 
+  clearCart() {
+    // Bestätigungsabfrage
+    if (confirm('Sind Sie sicher, dass Sie den gesamten Warenkorb leeren möchten? Alle ausgewählten Artikel werden entfernt.')) {
+      // Alle Artikel entfernen
+      this.items = [];
+      this.total = 0;
+      
+      // localStorage für diesen Kunden leeren
+      if (this.customer?.customer_id || this.customer?.customer_number) {
+        const localStorageKey = `customer_order_${this.customer.customer_id || this.customer.customer_number}`;
+        localStorage.removeItem(localStorageKey);
+        console.log('🗑️ Warenkorb geleert und localStorage gelöscht für Kunde:', this.customer.customer_id || this.customer.customer_number);
+      }
+      
+      // Review-spezifischen localStorage auch leeren
+      if (this.token) {
+        localStorage.removeItem(`review_items_${this.token}`);
+        localStorage.removeItem(`review_customer_${this.token}`);
+        localStorage.removeItem(`review_total_${this.token}`);
+        console.log('🗑️ Review localStorage geleert');
+      }
+      
+      // Customer Order State auch leeren
+      const stateService = inject(CustomerOrderStateService);
+      stateService.clearState();
+      console.log('🗑️ Customer Order State geleert');
+      
+      // Change Detection triggern
+      this.cdr.detectChanges();
+    }
+  }
+
   submitOrder() {
     // PFAND-Artikel automatisch hinzufügen BEVOR die Bestellung abgesendet wird
     this.addPfandArticlesToOrder();
     
-    // In dieser öffentlichen Version triggert die Review-Seite die Absendelogik nicht selbst,
-    // sondern navigiert zurück und sendet ein Event. Alternativ: Direkt POSTen.
-    // Für Einfachheit navigieren wir zurück und setzen einen Flag über state.
+    // Bestellung direkt von der Review-Seite abschicken
     this.isSubmitting = true;
-    this.router.navigate([`/customer-order/${this.token}`], { state: { submitNow: true } });
+    
+    // Bestellung an den API-Endpoint senden
+    const orderData = {
+      customer_number: this.customer?.customer_id || this.customer?.customer_number,
+      customer_street: '',
+      customer_country_code: 'DE',
+      customer_postal_code: '',
+      customer_city: '',
+      different_company_name: null,
+      status: 'open',
+      customer_notes: '',
+      shipping_address: '',
+      fulfillment_type: 'delivery',
+      total_price: this.total,
+      delivery_date: new Date().toISOString().split('T')[0]
+    };
+
+    const completeOrder = {
+      orderData: orderData,
+      orderItems: this.items.map(item => ({
+        article_number: item.product_id,
+        quantity: item.quantity,
+        sale_price: item.unit_price || 0,
+        description: item.article_text,
+        article_text: item.article_text,
+        category: item.category,
+        created_at: item.created_at,
+        customer_id: item.customer_id,
+        article_id: item.id,
+        invoice_date: item.invoice_date,
+        invoice_id: item.invoice_id,
+        product_category: item.product_category,
+        id: item.product_database_id,
+        product_name: item.product_name,
+        unit_price_gross: item.unit_price_gross,
+        unit_price_net: item.unit_price,
+        vat_percentage: item.vat_percentage,
+        updated_at: item.updated_at,
+        total_price: item.total_price,
+        product_custom_field_1: item.product_custom_field_1
+      }))
+    };
+
+    // Bestellung abschicken
+    fetch('https://multi-mandant-ecommerce.onrender.com/api/orders/without-auth', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(completeOrder)
+    })
+    .then(response => response.json())
+    .then(data => {
+      console.log('✅ Bestellung erfolgreich abgesendet:', data);
+      this.isSubmitting = false;
+      
+      // localStorage für diesen Kunden leeren
+      if (this.customer?.customer_id || this.customer?.customer_number) {
+        const localStorageKey = `customer_order_${this.customer.customer_id || this.customer.customer_number}`;
+        localStorage.removeItem(localStorageKey);
+        console.log('🗑️ localStorage geleert für Kunde:', this.customer.customer_id || this.customer.customer_number);
+      }
+      
+      // Erfolgreich - zur Startseite weiterleiten
+      setTimeout(() => {
+        this.router.navigate(['/']);
+      }, 1000);
+    })
+    .catch(error => {
+      console.error('❌ Fehler beim Absenden der Bestellung:', error);
+      this.isSubmitting = false;
+      alert('Fehler beim Absenden der Bestellung. Bitte versuchen Sie es erneut.');
+    });
   }
 
     // Neue Methode: PFAND-Artikel automatisch zur Bestellung hinzufügen
@@ -615,22 +729,7 @@ export class PublicOrderReviewComponent implements OnInit {
 
 
 
-  // Test-Methode: PFAND-Logik testen ohne Bestellung abzusenden
-  testPfandLogic() {
-    console.log('🧪 [PUBLIC-PFAND-TEST] Test-Button geklickt - Starte PFAND-Logik Test...');
-    console.log('📋 [PUBLIC-PFAND-TEST] Aktuelle Artikel vor PFAND-Logik:', this.items);
-    
 
-    
-    // Führe die PFAND-Logik aus
-    this.addPfandArticlesToOrder();
-    
-    console.log('🧪 [PUBLIC-PFAND-TEST] PFAND-Logik Test abgeschlossen!');
-    console.log('📋 [PUBLIC-PFAND-TEST] Artikel nach PFAND-Logik:', this.items);
-    
-    // Zeige eine Benachrichtigung an den Benutzer
-    alert(`PFAND-Logik Test abgeschlossen!\n\nNeue Artikel hinzugefügt: ${this.items.length - this.items.filter(item => !item.is_pfand).length}\nNeuer Gesamtpreis: ${this.total.toFixed(2)}€`);
-  }
 
 
 }

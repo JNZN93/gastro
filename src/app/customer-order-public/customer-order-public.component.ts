@@ -939,13 +939,15 @@ export class CustomerOrderPublicComponent implements OnInit {
   showOrderConfirmation() {
     // Statt Modal zu öffnen, zur öffentlichen Review-Seite navigieren
     if (this.token) {
-      this.router.navigate([`/customer-order/${this.token}/review`], {
-        state: {
-          customer: this.customer,
-          items: this.getOrderItems(),
-          total: this.getOrderTotal()
-        }
-      });
+      // Artikel in localStorage speichern für Refresh-Sicherheit
+      const reviewItems = this.getOrderItems();
+      const reviewTotal = this.getOrderTotal();
+      
+      localStorage.setItem(`review_items_${this.token}`, JSON.stringify(reviewItems));
+      localStorage.setItem(`review_customer_${this.token}`, JSON.stringify(this.customer));
+      localStorage.setItem(`review_total_${this.token}`, reviewTotal.toString());
+      
+      this.router.navigate([`/customer-order/${this.token}/review`]);
     }
   }
 
