@@ -370,6 +370,7 @@ export class PublicOrderReviewComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
+  private customerOrderStateService = inject(CustomerOrderStateService);
 
   token = '';
   items: any[] = [];
@@ -433,6 +434,42 @@ export class PublicOrderReviewComponent implements OnInit {
   }
 
 
+  // Synchronisiere Änderungen zurück in den Haupt-Warenkorb-Speicher der Public-Order-Seite
+  private syncToMainLocalStorage(): void {
+    try {
+      const customerNumber = this.customer?.customer_number || this.customer?.customer_id;
+      if (!customerNumber || !this.token) {
+        return;
+      }
+
+      const storageKey = `customer_order_${customerNumber}`;
+
+      const orderData = {
+        customerNumber: String(customerNumber),
+        token: this.token,
+        articles: this.items
+          // PFAND-Artikel nicht zurück synchronisieren
+          .filter(item => !item.is_pfand)
+          .map(item => ({
+            product_id: item.product_id || item.article_number,
+            article_number: item.article_number || item.product_id,
+            article_text: item.article_text,
+            tempQuantity: item.quantity,
+            isCustom: !!item.isCustom,
+            product_custom_field_1: item.product_custom_field_1,
+            category: item.category
+          })),
+        timestamp: new Date().toISOString()
+      };
+
+      localStorage.setItem(storageKey, JSON.stringify(orderData));
+      console.log('🔄 Haupt-Warenkorb synchronisiert:', orderData);
+    } catch (error) {
+      console.error('❌ Fehler beim Synchronisieren des Haupt-Warenkorbs:', error);
+    }
+  }
+
+
 
   private adjustHeightForDevice() {
     const userAgent = navigator.userAgent.toLowerCase();
@@ -466,6 +503,7 @@ export class PublicOrderReviewComponent implements OnInit {
       item.quantity--;
       this.updateTotal(); // Nur den Total aktualisieren, nicht das komplette Array
       this.saveToLocalStorage(); // Änderungen in localStorage speichern
+      this.syncToMainLocalStorage(); // Änderungen auch im Hauptspeicher aktualisieren
     }
   }
 
@@ -473,6 +511,7 @@ export class PublicOrderReviewComponent implements OnInit {
     item.quantity++;
     this.updateTotal(); // Nur den Total aktualisieren, nicht das komplette Array
     this.saveToLocalStorage(); // Änderungen in localStorage speichern
+    this.syncToMainLocalStorage(); // Änderungen auch im Hauptspeicher aktualisieren
   }
 
   removeItem(item: any) {
@@ -483,6 +522,7 @@ export class PublicOrderReviewComponent implements OnInit {
       );
       this.updateTotal(); // Total nach dem Entfernen aktualisieren
       this.saveToLocalStorage(); // Änderungen in localStorage speichern
+      this.syncToMainLocalStorage(); // Änderungen auch im Hauptspeicher aktualisieren
     }
   }
 
@@ -501,6 +541,8 @@ export class PublicOrderReviewComponent implements OnInit {
   }
 
   goBack() {
+    // Vor dem Zurück-Navigieren synchronisieren
+    this.syncToMainLocalStorage();
     this.router.navigate([`/customer-order/${this.token}`]);
   }
 
@@ -525,10 +567,12 @@ export class PublicOrderReviewComponent implements OnInit {
         localStorage.removeItem(`review_total_${this.token}`);
         console.log('🗑️ Review localStorage geleert');
       }
+
+      // Haupt-Warenkorb auch leeren (Synchronisation)
+      this.syncToMainLocalStorage();
       
       // Customer Order State auch leeren
-      const stateService = inject(CustomerOrderStateService);
-      stateService.clearState();
+      this.customerOrderStateService.clearState();
       console.log('🗑️ Customer Order State geleert');
       
       // Change Detection triggern
@@ -537,89 +581,99 @@ export class PublicOrderReviewComponent implements OnInit {
   }
 
   submitOrder() {
+    console.log('🚀 [PUBLIC-REVIEW] Bestellung wird abgesendet...');
+    console.log('📋 [PUBLIC-REVIEW] Artikel vor PFAND-Logik:', this.items);
+    
     // PFAND-Artikel automatisch hinzufügen BEVOR die Bestellung abgesendet wird
     this.addPfandArticlesToOrder();
     
-    // Bestellung direkt von der Review-Seite abschicken
-    this.isSubmitting = true;
-    
-    // Bestellung an den API-Endpoint senden
-    const orderData = {
-      customer_number: this.customer?.customer_id || this.customer?.customer_number,
-      customer_street: '',
-      customer_country_code: 'DE',
-      customer_postal_code: '',
-      customer_city: '',
-      different_company_name: null,
-      status: 'open',
-      customer_notes: '',
-      shipping_address: '',
-      fulfillment_type: 'delivery',
-      total_price: this.total,
-      delivery_date: new Date().toISOString().split('T')[0]
-    };
-
-    const completeOrder = {
-      orderData: orderData,
-      orderItems: this.items.map(item => ({
-        article_number: item.product_id,
-        quantity: item.quantity,
-        sale_price: item.unit_price || 0,
-        description: item.article_text,
-        article_text: item.article_text,
-        category: item.category,
-        created_at: item.created_at,
-        customer_id: item.customer_id,
-        article_id: item.id,
-        invoice_date: item.invoice_date,
-        invoice_id: item.invoice_id,
-        product_category: item.product_category,
-        id: item.product_database_id,
-        product_name: item.product_name,
-        unit_price_gross: item.unit_price_gross,
-        unit_price_net: item.unit_price,
-        vat_percentage: item.vat_percentage,
-        updated_at: item.updated_at,
-        total_price: item.total_price,
-        product_custom_field_1: item.product_custom_field_1
-      }))
-    };
-
-    // Bestellung abschicken
-    fetch('https://multi-mandant-ecommerce.onrender.com/api/orders/without-auth', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(completeOrder)
-    })
-    .then(response => response.json())
-    .then(data => {
-      console.log('✅ Bestellung erfolgreich abgesendet:', data);
-      this.isSubmitting = false;
+    // Kurz warten, damit die PFAND-Logik abgeschlossen ist
+    setTimeout(() => {
+      console.log('📋 [PUBLIC-REVIEW] Artikel nach PFAND-Logik:', this.items);
+      console.log('💰 [PUBLIC-REVIEW] Gesamtpreis nach PFAND-Logik:', this.total);
       
-      // localStorage für diesen Kunden leeren
-      if (this.customer?.customer_id || this.customer?.customer_number) {
-        const localStorageKey = `customer_order_${this.customer.customer_id || this.customer.customer_number}`;
-        localStorage.removeItem(localStorageKey);
-        console.log('🗑️ localStorage geleert für Kunde:', this.customer.customer_id || this.customer.customer_number);
-      }
+      // Bestellung direkt von der Review-Seite abschicken
+      this.isSubmitting = true;
       
-      // Erfolgreich - zur Startseite weiterleiten
-      setTimeout(() => {
-        this.router.navigate(['/']);
-      }, 1000);
-    })
-    .catch(error => {
-      console.error('❌ Fehler beim Absenden der Bestellung:', error);
-      this.isSubmitting = false;
-      alert('Fehler beim Absenden der Bestellung. Bitte versuchen Sie es erneut.');
+      // Bestellung an den API-Endpoint senden
+      const orderData = {
+        customer_number: this.customer?.customer_id || this.customer?.customer_number,
+        customer_street: '',
+        customer_country_code: 'DE',
+        customer_postal_code: '',
+        customer_city: '',
+        different_company_name: null,
+        status: 'open',
+        customer_notes: '',
+        shipping_address: '',
+        fulfillment_type: 'delivery',
+        total_price: this.total,
+        delivery_date: new Date().toISOString().split('T')[0]
+      };
+
+      const completeOrder = {
+        orderData: orderData,
+        orderItems: this.items.map(item => ({
+          article_number: item.product_id,
+          quantity: item.quantity,
+          sale_price: item.unit_price || 0,
+          description: item.article_text,
+          article_text: item.article_text,
+          category: item.category,
+          created_at: item.created_at,
+          customer_id: item.customer_id,
+          article_id: item.id,
+          invoice_date: item.invoice_date,
+          invoice_id: item.invoice_id,
+          product_category: item.product_category,
+          id: item.product_database_id,
+          product_name: item.product_name,
+          unit_price_gross: item.unit_price_gross,
+          unit_price_net: item.unit_price,
+          vat_percentage: item.vat_percentage,
+          updated_at: item.updated_at,
+          total_price: item.total_price,
+          product_custom_field_1: item.product_custom_field_1
+        }))
+      };
+
+      // Bestellung abschicken
+      fetch('https://multi-mandant-ecommerce.onrender.com/api/orders/without-auth', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(completeOrder)
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log('✅ Bestellung erfolgreich abgesendet:', data);
+        this.isSubmitting = false;
+        
+        // localStorage für diesen Kunden leeren
+        if (this.customer?.customer_id || this.customer?.customer_number) {
+          const localStorageKey = `customer_order_${this.customer.customer_id || this.customer.customer_number}`;
+          localStorage.removeItem(localStorageKey);
+          console.log('🗑️ localStorage geleert für Kunde:', this.customer.customer_id || this.customer.customer_number);
+        }
+        
+        // Erfolgreich - zur Startseite weiterleiten
+        setTimeout(() => {
+          this.router.navigate(['/']);
+        }, 1000);
+      })
+      .catch(error => {
+        console.error('❌ Fehler beim Absenden der Bestellung:', error);
+        this.isSubmitting = false;
+        alert('Fehler beim Absenden der Bestellung. Bitte versuchen Sie es erneut.');
+      });
     });
   }
 
-    // Neue Methode: PFAND-Artikel automatisch zur Bestellung hinzufügen
+  // Neue Methode: PFAND-Artikel automatisch zur Bestellung hinzufügen
   addPfandArticlesToOrder() {
     console.log('🔄 [PUBLIC-PFAND-LOGIC] Starte PFAND-Artikel Logik...');
+    console.log('📋 [PUBLIC-PFAND-LOGIC] Aktuelle Artikel vor PFAND-Logik:', this.items);
     
     // Lade alle verfügbaren PFAND-Artikel vom api/products Endpoint
     this.loadPfandArticles().then(pfandArticles => {
@@ -726,12 +780,6 @@ export class PublicOrderReviewComponent implements OnInit {
       return [];
     }
   }
-
-
-
-
-
-
 }
 
 

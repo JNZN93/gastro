@@ -381,15 +381,23 @@ export class CustomerOrderPublicComponent implements OnInit {
         console.error('❌ [PUBLIC-ORDER] Alle URL Parameter:', params);
       }
       
-      const savedState = this.stateService.getState();
-      if (savedState && savedState.token === this.token && savedState.fromImageViewer) {
-        console.log('🔄 [PUBLIC-ORDER] Restauriere gespeicherten State vom Image-Viewer (ohne API-Calls)');
-        this.restoreFromState(savedState);
-        if (this.stateService.hasMemoryState()) {
-          this.stateService.clearState();
-        }
+      // Prüfe zuerst localStorage für gespeicherte Bestellung
+      const localStorageData = this.getLocalStorageData();
+      if (localStorageData && localStorageData.token === this.token) {
+        console.log('🔄 [PUBLIC-ORDER] Gespeicherte Bestellung aus localStorage gefunden');
+        this.restoreFromLocalStorage(localStorageData);
       } else {
-        this.decodeTokenAndLoadData();
+        // Fallback: Prüfe State-Service nur für Image-Viewer State
+        const savedState = this.stateService.getState();
+        if (savedState && savedState.token === this.token && savedState.fromImageViewer) {
+          console.log('🔄 [PUBLIC-ORDER] Restauriere gespeicherten State vom Image-Viewer (ohne API-Calls)');
+          this.restoreFromState(savedState);
+          if (this.stateService.hasMemoryState()) {
+            this.stateService.clearState();
+          }
+        } else {
+          this.decodeTokenAndLoadData();
+        }
       }
     });
 
@@ -400,12 +408,59 @@ export class CustomerOrderPublicComponent implements OnInit {
     }
   }
 
+  // Neue Methode zum Abrufen der localStorage-Daten
+  private getLocalStorageData(): any {
+    if (!this.token) return null;
+    
+    try {
+      // Durchsuche alle localStorage-Einträge nach einem passenden Token
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('customer_order_')) {
+          try {
+            const storedData = localStorage.getItem(key);
+            if (storedData) {
+              const orderData = JSON.parse(storedData);
+              if (orderData.token === this.token) {
+                console.log('📱 [PUBLIC-ORDER] Passende Bestellung in localStorage gefunden:', orderData);
+                return orderData;
+              }
+            }
+          } catch (error) {
+            // Ignoriere ungültige localStorage-Einträge
+            continue;
+          }
+        }
+      }
+      
+      console.log('📱 [PUBLIC-ORDER] Keine passende Bestellung in localStorage gefunden für Token:', this.token);
+    } catch (error) {
+      console.error('❌ [PUBLIC-ORDER] Fehler beim Laden aus localStorage:', error);
+    }
+    return null;
+  }
+
+
+
+  // Neue Methode zum Wiederherstellen aus localStorage
+  private restoreFromLocalStorage(localStorageData: any) {
+    console.log('🔄 [PUBLIC-ORDER] Stelle Bestellung aus localStorage wieder her:', localStorageData);
+    
+    // Setze die Kundennummer
+    this.customerNumber = localStorageData.customerNumber;
+    
+    // Lade die Kundendaten von der API
+    // Die Mengen werden nach dem Laden der Produkte in filterArticlesByProducts() wiederhergestellt
+    this.loadCustomerData();
+  }
+
   // localStorage Methoden
   private saveToLocalStorage(): void {
-    if (!this.customerNumber) return;
+    if (!this.customerNumber || !this.token) return;
     
     const orderData = {
       customerNumber: this.customerNumber,
+      token: this.token, // Token hinzufügen für bessere Identifikation
       articles: this.customerArticlePrices.map(article => ({
         product_id: article.product_id,
         tempQuantity: article.tempQuantity,
@@ -440,7 +495,19 @@ export class CustomerOrderPublicComponent implements OnInit {
           
           // Stelle die Mengen für alle Artikel wieder her
           orderData.articles.forEach((storedArticle: any) => {
-            const article = this.customerArticlePrices.find(a => a.product_id === storedArticle.product_id);
+            // Suche nach dem Artikel basierend auf verschiedenen Feldern
+            let article = this.customerArticlePrices.find(a => a.product_id === storedArticle.product_id);
+            
+            // Fallback: Suche nach article_number
+            if (!article && storedArticle.article_number) {
+              article = this.customerArticlePrices.find(a => a.article_number === storedArticle.article_number);
+            }
+            
+            // Fallback: Suche nach article_text
+            if (!article && storedArticle.article_text) {
+              article = this.customerArticlePrices.find(a => a.article_text === storedArticle.article_text);
+            }
+            
             if (article) {
               article.tempQuantity = storedArticle.tempQuantity;
               article.isCustom = storedArticle.isCustom || false;
@@ -450,6 +517,10 @@ export class CustomerOrderPublicComponent implements OnInit {
                 article.product_custom_field_1 = storedArticle.product_custom_field_1;
                 console.log(`🔄 [PUBLIC-ORDER] PFAND-Referenz wiederhergestellt für ${article.article_text}: ${storedArticle.product_custom_field_1}`);
               }
+              
+              console.log(`🔄 [PUBLIC-ORDER] Menge wiederhergestellt für ${article.article_text}: ${storedArticle.tempQuantity}`);
+            } else {
+              console.log(`⚠️ [PUBLIC-ORDER] Artikel nicht gefunden für localStorage-Daten:`, storedArticle);
             }
           });
           
@@ -469,9 +540,12 @@ export class CustomerOrderPublicComponent implements OnInit {
                 tempQuantity: storedCustom.tempQuantity,
                 isCustom: true,
                 invoice_date: null,
-                product_database_id: 571
+                product_database_id: 571,
+                category: 'NEU HINZUGEFÜGT',
+                product_category: 'NEU HINZUGEFÜGT'
               };
               this.customerArticlePrices.push(newCustomArticle);
+              console.log(`🔄 [PUBLIC-ORDER] Benutzerdefinierten Artikel wiederhergestellt: ${storedCustom.article_text}`);
             }
           });
           
@@ -485,10 +559,32 @@ export class CustomerOrderPublicComponent implements OnInit {
   }
 
   private clearLocalStorage(): void {
-    if (!this.customerNumber) return;
+    if (!this.customerNumber || !this.token) return;
     
     try {
+      // Lösche den spezifischen localStorage-Eintrag für diesen Kunden
       localStorage.removeItem(this.localStorageKey);
+      
+      // Lösche auch alle anderen localStorage-Einträge mit dem gleichen Token
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('customer_order_')) {
+          try {
+            const storedData = localStorage.getItem(key);
+            if (storedData) {
+              const orderData = JSON.parse(storedData);
+              if (orderData.token === this.token) {
+                localStorage.removeItem(key);
+                console.log(`🗑️ [PUBLIC-ORDER] Zusätzlichen localStorage-Eintrag gelöscht: ${key}`);
+              }
+            }
+          } catch (error) {
+            // Ignoriere ungültige localStorage-Einträge
+            continue;
+          }
+        }
+      }
+      
       console.log('🗑️ [PUBLIC-ORDER] localStorage für Kunde geleert:', this.customerNumber);
     } catch (error) {
       console.error('❌ [PUBLIC-ORDER] Fehler beim Leeren des localStorage:', error);
@@ -640,6 +736,9 @@ export class CustomerOrderPublicComponent implements OnInit {
     // Nach dem Filtern gruppieren
     this.buildGroups();
 
+    // Gespeicherte Bestellung aus localStorage wiederherstellen
+    this.loadFromLocalStorage();
+
     // Loading beenden, da alle Daten geladen und gefiltert wurden
     this.isLoading = false;
     this.triggerPendingSubmitIfReady();
@@ -763,7 +862,8 @@ export class CustomerOrderPublicComponent implements OnInit {
             this.loadAllProducts();
             
             // Gespeicherte Bestellung aus localStorage wiederherstellen
-            this.loadFromLocalStorage();
+            // Warte bis die Produkte geladen sind, dann stelle localStorage wieder her
+            // Dies geschieht in filterArticlesByProducts() nach dem Aufbau der Gruppen
           } else {
             this.error = 'Ungültige API-Response: Artikel fehlen';
             this.isLoading = false;
