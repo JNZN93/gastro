@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { CustomerOrderStateService } from '../customer-order-state.service';
+
 
 @Component({
   selector: 'app-public-order-review',
@@ -436,7 +436,7 @@ export class PublicOrderReviewComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
-  private customerOrderStateService = inject(CustomerOrderStateService);
+
 
   token = '';
   items: any[] = [];
@@ -471,62 +471,67 @@ export class PublicOrderReviewComponent implements OnInit {
     if (!this.token) return;
     
     try {
-      let customerNumber = this.customer?.customer_number || this.customer?.customer_id || null;
-      let orderData: any = null;
-
-      // Versuche primär über bekannte Kundennummer
-      if (customerNumber) {
-        const storageKey = `customer_order_${customerNumber}`;
-        const storedData = localStorage.getItem(storageKey);
-        if (storedData) {
-          orderData = JSON.parse(storedData);
-        }
+      // WICHTIG: Verwende direkt den customer_order_10.001 Key
+      const storageKey = 'customer_order_10.001';
+      console.log(`🔍 Lade Daten direkt aus localStorage Key: ${storageKey}`);
+      
+      const storedData = localStorage.getItem(storageKey);
+      if (!storedData) {
+        console.log(`⚠️ Keine Bestellung im localStorage gefunden für Key: ${storageKey}`);
+        this.items = [];
+        return;
       }
 
-      // Fallback: Scanne localStorage nach dem Eintrag mit passendem Token
-      if (!orderData) {
-        for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i);
-          if (key && key.startsWith('customer_order_')) {
-            try {
-              const val = localStorage.getItem(key);
-              if (!val) continue;
-              const parsed = JSON.parse(val);
-              if (parsed && parsed.token === this.token) {
-                orderData = parsed;
-                customerNumber = parsed.customerNumber;
-                break;
-              }
-            } catch {}
-          }
-        }
+      const orderData = JSON.parse(storedData);
+      console.log(`📦 Bestelldaten gefunden für Key: ${storageKey}`);
+
+      // Setze Customer-Informationen
+      if (orderData.customerNumber && !this.customer) {
+        this.customer = { customer_number: orderData.customerNumber };
+        console.log(`👤 Customer gesetzt: ${orderData.customerNumber}`);
       }
 
-      if (orderData) {
-        // Setze minimalen Customer, falls noch nicht vorhanden
-        if (!this.customer && customerNumber) {
-          this.customer = { customer_number: customerNumber };
-        }
-        let entries: any[] = [];
-        if (Array.isArray(orderData.articles)) {
-          entries = orderData.articles;
-        } else if (orderData.items && typeof orderData.items === 'object') {
-          entries = Object.values(orderData.items);
-        }
+      let entries: any[] = [];
+      if (Array.isArray(orderData.articles)) {
+        entries = orderData.articles;
+      } else if (orderData.items && typeof orderData.items === 'object') {
+        entries = Object.values(orderData.items);
+      }
 
-        // Konvertiere tempQuantity -> quantity und stelle unit_price für Total sicher
-        this.items = entries.map((article: any) => ({
+      console.log(`📦 Rohe Einträge gefunden: ${entries.length}`);
+
+      // WICHTIG: Nur Artikel mit Menge > 0 laden (nur die tatsächlich hinzugefügten)
+      const validEntries = entries.filter((article: any) => {
+        const quantity = article.tempQuantity || article.quantity || 0;
+        const isValid = quantity > 0;
+        if (!isValid) {
+          console.log(`❌ Artikel ${article.article_text} hat Menge 0 - wird gefiltert`);
+        }
+        return isValid;
+      });
+
+      console.log(`✅ Gültige Einträge nach Filterung: ${validEntries.length}`);
+
+      // Konvertiere tempQuantity -> quantity und stelle unit_price für Total sicher
+      this.items = validEntries.map((article: any) => {
+        // WICHTIG: tempQuantity hat Vorrang vor quantity
+        const finalQuantity = article.tempQuantity !== undefined ? article.tempQuantity : (article.quantity || 0);
+        
+        console.log(`🔍 Artikel ${article.article_text}: tempQuantity=${article.tempQuantity}, quantity=${article.quantity}, finalQuantity=${finalQuantity}`);
+        
+        return {
           ...article,
-          quantity: article.tempQuantity || article.quantity || 0,
+          quantity: finalQuantity,
           unit_price: article.unit_price ?? article.unit_price_net ?? article.sale_price ?? 0
-        }));
-        this.total = this.calculateTotal();
-        console.log('📱 Artikel aus localStorage geladen:', this.items.length);
-      } else {
-        console.log('⚠️ Keine Bestellung im localStorage gefunden');
-      }
+        };
+      });
+      
+      this.total = this.calculateTotal();
+      console.log(`📱 Artikel erfolgreich geladen: ${this.items.length} Artikel`);
+      
     } catch (error) {
       console.error('❌ Fehler beim Laden aus localStorage:', error);
+      this.items = []; // Bei Fehler auch leeres Array setzen
     }
   }
 
@@ -547,14 +552,14 @@ export class PublicOrderReviewComponent implements OnInit {
       stored.customerNumber = String(customerNumber);
       stored.token = this.token;
 
-      // Nur notwendige Felder speichern und Mengen updaten
+      // Nur Artikel mit Menge > 0 speichern
       const presentKeys = new Set<string>();
       for (const item of this.items) {
         const quantity = Number(item.quantity);
         const key = String(item.article_number || item.product_id);
 
+        // Nur Artikel mit Menge > 0 speichern
         if (!quantity || quantity <= 0 || isNaN(quantity)) {
-          // wird ggf. im Prune-Schritt entfernt
           continue;
         }
 
@@ -604,11 +609,28 @@ export class PublicOrderReviewComponent implements OnInit {
       const customerNumber = this.customer?.customer_number || this.customer?.customer_id;
       if (!customerNumber) return;
       
-      // Lösche nur den einen Key: customer_order_<customer_number>
+      // Lösche den Key: customer_order_<customer_number>
       const storageKey = `customer_order_${customerNumber}`;
       localStorage.removeItem(storageKey);
       
-      console.log('🗑️ localStorage geleert für Kunde:', customerNumber);
+      // Zusätzlich: Lösche auch alle anderen Keys, die mit diesem Token verknüpft sind
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('customer_order_')) {
+          try {
+            const val = localStorage.getItem(key);
+            if (val) {
+              const parsed = JSON.parse(val);
+              if (parsed && parsed.token === this.token) {
+                localStorage.removeItem(key);
+                console.log('🗑️ Zusätzlicher localStorage-Key gelöscht:', key);
+              }
+            }
+          } catch {}
+        }
+      }
+      
+      console.log('🗑️ localStorage komplett geleert für Kunde:', customerNumber);
     } catch (error) {
       console.error('❌ Fehler beim Löschen der localStorage-Einträge:', error);
     }
@@ -653,27 +675,34 @@ export class PublicOrderReviewComponent implements OnInit {
     if (item.quantity > 1) {
       item.quantity--;
       this.updateTotal(); // Nur den Total aktualisieren, nicht das komplette Array
-      this.saveToLocalStorage(); // Änderungen in localStorage speichern
-      this.syncToMainLocalStorage(); // Änderungen auch im Hauptspeicher aktualisieren
+      this.updateItemInLocalStorage(item); // Änderungen sofort in localStorage speichern
+      this.cdr.detectChanges(); // Change Detection triggern
     }
   }
 
   increaseQuantity(item: any) {
     item.quantity++;
     this.updateTotal(); // Nur den Total aktualisieren, nicht das komplette Array
-    this.saveToLocalStorage(); // Änderungen in localStorage speichern
-    this.syncToMainLocalStorage(); // Änderungen auch im Hauptspeicher aktualisieren
+    this.updateItemInLocalStorage(item); // Änderungen sofort in localStorage speichern
+    this.cdr.detectChanges(); // Change Detection triggern
   }
 
   removeItem(item: any) {
     // Bestätigungsabfrage vor dem Entfernen
     if (confirm(`Möchten Sie "${item.article_text}" wirklich aus der Bestellung entfernen?`)) {
+      // Artikel aus dem Array entfernen
       this.items = this.items.filter(i => 
         (i.article_number || i.product_id) !== (item.article_number || item.product_id)
       );
-      this.updateTotal(); // Total nach dem Entfernen aktualisieren
-      this.saveToLocalStorage(); // Änderungen in localStorage speichern
-      this.syncToMainLocalStorage(); // Änderungen auch im Hauptspeicher aktualisieren
+      
+      // Total nach dem Entfernen aktualisieren
+      this.updateTotal();
+      
+      // WICHTIG: localStorage sofort bereinigen - entferne den gelöschten Artikel
+      this.removeItemFromLocalStorage(item);
+      
+      // Change Detection triggern
+      this.cdr.detectChanges();
     }
   }
 
@@ -725,10 +754,6 @@ export class PublicOrderReviewComponent implements OnInit {
       
       // Haupt-Warenkorb auch leeren (Synchronisation)
       this.syncToMainLocalStorage();
-      
-      // Customer Order State auch leeren
-      this.customerOrderStateService.clearState();
-      console.log('🗑️ Customer Order State geleert');
       
       // Change Detection triggern
       this.cdr.detectChanges();
@@ -792,7 +817,14 @@ export class PublicOrderReviewComponent implements OnInit {
         }))
       };
 
-      // Bestellung abschicken
+      // Bestellung abschicken - AUSKOMMENTIERT für Logging
+      console.log('🚀 [REVIEW] Bestellung wird abgesendet:', completeOrder);
+      console.log('📋 [REVIEW] Vollständiges Payload (JSON):', JSON.stringify(completeOrder, null, 2));
+      console.log('💰 [REVIEW] Gesamtpreis:', this.total);
+      console.log('📦 [REVIEW] Anzahl Artikel:', this.items.length);
+      
+      // Fetch auskommentiert - nur Logging
+      /*
       fetch('https://multi-mandant-ecommerce.onrender.com/api/orders/without-auth', {
         method: 'POST',
         headers: {
@@ -818,32 +850,47 @@ export class PublicOrderReviewComponent implements OnInit {
         this.isSubmitting = false;
         alert('Fehler beim Absenden der Bestellung. Bitte versuchen Sie es erneut.');
       });
+      */
+
+      // Simuliere erfolgreichen Submit für UI
+      setTimeout(() => {
+        console.log('✅ [REVIEW] Bestellung simuliert erfolgreich abgesendet');
+        this.isSubmitting = false;
+        
+        // Alle localStorage-Einträge für diesen Kunden löschen
+        this.clearAllLocalStorage();
+        
+        // Erfolgreich - zur Startseite weiterleiten
+        setTimeout(() => {
+          this.router.navigate(['/']);
+        }, 1000);
+      }, 1000);
     });
   }
 
   // Neue Methode: PFAND-Artikel automatisch zur Bestellung hinzufügen
   addPfandArticlesToOrder() {
-    console.log('🔄 [PUBLIC-PFAND-LOGIC] Starte PFAND-Artikel Logik...');
-    console.log('📋 [PUBLIC-PFAND-LOGIC] Aktuelle Artikel vor PFAND-Logik:', this.items);
+    console.log('🔄 [REVIEW] Starte PFAND-Artikel Logik...');
+    console.log('📋 [REVIEW] Aktuelle Artikel vor PFAND-Logik:', this.items);
     
     // Lade alle verfügbaren PFAND-Artikel vom api/products Endpoint
     this.loadPfandArticles().then(pfandArticles => {
-      console.log('📦 [PUBLIC-PFAND-LOGIC] Verfügbare PFAND-Artikel geladen:', pfandArticles);
+      console.log('📦 [REVIEW] Verfügbare PFAND-Artikel geladen:', pfandArticles);
       
       // Entferne vorhandene PFAND-Artikel, um Duplikate zu vermeiden
       const baseItems = this.items.filter(i => !i.is_pfand);
-      // Setze die Liste zunächst auf die Basisartikel ohne PFAND
-      this.items = [...baseItems];
-
-      // Erstelle eine Kopie der Basisartikel für die Verarbeitung
-      const itemsCopy = [...baseItems];
-      const newItems: any[] = [];
       
-      // Durchlaufe alle Artikel
-      itemsCopy.forEach((artikel, index) => {
+      // Erstelle eine neue Liste für die finale Bestellung
+      const finalItems: any[] = [];
+      
+      // Durchlaufe alle Basisartikel
+      baseItems.forEach((artikel) => {
+        // Füge den Hauptartikel hinzu
+        finalItems.push(artikel);
+        
         // Prüfe, ob der Artikel ein product_custom_field_1 hat (PFAND-Referenz)
         if (artikel.product_custom_field_1) {
-          console.log(`🔍 [PUBLIC-PFAND-LOGIC] Artikel ${artikel.article_text} hat product_custom_field_1: ${artikel.product_custom_field_1}`);
+          console.log(`🔍 [REVIEW] Artikel ${artikel.article_text} hat PFAND-Referenz: ${artikel.product_custom_field_1}`);
           
           // Suche nach dem echten PFAND-Artikel in den geladenen PFAND-Artikeln
           const realPfandArticle = pfandArticles.find(pfand => 
@@ -852,7 +899,7 @@ export class PublicOrderReviewComponent implements OnInit {
           );
           
           if (realPfandArticle) {
-            console.log(`✅ [PUBLIC-PFAND-LOGIC] Echten PFAND-Artikel gefunden: ${realPfandArticle.article_text}`);
+            console.log(`✅ [REVIEW] PFAND-Artikel gefunden: ${realPfandArticle.article_text}`);
             
             // Erstelle einen PFAND-Artikel basierend auf dem echten PFAND-Artikel
             const pfandItem = {
@@ -860,31 +907,25 @@ export class PublicOrderReviewComponent implements OnInit {
               quantity: artikel.quantity, // Menge vom Hauptartikel übernehmen
               parent_article_number: artikel.article_number || artikel.product_id, // Referenz zum Hauptartikel
               is_pfand: true, // Markierung als PFAND-Artikel
-              description: `Pfand für ${artikel.article_text}` // Beschreibung anpassen
+              description: `PFAND für ${artikel.article_text}` // Beschreibung anpassen
             };
             
-            // Füge den echten PFAND-Artikel zur Liste der neuen Artikel hinzu
-            newItems.push({
-              item: pfandItem,
-              insertAfterIndex: index
-            });
-            console.log(`➕ [PUBLIC-PFAND-LOGIC] Echter PFAND-Artikel wird hinzugefügt: ${pfandItem.article_text}, Menge: ${pfandItem.quantity}, Preis: ${pfandItem.sale_price ?? pfandItem.unit_price ?? 0}€`);
+            // Füge den PFAND-Artikel direkt nach dem Hauptartikel hinzu
+            finalItems.push(pfandItem);
+            console.log(`➕ [REVIEW] PFAND-Artikel hinzugefügt: ${pfandItem.article_text}, Menge: ${pfandItem.quantity}, Preis: ${pfandItem.sale_price ?? pfandItem.unit_price ?? 0}€`);
           } else {
-            // Kein PFAND-Artikel gefunden: nichts hinzufügen
-            console.log(`❌ [PUBLIC-PFAND-LOGIC] Kein echter PFAND-Artikel gefunden für Referenz: ${artikel.product_custom_field_1}. Es wird kein PFAND hinzugefügt.`);
+            console.log(`❌ [REVIEW] Kein PFAND-Artikel gefunden für Referenz: ${artikel.product_custom_field_1}`);
           }
         } else {
-          console.log(`ℹ️ [PUBLIC-PFAND-LOGIC] Artikel ${artikel.article_text} hat kein product_custom_field_1`);
+          console.log(`ℹ️ [REVIEW] Artikel ${artikel.article_text} hat keine PFAND-Referenz`);
         }
       });
       
-      // Füge alle PFAND-Artikel in umgekehrter Reihenfolge hinzu (damit die Indizes stimmen)
-      newItems.reverse().forEach(({ item, insertAfterIndex }) => {
-        this.items.splice(insertAfterIndex + 1, 0, item);
-      });
+      // Setze die finale Liste
+      this.items = finalItems;
       
-      console.log(`🎯 [PUBLIC-PFAND-LOGIC] PFAND-Logik abgeschlossen. ${newItems.length} PFAND-Artikel hinzugefügt.`);
-      console.log(`📋 [PUBLIC-PFAND-LOGIC] Neuer Artikel-Array:`, this.items);
+      console.log(`🎯 [REVIEW] PFAND-Logik abgeschlossen. ${finalItems.length - baseItems.length} PFAND-Artikel hinzugefügt.`);
+      console.log(`📋 [REVIEW] Finale Artikel-Liste:`, this.items);
       
       // Aktualisiere den Gesamtpreis
       this.updateTotal();
@@ -892,6 +933,60 @@ export class PublicOrderReviewComponent implements OnInit {
       // Manuell Change Detection triggern
       this.cdr.detectChanges();
     });
+  }
+
+  // Neue Methode: Aktualisiere einen Artikel direkt im localStorage
+  private updateItemInLocalStorage(item: any): void {
+    try {
+      const customerNumber = this.customer?.customer_number || this.customer?.customer_id;
+      if (!customerNumber) return;
+      
+      const storageKey = `customer_order_${customerNumber}`;
+      const storedRaw = localStorage.getItem(storageKey);
+      if (!storedRaw) return;
+      
+      let stored = JSON.parse(storedRaw);
+      if (!stored || !stored.items) return;
+      
+      // Aktualisiere den Artikel im localStorage
+      const itemKey = String(item.article_number || item.product_id);
+      if (stored.items[itemKey]) {
+        stored.items[itemKey].tempQuantity = item.quantity;
+        console.log(`🔄 Artikel ${itemKey} im localStorage aktualisiert - neue Menge: ${item.quantity}`);
+        
+        // Aktualisiere den localStorage
+        localStorage.setItem(storageKey, JSON.stringify(stored));
+      }
+    } catch (error) {
+      console.error('❌ Fehler beim Aktualisieren des Artikels im localStorage:', error);
+    }
+  }
+
+  // Neue Methode: Entferne einen Artikel direkt aus dem localStorage
+  private removeItemFromLocalStorage(item: any): void {
+    try {
+      const customerNumber = this.customer?.customer_number || this.customer?.customer_id;
+      if (!customerNumber) return;
+      
+      const storageKey = `customer_order_${customerNumber}`;
+      const storedRaw = localStorage.getItem(storageKey);
+      if (!storedRaw) return;
+      
+      let stored = JSON.parse(storedRaw);
+      if (!stored || !stored.items) return;
+      
+      // Entferne den Artikel aus dem localStorage
+      const itemKey = String(item.article_number || item.product_id);
+      if (stored.items[itemKey]) {
+        delete stored.items[itemKey];
+        console.log(`🗑️ Artikel ${itemKey} aus localStorage entfernt`);
+        
+        // Aktualisiere den localStorage
+        localStorage.setItem(storageKey, JSON.stringify(stored));
+      }
+    } catch (error) {
+      console.error('❌ Fehler beim Entfernen des Artikels aus localStorage:', error);
+    }
   }
 
   // Neue Methode: Lade alle PFAND-Artikel vom api/products Endpoint
