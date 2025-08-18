@@ -511,6 +511,7 @@ export class CustomerOrderPublicComponent implements OnInit {
           unit_price_net: Number(article.unit_price_net) || 0,
           main_image_url: article.main_image_url,
           product_custom_field_1: article.product_custom_field_1,
+          product_database_id: article.product_database_id,
           isCustom: !!article.isCustom,
           // Menge
           tempQuantity: quantity

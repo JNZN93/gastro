@@ -453,8 +453,6 @@ export class PublicOrderReviewComponent implements OnInit {
     // Artikel aus localStorage laden
     this.loadFromLocalStorage();
 
-
-
     // Gerätespezifische Höhenanpassung
     this.adjustHeightForDevice();
 
@@ -513,16 +511,39 @@ export class PublicOrderReviewComponent implements OnInit {
       console.log(`✅ Gültige Einträge nach Filterung: ${validEntries.length}`);
 
       // Konvertiere tempQuantity -> quantity und stelle unit_price für Total sicher
+      // WICHTIG: Alle Artikel müssen das gleiche Schema haben
       this.items = validEntries.map((article: any) => {
         // WICHTIG: tempQuantity hat Vorrang vor quantity
         const finalQuantity = article.tempQuantity !== undefined ? article.tempQuantity : (article.quantity || 0);
         
         console.log(`🔍 Artikel ${article.article_text}: tempQuantity=${article.tempQuantity}, quantity=${article.quantity}, finalQuantity=${finalQuantity}`);
+        console.log(`🔍 Artikel ${article.article_text}: product_database_id=${article.product_database_id}, id=${article.id}`);
+        console.log(`🔍 Artikel ${article.article_text}: Vollständiger Artikel:`, article);
         
+        // Einheitliches Schema für alle Artikel
         return {
-          ...article,
+          // Basis-Identifikation (immer vorhanden)
+          product_id: article.product_id || article.article_number || article.id,
+          article_number: article.article_number || article.product_id || article.id,
+          
+          // Anzeige-Informationen
+          article_text: article.article_text,
+          main_image_url: article.main_image_url,
+          
+          // Preise (nur unit_price_net verwenden)
+          unit_price_net: article.unit_price_net || 0,
+          
+          // Mengen (einheitlich)
           quantity: finalQuantity,
-          unit_price: article.unit_price ?? article.unit_price_net ?? article.sale_price ?? 0
+          tempQuantity: finalQuantity,
+          
+          // Zusätzliche Felder
+          product_custom_field_1: article.product_custom_field_1,
+          isCustom: article.isCustom || false,
+          is_pfand: article.is_pfand || false,
+          
+          // WICHTIG: product_database_id für den id Key im Payload
+          product_database_id: article.product_database_id
         };
       });
       
@@ -564,13 +585,25 @@ export class PublicOrderReviewComponent implements OnInit {
         }
 
         presentKeys.add(key);
+        console.log(`💾 [LOCALSTORAGE] Speichere Artikel ${key}:`, {
+          product_id: item.product_id,
+          article_number: item.article_number,
+          article_text: item.article_text,
+          unit_price_net: Number(item.unit_price_net || 0) || 0,
+          main_image_url: item.main_image_url,
+          product_custom_field_1: item.product_custom_field_1,
+          product_database_id: item.product_database_id,
+          isCustom: !!item.isCustom,
+          tempQuantity: quantity
+        });
         stored.items[key] = {
           product_id: item.product_id,
           article_number: item.article_number,
           article_text: item.article_text,
-          unit_price_net: Number(item.unit_price ?? item.sale_price ?? 0) || 0,
+          unit_price_net: Number(item.unit_price_net || 0) || 0,
           main_image_url: item.main_image_url,
           product_custom_field_1: item.product_custom_field_1,
+          product_database_id: item.product_database_id,
           isCustom: !!item.isCustom,
           tempQuantity: quantity
         };
@@ -598,7 +631,7 @@ export class PublicOrderReviewComponent implements OnInit {
     if (this.items.length === 0) return 0;
     
     return this.items.reduce((sum, item) => {
-      const price = item.sale_price || item.unit_price || 0;
+      const price = item.unit_price_net || 0;
       return sum + (price * item.quantity);
     }, 0);
   }
@@ -711,7 +744,7 @@ export class PublicOrderReviewComponent implements OnInit {
     if (this.items.length > 0) {
       this.total = this.items.reduce((sum, item) => {
         // Verwende sale_price falls vorhanden, sonst 0 (für PFAND-Artikel)
-        const price = item.sale_price || 0;
+        const price = item.unit_price_net || 0;
         return sum + (price * item.quantity);
       }, 0);
     }
@@ -760,94 +793,103 @@ export class PublicOrderReviewComponent implements OnInit {
     }
   }
 
-  submitOrder() {
+  async submitOrder() {
     console.log('🚀 [PUBLIC-REVIEW] Bestellung wird abgesendet...');
     console.log('📋 [PUBLIC-REVIEW] Artikel vor PFAND-Logik:', this.items);
     
-    // PFAND-Artikel automatisch hinzufügen BEVOR die Bestellung abgesendet wird
-    this.addPfandArticlesToOrder();
+    // PFAND-Artikel synchron hinzufügen BEVOR die Bestellung abgesendet wird
+    await this.addPfandArticlesToOrderSync();
     
-    // Kurz warten, damit die PFAND-Logik abgeschlossen ist
-    setTimeout(() => {
-      console.log('📋 [PUBLIC-REVIEW] Artikel nach PFAND-Logik:', this.items);
-      console.log('💰 [PUBLIC-REVIEW] Gesamtpreis nach PFAND-Logik:', this.total);
+    console.log('📋 [PUBLIC-REVIEW] Artikel nach PFAND-Logik:', this.items);
+    console.log('💰 [PUBLIC-REVIEW] Gesamtpreis nach PFAND-Logik:', this.total);
+    
+    // WICHTIG: Prüfe ob PFAND-Artikel korrekt hinzugefügt wurden
+    const pfandItems = this.items.filter(item => item.is_pfand);
+    const normalItems = this.items.filter(item => !item.is_pfand);
+    
+    console.log(`🔍 [REVIEW] PFAND-Artikel gefunden: ${pfandItems.length}`);
+    console.log(`🔍 [REVIEW] Normale Artikel gefunden: ${normalItems.length}`);
+    console.log(`🔍 [REVIEW] Gesamtartikel: ${this.items.length}`);
+    
+    // Bestellung direkt von der Review-Seite abschicken
+    this.isSubmitting = true;
+    
+    // Bestellung an den API-Endpoint senden - nur customer_number verfügbar
+    const orderData = {
+      // Nur die verfügbare customer_number senden
+      customer_number: this.customer?.customer_number || this.customer?.customer_id,
       
-      // Bestellung direkt von der Review-Seite abschicken
-      this.isSubmitting = true;
-      
-      // Bestellung an den API-Endpoint senden
-      const orderData = {
-        customer_number: this.customer?.customer_id || this.customer?.customer_number,
-        customer_street: '',
-        customer_country_code: 'DE',
-        customer_postal_code: '',
-        customer_city: '',
-        different_company_name: null,
-        status: 'open',
-        customer_notes: '',
-        shipping_address: '',
-        fulfillment_type: 'delivery',
-        total_price: this.total,
-        delivery_date: new Date().toISOString().split('T')[0]
-      };
+      // Bestellungsdaten
+      status: 'open',
+      customer_notes: '',
+      shipping_address: '',
+      fulfillment_type: 'delivery',
+      total_price: this.total,
+      delivery_date: new Date().toISOString().split('T')[0]
+    };
 
-      const completeOrder = {
-        orderData: orderData,
-        orderItems: this.items.map(item => ({
+    const completeOrder = {
+      orderData: orderData,
+      orderItems: this.items.map(item => {
+        console.log(`🔍 [PAYLOAD] Artikel ${item.article_text}: product_database_id=${item.product_database_id}`);
+        return {
           article_number: item.article_number || item.product_id,
           quantity: item.quantity,
-          sale_price: (item.unit_price ?? item.sale_price ?? 0),
+          sale_price: item.unit_price_net || 0,
           description: item.article_text,
           article_text: item.article_text,
-          category: item.category,
-          created_at: item.created_at,
-          customer_id: item.customer_id,
-          article_id: item.id,
-          invoice_date: item.invoice_date,
-          invoice_id: item.invoice_id,
-          product_category: item.product_category,
+          unit_price_net: item.unit_price_net || 0,
+          different_price: item.unit_price_net || 0,
           id: item.product_database_id,
-          product_name: item.product_name,
-          unit_price_gross: item.unit_price_gross,
-          unit_price_net: (item.unit_price ?? item.sale_price ?? 0),
-          vat_percentage: item.vat_percentage,
-          updated_at: item.updated_at,
-          total_price: (item.quantity * (item.unit_price ?? item.sale_price ?? 0)),
+          total_price: (item.quantity * (item.unit_price_net || 0)),
           product_custom_field_1: item.product_custom_field_1
-        }))
-      };
+        };
+      })
+    };
 
-      // Bestellung abschicken
-      console.log('🚀 [REVIEW] Bestellung wird abgesendet:', completeOrder);
-      console.log('📋 [REVIEW] Vollständiges Payload (JSON):', JSON.stringify(completeOrder, null, 2));
-      console.log('💰 [REVIEW] Gesamtpreis:', this.total);
-      console.log('📦 [REVIEW] Anzahl Artikel:', this.items.length);
+    // 🔍 PAYLOAD LOGGING - Bestellung wird abgesendet
+    console.log('🚀 [REVIEW] Bestellung wird abgesendet:');
+    console.log('📋 [REVIEW] Vollständiges Order-Payload:', JSON.stringify(completeOrder, null, 2));
+    console.log('💰 [REVIEW] Gesamtpreis:', this.total);
+    console.log('📦 [REVIEW] Anzahl Artikel:', this.items.length);
+    console.log('👤 [REVIEW] Kunde:', completeOrder.orderData.customer_number);
+    console.log('📅 [REVIEW] Lieferdatum:', completeOrder.orderData.delivery_date);
+    console.log('📍 [REVIEW] Lieferart:', completeOrder.orderData.fulfillment_type);
+    console.log('🏠 [REVIEW] Lieferadresse:', orderData.shipping_address);
+    console.log('📝 [REVIEW] Anmerkungen:', orderData.customer_notes);
+    console.log('🌐 [REVIEW] Endpoint:', 'https://multi-mandant-ecommerce.onrender.com/api/orders/without-auth');
+    
+    // Zusätzliches Logging für PFAND-Artikel
+    console.log('🔍 [REVIEW] PFAND-Artikel im Payload:', pfandItems.map(item => ({
+      name: item.article_text,
+      quantity: item.quantity,
+      price: item.unit_price_net || 0
+    })));
+    
+    fetch('https://multi-mandant-ecommerce.onrender.com/api/orders/without-auth', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(completeOrder)
+    })
+    .then(response => response.json())
+    .then(data => {
+      console.log('✅ Bestellung erfolgreich abgesendet:', data);
+      this.isSubmitting = false;
       
-      fetch('https://multi-mandant-ecommerce.onrender.com/api/orders/without-auth', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(completeOrder)
-      })
-      .then(response => response.json())
-      .then(data => {
-        console.log('✅ Bestellung erfolgreich abgesendet:', data);
-        this.isSubmitting = false;
-        
-        // Alle localStorage-Einträge für diesen Kunden löschen
-        this.clearAllLocalStorage();
-        
-        // Erfolgreich - zur Startseite weiterleiten
-        setTimeout(() => {
-          this.router.navigate(['/']);
-        }, 1000);
-      })
-      .catch(error => {
-        console.error('❌ Fehler beim Absenden der Bestellung:', error);
-        this.isSubmitting = false;
-        alert('Fehler beim Absenden der Bestellung. Bitte versuchen Sie es erneut.');
-      });
+      // Alle localStorage-Einträge für diesen Kunden löschen
+      this.clearAllLocalStorage();
+      
+      // Erfolgreich - zur Startseite weiterleiten
+      setTimeout(() => {
+        this.router.navigate(['/']);
+      }, 1000);
+    })
+    .catch(error => {
+      console.error('❌ Fehler beim Absenden der Bestellung:', error);
+      this.isSubmitting = false;
+      alert('Fehler beim Absenden der Bestellung. Bitte versuchen Sie es erneut.');
     });
   }
 
@@ -884,18 +926,44 @@ export class PublicOrderReviewComponent implements OnInit {
           if (realPfandArticle) {
             console.log(`✅ [REVIEW] PFAND-Artikel gefunden: ${realPfandArticle.article_text}`);
             
-            // Erstelle einen PFAND-Artikel basierend auf dem echten PFAND-Artikel
+            // Erstelle einen PFAND-Artikel mit dem gleichen Schema wie in orderItems
             const pfandItem = {
-              ...realPfandArticle, // Alle echten PFAND-Daten übernehmen
-              quantity: artikel.quantity, // Menge vom Hauptartikel übernehmen
-              parent_article_number: artikel.article_number || artikel.product_id, // Referenz zum Hauptartikel
-              is_pfand: true, // Markierung als PFAND-Artikel
-              description: `PFAND für ${artikel.article_text}` // Beschreibung anpassen
+              // Basis-Felder (wie im localStorage)
+              product_id: realPfandArticle.article_number || realPfandArticle.product_id,
+              article_number: realPfandArticle.article_number || realPfandArticle.product_id,
+              article_text: realPfandArticle.article_text,
+              unit_price_net: realPfandArticle.unit_price_net || 0,
+              main_image_url: realPfandArticle.main_image_url,
+              product_custom_field_1: realPfandArticle.product_custom_field_1,
+              isCustom: false,
+              is_pfand: true,
+              
+              // Menge und Referenz - WICHTIG: Gleiche Menge wie der Hauptartikel
+              quantity: artikel.quantity,
+              tempQuantity: artikel.quantity,
+              parent_article_number: artikel.article_number || artikel.product_id,
+              
+              // Zusätzliche Felder für Kompatibilität
+              sale_price: realPfandArticle.unit_price_net || 0,
+              
+              // Alle Felder die in orderItems benötigt werden
+              category: realPfandArticle.category,
+              created_at: realPfandArticle.created_at,
+              customer_id: artikel.customer_id,
+              id: realPfandArticle.id || realPfandArticle.product_id,
+              invoice_date: realPfandArticle.invoice_date,
+              invoice_id: realPfandArticle.invoice_id,
+              product_category: realPfandArticle.product_category,
+              product_database_id: realPfandArticle.id || realPfandArticle.product_id,
+              product_name: realPfandArticle.article_text,
+              unit_price_gross: realPfandArticle.unit_price_gross || realPfandArticle.unit_price_net || 0,
+              vat_percentage: realPfandArticle.vat_percentage,
+              updated_at: realPfandArticle.updated_at
             };
             
             // Füge den PFAND-Artikel direkt nach dem Hauptartikel hinzu
             finalItems.push(pfandItem);
-            console.log(`➕ [REVIEW] PFAND-Artikel hinzugefügt: ${pfandItem.article_text}, Menge: ${pfandItem.quantity}, Preis: ${pfandItem.sale_price ?? pfandItem.unit_price ?? 0}€`);
+            console.log(`➕ [REVIEW] PFAND-Artikel hinzugefügt: ${pfandItem.article_text}, Menge: ${pfandItem.quantity}, Preis: ${pfandItem.unit_price_net}€`);
           } else {
             console.log(`❌ [REVIEW] Kein PFAND-Artikel gefunden für Referenz: ${artikel.product_custom_field_1}`);
           }
@@ -916,6 +984,104 @@ export class PublicOrderReviewComponent implements OnInit {
       // Manuell Change Detection triggern
       this.cdr.detectChanges();
     });
+  }
+
+  // Neue Methode: PFAND-Artikel synchron hinzufügen
+  async addPfandArticlesToOrderSync() {
+    console.log('🔄 [REVIEW] Starte PFAND-Artikel Logik (Sync)...');
+    console.log('📋 [REVIEW] Aktuelle Artikel vor PFAND-Logik:', this.items);
+    
+    try {
+      // Lade alle verfügbaren PFAND-Artikel vom api/products Endpoint
+      const pfandArticles = await this.loadPfandArticles();
+      console.log('📦 [REVIEW] Verfügbare PFAND-Artikel geladen:', pfandArticles);
+      
+      // Entferne vorhandene PFAND-Artikel, um Duplikate zu vermeiden
+      const baseItems = this.items.filter(i => !i.is_pfand);
+      
+      // Erstelle eine neue Liste für die finale Bestellung
+      const finalItems: any[] = [];
+      
+      // Durchlaufe alle Basisartikel
+      baseItems.forEach((artikel) => {
+        // Füge den Hauptartikel hinzu
+        finalItems.push(artikel);
+        
+        // Prüfe, ob der Artikel ein product_custom_field_1 hat (PFAND-Referenz)
+        if (artikel.product_custom_field_1) {
+          console.log(`🔍 [REVIEW] Artikel ${artikel.article_text} hat PFAND-Referenz: ${artikel.product_custom_field_1}`);
+          
+          // Suche nach dem echten PFAND-Artikel in den geladenen PFAND-Artikeln
+          const realPfandArticle = pfandArticles.find(pfand => 
+            pfand.article_number === artikel.product_custom_field_1 || 
+            pfand.product_id === artikel.product_custom_field_1
+          );
+          
+          if (realPfandArticle) {
+            console.log(`✅ [REVIEW] PFAND-Artikel gefunden: ${realPfandArticle.article_text}`);
+            
+            // Erstelle einen PFAND-Artikel mit dem gleichen Schema wie in orderItems
+            const pfandItem = {
+              // Basis-Felder (wie im localStorage)
+              product_id: realPfandArticle.article_number || realPfandArticle.product_id,
+              article_number: realPfandArticle.article_number || realPfandArticle.product_id,
+              article_text: realPfandArticle.article_text,
+              unit_price_net: realPfandArticle.unit_price_net || 0,
+              main_image_url: realPfandArticle.main_image_url,
+              product_custom_field_1: realPfandArticle.product_custom_field_1,
+              isCustom: false,
+              is_pfand: true,
+              
+              // Menge und Referenz - WICHTIG: Gleiche Menge wie der Hauptartikel
+              quantity: artikel.quantity,
+              tempQuantity: artikel.quantity,
+              parent_article_number: artikel.article_number || artikel.product_id,
+              
+              // Zusätzliche Felder für Kompatibilität
+              sale_price: realPfandArticle.unit_price_net || 0,
+              
+              // Alle Felder die in orderItems benötigt werden
+              category: realPfandArticle.category,
+              created_at: realPfandArticle.created_at,
+              customer_id: artikel.customer_id,
+              id: realPfandArticle.id || realPfandArticle.product_id,
+              invoice_date: realPfandArticle.invoice_date,
+              invoice_id: realPfandArticle.invoice_id,
+              product_category: realPfandArticle.product_category,
+              product_database_id: realPfandArticle.id || realPfandArticle.product_id,
+              product_name: realPfandArticle.article_text,
+              unit_price_gross: realPfandArticle.unit_price_gross || realPfandArticle.unit_price_net || 0,
+              vat_percentage: realPfandArticle.vat_percentage,
+              updated_at: realPfandArticle.updated_at
+            };
+            
+            // Füge den PFAND-Artikel direkt nach dem Hauptartikel hinzu
+            finalItems.push(pfandItem);
+            console.log(`➕ [REVIEW] PFAND-Artikel hinzugefügt: ${pfandItem.article_text}, Menge: ${pfandItem.quantity}, Preis: ${pfandItem.unit_price_net}€`);
+          } else {
+            console.log(`❌ [REVIEW] Kein PFAND-Artikel gefunden für Referenz: ${artikel.product_custom_field_1}`);
+          }
+        } else {
+          console.log(`ℹ️ [REVIEW] Artikel ${artikel.article_text} hat keine PFAND-Referenz`);
+        }
+      });
+      
+      // Setze die finale Liste
+      this.items = finalItems;
+      
+      console.log(`🎯 [REVIEW] PFAND-Logik abgeschlossen. ${finalItems.length - baseItems.length} PFAND-Artikel hinzugefügt.`);
+      console.log(`📋 [REVIEW] Finale Artikel-Liste:`, this.items);
+      
+      // Aktualisiere den Gesamtpreis
+      this.updateTotal();
+      
+      // Manuell Change Detection triggern
+      this.cdr.detectChanges();
+      
+    } catch (error) {
+      console.error('❌ [REVIEW] Fehler in der PFAND-Logik:', error);
+      // Bei Fehler trotzdem fortfahren mit den ursprünglichen Artikeln
+    }
   }
 
   // Neue Methode: Aktualisiere einen Artikel direkt im localStorage
