@@ -701,7 +701,7 @@
                     
                     <div class="price-card-content">
                       <div class="article-info">
-                        <div class="article-name">{{ customerPrice.article_text || 'Unbekannter Artikel' }}</div>
+                        <div class="article-name">{{ sanitizeText(customerPrice.article_text) || 'Unbekannter Artikel' }}</div>
                         <div class="article-number">{{ customerPrice.article_number || customerPrice.product_id }}</div>
                       </div>
                       
@@ -862,7 +862,7 @@
           <tbody>
             @for (customerPrice of filteredArticlePrices; track customerPrice.product_id) {
             <tr class="article-price-row">
-              <td class="article-name">{{ customerPrice.article_text || 'Unbekannter Artikel' }}</td>
+              <td class="article-name">{{ sanitizeText(customerPrice.article_text) || 'Unbekannter Artikel' }}</td>
               <td class="article-number">{{ customerPrice.article_number || customerPrice.product_id }}</td>
               <td class="customer-price">
                 <span class="customer-price-value">€{{ customerPrice.unit_price_net }}</span>
@@ -924,7 +924,7 @@
           
           <div class="price-card-content">
             <div class="article-info">
-              <div class="article-name">{{ customerPrice.article_text || 'Unbekannter Artikel' }}</div>
+              <div class="article-name">{{ sanitizeText(customerPrice.article_text) || 'Unbekannter Artikel' }}</div>
               <div class="article-number">{{ customerPrice.article_number || customerPrice.product_id }}</div>
             </div>
             

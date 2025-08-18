@@ -91,6 +91,19 @@ export class EmployeesComponent implements OnInit, OnDestroy {
   // Drag & Drop properties
   draggedIndex: number = -1;
   dragOverIndex: number = -1;
+
+  // Hilfsmethode zur Bereinigung von HTML-Entitäten
+  sanitizeText(text: string): string {
+    if (!text) return '';
+    return text
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .trim();
+  }
   
   // Mobile Tab properties
   activeTab: 'search' | 'order' | 'prices' = 'search';
