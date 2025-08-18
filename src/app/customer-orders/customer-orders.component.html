@@ -150,7 +150,7 @@
                                class="article-name-edit-input"
                                #articleNameInput>
                       } @else {
-                        <span class="article-text" (click)="startEditArticleName(i)">{{ item.article_text }}</span>
+                        <span class="article-text" (click)="startEditArticleName(i)" [title]="item.article_text">{{ item.article_text }}</span>
                       }
                     </div>
                   </td>
