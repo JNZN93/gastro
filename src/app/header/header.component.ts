@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, NgZone } from '@angular/core';
 import { ToggleCartService } from '../toggle-cart.service';
 import { Router, RouterModule } from '@angular/router';
 import { GlobalService } from '../global.service';
@@ -41,7 +41,8 @@ export class HeaderComponent {
     public globalService: GlobalService,
     private fb: FormBuilder,
     private authService: AuthService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private ngZone: NgZone
   ) {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
@@ -58,7 +59,7 @@ export class HeaderComponent {
 
     // Event Listener für Login-Modal von anderen Komponenten
     window.addEventListener('openLoginModal', () => {
-      this.openLoginModal();
+      this.ngZone.run(() => this.openLoginModal());
     });
   }
 
