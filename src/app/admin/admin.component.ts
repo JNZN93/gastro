@@ -40,6 +40,10 @@ export class AdminComponent implements OnInit {
   globalArtikels: any[] = [];
   // Alle Artikel inkl. PFAND für die custom_field_1 Überprüfung
   allArtikels: any[] = [];
+  
+  // Kundendaten für die Anzeige der Kundennamen
+  customers: any[] = [];
+  customerNameMap: { [key: string]: string } = {};
 
   constructor(
     private router: Router,
@@ -54,6 +58,51 @@ export class AdminComponent implements OnInit {
     this.checkUserRole();
     this.loadOrders();
     this.loadAllArtikels();
+    this.loadCustomers();
+  }
+
+  // Neue Methode zum Laden der Kundendaten
+  loadCustomers(): void {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    this.http.get<any[]>('https://multi-mandant-ecommerce.onrender.com/api/customers', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    }).subscribe({
+      next: (customers) => {
+        this.customers = customers || [];
+        // Erstelle eine Map von Kundennummer zu Kundennamen
+        this.customerNameMap = {};
+        customers.forEach(customer => {
+          if (customer.customer_number && customer.last_name_company) {
+            this.customerNameMap[customer.customer_number] = customer.last_name_company;
+          }
+        });
+        console.log('✅ [ADMIN] Kundendaten geladen:', this.customers.length);
+      },
+      error: (error) => {
+        console.error('❌ [ADMIN] Fehler beim Laden der Kundendaten:', error);
+      }
+    });
+  }
+
+  // Methode zum Abrufen des Kundennamens basierend auf der Kundennummer
+  getCustomerName(order: any): string {
+    // Wenn bereits ein Name vorhanden ist, verwende diesen
+    if (order.name && order.name.trim() !== '') {
+      return order.name;
+    }
+    
+    // Wenn nur eine Kundennummer vorhanden ist, suche nach dem Kundennamen
+    if (order.customer_number && this.customerNameMap[order.customer_number]) {
+      return this.customerNameMap[order.customer_number];
+    }
+    
+    // Fallback: Zeige Kundennummer an
+    return order.customer_number || 'Unbekannter Kunde';
   }
 
   // Neue Methode zum Laden aller Artikel (inkl. PFAND)
@@ -99,6 +148,7 @@ export class AdminComponent implements OnInit {
     return this.orders.filter(order => 
       order.order_id?.toString().includes(this.searchTerm) ||
       order.name?.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+      this.getCustomerName(order).toLowerCase().includes(this.searchTerm.toLowerCase()) ||
       order.company?.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
       order.email?.toLowerCase().includes(this.searchTerm.toLowerCase())
     );
