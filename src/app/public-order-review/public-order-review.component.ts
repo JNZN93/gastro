@@ -555,7 +555,10 @@ export class PublicOrderReviewComponent implements OnInit {
           is_pfand: article.is_pfand || false,
           
           // WICHTIG: product_database_id für den id Key im Payload
-          product_database_id: article.product_database_id
+          product_database_id: article.product_database_id,
+          
+          // WICHTIG: different_price auf unit_price_net setzen (wie in customer-orders)
+          different_price: article.unit_price_net || 0
         };
       });
       
@@ -619,7 +622,9 @@ export class PublicOrderReviewComponent implements OnInit {
           product_database_id: item.product_database_id,
           isCustom: !!item.isCustom,
           is_pfand: !!item.is_pfand, // WICHTIG: is_pfand Flag auch speichern
-          tempQuantity: quantity
+          tempQuantity: quantity,
+          // WICHTIG: different_price auf unit_price_net setzen (wie in customer-orders)
+          different_price: Number(item.unit_price_net || 0) || 0
         };
       }
 
@@ -875,7 +880,6 @@ export class PublicOrderReviewComponent implements OnInit {
             article_number: realPfandArticle.article_number || realPfandArticle.product_id,
             quantity: artikel.quantity,
             sale_price: pfandFinalPrice,
-            description: realPfandArticle.article_text,
             article_text: realPfandArticle.article_text,
             unit_price_net: realPfandArticle.unit_price_net || 0,
             different_price: realPfandArticle.different_price || 0,
@@ -938,7 +942,6 @@ export class PublicOrderReviewComponent implements OnInit {
             article_number: item.article_number || item.product_id,
             quantity: item.quantity,
             sale_price: finalPrice,
-            description: item.article_text,
             article_text: item.article_text,
             unit_price_net: item.unit_price_net || 0,
             different_price: item.different_price || 0,
