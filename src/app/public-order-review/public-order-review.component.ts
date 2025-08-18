@@ -463,6 +463,17 @@ export class PublicOrderReviewComponent implements OnInit {
         contentElement.scrollTop = 0;
       }
     }, 100);
+
+    // PFAND-Verknüpfungen analysieren nach dem Laden der Artikel
+    setTimeout(() => {
+      if (this.items && this.items.length > 0) {
+        this.loadPfandArticles().then(pfandArticles => {
+          if (pfandArticles && pfandArticles.length > 0) {
+            this.logPfandVerknuepfungen(this.items, pfandArticles);
+          }
+        });
+      }
+    }, 500);
   }
 
   private loadFromLocalStorage() {
@@ -832,16 +843,24 @@ export class PublicOrderReviewComponent implements OnInit {
       orderData: orderData,
       orderItems: this.items.map(item => {
         console.log(`🔍 [PAYLOAD] Artikel ${item.article_text}: product_database_id=${item.product_database_id}`);
+        
+        // Für PFAND-Artikel den korrekten sale_price verwenden
+        let salePrice = item.unit_price_net || 0;
+        if (item.is_pfand && item.sale_price !== undefined) {
+          salePrice = item.sale_price;
+          console.log(`💰 [PAYLOAD] PFAND-Artikel ${item.article_text}: Verwende sale_price=${item.sale_price}€`);
+        }
+        
         return {
           article_number: item.article_number || item.product_id,
           quantity: item.quantity,
-          sale_price: item.unit_price_net || 0,
+          sale_price: salePrice, // Verkaufspreis (für PFAND: sale_price, für normale Artikel: unit_price_net)
           description: item.article_text,
           article_text: item.article_text,
           unit_price_net: item.unit_price_net || 0,
-          different_price: item.unit_price_net || 0,
+          different_price: item.unit_price_net || 0, // different_price sollte unit_price_net sein
           id: item.product_database_id,
-          total_price: (item.quantity * (item.unit_price_net || 0)),
+          total_price: (item.quantity * salePrice),
           product_custom_field_1: item.product_custom_field_1
         };
       })
@@ -863,7 +882,9 @@ export class PublicOrderReviewComponent implements OnInit {
     console.log('🔍 [REVIEW] PFAND-Artikel im Payload:', pfandItems.map(item => ({
       name: item.article_text,
       quantity: item.quantity,
-      price: item.unit_price_net || 0
+      unit_price_net: item.unit_price_net || 0,
+      sale_price: item.sale_price || 'Nicht gesetzt',
+      total_price: (item.quantity * (item.sale_price || item.unit_price_net || 0))
     })));
     
     fetch('https://multi-mandant-ecommerce.onrender.com/api/orders/without-auth', {
@@ -1150,13 +1171,70 @@ export class PublicOrderReviewComponent implements OnInit {
       // Filtere nur PFAND-Artikel
       const pfandArticles = allProducts.filter((product: any) => product.category === 'PFAND');
       
-      console.log(`📦 [PUBLIC-PFAND-LOGIC] ${pfandArticles.length} PFAND-Artikel gefunden:`, pfandArticles);
+      // Stelle sicher, dass sale_price für alle PFAND-Artikel verfügbar ist
+      const pfandArticlesWithSalePrice = pfandArticles.map((pfand: any) => ({
+        ...pfand,
+        sale_price: pfand.sale_price // Verwende sale_price direkt vom API-Response
+      }));
       
-      return pfandArticles;
+      console.log(`📦 [PUBLIC-PFAND-LOGIC] ${pfandArticlesWithSalePrice.length} PFAND-Artikel gefunden:`, pfandArticlesWithSalePrice);
+      console.log(`💰 [PUBLIC-PFAND-LOGIC] PFAND-Artikel mit sale_price:`, pfandArticlesWithSalePrice.map((p: any) => ({
+        article_text: p.article_text,
+        sale_price: p.sale_price
+      })));
+      
+      return pfandArticlesWithSalePrice;
     } catch (error) {
       console.error('❌ [PUBLIC-PFAND-LOGIC] Fehler beim Laden der PFAND-Artikel:', error);
       return [];
     }
+  }
+
+  // Neue Methode: Detailliertes PFAND-Verknüpfungs-Logging
+  private logPfandVerknuepfungen(items: any[], pfandArticles: any[]): void {
+    console.log('\n🔍 [PUBLIC-REVIEW] === PFAND-VERKNÜPFUNGS-ANALYSE START ===');
+    
+    const baseItems = items.filter(i => !i.is_pfand);
+    console.log(`📦 [PUBLIC-REVIEW] Analysiere ${baseItems.length} Basisartikel auf PFAND-Verknüpfungen...`);
+    
+    baseItems.forEach((artikel, index) => {
+      console.log(`\n🔍 [PUBLIC-REVIEW] === PFAND-SUCHE FÜR ARTIKEL ${index + 1} ===`);
+      console.log(`📦 Artikel: ${artikel.article_text}`);
+      console.log(`🔢 Artikel-Nr.: ${artikel.article_number || artikel.product_id}`);
+      console.log(`🔗 PFAND-Referenz: ${artikel.product_custom_field_1 || 'KEINE'}`);
+      
+      if (artikel.product_custom_field_1) {
+        // Suche nach dem passenden PFAND-Artikel
+        const realPfandArticle = pfandArticles.find(pfand => 
+          pfand.article_number === artikel.product_custom_field_1 || 
+          pfand.product_id === artikel.product_custom_field_1
+        );
+        
+        if (realPfandArticle) {
+          console.log(`✅ [REVIEW] PFAND-Artikel GEFUNDEN!`);
+          console.log(`📋 PFAND-Name: ${realPfandArticle.article_text}`);
+          console.log(`🔢 PFAND-Artikel-Nr.: ${realPfandArticle.article_number || realPfandArticle.product_id}`);
+          console.log(`💰 PFAND-Preis (sale_price): ${realPfandArticle.sale_price || 'Nicht gesetzt'}€`);
+          console.log(`💰 PFAND-Preis (unit_price_net): ${realPfandArticle.unit_price_net || 'Nicht gesetzt'}€`);
+          console.log(`🔗 Verknüpfung erfolgreich: ${artikel.article_text} → ${realPfandArticle.article_text}`);
+          console.log(`🔍 [REVIEW] === PFAND-SUCHE ERFOLGREICH ===`);
+        } else {
+          console.log(`❌ [REVIEW] PFAND-Artikel NICHT GEFUNDEN!`);
+          console.log(`⚠️ Verknüpfung fehlgeschlagen für Referenz: ${artikel.product_custom_field_1}`);
+          console.log(`🔍 Verfügbare PFAND-Artikel zur Fehlersuche:`, pfandArticles.map((p: any) => ({
+            article_number: p.article_number,
+            product_id: p.product_id,
+            article_text: p.article_text
+          })));
+          console.log(`🔍 [REVIEW] === PFAND-SUCHE FEHLGESCHLAGEN ===`);
+        }
+      } else {
+        console.log(`ℹ️ Keine PFAND-Referenz vorhanden`);
+        console.log(`📋 Keine PFAND-Verknüpfung erforderlich`);
+      }
+    });
+    
+    console.log('\n🔍 [PUBLIC-REVIEW] === PFAND-VERKNÜPFUNGS-ANALYSE ENDE ===');
   }
 }
 
