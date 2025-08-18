@@ -817,14 +817,12 @@ export class PublicOrderReviewComponent implements OnInit {
         }))
       };
 
-      // Bestellung abschicken - AUSKOMMENTIERT für Logging
+      // Bestellung abschicken
       console.log('🚀 [REVIEW] Bestellung wird abgesendet:', completeOrder);
       console.log('📋 [REVIEW] Vollständiges Payload (JSON):', JSON.stringify(completeOrder, null, 2));
       console.log('💰 [REVIEW] Gesamtpreis:', this.total);
       console.log('📦 [REVIEW] Anzahl Artikel:', this.items.length);
       
-      // Fetch auskommentiert - nur Logging
-      /*
       fetch('https://multi-mandant-ecommerce.onrender.com/api/orders/without-auth', {
         method: 'POST',
         headers: {
@@ -850,21 +848,6 @@ export class PublicOrderReviewComponent implements OnInit {
         this.isSubmitting = false;
         alert('Fehler beim Absenden der Bestellung. Bitte versuchen Sie es erneut.');
       });
-      */
-
-      // Simuliere erfolgreichen Submit für UI
-      setTimeout(() => {
-        console.log('✅ [REVIEW] Bestellung simuliert erfolgreich abgesendet');
-        this.isSubmitting = false;
-        
-        // Alle localStorage-Einträge für diesen Kunden löschen
-        this.clearAllLocalStorage();
-        
-        // Erfolgreich - zur Startseite weiterleiten
-        setTimeout(() => {
-          this.router.navigate(['/']);
-        }, 1000);
-      }, 1000);
     });
   }
 
