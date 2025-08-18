@@ -541,8 +541,9 @@ export class PublicOrderReviewComponent implements OnInit {
           article_text: article.article_text,
           main_image_url: article.main_image_url,
           
-          // Preise (nur unit_price_net verwenden)
+          // Preise (unit_price_net und sale_price)
           unit_price_net: article.unit_price_net || 0,
+          sale_price: article.sale_price, // WICHTIG: sale_price wiederherstellen
           
           // Mengen (einheitlich)
           quantity: finalQuantity,
@@ -612,10 +613,12 @@ export class PublicOrderReviewComponent implements OnInit {
           article_number: item.article_number,
           article_text: item.article_text,
           unit_price_net: Number(item.unit_price_net || 0) || 0,
+          sale_price: item.sale_price, // WICHTIG: sale_price auch speichern
           main_image_url: item.main_image_url,
           product_custom_field_1: item.product_custom_field_1,
           product_database_id: item.product_database_id,
           isCustom: !!item.isCustom,
+          is_pfand: !!item.is_pfand, // WICHTIG: is_pfand Flag auch speichern
           tempQuantity: quantity
         };
       }
@@ -642,7 +645,8 @@ export class PublicOrderReviewComponent implements OnInit {
     if (this.items.length === 0) return 0;
     
     return this.items.reduce((sum, item) => {
-      const price = item.unit_price_net || 0;
+      // Für PFAND-Artikel: Verwende sale_price, für normale Artikel: unit_price_net
+      const price = item.is_pfand ? (item.sale_price || 0) : (item.unit_price_net || 0);
       return sum + (price * item.quantity);
     }, 0);
   }
@@ -754,8 +758,8 @@ export class PublicOrderReviewComponent implements OnInit {
     // Nur den Gesamtpreis aktualisieren, nicht das komplette Array kopieren
     if (this.items.length > 0) {
       this.total = this.items.reduce((sum, item) => {
-        // Verwende sale_price falls vorhanden, sonst 0 (für PFAND-Artikel)
-        const price = item.unit_price_net || 0;
+        // Für PFAND-Artikel: Verwende sale_price, für normale Artikel: unit_price_net
+        const price = item.is_pfand ? (item.sale_price || 0) : (item.unit_price_net || 0);
         return sum + (price * item.quantity);
       }, 0);
     }
@@ -846,9 +850,10 @@ export class PublicOrderReviewComponent implements OnInit {
         
         // Für PFAND-Artikel den korrekten sale_price verwenden
         let salePrice = item.unit_price_net || 0;
-        if (item.is_pfand && item.sale_price !== undefined) {
+        if (item.is_pfand) {
+          // Für PFAND-Artikel: Verwende sale_price ohne Fallback
           salePrice = item.sale_price;
-          console.log(`💰 [PAYLOAD] PFAND-Artikel ${item.article_text}: Verwende sale_price=${item.sale_price}€`);
+          console.log(`💰 [PAYLOAD] PFAND-Artikel ${item.article_text}: sale_price=${item.sale_price}€`);
         }
         
         return {
@@ -965,7 +970,7 @@ export class PublicOrderReviewComponent implements OnInit {
               parent_article_number: artikel.article_number || artikel.product_id,
               
               // Zusätzliche Felder für Kompatibilität
-              sale_price: realPfandArticle.unit_price_net || 0,
+              sale_price: realPfandArticle.sale_price,
               
               // Alle Felder die in orderItems benötigt werden
               category: realPfandArticle.category,
@@ -985,6 +990,7 @@ export class PublicOrderReviewComponent implements OnInit {
             // Füge den PFAND-Artikel direkt nach dem Hauptartikel hinzu
             finalItems.push(pfandItem);
             console.log(`➕ [REVIEW] PFAND-Artikel hinzugefügt: ${pfandItem.article_text}, Menge: ${pfandItem.quantity}, Preis: ${pfandItem.unit_price_net}€`);
+            console.log(`💰 [REVIEW] PFAND-Artikel sale_price: ${pfandItem.sale_price}€ (von API: ${realPfandArticle.sale_price}€)`);
           } else {
             console.log(`❌ [REVIEW] Kein PFAND-Artikel gefunden für Referenz: ${artikel.product_custom_field_1}`);
           }
@@ -1059,7 +1065,7 @@ export class PublicOrderReviewComponent implements OnInit {
               parent_article_number: artikel.article_number || artikel.product_id,
               
               // Zusätzliche Felder für Kompatibilität
-              sale_price: realPfandArticle.unit_price_net || 0,
+              sale_price: realPfandArticle.sale_price,
               
               // Alle Felder die in orderItems benötigt werden
               category: realPfandArticle.category,
@@ -1079,6 +1085,7 @@ export class PublicOrderReviewComponent implements OnInit {
             // Füge den PFAND-Artikel direkt nach dem Hauptartikel hinzu
             finalItems.push(pfandItem);
             console.log(`➕ [REVIEW] PFAND-Artikel hinzugefügt: ${pfandItem.article_text}, Menge: ${pfandItem.quantity}, Preis: ${pfandItem.unit_price_net}€`);
+            console.log(`💰 [REVIEW] PFAND-Artikel sale_price: ${pfandItem.sale_price}€ (von API: ${realPfandArticle.sale_price}€)`);
           } else {
             console.log(`❌ [REVIEW] Kein PFAND-Artikel gefunden für Referenz: ${artikel.product_custom_field_1}`);
           }
@@ -1174,13 +1181,15 @@ export class PublicOrderReviewComponent implements OnInit {
       // Stelle sicher, dass sale_price für alle PFAND-Artikel verfügbar ist
       const pfandArticlesWithSalePrice = pfandArticles.map((pfand: any) => ({
         ...pfand,
-        sale_price: pfand.sale_price // Verwende sale_price direkt vom API-Response
+        sale_price: pfand.sale_price
       }));
       
       console.log(`📦 [PUBLIC-PFAND-LOGIC] ${pfandArticlesWithSalePrice.length} PFAND-Artikel gefunden:`, pfandArticlesWithSalePrice);
       console.log(`💰 [PUBLIC-PFAND-LOGIC] PFAND-Artikel mit sale_price:`, pfandArticlesWithSalePrice.map((p: any) => ({
         article_text: p.article_text,
-        sale_price: p.sale_price
+        sale_price: p.sale_price,
+        unit_price_net: p.unit_price_net,
+        raw_data: p
       })));
       
       return pfandArticlesWithSalePrice;
