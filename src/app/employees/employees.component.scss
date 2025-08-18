@@ -2075,6 +2075,8 @@
   }
 }
 
+/* Globalen Header für alle Bildschirmgrößen anzeigen */
+
 .customers-grid {
   display: flex;
   flex-direction: column;
@@ -5878,20 +5880,8 @@
     display: none !important;
   }
 
-  /* Globalen Header in Mobile/Tablet-Ansicht ausblenden */
-  /* .back-header wird wieder angezeigt - nützlich für Navigation */
-
-  /* Schwarzen App-Header mit Logo und Burger-Menu ausblenden */
-  header,
-  .header,
-  app-header,
-  .app-header {
-    display: none !important;
-    visibility: hidden !important;
-    opacity: 0 !important;
-    height: 0 !important;
-    overflow: hidden !important;
-  }
+  /* Globalen Header wird global ausgeblendet */
+  /* .back-header wird weiterhin angezeigt - nützlich für Navigation */
 }
 
 // Toast Notification Styles

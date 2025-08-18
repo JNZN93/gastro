@@ -82,7 +82,6 @@
         </div>
     </div>
 </div>
-}
 
 @if (showModal) {
 <div class="modal-overlay">
@@ -161,7 +160,7 @@
                     <label>E-Mail-Adresse</label>
                 </div>
 
-                <div class="input-group">
+                    <div class="input-group">
                     <input [type]="passwordVisible ? 'text' : 'password'" formControlName="password" placeholder=" " required>
                     <label>Passwort</label>
                     <button type="button" class="toggle-password" (click)="togglePassword()">
@@ -203,4 +202,5 @@
 <!-- Warenkorb -->
 @if(globalService.isUserLoggedIn) {
 <app-warenkorb></app-warenkorb>
+}
 }

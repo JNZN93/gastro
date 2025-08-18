@@ -41,8 +41,8 @@ export class AppComponent implements OnInit, OnDestroy {
                                 event.url.includes('/reports') ||
                                 event.url.includes('/customer-order/');
         
-        // Header auf customer-order Route ausblenden
-        this.shouldHideHeader = event.url.includes('/customer-order/');
+        // Header nur auf der Employees-Route ausblenden
+        this.shouldHideHeader = event.url.includes('/employees');
       });
   }
 
