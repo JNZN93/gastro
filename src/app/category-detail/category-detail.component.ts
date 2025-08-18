@@ -170,8 +170,14 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
             this.globalArtikels = this.globalService.filterSchnellverkaufArticles(res);
             this.globalService.setPfandArtikels(this.globalArtikels);
             
-            // Produkte der spezifischen Kategorie filtern
-            this.filterCategoryProducts();
+            // WICHTIG: Kundenspezifische Preise laden (falls Benutzer angemeldet)
+            if (this.categoryName !== '🕒 Zuletzt gekauft') {
+              this.loadCustomerPricesForAllArticles();
+            } else {
+              // Produkte der spezifischen Kategorie filtern
+              this.filterCategoryProducts();
+            }
+            
             this.isVisible = false;
             
             // Scroll to top after data is loaded
@@ -314,6 +320,90 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
     });
   }
 
+  // Neue Methode: Kundenspezifische Preise für alle Artikel laden (außer "Zuletzt gekauft")
+  loadCustomerPricesForAllArticles(): void {
+    console.log('🔄 [CUSTOMER-PRICES-ALL] Starte Laden der kundenspezifischen Preise für alle Artikel...');
+    
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+      console.log('❌ [CUSTOMER-PRICES-ALL] Kein Token gefunden, verwende Standard-Preise');
+      this.filterCategoryProducts();
+      return;
+    }
+
+    // Prüfen ob globalArtikels geladen sind
+    if (this.globalArtikels.length === 0) {
+      console.log('⚠️ [CUSTOMER-PRICES-ALL] globalArtikels noch nicht geladen, warte...');
+      setTimeout(() => {
+        this.loadCustomerPricesForAllArticles();
+      }, 200);
+      return;
+    }
+
+    console.log('✅ [CUSTOMER-PRICES-ALL] Token vorhanden, starte API-Aufruf...');
+
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${token}`
+    });
+
+    this.http.get<CustomerArticlePrice[]>(`https://multi-mandant-ecommerce.onrender.com/api/customer-article-prices/user`, { headers })
+      .subscribe({
+        next: (data) => {
+          console.log('📡 [CUSTOMER-PRICES-ALL] API Response erhalten:', data);
+          
+          if (Array.isArray(data) && data.length > 0) {
+            console.log('🔍 [CUSTOMER-PRICES-ALL] Kundenspezifische Preise gefunden:', data.length);
+            
+            // Erstelle eine Map der kundenspezifischen Preise für schnellen Zugriff
+            const customerPricesMap = new Map<string, CustomerArticlePrice>();
+            data.forEach(price => {
+              customerPricesMap.set(price.product_id, price);
+            });
+            
+            // Produkte der spezifischen Kategorie filtern
+            this.filterCategoryProducts();
+            
+            // Jetzt alle Artikel mit kundenspezifischen Preisen anreichern
+            this.artikelData = this.artikelData.map(artikel => {
+              const customerPrice = customerPricesMap.get(artikel.article_number);
+              
+              if (customerPrice) {
+                console.log(`✅ [CUSTOMER-PRICES-ALL] Kundenspezifischer Preis für ${artikel.article_text}: ${customerPrice.unit_price_net}€`);
+                
+                return {
+                  ...artikel,
+                  customer_price_net: customerPrice.unit_price_net,
+                  customer_price_gross: customerPrice.unit_price_gross,
+                  customer_vat: customerPrice.vat_percentage,
+                  last_order_date: customerPrice.invoice_date,
+                  invoice_id: customerPrice.invoice_id,
+                  // WICHTIG: different_price auf kundenspezifischen Preis setzen (wie in customer-orders)
+                  different_price: parseFloat(customerPrice.unit_price_net) || 0
+                };
+              } else {
+                // Kein kundenspezifischer Preis verfügbar
+                return artikel;
+              }
+            });
+            
+            console.log('📊 [CUSTOMER-PRICES-ALL] Artikel mit kundenspezifischen Preisen angereichert:', this.artikelData.length);
+            
+            // Jetzt filteredData aktualisieren
+            this.updateFilteredData();
+          } else {
+            console.log('❌ [CUSTOMER-PRICES-ALL] Keine kundenspezifischen Preise gefunden, verwende Standard-Preise');
+            this.filterCategoryProducts();
+          }
+        },
+        error: (error) => {
+          console.error('❌ [CUSTOMER-PRICES-ALL] API Fehler:', error);
+          console.log('⚠️ [CUSTOMER-PRICES-ALL] Verwende Standard-Preise bei Fehler');
+          this.filterCategoryProducts();
+        }
+      });
+  }
+
   // Methode zum Laden der zuletzt gekauften Artikel
   loadCustomerPrices(): void {
     console.log('🔄 [CUSTOMER-PRICES] Starte Laden der zuletzt gekauften Artikel...');
@@ -381,9 +471,11 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
                   customer_price_gross: order.unit_price_gross,
                   customer_vat: order.vat_percentage,
                   last_order_date: order.invoice_date,
-                  invoice_id: order.invoice_id
+                  invoice_id: order.invoice_id,
+                  // WICHTIG: different_price auf kundenspezifischen Preis setzen (wie in customer-orders)
+                  different_price: parseFloat(order.unit_price_net) || 0
                 };
-                console.log('✅ [CUSTOMER-PRICES] Angereicherter Artikel:', enrichedArtikel);
+                console.log('✅ [CUSTOMER-PRICES] Angereicherter Artikel mit different_price:', enrichedArtikel);
                 return enrichedArtikel;
               } else {
                 console.log('❌ [CUSTOMER-PRICES] Kein Artikel gefunden für product_id:', order.product_id);
