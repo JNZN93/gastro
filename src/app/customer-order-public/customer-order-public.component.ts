@@ -509,6 +509,7 @@ export class CustomerOrderPublicComponent implements OnInit {
           // Anzeige-/Logik-Felder (nur nötigste)
           article_text: article.article_text,
           unit_price_net: Number(article.unit_price_net) || 0,
+          sale_price: article.sale_price || article.unit_price, // WICHTIG: sale_price auch speichern
           main_image_url: article.main_image_url,
           product_custom_field_1: article.product_custom_field_1,
           product_database_id: article.product_database_id,

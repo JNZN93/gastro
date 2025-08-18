@@ -812,19 +812,41 @@ export class PublicOrderReviewComponent implements OnInit {
     console.log('🚀 [PUBLIC-REVIEW] Bestellung wird abgesendet...');
     console.log('📋 [PUBLIC-REVIEW] Artikel vor PFAND-Logik:', this.items);
     
-    // PFAND-Artikel synchron hinzufügen BEVOR die Bestellung abgesendet wird
-    await this.addPfandArticlesToOrderSync();
+    // PFAND-Artikel nur für den Order-Payload laden (nicht visuell anzeigen)
+    const pfandArticles = await this.loadPfandArticles();
     
-    console.log('📋 [PUBLIC-REVIEW] Artikel nach PFAND-Logik:', this.items);
-    console.log('💰 [PUBLIC-REVIEW] Gesamtpreis nach PFAND-Logik:', this.total);
+    console.log('📋 [PUBLIC-REVIEW] Artikel bleiben unverändert (keine visuelle PFAND-Anzeige)');
+    console.log('💰 [PUBLIC-REVIEW] Gesamtpreis bleibt unverändert');
     
-    // WICHTIG: Prüfe ob PFAND-Artikel korrekt hinzugefügt wurden
-    const pfandItems = this.items.filter(item => item.is_pfand);
-    const normalItems = this.items.filter(item => !item.is_pfand);
+    // PFAND-Artikel nur für den Payload vorbereiten (nicht in this.items)
+    const pfandItemsForPayload: any[] = [];
+    this.items.forEach((artikel) => {
+      if (artikel.product_custom_field_1) {
+        const realPfandArticle = pfandArticles.find(pfand => 
+          pfand.article_number === artikel.product_custom_field_1 || 
+          pfand.product_id === artikel.product_custom_field_1
+        );
+        
+        if (realPfandArticle) {
+          pfandItemsForPayload.push({
+            article_number: realPfandArticle.article_number || realPfandArticle.product_id,
+            quantity: artikel.quantity,
+            sale_price: realPfandArticle.sale_price,
+            description: realPfandArticle.article_text,
+            article_text: realPfandArticle.article_text,
+            unit_price_net: realPfandArticle.unit_price_net || 0,
+            different_price: realPfandArticle.unit_price_net || 0,
+            id: realPfandArticle.id || realPfandArticle.product_id,
+            total_price: (artikel.quantity * (realPfandArticle.sale_price || 0)),
+            product_custom_field_1: realPfandArticle.product_custom_field_1
+          });
+        }
+      }
+    });
     
-    console.log(`🔍 [REVIEW] PFAND-Artikel gefunden: ${pfandItems.length}`);
-    console.log(`🔍 [REVIEW] Normale Artikel gefunden: ${normalItems.length}`);
-    console.log(`🔍 [REVIEW] Gesamtartikel: ${this.items.length}`);
+    console.log(`🔍 [REVIEW] PFAND-Artikel für Payload vorbereitet: ${pfandItemsForPayload.length}`);
+    console.log(`🔍 [REVIEW] Normale Artikel: ${this.items.length}`);
+    console.log(`🔍 [REVIEW] Gesamtartikel im Payload: ${this.items.length + pfandItemsForPayload.length}`);
     
     // Bestellung direkt von der Review-Seite abschicken
     this.isSubmitting = true;
@@ -845,30 +867,31 @@ export class PublicOrderReviewComponent implements OnInit {
 
     const completeOrder = {
       orderData: orderData,
-      orderItems: this.items.map(item => {
-        console.log(`🔍 [PAYLOAD] Artikel ${item.article_text}: product_database_id=${item.product_database_id}`);
-        
-        // Für PFAND-Artikel den korrekten sale_price verwenden
-        let salePrice = item.unit_price_net || 0;
-        if (item.is_pfand) {
-          // Für PFAND-Artikel: Verwende sale_price ohne Fallback
-          salePrice = item.sale_price;
-          console.log(`💰 [PAYLOAD] PFAND-Artikel ${item.article_text}: sale_price=${item.sale_price}€`);
-        }
-        
-        return {
-          article_number: item.article_number || item.product_id,
-          quantity: item.quantity,
-          sale_price: salePrice, // Verkaufspreis (für PFAND: sale_price, für normale Artikel: unit_price_net)
-          description: item.article_text,
-          article_text: item.article_text,
-          unit_price_net: item.unit_price_net || 0,
-          different_price: item.unit_price_net || 0, // different_price sollte unit_price_net sein
-          id: item.product_database_id,
-          total_price: (item.quantity * salePrice),
-          product_custom_field_1: item.product_custom_field_1
-        };
-      })
+      orderItems: [
+        // Normale Artikel
+        ...this.items.map(item => {
+          console.log(`🔍 [PAYLOAD] Normaler Artikel ${item.article_text}: product_database_id=${item.product_database_id}`);
+          
+          // Für normale Artikel: Verwende sale_price falls verfügbar, sonst unit_price_net
+          const salePrice = item.sale_price || item.unit_price_net || 0;
+          console.log(`💰 [PAYLOAD] Normaler Artikel ${item.article_text}: sale_price=${item.sale_price}€, unit_price_net=${item.unit_price_net}€, final=${salePrice}€`);
+          
+          return {
+            article_number: item.article_number || item.product_id,
+            quantity: item.quantity,
+            sale_price: salePrice,
+            description: item.article_text,
+            article_text: item.article_text,
+            unit_price_net: item.unit_price_net || 0,
+            different_price: item.unit_price_net || 0,
+            id: item.product_database_id,
+            total_price: (item.quantity * salePrice),
+            product_custom_field_1: item.product_custom_field_1
+          };
+        }),
+        // PFAND-Artikel (nur im Payload, nicht visuell)
+        ...pfandItemsForPayload
+      ]
     };
 
     // 🔍 PAYLOAD LOGGING - Bestellung wird abgesendet
@@ -884,7 +907,7 @@ export class PublicOrderReviewComponent implements OnInit {
     console.log('🌐 [REVIEW] Endpoint:', 'https://multi-mandant-ecommerce.onrender.com/api/orders/without-auth');
     
     // Zusätzliches Logging für PFAND-Artikel
-    console.log('🔍 [REVIEW] PFAND-Artikel im Payload:', pfandItems.map(item => ({
+    console.log('🔍 [REVIEW] PFAND-Artikel im Payload:', pfandItemsForPayload.map((item: any) => ({
       name: item.article_text,
       quantity: item.quantity,
       unit_price_net: item.unit_price_net || 0,
