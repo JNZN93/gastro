@@ -2266,6 +2266,9 @@ export class EmployeesComponent implements OnInit, OnDestroy {
     if (!this.articlePricesSearchTerm.trim()) {
       // Wenn kein Suchbegriff, zeige alle verfügbaren Artikel-Preise an
       this.filteredArticlePrices = availableCustomerPrices;
+    } else if (this.articlePricesSearchTerm.trim().length < 3) {
+      // Wenn weniger als 3 Zeichen eingegeben wurden, zeige alle verfügbaren Artikel-Preise an
+      this.filteredArticlePrices = availableCustomerPrices;
     } else {
       // Intelligente Suche: Teile Suchbegriff in einzelne Wörter auf
       const terms = this.articlePricesSearchTerm.toLowerCase().split(/\s+/);
