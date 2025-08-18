@@ -2263,6 +2263,7 @@
   padding: 16px 20px;
   border-bottom: 1px solid #e0e0e0;
   background-color: #f8f9fa;
+  margin-top: 60px;
 
   h2 {
     margin: 0;
@@ -5601,7 +5602,7 @@
     min-height: 100vh;
     overflow-y: auto;
     overflow-x: hidden;
-    margin-top: 0; /* Entferne oberen Margin */
+    margin-top: 20px; /* Entferne oberen Margin */
   }
 
   .content {
