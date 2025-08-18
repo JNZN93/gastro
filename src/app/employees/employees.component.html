@@ -535,9 +535,8 @@
                 </div>
               </div>
               <div class="price-info-section">
-                <div class="price-row"><span class="price-label">EK:</span><span class="price-value cost-price">€{{ (item.cost_price || 0).toFixed(2) }}</span></div>
-                <div class="price-row"><span class="price-label">Std.:</span><span class="price-value standard-price">€{{ item.sale_price }}</span></div>
-                <div class="price-row"><span class="price-label">VK:</span><span class="price-value customer-price">€{{ getItemPrice(item).toFixed(2) }}</span></div>
+                <div class="price-row"><span class="price-label">Standard:</span><span class="price-value standard-price">€{{ item.sale_price }}</span></div>
+                <div class="price-row"><span class="price-label">Verkauf:</span><span class="price-value customer-price">€{{ getItemPrice(item).toFixed(2) }}</span></div>
               </div>
               <div class="quantity-total-section">
                 <div class="quantity-section">
