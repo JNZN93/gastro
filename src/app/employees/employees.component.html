@@ -11,9 +11,7 @@
   </div>
 
   <div class="content">
-    @if (isAnalyzingImages) {
-      <app-upload-loading></app-upload-loading>
-    }
+
     <input #imageInput type="file" multiple accept="image/*" style="display:none" (change)="onImagesSelected($event)">
     <!-- Desktop Ansicht (unverändert) -->
     <div class="main-content desktop-view">
@@ -295,7 +293,7 @@
               <button (click)="startScanner()" [disabled]="isScanning" class="scanner-btn">
                 <span class="material-symbols-outlined">barcode</span>
               </button>
-               <button (click)="imageInput.click()" class="upload-images-btn" [disabled]="isAnalyzingImages">
+               <button (click)="imageInput.click()" class="upload-images-btn">
                 <span class="material-icons">cloud_upload</span>
               </button>
               <button (click)="openRecentImagesModal()" class="recent-images-btn" title="Zuletzt hochgeladene Bilder anzeigen">
@@ -385,7 +383,7 @@
             <button (click)="startScanner()" [disabled]="isScanning" class="scanner-btn">
               <span class="material-symbols-outlined">barcode</span>
             </button>
-            <button (click)="imageInput.click()" class="upload-images-btn" [disabled]="isAnalyzingImages">
+            <button (click)="imageInput.click()" class="upload-images-btn">
               <span class="material-icons">cloud_upload</span>
             </button>
             <button (click)="openRecentImagesModal()" class="recent-images-btn" title="Zuletzt hochgeladene Bilder anzeigen">

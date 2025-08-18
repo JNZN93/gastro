@@ -42,8 +42,6 @@ export class EmployeesComponent implements OnInit, OnDestroy {
   pendingCustomerForPriceUpdate: any = null; // Temporärer Kunde für Preis-Updates nach dem Laden der Artikel
   isVisible: boolean = true;
   isScanning = false;
-  isAnalyzingImages = false;
-  analyzedImagesCount: number = 0;
   
   // Neue Properties für Dropdown-Navigation
   selectedIndex: number = -1;
@@ -252,140 +250,11 @@ export class EmployeesComponent implements OnInit, OnDestroy {
       });
     }
     
-    // Speichere Bilder in IndexedDB
+    // Speichere Bilder nur lokal in IndexedDB
     this.storeImagesInIndexedDB(files);
-
-    const formData = new FormData();
-    for (let i = 0; i < files.length; i++) {
-      formData.append('images', files[i]);
-    }
-
-    this.isAnalyzingImages = true;
-    const token = localStorage.getItem('token');
-
-    console.log('🚀 [BILD-UPLOAD] Starte API-Aufruf an /api/orders/analyze-images');
-    console.log('🔑 [BILD-UPLOAD] Token vorhanden:', !!token);
-
-    fetch('https://multi-mandant-ecommerce.onrender.com/api/orders/analyze-images', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      },
-      body: formData
-    })
-    .then(async (res) => {
-      console.log('📡 [BILD-UPLOAD] HTTP Response Status:', res.status);
-      console.log('📡 [BILD-UPLOAD] HTTP Response OK:', res.ok);
-      console.log('📡 [BILD-UPLOAD] HTTP Response Headers:', Object.fromEntries(res.headers.entries()));
-      
-      if (!res.ok) {
-        const text = await res.text();
-        console.error('❌ [BILD-UPLOAD] HTTP Response nicht OK:', res.status, res.statusText);
-        console.error('❌ [BILD-UPLOAD] Response Text:', text);
-        throw new Error(text || `HTTP ${res.status}`);
-      }
-      
-      console.log('✅ [BILD-UPLOAD] HTTP Response erfolgreich, parse JSON...');
-      return res.json();
-    })
-    .then((response) => {
-      // Detaillierte Logs für die API-Antwort
-      console.log('📡 [BILD-UPLOAD] API Response erhalten:', response);
-      console.log('📊 [BILD-UPLOAD] Response Typ:', typeof response);
-      console.log('📊 [BILD-UPLOAD] Response Struktur:', Object.keys(response));
-      
-      if (response.data) {
-        console.log('📊 [BILD-UPLOAD] Response.data verfügbar:', Object.keys(response.data));
-        
-        if (response.data.imageAnalyses) {
-          console.log('📊 [BILD-UPLOAD] imageAnalyses verfügbar:', response.data.imageAnalyses);
-          console.log('📊 [BILD-UPLOAD] Anzahl imageAnalyses:', response.data.imageAnalyses.length);
-          
-          // Verwende die neue Response-Struktur mit customerNumber direkt in der Response
-          let foundCustomerNumber: string | null = null;
-          
-          if (response.data.customerNumber) {
-            foundCustomerNumber = response.data.customerNumber;
-            console.log(`👤 [BILD-UPLOAD] Kundennummer aus Response gefunden:`, foundCustomerNumber);
-          } else {
-            // Fallback: Durchsuche alle imageAnalyses nach einer gültigen customer_number (alte Struktur)
-            console.log('⚠️ [BILD-UPLOAD] Keine customerNumber in Response, verwende Fallback-Logik');
-            for (let i = 0; i < response.data.imageAnalyses.length; i++) {
-              const analysis = response.data.imageAnalyses[i];
-              console.log(`📊 [BILD-UPLOAD] Analyse ${i}:`, analysis);
-              
-              if (analysis.orderInfo && analysis.orderInfo.customer_number && analysis.orderInfo.customer) {
-                foundCustomerNumber = analysis.orderInfo.customer_number;
-                console.log(`👤 [BILD-UPLOAD] Gültige Kundendaten in Analyse ${i} gefunden:`, {
-                  customer_number: foundCustomerNumber,
-                  customer: analysis.orderInfo.customer
-                });
-                break; // Verwende die erste gültige Kundennummer
-              }
-            }
-          }
-          
-          // Wenn eine Kundennummer gefunden wurde, lade den Kunden (immer, auch wenn bereits ein Kunde ausgewählt ist)
-          if (foundCustomerNumber) {
-            console.log('👤 [BILD-UPLOAD] Wechsle zu Kunde aus Response:', foundCustomerNumber);
-            this.loadCustomerByNumberFromResponse(foundCustomerNumber);
-          }
-          
-          // Sammle alle Produkte aus allen Analysen
-          let allProducts: any[] = [];
-          response.data.imageAnalyses.forEach((analysis: any, index: number) => {
-            if (analysis.products && Array.isArray(analysis.products)) {
-              console.log(`📋 [BILD-UPLOAD] Produkte in Analyse ${index}:`, analysis.products.length);
-              allProducts = allProducts.concat(analysis.products);
-            }
-          });
-          
-          console.log('📋 [BILD-UPLOAD] Alle gefundenen Produkte:', allProducts.length);
-          
-          // Verarbeite alle gefundenen Produkte
-          let addedCount = 0;
-          allProducts.forEach((product: any) => {
-            // Find matching artikel in global list by article_number
-            const artikel = this.globalArtikels.find(a => a.article_number === product.article_number);
-            if (artikel) {
-              const artikelWithQty = { ...artikel, quantity: Number(product.quantity) || 1 };
-              // Reuse existing logic to insert and merge
-              this.addToOrder(new Event('analyze-images'), artikelWithQty);
-              addedCount++;
-            }
-          });
-
-          console.log('✅ [BILD-UPLOAD] Verarbeitung abgeschlossen. Hinzugefügte Artikel:', addedCount);
-
-          this.analyzedImagesCount = response.data.imageAnalyses.length;
-          if (addedCount > 0) {
-            this.showToastMessage(`${addedCount} Artikel aus Bild-Analyse hinzugefügt`, 'success');
-          } else {
-            this.showToastMessage('Keine passenden Artikel gefunden', 'error');
-          }
-        } else {
-          console.log('⚠️ [BILD-UPLOAD] Keine imageAnalyses in der Response gefunden');
-        }
-      }
-    })
-    .catch((err) => {
-      console.error('❌ [BILD-UPLOAD] Fehler bei Bildanalyse:', err);
-      console.error('❌ [BILD-UPLOAD] Fehler Details:', {
-        message: err.message,
-        stack: err.stack,
-        name: err.name
-      });
-      this.showToastMessage('Bildanalyse fehlgeschlagen', 'error');
-    })
-    .finally(() => {
-      this.isAnalyzingImages = false;
-      // reset input so same files can be reselected
-      if (this.imageInput && this.imageInput.nativeElement) {
-        this.imageInput.nativeElement.value = '';
-      } else {
-        (event.target as HTMLInputElement).value = '';
-      }
-    });
+    
+    // Zeige Erfolgsmeldung
+    this.showToastMessage(`${files.length} Bild(er) lokal gespeichert`, 'success');
   }
 
   // Modal mit den letzten hochgeladenen Bildern öffnen
