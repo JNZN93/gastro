@@ -645,8 +645,21 @@ export class PublicOrderReviewComponent implements OnInit {
     if (this.items.length === 0) return 0;
     
     return this.items.reduce((sum, item) => {
-      // Für PFAND-Artikel: Verwende sale_price, für normale Artikel: unit_price_net
-      const price = item.is_pfand ? (item.sale_price || 0) : (item.unit_price_net || 0);
+      // Für alle Artikel: Verwende different_price falls vorhanden und gültig, sonst sale_price
+      let price: number;
+      
+      if (item.different_price !== undefined && item.different_price !== null && item.different_price !== '') {
+        const parsedDifferentPrice = parseFloat(item.different_price);
+        if (!isNaN(parsedDifferentPrice) && parsedDifferentPrice >= 0) {
+          price = parsedDifferentPrice;
+        } else {
+          // Ungültiger different_price - verwende sale_price
+          price = parseFloat(item.sale_price) || 0;
+        }
+      } else {
+        // Kein different_price - verwende sale_price
+        price = parseFloat(item.sale_price) || 0;
+      }
       return sum + (price * item.quantity);
     }, 0);
   }
@@ -758,8 +771,21 @@ export class PublicOrderReviewComponent implements OnInit {
     // Nur den Gesamtpreis aktualisieren, nicht das komplette Array kopieren
     if (this.items.length > 0) {
       this.total = this.items.reduce((sum, item) => {
-        // Für PFAND-Artikel: Verwende sale_price, für normale Artikel: unit_price_net
-        const price = item.is_pfand ? (item.sale_price || 0) : (item.unit_price_net || 0);
+        // Für alle Artikel: Verwende different_price falls vorhanden und gültig, sonst sale_price
+        let price: number;
+        
+        if (item.different_price !== undefined && item.different_price !== null && item.different_price !== '') {
+          const parsedDifferentPrice = parseFloat(item.different_price);
+          if (!isNaN(parsedDifferentPrice) && parsedDifferentPrice >= 0) {
+            price = parsedDifferentPrice;
+          } else {
+            // Ungültiger different_price - verwende sale_price
+            price = parseFloat(item.sale_price) || 0;
+          }
+        } else {
+          // Kein different_price - verwende sale_price
+          price = parseFloat(item.sale_price) || 0;
+        }
         return sum + (price * item.quantity);
       }, 0);
     }
@@ -828,16 +854,33 @@ export class PublicOrderReviewComponent implements OnInit {
         );
         
         if (realPfandArticle) {
+          // Für PFAND-Artikel: Verwende different_price falls vorhanden und gültig, sonst sale_price
+          let pfandFinalPrice: number;
+          
+          if (realPfandArticle.different_price !== undefined && realPfandArticle.different_price !== null && realPfandArticle.different_price !== '') {
+            const parsedDifferentPrice = parseFloat(realPfandArticle.different_price);
+            if (!isNaN(parsedDifferentPrice) && parsedDifferentPrice >= 0) {
+              pfandFinalPrice = parsedDifferentPrice;
+            } else {
+              // Ungültiger different_price - verwende sale_price
+              console.warn('⚠️ [PAYLOAD] Ungültiger different_price:', realPfandArticle.different_price, 'für PFAND-Artikel:', realPfandArticle.article_text, '- verwende sale_price');
+              pfandFinalPrice = parseFloat(realPfandArticle.sale_price) || 0;
+            }
+          } else {
+            // Kein different_price - verwende sale_price
+            pfandFinalPrice = parseFloat(realPfandArticle.sale_price) || 0;
+          }
+          
           pfandItemsForPayload.push({
             article_number: realPfandArticle.article_number || realPfandArticle.product_id,
             quantity: artikel.quantity,
-            sale_price: realPfandArticle.sale_price,
+            sale_price: pfandFinalPrice,
             description: realPfandArticle.article_text,
             article_text: realPfandArticle.article_text,
             unit_price_net: realPfandArticle.unit_price_net || 0,
-            different_price: realPfandArticle.unit_price_net || 0,
+            different_price: realPfandArticle.different_price || 0,
             id: realPfandArticle.id || realPfandArticle.product_id,
-            total_price: (artikel.quantity * (realPfandArticle.sale_price || 0)),
+            total_price: (artikel.quantity * pfandFinalPrice),
             product_custom_field_1: realPfandArticle.product_custom_field_1
           });
         }
@@ -872,20 +915,35 @@ export class PublicOrderReviewComponent implements OnInit {
         ...this.items.map(item => {
           console.log(`🔍 [PAYLOAD] Normaler Artikel ${item.article_text}: product_database_id=${item.product_database_id}`);
           
-          // Für normale Artikel: Verwende sale_price falls verfügbar, sonst unit_price_net
-          const salePrice = item.sale_price || item.unit_price_net || 0;
-          console.log(`💰 [PAYLOAD] Normaler Artikel ${item.article_text}: sale_price=${item.sale_price}€, unit_price_net=${item.unit_price_net}€, final=${salePrice}€`);
+          // Für normale Artikel: Verwende different_price falls vorhanden und gültig, sonst sale_price
+          let finalPrice: number;
+          
+          if (item.different_price !== undefined && item.different_price !== null && item.different_price !== '') {
+            const parsedDifferentPrice = parseFloat(item.different_price);
+            if (!isNaN(parsedDifferentPrice) && parsedDifferentPrice >= 0) {
+              finalPrice = parsedDifferentPrice;
+            } else {
+              // Ungültiger different_price - verwende sale_price
+              console.warn('⚠️ [PAYLOAD] Ungültiger different_price:', item.different_price, 'für Artikel:', item.article_text, '- verwende sale_price');
+              finalPrice = parseFloat(item.sale_price) || 0;
+            }
+          } else {
+            // Kein different_price - verwende sale_price
+            finalPrice = parseFloat(item.sale_price) || 0;
+          }
+          
+          console.log(`💰 [PAYLOAD] Normaler Artikel ${item.article_text}: different_price=${item.different_price}€, sale_price=${item.sale_price}€, final=${finalPrice}€`);
           
           return {
             article_number: item.article_number || item.product_id,
             quantity: item.quantity,
-            sale_price: salePrice,
+            sale_price: finalPrice,
             description: item.article_text,
             article_text: item.article_text,
             unit_price_net: item.unit_price_net || 0,
-            different_price: item.unit_price_net || 0,
+            different_price: item.different_price || 0,
             id: item.product_database_id,
-            total_price: (item.quantity * salePrice),
+            total_price: (item.quantity * finalPrice),
             product_custom_field_1: item.product_custom_field_1
           };
         }),

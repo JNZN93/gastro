@@ -855,6 +855,7 @@
               <th>Kundenpreis (€)</th>
               <th>Rechnungs-ID</th>
               <th>Rechnungsdatum</th>
+              <th>Info</th>
               <th>Aktion</th>
             </tr>
           </thead>
@@ -868,6 +869,13 @@
               </td>
               <td class="invoice-id">{{ customerPrice.invoice_id || '-' }}</td>
               <td class="invoice-date">{{ formatInvoiceDate(customerPrice.invoice_date) }}</td>
+              <td class="notes">
+                <button class="info-btn" 
+                        (click)="showCustomerPriceNotes(customerPrice)"
+                        [title]="customerPrice.article_notes ? 'Artikel-Notizen anzeigen' : 'Keine Notizen'">
+                  <span class="material-icons">info</span>
+                </button>
+              </td>
               <td class="action">
                 <div class="add-article-controls">
                   <input type="number" 
@@ -908,7 +916,7 @@
               <span class="price-label">Kundenpreis</span>
             </div>
             <div class="card-actions">
-              <button class="info-btn" title="Details anzeigen">
+              <button class="info-btn" (click)="showCustomerPriceNotes(customerPrice)" title="Artikel-Notizen anzeigen">
                 <span class="material-icons">info</span>
               </button>
             </div>

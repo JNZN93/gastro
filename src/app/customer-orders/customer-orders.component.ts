@@ -1834,6 +1834,20 @@ filteredArtikelData() {
     return notes ? notes : 'Keine Notizen für diesen Artikel verfügbar.';
   }
 
+  // Zeige Notizen für Eintrag aus dem Artikel-Preise-Modal
+  showCustomerPriceNotes(customerPrice: any): void {
+    const notes = customerPrice?.article_notes || customerPrice?.notes || customerPrice?.description || '';
+    const dialogRef = this.dialog.open(MyDialogComponent, {
+      width: '500px',
+      data: {
+        title: 'Artikel-Notizen',
+        message: notes ? notes : 'Keine Notizen für diesen Artikel verfügbar.',
+        confirmLabel: 'Schließen',
+        showCancel: false
+      }
+    });
+  }
+
   getOrderTotal(): number {
     return this.orderItems.reduce((sum, item) => {
       // Robuste Preis-Validierung für getOrderTotal
