@@ -972,6 +972,7 @@ export class PublicOrderReviewComponent implements OnInit {
           return {
             article_number: item.article_number || item.product_id,
             quantity: item.quantity,
+            description: item.article_text,
             sale_price: finalPrice,
             article_text: item.article_text,
             unit_price_net: item.unit_price_net || 0,
