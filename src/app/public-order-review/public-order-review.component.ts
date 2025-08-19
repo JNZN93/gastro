@@ -480,9 +480,16 @@ export class PublicOrderReviewComponent implements OnInit {
     if (!this.token) return;
     
     try {
-      // WICHTIG: Verwende direkt den customer_order_10.001 Key
-      const storageKey = 'customer_order_10.001';
-      console.log(`🔍 Lade Daten direkt aus localStorage Key: ${storageKey}`);
+      // Kundennummer anhand des Tokens aus dem localStorage extrahieren
+      const customerNumber = this.extractCustomerNumberFromToken();
+      if (!customerNumber) {
+        console.log('⚠️ Keine passende Bestellung im localStorage gefunden für diesen Token');
+        this.items = [];
+        return;
+      }
+
+      const storageKey = `customer_order_${customerNumber}`;
+      console.log(`🔍 Lade Daten aus localStorage Key: ${storageKey}`);
       
       const storedData = localStorage.getItem(storageKey);
       if (!storedData) {
@@ -569,6 +576,29 @@ export class PublicOrderReviewComponent implements OnInit {
       console.error('❌ Fehler beim Laden aus localStorage:', error);
       this.items = []; // Bei Fehler auch leeres Array setzen
     }
+  }
+
+  // Kundennummer anhand des im localStorage gespeicherten Tokens ermitteln
+  private extractCustomerNumberFromToken(): string | null {
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('customer_order_')) {
+          try {
+            const val = localStorage.getItem(key);
+            if (val) {
+              const parsed = JSON.parse(val);
+              if (parsed && parsed.token === this.token) {
+                return parsed.customerNumber;
+              }
+            }
+          } catch {}
+        }
+      }
+    } catch (error) {
+      console.error('❌ Fehler beim Extrahieren der Kundennummer aus Token:', error);
+    }
+    return null;
   }
 
   private saveToLocalStorage() {
