@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { HeaderComponent } from './header/header.component';
@@ -19,11 +19,16 @@ export class AppComponent implements OnInit, OnDestroy {
   isCategoryDetailRoute = false;
   shouldHideFooter = false;
   shouldHideHeader = false;
+  private isEmployeesRoute = false;
   private routerSubscription?: Subscription;
 
   constructor(public globalService: GlobalService, private router: Router) {}
 
   ngOnInit() {
+    // Initial state on load
+    this.isEmployeesRoute = this.router.url.includes('/employees');
+    this.updateHeaderVisibility();
+
     this.routerSubscription = this.router.events
       .pipe(filter(event => event instanceof NavigationEnd))
       .subscribe((event: NavigationEnd) => {
@@ -40,10 +45,21 @@ export class AppComponent implements OnInit, OnDestroy {
                                 event.url.includes('/route-planning') ||
                                 event.url.includes('/reports') ||
                                 event.url.includes('/customer-order/');
-        
-        // Header nur auf der Employees-Route ausblenden
-        this.shouldHideHeader = event.url.includes('/employees');
+
+        // Header auf Employees-Route nur auf Mobile/Tablet ausblenden
+        this.isEmployeesRoute = event.url.includes('/employees');
+        this.updateHeaderVisibility();
       });
+  }
+
+  @HostListener('window:resize')
+  onResize() {
+    this.updateHeaderVisibility();
+  }
+
+  private updateHeaderVisibility() {
+    const isMobileOrTablet = typeof window !== 'undefined' ? window.innerWidth <= 1023 : false;
+    this.shouldHideHeader = this.isEmployeesRoute && isMobileOrTablet;
   }
 
   ngOnDestroy() {
