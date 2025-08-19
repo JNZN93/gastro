@@ -1,0 +1,35 @@
+{
+  "name": "Gastro Depot Worms",
+  "short_name": "Gastro Depot",
+  "description": "Gastro Depot Worms - Ihr Partner für Gastronomiebedarf",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1976d2",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "de",
+  "icons": [
+    {
+      "src": "logo.webp",
+      "sizes": "192x192",
+      "type": "image/webp",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "logo.webp",
+      "sizes": "512x512",
+      "type": "image/webp",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "food", "shopping"],
+  "screenshots": [
+    {
+      "src": "hero-background_gastro.webp",
+      "sizes": "1280x720",
+      "type": "image/webp",
+      "form_factor": "wide"
+    }
+  ]
+}
