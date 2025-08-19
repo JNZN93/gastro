@@ -89,6 +89,7 @@ import { ActivatedRoute, Router } from '@angular/router';
       display: flex; 
       flex-direction: column;
       overflow: hidden;
+      margin-top: 80px;
     }
     .topbar { 
       height: var(--header-height, 80px);
