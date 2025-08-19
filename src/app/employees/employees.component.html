@@ -454,6 +454,9 @@
             <p class="customer-addition">{{ globalService.selectedCustomerForOrders.name_addition }}</p>
           }
         </div>
+        <button (click)="confirmClearSelectedCustomer()" class="clear-customer-btn" title="Kunde entfernen">
+          <span class="material-icons">close</span>
+        </button>
       </div>
       } @else {
       <div class="mobile-no-customer">
