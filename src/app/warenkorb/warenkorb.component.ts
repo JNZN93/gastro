@@ -59,7 +59,8 @@ export class WarenkorbComponent implements OnInit {
       data: {
         title: 'Bestellung bestätigen',
         message: 'Möchten Sie die Bestellung abschließen?',
-        buttonLabel: 'Bestellen',
+        isConfirmation: true,
+        confirmLabel: 'Bestellen',
         cancelLabel: 'Abbrechen'
       },
       maxWidth: '400px',
@@ -285,7 +286,8 @@ export class WarenkorbComponent implements OnInit {
       data: {
         title: 'Artikel entfernen',
         message: `Möchten Sie das Artikel "${artikel.article_text}" wirklich aus dem Warenkorb entfernen?`,
-        buttonLabel: 'Entfernen',
+        isConfirmation: true,
+        confirmLabel: 'Entfernen',
         cancelLabel: 'Abbrechen'
       },
       maxWidth: '400px',
@@ -320,7 +322,8 @@ export class WarenkorbComponent implements OnInit {
       data: {
         title: 'Warenkorb leeren',
         message: 'Möchten Sie den gesamten Warenkorb wirklich leeren?',
-        buttonLabel: 'Leeren',
+        isConfirmation: true,
+        confirmLabel: 'Leeren',
         cancelLabel: 'Abbrechen'
       },
       maxWidth: '400px',
