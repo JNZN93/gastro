@@ -48,6 +48,12 @@ export class AppComponent implements OnInit, OnDestroy {
 
         // Header auf Employees-Route nur auf Mobile/Tablet ausblenden
         this.isEmployeesRoute = event.url.includes('/employees');
+        
+        // Header auf Public Order Review Route ausblenden
+        const isPublicOrderReview = event.url.includes('/customer-order/') && event.url.includes('/review');
+        const isMobileOrTablet = typeof window !== 'undefined' ? window.innerWidth <= 1023 : false;
+        this.shouldHideHeader = (this.isEmployeesRoute && isMobileOrTablet) || isPublicOrderReview;
+        
         this.updateHeaderVisibility();
       });
   }
@@ -59,7 +65,9 @@ export class AppComponent implements OnInit, OnDestroy {
 
   private updateHeaderVisibility() {
     const isMobileOrTablet = typeof window !== 'undefined' ? window.innerWidth <= 1023 : false;
-    this.shouldHideHeader = this.isEmployeesRoute && isMobileOrTablet;
+    const isPublicOrderReview = this.router.url.includes('/customer-order/') && this.router.url.includes('/review');
+    
+    this.shouldHideHeader = (this.isEmployeesRoute && isMobileOrTablet) || isPublicOrderReview;
   }
 
   ngOnDestroy() {

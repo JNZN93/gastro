@@ -78,12 +78,27 @@ import { MyDialogComponent } from '../my-dialog/my-dialog.component';
   styles: [`
     :host { display: block; }
     .review-page { 
-      height: calc(100vh - 80px); /* Viewport-Höhe minus margin-top */
+      height: 100vh; /* Vollständige Viewport-Höhe */
       background: #f8f9fb; 
       display: flex; 
       flex-direction: column;
       overflow: hidden;
-      margin-top: 80px;
+      margin-top: 0; /* margin-top entfernen */
+      position: fixed; /* WICHTIG: Fixed positioning für Safari */
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 1; /* Unter dem Header */
+    }
+    
+    /* Safari-spezifische Fixes */
+    @supports (-webkit-touch-callout: none) {
+      .review-page {
+        -webkit-overflow-scrolling: touch;
+        -webkit-transform: translateZ(0); /* Hardware-Beschleunigung */
+        transform: translateZ(0);
+      }
     }
     .topbar { 
       height: var(--header-height, 80px);
@@ -188,9 +203,12 @@ import { MyDialogComponent } from '../my-dialog/my-dialog.component';
     /* Mobile und Tablet Styles */
     @media (max-width: 1024px) {
       .content-container {
-        height: calc(100vh - 80px - 80px - 80px - 32px); /* viewport - margin-top - header - submit container - padding */
-        max-height: calc(100vh - 80px - 80px - 80px - 32px);
+        height: calc(100vh - 80px - 80px - 32px); /* viewport - header - submit container - padding */
+        max-height: calc(100vh - 80px - 80px - 32px);
         overflow: hidden;
+        -webkit-overflow-scrolling: touch;
+        -webkit-transform: translate3d(0, 0, 0);
+        transform: translate3d(0, 0, 0);
       }
       
       .content {
@@ -200,14 +218,16 @@ import { MyDialogComponent } from '../my-dialog/my-dialog.component';
         padding: 16px;
         margin: 0;
         max-width: none;
+        -webkit-transform: translate3d(0, 0, 0);
+        transform: translate3d(0, 0, 0);
       }
     }
     
     /* Kleine Mobile Geräte */
     @media (max-width: 480px) {
       .content-container {
-        height: calc(100vh - 80px - 80px - 80px - 16px); /* Reduzierter Padding für kleine Bildschirme */
-        max-height: calc(100vh - 80px - 80px - 80px - 16px);
+        height: calc(100vh - 80px - 80px - 16px); /* Reduzierter Padding für kleine Bildschirme */
+        max-height: calc(100vh - 80px - 80px - 16px);
       }
       
       .content {
@@ -491,6 +511,12 @@ export class PublicOrderReviewComponent implements OnInit {
   customer: any = null;
 
   ngOnInit(): void {
+    // Verhindere Body-Scroll auf Safari
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.width = '100%';
+    document.body.style.height = '100%';
+    
     this.route.params.subscribe(params => {
       this.token = params['token'];
     });
@@ -518,6 +544,14 @@ export class PublicOrderReviewComponent implements OnInit {
         });
       }
     }, 500);
+  }
+
+  ngOnDestroy() {
+    // Stelle Body-Scroll wieder her
+    document.body.style.overflow = '';
+    document.body.style.position = '';
+    document.body.style.width = '';
+    document.body.style.height = '';
   }
 
   private loadFromLocalStorage() {
