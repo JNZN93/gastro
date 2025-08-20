@@ -31,51 +31,54 @@ import { MyDialogComponent } from '../my-dialog/my-dialog.component';
         </button>
       </div>
 
-      <div class="content">
-        <ng-container *ngIf="items && items.length; else empty">
-          <div class="items">
-            <div class="item-card" *ngFor="let item of items; trackBy: trackByItem">
-              <div class="media">
-                <img *ngIf="item.main_image_url" [src]="item.main_image_url" [alt]="item.article_text" />
-                <div *ngIf="!item.main_image_url" class="placeholder">📦</div>
-              </div>
-              <div class="info">
-                <div class="name">{{ item.article_text }}</div>
-                <div class="meta">Art.-Nr.: {{ item.article_number || item.product_id }}</div>
-              </div>
-              <div class="actions">
-                <div class="quantity-controls">
-                  <button class="qty-btn minus" (click)="reduceQuantity(item)" [disabled]="item.quantity <= 1">
+      <!-- Content Container mit fester Höhe für mobile/tablet -->
+      <div class="content-container">
+        <div class="content">
+          <ng-container *ngIf="items && items.length; else empty">
+            <div class="items">
+              <div class="item-card" *ngFor="let item of items; trackBy: trackByItem">
+                <div class="media">
+                  <img *ngIf="item.main_image_url" [src]="item.main_image_url" [alt]="item.article_text" />
+                  <div *ngIf="!item.main_image_url" class="placeholder">📦</div>
+                </div>
+                <div class="info">
+                  <div class="name">{{ item.article_text }}</div>
+                  <div class="meta">Art.-Nr.: {{ item.article_number || item.product_id }}</div>
+                </div>
+                <div class="actions">
+                  <div class="quantity-controls">
+                    <button class="qty-btn minus" (click)="reduceQuantity(item)" [disabled]="item.quantity <= 1">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/>
+                      </svg>
+                    </button>
+                    <span class="qty-display">{{ item.quantity }}</span>
+                    <button class="qty-btn plus" (click)="increaseQuantity(item)">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                      </svg>
+                    </button>
+                  </div>
+                  <button class="remove-btn" (click)="removeItem(item)" title="Entfernen">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/>
-                    </svg>
-                  </button>
-                  <span class="qty-display">{{ item.quantity }}</span>
-                  <button class="qty-btn plus" (click)="increaseQuantity(item)">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z"/>
                     </svg>
                   </button>
                 </div>
-                <button class="remove-btn" (click)="removeItem(item)" title="Entfernen">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z"/>
-                  </svg>
-                </button>
               </div>
             </div>
-          </div>
-        </ng-container>
-        <ng-template #empty>
-          <div class="empty">Keine Artikel ausgewählt.</div>
-        </ng-template>
+          </ng-container>
+          <ng-template #empty>
+            <div class="empty">Keine Artikel ausgewählt.</div>
+          </ng-template>
+        </div>
       </div>
     </div>
   `,
   styles: [`
     :host { display: block; }
     .review-page { 
-      min-height: 100vh; 
+      height: calc(100vh - 80px); /* Viewport-Höhe minus margin-top */
       background: #f8f9fb; 
       display: flex; 
       flex-direction: column;
@@ -137,6 +140,104 @@ import { MyDialogComponent } from '../my-dialog/my-dialog.component';
       -webkit-overflow-scrolling: touch;
       width: 100%;
       box-sizing: border-box;
+      margin-bottom: 250px;
+    }
+    
+    .submit-container {
+      flex-shrink: 0;
+      padding: 16px;
+      background: #fff;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: center;
+    }
+    
+    .submit {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+      border: none;
+      padding: 16px 32px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+      min-width: 200px;
+    }
+    
+    .submit:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+    }
+    
+    .submit:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    /* Content Container für mobile/tablet mit fester Höhe */
+    .content-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    
+    /* Mobile und Tablet Styles */
+    @media (max-width: 1024px) {
+      .content-container {
+        height: calc(100vh - 80px - 80px - 80px - 32px); /* viewport - margin-top - header - submit container - padding */
+        max-height: calc(100vh - 80px - 80px - 80px - 32px);
+        overflow: hidden;
+      }
+      
+      .content {
+        flex: 1;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding: 16px;
+        margin: 0;
+        max-width: none;
+      }
+    }
+    
+    /* Kleine Mobile Geräte */
+    @media (max-width: 480px) {
+      .content-container {
+        height: calc(100vh - 80px - 80px - 80px - 16px); /* Reduzierter Padding für kleine Bildschirme */
+        max-height: calc(100vh - 80px - 80px - 80px - 16px);
+      }
+      
+      .content {
+        padding: 12px;
+      }
+      
+      .submit-container {
+        padding: 12px;
+      }
+      
+      .submit {
+        padding: 14px 24px;
+        font-size: 15px;
+        min-width: 180px;
+      }
+    }
+    
+    /* Desktop Styles - normale Darstellung beibehalten */
+    @media (min-width: 1025px) {
+      .content-container {
+        overflow: visible;
+        height: auto;
+        max-height: none;
+      }
+      
+      .content {
+        overflow-y: auto;
+        max-height: calc(100vh - 80px - 80px - 80px - 32px); /* viewport - margin-top - header - submit container - padding */
+        margin-bottom: 250px;
+      }
     }
     .items { 
       display: flex; 
