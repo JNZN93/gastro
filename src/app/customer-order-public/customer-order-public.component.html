@@ -32,7 +32,9 @@
       <!-- Mobile Cards View (hidden on desktop) -->
       <div class="products-cards">
         <ng-container *ngFor="let category of orderedCategories">
-          <div class="category-header-mobile" (click)="toggleCategory(category)">
+          <div class="category-header-mobile" 
+               (click)="toggleCategory(category)"
+               [ngClass]="{'new-category': category === 'NEU HINZUGEFÜGT'}">
             <div class="category-title">
               <span class="category-name">{{ category }}</span>
               <span class="category-count">({{ groupedArticles[category].length }} Artikel)</span>
@@ -99,7 +101,9 @@
         </div>
         
         <ng-container *ngFor="let category of orderedCategories">
-          <div class="category-header" (click)="toggleCategory(category)">
+          <div class="category-header" 
+               (click)="toggleCategory(category)"
+               [ngClass]="{'new-category': category === 'NEU HINZUGEFÜGT'}">
             <div class="category-title">
               <span class="category-name">{{ category }}</span>
               <span class="category-count">({{ groupedArticles[category].length }} Artikel)</span>
@@ -295,7 +299,7 @@
       <!-- Add Custom Article Button -->
       <div class="add-custom-article">
         <button 
-          class="btn-add-custom"
+          class="btn-add-custom new-category-button"
           (click)="addCustomArticle()"
           *ngIf="!showCustomArticleForm"
         >
@@ -315,7 +319,7 @@
 
       <div class="order-actions">
         <button 
-          class="btn-submit"
+          class="btn-submit order-review-button"
           (click)="showOrderConfirmation()"
           [disabled]="!hasAnyQuantity()"
         >
@@ -413,30 +417,3 @@
     </div>
   </div>
 </div>
-
-            <!-- State Restore Loading Modal -->
-            <div *ngIf="showStateRestoreModal" class="state-restore-modal">
-              <div class="modal-content">
-                <div class="loading-container">
-                  <div class="loading-bar">
-                    <div class="loading-fill" [style.width.%]="loadingProgress"></div>
-                  </div>
-                  <p>Zurück zur Artikelauswahl...</p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Scroll Modal für Image-Viewer Navigation -->
-            <div *ngIf="showScrollModal" class="scroll-modal">
-              <div class="modal-content">
-                <div class="scroll-container">
-                  <div class="scroll-icon">📱</div>
-                  <p>Zurück zur Artikelauswahl...</p>
-                  <div class="scroll-progress">
-                    <div class="progress-bar">
-                      <div class="progress-fill"></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>

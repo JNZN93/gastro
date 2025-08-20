@@ -355,6 +355,82 @@
   overflow: hidden;
 }
 
+/* Neue Kategorie "NEU HINZUGEFÜGT" speziell hervorheben */
+.new-category {
+  .category-title {
+    background: linear-gradient(135deg, #27ae60, #2ecc71) !important;
+    box-shadow: 0 4px 12px rgba(39, 174, 96, 0.4) !important;
+    
+    &:hover {
+      background: linear-gradient(135deg, #2ecc71, #27ae60) !important;
+      box-shadow: 0 6px 20px rgba(39, 174, 96, 0.6) !important;
+    }
+  }
+  
+  .category-name {
+    font-weight: 700 !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+  
+  .category-count {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-weight: 600;
+  }
+  
+  .category-toggle-icon {
+    color: #fff !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* Hover-Effekt für neue Kategorie verstärken */
+.new-category:hover {
+  transform: translateY(-3px) !important;
+  box-shadow: 0 8px 25px rgba(39, 174, 96, 0.5) !important;
+}
+
+/* Eigenen Artikel hinzufügen Button - gleiche grüne Farbe wie neue Kategorie */
+.new-category-button {
+  background: linear-gradient(135deg, #27ae60, #2ecc71) !important;
+  border: none !important;
+  color: white !important;
+  box-shadow: 0 4px 12px rgba(39, 174, 96, 0.4) !important;
+  
+  &:hover {
+    background: linear-gradient(135deg, #2ecc71, #27ae60) !important;
+    box-shadow: 0 6px 20px rgba(39, 174, 96, 0.6) !important;
+    transform: translateY(-2px);
+  }
+  
+  .plus-icon {
+    font-weight: bold;
+    margin-right: 8px;
+  }
+}
+
+/* Bestellung überprüfen Button - orange Farbe */
+.order-review-button {
+  background: linear-gradient(135deg, #f39c12, #e67e22) !important;
+  border: none !important;
+  color: white !important;
+  box-shadow: 0 4px 12px rgba(243, 156, 18, 0.4) !important;
+  
+  &:hover {
+    background: linear-gradient(135deg, #e67e22, #f39c12) !important;
+    box-shadow: 0 6px 20px rgba(243, 156, 18, 0.6) !important;
+    transform: translateY(-2px);
+  }
+  
+  &:disabled {
+    background: linear-gradient(135deg, #bdc3c7, #95a5a6) !important;
+    box-shadow: 0 2px 8px rgba(189, 195, 199, 0.3) !important;
+    transform: none;
+    cursor: not-allowed;
+  }
+}
+
 @keyframes slideDown {
   from {
     opacity: 0;
