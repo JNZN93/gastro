@@ -23,7 +23,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 
       <!-- Submit button directly under topbar -->
       <div class="submit-container" *ngIf="items && items.length">
-        <button class="submit" (click)="openConfirmModal()" [disabled]="isSubmitting">
+        <button class="submit" (click)="confirmAndSubmitOrder()" [disabled]="isSubmitting">
           <span *ngIf="!isSubmitting">Bestellung absenden</span>
           <span *ngIf="isSubmitting">Sende...</span>
         </button>
@@ -67,18 +67,6 @@ import { ActivatedRoute, Router } from '@angular/router';
         <ng-template #empty>
           <div class="empty">Keine Artikel ausgewählt.</div>
         </ng-template>
-      </div>
-      
-      <!-- Confirmation Modal -->
-      <div class="confirm-backdrop" *ngIf="showConfirmModal">
-        <div class="confirm-modal">
-          <h2>Bestellung absenden?</h2>
-          <p>Möchten Sie die Bestellung jetzt absenden?</p>
-          <div class="confirm-actions">
-            <button class="btn-cancel" (click)="closeConfirmModal()">Abbrechen</button>
-            <button class="btn-confirm" (click)="confirmSubmit()" [disabled]="isSubmitting">Ja, absenden</button>
-          </div>
-        </div>
       </div>
     </div>
   `,
@@ -384,60 +372,6 @@ import { ActivatedRoute, Router } from '@angular/router';
         font-size: 12px;
       }
     }
-
-    /* Confirmation modal */
-    .confirm-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.4);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 50;
-    }
-    .confirm-modal {
-      width: 90%;
-      max-width: 420px;
-      background: #fff;
-      border-radius: 12px;
-      padding: 16px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-    }
-    .confirm-modal h2 {
-      margin: 0 0 8px 0;
-      font-size: 18px;
-    }
-    .confirm-modal p {
-      margin: 0 0 16px 0;
-      color: #374151;
-      font-size: 14px;
-    }
-    .confirm-actions {
-      display: flex;
-      gap: 8px;
-      justify-content: flex-end;
-    }
-    .btn-cancel {
-      appearance: none;
-      border: 1px solid #d1d5db;
-      background: #fff;
-      color: #374151;
-      padding: 10px 14px;
-      border-radius: 10px;
-      cursor: pointer;
-      font-weight: 600;
-    }
-    .btn-confirm {
-      appearance: none;
-      border: none;
-      background: #ff7a00;
-      color: #fff;
-      padding: 10px 14px;
-      border-radius: 10px;
-      cursor: pointer;
-      font-weight: 700;
-      box-shadow: 0 6px 16px rgba(255,122,0,0.35);
-    }
   `]
 })
 export class PublicOrderReviewComponent implements OnInit {
@@ -451,7 +385,6 @@ export class PublicOrderReviewComponent implements OnInit {
   total = 0;
   isSubmitting = false;
   customer: any = null;
-  showConfirmModal = false;
 
   ngOnInit(): void {
     this.route.params.subscribe(params => {
@@ -815,22 +748,6 @@ export class PublicOrderReviewComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
-  openConfirmModal() {
-    this.showConfirmModal = true;
-    this.cdr.markForCheck();
-  }
-
-  closeConfirmModal() {
-    this.showConfirmModal = false;
-    this.cdr.markForCheck();
-  }
-
-  confirmSubmit() {
-    this.showConfirmModal = false;
-    this.cdr.markForCheck();
-    this.submitOrder();
-  }
-
   goBack() {
     // Vor dem Zurück-Navigieren synchronisieren
     this.syncToMainLocalStorage();
@@ -1018,6 +935,12 @@ export class PublicOrderReviewComponent implements OnInit {
       this.isSubmitting = false;
       alert('Fehler beim Absenden der Bestellung. Bitte versuchen Sie es erneut.');
     });
+  }
+
+  confirmAndSubmitOrder() {
+    if (confirm('Sind Sie sicher, dass Sie die Bestellung absenden möchten? Alle ausgewählten Artikel werden in Ihre Bestellung aufgenommen.')) {
+      this.submitOrder();
+    }
   }
 
   // Neue Methode: PFAND-Artikel automatisch zur Bestellung hinzufügen
@@ -1347,5 +1270,3 @@ export class PublicOrderReviewComponent implements OnInit {
     console.log('\n🔍 [PUBLIC-REVIEW] === PFAND-VERKNÜPFUNGS-ANALYSE ENDE ===');
   }
 }
-
-
