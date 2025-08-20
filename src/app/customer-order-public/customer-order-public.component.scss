@@ -3,7 +3,7 @@
   background: #f5f5f5;
   font-family: 'Poppins', sans-serif;
   margin-top: 70px;
-  padding-bottom: 2rem; // Margin bottom für bessere Button-Erreichbarkeit
+  padding-bottom: 4rem; // Mehr Platz nach unten für bessere Button-Erreichbarkeit
 }
 
 /* Header */
@@ -874,6 +874,8 @@
 
 .order-actions {
   text-align: center;
+  margin-top: 2rem; // Abstand nach oben vom Button
+  margin-bottom: 2rem; // Zusätzlicher Abstand nach unten
   
   .btn-submit {
     background: #27ae60;
@@ -885,6 +887,11 @@
     font-weight: 600;
     cursor: pointer;
     transition: background 0.2s;
+    
+    // Mobile-Optimierungen hinzufügen
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: rgba(0,0,0,0.1);
+    user-select: none;
     
     &:hover:not(:disabled) {
       background: #229954;
