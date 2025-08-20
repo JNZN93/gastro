@@ -3,7 +3,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
-import { CustomerOrderStateService } from '../customer-order-state.service';
+// private stateService = inject(CustomerOrderStateService); // Entferne State Service
 
 @Component({
   selector: 'app-customer-order-public',
@@ -16,7 +16,6 @@ export class CustomerOrderPublicComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private http = inject(HttpClient);
-  private stateService = inject(CustomerOrderStateService);
 
   token: string = '';
   customerNumber: string = '';
@@ -42,324 +41,12 @@ export class CustomerOrderPublicComponent implements OnInit {
   
   // Neue Eigenschaft für den Zustand der Kategorien (aufgeklappt/zugeklappt)
   categoryStates: { [category: string]: boolean } = {};
-  // Letzter Artikel, dessen Bild geöffnet wurde
-  private lastOpenedArticleId: string | null = null;
-  // Loading-Modal für State-Wiederherstellung
-  showStateRestoreModal: boolean = false;
-  loadingProgress: number = 0;
-  
-  // Neues Modal für das Scrollen zurück zur Position
-  showScrollModal: boolean = false;
 
   // localStorage Key für diesen Kunden
   private get localStorageKey(): string {
     return `customer_order_${this.customerNumber}`;
   }
 
-  // Methode zum Verstecken des Scroll-Modals
-  private hideScrollModal() {
-    this.showScrollModal = false;
-  }
-
-  private saveCompleteState() {
-    const completeState = {
-      customer: this.customer,
-      customerNumber: this.customerNumber,
-      token: this.token,
-      articles: this.customerArticlePrices.map(a => ({ ...a })),
-      groupedArticles: this.groupedArticles,
-      orderedCategories: this.orderedCategories,
-      categoryStates: this.categoryStates,
-      showCustomArticleForm: this.showCustomArticleForm,
-      customArticle: this.customArticle,
-      isLoading: this.isLoading,
-      isSubmitting: this.isSubmitting,
-      error: this.error,
-      successMessage: this.successMessage,
-      showOrderModal: this.showOrderModal,
-      pendingSubmit: this.pendingSubmit,
-      scrollPosition: { scrollTop: window.scrollY, scrollLeft: window.scrollX },
-      lastOpenedArticleId: this.lastOpenedArticleId,
-      activeCategory: this.getActiveCategory(),
-      fromImageViewer: true, // Markierung dass der State vom Image-Viewer kommt
-      savedAt: new Date().toISOString()
-    };
-    this.stateService.saveStateMemory(completeState);
-    this.stateService.saveStatePersistent(completeState);
-  }
-
-  private getActiveCategory(): string | null {
-    const categories = document.querySelectorAll('.category-section');
-    for (const category of Array.from(categories)) {
-      const rect = (category as HTMLElement).getBoundingClientRect();
-      if (rect.top <= 100 && rect.bottom >= 100) {
-        return (category as HTMLElement).getAttribute('data-category');
-      }
-    }
-    return null;
-  }
-
-  private restoreFromState(state: any) {
-    // State direkt laden ohne Loading-Modal
-    this.customer = state.customer;
-    this.customerNumber = state.customerNumber;
-    this.token = state.token;
-    this.customerArticlePrices = (state.articles || []).map((a: any) => ({ ...a }));
-    this.groupedArticles = state.groupedArticles || {};
-    this.orderedCategories = state.orderedCategories || [];
-    this.categoryStates = state.categoryStates || {};
-    this.showCustomArticleForm = !!state.showCustomArticleForm;
-    this.customArticle = state.customArticle || { article_text: '', tempQuantity: null, isCustom: true };
-    this.isLoading = false;
-    this.isSubmitting = false;
-    this.error = state.error || '';
-    this.successMessage = state.successMessage || '';
-    this.showOrderModal = !!state.showOrderModal;
-    this.pendingSubmit = !!state.pendingSubmit;
-    this.lastOpenedArticleId = state.lastOpenedArticleId || null;
-
-    this.buildGroups();
-
-    // Zeige das Scroll-Modal, wenn der State vom Image-Viewer kommt
-    if (state.fromImageViewer) {
-      this.showScrollModal = true;
-    }
-
-    // Kurze Verzögerung für DOM-Rendering, dann sofort smooth scrollen
-    setTimeout(() => {
-      // Scroll-Position und Viewport-State wiederherstellen
-      this.restoreScrollPosition(state.scrollPosition);
-      this.restoreViewportState(state.activeCategory);
-      
-      // Sofort smooth zum Artikel scrollen
-      if (this.lastOpenedArticleId) {
-        this.scrollToArticle(this.lastOpenedArticleId!);
-      }
-      
-      // Verstecke das Scroll-Modal nach dem Scrollen
-      setTimeout(() => {
-        this.hideScrollModal();
-      }, 1500); // 1.5 Sekunden nach dem Scrollen verstecken
-    }, 100); // Nur kurze Verzögerung für DOM-Rendering
-  }
-
-  private restoreScrollPosition(scrollData: any) {
-    if (scrollData && typeof scrollData.scrollTop === 'number') {
-      window.scrollTo({ top: scrollData.scrollTop, left: scrollData.scrollLeft || 0, behavior: 'smooth' });
-      
-      // Verstecke das Scroll-Modal nach dem Wiederherstellen der Scroll-Position
-      setTimeout(() => {
-        this.hideScrollModal();
-      }, 800);
-    }
-  }
-
-  private restoreViewportState(activeCategory: string | null) {
-    if (!activeCategory) return;
-    this.categoryStates[activeCategory] = true;
-    this.scrollToCategory(activeCategory);
-  }
-
-  private scrollToCategory(categoryName: string) {
-    const el = document.querySelector(`[data-category="${categoryName}"]`);
-    if (el) {
-      (el as HTMLElement).scrollIntoView({ behavior: 'instant', block: 'start' });
-    }
-  }
-
-  private scrollToElement(element: HTMLElement) {
-    // Mehrere Scroll-Strategien versuchen
-    try {
-      // Strategie 1: scrollIntoView mit smooth
-      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      
-      // Verifiziere die Position nach dem Scroll
-      setTimeout(() => {
-        this.verifyScrollPosition(element);
-      }, 50);
-      
-    } catch (error) {
-      this.scrollWithWindowScrollTo(element);
-    }
-  }
-
-  private scrollWithWindowScrollTo(element: HTMLElement) {
-    try {
-      // Strategie 2: window.scrollTo mit berechneter Position
-      const rect = element.getBoundingClientRect();
-      const scrollTop = window.pageYOffset + rect.top - (window.innerHeight / 2) + (rect.height / 2);
-      
-      window.scrollTo({ top: scrollTop, behavior: 'instant' });
-      
-      // Verifiziere die Position nach dem Scroll
-      setTimeout(() => {
-        this.verifyScrollPosition(element);
-      }, 50);
-      
-    } catch (error2) {
-      // Strategie 3: Smooth scroll als Fallback
-      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-  }
-
-  private verifyScrollPosition(element: HTMLElement) {
-    const rect = element.getBoundingClientRect();
-    const isCentered = Math.abs(rect.top + rect.height / 2 - window.innerHeight / 2) < 50;
-    
-    // Falls nicht zentriert, versuche es nochmal mit einer anderen Strategie
-    if (!isCentered) {
-      this.correctScrollPosition(element);
-    } else {
-      // Position erreicht - verstecke das Scroll-Modal
-      this.hideScrollModal();
-    }
-  }
-
-  private correctScrollPosition(element: HTMLElement) {
-    // Versuche mehrere Korrektur-Strategien
-    try {
-      // Strategie 1: Direkte scrollIntoView mit smooth
-      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      
-      // Warte kurz und verifiziere
-      setTimeout(() => {
-        this.verifyScrollPosition(element);
-      }, 100);
-      
-    } catch (error) {
-      this.correctScrollPositionStrategy2(element);
-    }
-  }
-
-  private correctScrollPositionStrategy2(element: HTMLElement) {
-    try {
-      // Strategie 2: window.scroll mit präziser Berechnung
-      const rect = element.getBoundingClientRect();
-      const currentScrollTop = window.pageYOffset || document.documentElement.scrollTop;
-      const targetScrollTop = currentScrollTop + rect.top - (window.innerHeight / 2) + (rect.height / 2);
-      
-
-      
-      // Verwende document.documentElement.scrollTop für bessere Kompatibilität
-      if (document.documentElement.scrollTop !== undefined) {
-        document.documentElement.scrollTop = targetScrollTop;
-      } else if (document.body.scrollTop !== undefined) {
-        document.body.scrollTop = targetScrollTop;
-      } else {
-        window.scrollTo(0, targetScrollTop);
-      }
-      
-      // Verifiziere nach kurzer Verzögerung
-      setTimeout(() => {
-        this.verifyScrollPosition(element);
-      }, 100);
-      
-    } catch (error) {
-      this.correctScrollPositionStrategy3(element);
-    }
-  }
-
-  private correctScrollPositionStrategy3(element: HTMLElement) {
-    try {
-      // Strategie 3: Smooth scroll als letzter Ausweg
-      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      
-      // Verifiziere nach dem Smooth-Scroll
-      setTimeout(() => {
-        this.verifyScrollPosition(element);
-      }, 500); // Länger warten bei smooth scroll
-      
-    } catch (error) {
-      // Alle Scroll-Strategien fehlgeschlagen
-      // Verstecke das Scroll-Modal trotzdem
-      this.hideScrollModal();
-    }
-  }
-
-  private scrollToArticle(articleId: string) {
-    
-    // Versuche zuerst nach der exakten ID zu suchen
-    let el = document.querySelector(`[data-article-id="${articleId}"]`);
-    
-    // Falls nicht gefunden, suche nach dem Artikel in den Daten und verwende die korrekte ID
-    if (!el) {
-      const article = this.customerArticlePrices.find(a => 
-        String(a.article_number || a.product_id) === articleId
-      );
-      
-      if (article) {
-        const correctId = String(article.article_number || article.product_id);
-        
-        // Versuche mit der korrekten ID zu suchen
-        el = document.querySelector(`[data-article-id="${correctId}"]`);
-        
-        if (el) {
-          // Artikel mit korrigierter ID gefunden
-        } else {
-          // Kategorie öffnen falls sie zugeklappt ist
-          const category = this.getCategoryForArticle(article);
-          if (category && !this.categoryStates[category]) {
-            this.categoryStates[category] = true;
-            this.buildGroups();
-          }
-          
-          // Nach dem DOM-Update nochmal versuchen
-          setTimeout(() => {
-            const el2 = document.querySelector(`[data-article-id="${correctId}"]`);
-            if (el2) {
-              this.scrollToElement(el2 as HTMLElement);
-            } else {
-              // Letzter Versuch: Suche nach dem Artikel-Text
-              const textElements = Array.from(document.querySelectorAll('.article-text'));
-              const matchingElement = textElements.find(el => el.textContent?.trim() === article.article_text);
-              if (matchingElement) {
-                const articleElement = matchingElement.closest('.product-card, .table-row');
-                if (articleElement) {
-                  this.scrollToElement(articleElement as HTMLElement);
-                }
-              }
-            }
-          }, 200);
-        }
-      }
-    }
-    
-    // Falls der Artikel gefunden wurde, scrolle dorthin
-    if (el) {
-      // Stelle sicher, dass die Kategorie geöffnet ist
-      const articleCard = (el as HTMLElement).closest('.product-card, .table-row');
-      if (articleCard) {
-        const categorySection = articleCard.closest('.category-content');
-        if (categorySection) {
-          const categoryHeader = categorySection.previousElementSibling;
-          if (categoryHeader && categoryHeader.classList.contains('category-header')) {
-            const categoryName = categoryHeader.querySelector('.category-name')?.textContent;
-            if (categoryName && !this.categoryStates[categoryName]) {
-              this.categoryStates[categoryName] = true;
-              this.buildGroups();
-              
-              // Nach dem DOM-Update nochmal scrollen
-              setTimeout(() => {
-                const el2 = document.querySelector(`[data-article-id="${articleId}"]`);
-                if (el2) {
-                  this.scrollToElement(el2 as HTMLElement);
-                }
-              }, 100);
-              return;
-            }
-          }
-        }
-      }
-      
-      // Direkt scrollen
-      this.scrollToElement(el as HTMLElement);
-      
-      // Verstecke das Scroll-Modal nach dem Scrollen zum Artikel
-      setTimeout(() => {
-        this.hideScrollModal();
-      }, 1000);
-    }
-  }
   // Methode zum Umschalten des Zustands einer Kategorie
   toggleCategory(category: string): void {
     this.categoryStates[category] = !this.categoryStates[category];
@@ -381,23 +68,13 @@ export class CustomerOrderPublicComponent implements OnInit {
         console.error('❌ [PUBLIC-ORDER] Alle URL Parameter:', params);
       }
       
-      // Prüfe zuerst localStorage für gespeicherte Bestellung
+      // Prüfe localStorage für gespeicherte Bestellung
       const localStorageData = this.getLocalStorageData();
       if (localStorageData && localStorageData.token === this.token) {
         console.log('🔄 [PUBLIC-ORDER] Gespeicherte Bestellung aus localStorage gefunden');
         this.restoreFromLocalStorage(localStorageData);
       } else {
-        // Fallback: Prüfe State-Service nur für Image-Viewer State
-        const savedState = this.stateService.getState();
-        if (savedState && savedState.token === this.token && savedState.fromImageViewer) {
-          console.log('🔄 [PUBLIC-ORDER] Restauriere gespeicherten State vom Image-Viewer (ohne API-Calls)');
-          this.restoreFromState(savedState);
-          if (this.stateService.hasMemoryState()) {
-            this.stateService.clearState();
-          }
-        } else {
-          this.decodeTokenAndLoadData();
-        }
+        this.decodeTokenAndLoadData();
       }
     });
 
@@ -774,15 +451,6 @@ export class CustomerOrderPublicComponent implements OnInit {
     // Loading beenden, da alle Daten geladen und gefiltert wurden
     this.isLoading = false;
     this.triggerPendingSubmitIfReady();
-
-    // Falls ein gespeicherter State existiert (z. B. nach Refresh), danach Scroll wiederherstellen
-    const st = this.stateService.getState();
-    if (st && st.token === this.token) {
-      setTimeout(() => {
-        this.restoreScrollPosition(st.scrollPosition);
-        this.restoreViewportState(st.activeCategory);
-      }, 0);
-    }
   }
 
   private normalizeCategoryName(name: any): string {
@@ -1164,7 +832,6 @@ export class CustomerOrderPublicComponent implements OnInit {
     
     // Bestellung in localStorage speichern
     this.saveToLocalStorage();
-    this.saveCompleteState();
   }
 
   // Minus-Button: Menge verringern
@@ -1177,7 +844,6 @@ export class CustomerOrderPublicComponent implements OnInit {
     
     // Bestellung in localStorage speichern
     this.saveToLocalStorage();
-    this.saveCompleteState();
   }
 
   getOrderTotal(): number {
@@ -1199,7 +865,6 @@ export class CustomerOrderPublicComponent implements OnInit {
   onQuantityChange(): void {
     // Bestellung in localStorage speichern
     this.saveToLocalStorage();
-    this.saveCompleteState();
   }
 
   // Prüft, ob mindestens ein Artikel eine Menge hat
@@ -1211,13 +876,6 @@ export class CustomerOrderPublicComponent implements OnInit {
 
   openImage(article: any) {
     if (!article) return;
-    this.lastOpenedArticleId = String(article.article_number || article.product_id);
-    console.log('📸 [PUBLIC-ORDER] Bild geöffnet für Artikel:', {
-      articleNumber: article.article_number,
-      productId: article.product_id,
-      lastOpenedArticleId: this.lastOpenedArticleId
-    });
-    this.saveCompleteState();
     const articleNumber = article.article_number || article.product_id;
     const imageUrl = article.main_image_url;
     const title = article.article_text;
@@ -1245,7 +903,6 @@ export class CustomerOrderPublicComponent implements OnInit {
     
     // Bestellung in localStorage speichern
     this.saveToLocalStorage();
-    this.saveCompleteState();
   }
 
   decreaseCustomQuantity() {
@@ -1257,7 +914,6 @@ export class CustomerOrderPublicComponent implements OnInit {
     
     // Bestellung in localStorage speichern
     this.saveToLocalStorage();
-    this.saveCompleteState();
   }
 
   saveCustomArticle() {
@@ -1282,7 +938,6 @@ export class CustomerOrderPublicComponent implements OnInit {
 
       // Bestellung in localStorage speichern
       this.saveToLocalStorage();
-      this.saveCompleteState();
 
       // Verstecke das Formular
       this.showCustomArticleForm = false;
@@ -1305,6 +960,5 @@ export class CustomerOrderPublicComponent implements OnInit {
     };
     // Bestellung in localStorage speichern
     this.saveToLocalStorage();
-    this.saveCompleteState();
   }
 }
