@@ -57,7 +57,7 @@ import { ActivatedRoute, Router } from '@angular/router';
                 </div>
                 <button class="remove-btn" (click)="removeItem(item)" title="Entfernen">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z"/>
                   </svg>
                 </button>
               </div>
@@ -142,7 +142,7 @@ import { ActivatedRoute, Router } from '@angular/router';
       flex: 1;
       max-width: 1000px; 
       margin: 0 auto; 
-      padding: 16px; 
+      padding: 16px 16px 32px 16px; 
       overflow-y: auto; 
       -webkit-overflow-scrolling: touch;
       width: 100%;
@@ -250,9 +250,9 @@ import { ActivatedRoute, Router } from '@angular/router';
       appearance: none;
       border: none;
       background: #fee2e2;
-      width: 28px;
-      height: 28px;
-      border-radius: 6px;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -264,8 +264,8 @@ import { ActivatedRoute, Router } from '@angular/router';
       transform: translateY(-1px);
     }
     .remove-btn svg {
-      width: 14px;
-      height: 14px;
+      width: 18px;
+      height: 18px;
       stroke: #dc2626;
     }
     .empty { 
@@ -309,7 +309,7 @@ import { ActivatedRoute, Router } from '@angular/router';
         padding: 12px;
       }
       .content {
-        padding: 12px;
+        padding: 12px 12px 24px 12px;
       }
       .submit-container {
         padding: 12px;
@@ -342,17 +342,20 @@ import { ActivatedRoute, Router } from '@angular/router';
         height: 14px;
       }
       .remove-btn {
-        width: 26px;
-        height: 26px;
+        width: 30px;
+        height: 30px;
       }
       .remove-btn svg {
-        width: 12px;
-        height: 12px;
+        width: 16px;
+        height: 16px;
       }
     }
     
     /* Tablet-specific improvements */
     @media (min-width: 768px) and (max-width: 1023px) {
+      .content {
+        padding: 16px 16px 40px 16px;
+      }
       .submit-container {
         padding: 24px;
       }
