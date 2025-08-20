@@ -1836,7 +1836,22 @@ export class EmployeesComponent implements OnInit, OnDestroy {
     this.pendingCustomerForPriceUpdate = null;
     console.log('✅ [CLEAR-ALL-ORDER] pendingCustomerForPriceUpdate zurückgesetzt');
     
+    // 12. Lösche alle Bilder aus den Recent Images
+    this.clearAllRecentImages();
+    console.log('✅ [CLEAR-ALL-ORDER] Alle Bilder aus Recent Images gelöscht');
+    
     console.log('🎉 [CLEAR-ALL-ORDER] Alle auftragsrelevanten Daten erfolgreich geleert!');
+  }
+
+  // Methode zum Löschen aller Bilder aus den Recent Images
+  private async clearAllRecentImages(): Promise<void> {
+    try {
+      console.log('🗑️ [CLEAR-RECENT-IMAGES] Starte Löschen aller Bilder aus Recent Images...');
+      await this.indexedDBService.clearAllImages();
+      console.log('✅ [CLEAR-RECENT-IMAGES] Alle Bilder erfolgreich gelöscht');
+    } catch (error) {
+      console.error('❌ [CLEAR-RECENT-IMAGES] Fehler beim Löschen der Bilder:', error);
+    }
   }
 
   // Neue Methode für Bestätigungs-Modal beim Löschen des gesamten Auftrags
