@@ -25,8 +25,10 @@ export class WarenkorbComponent implements OnInit {
   combinedValue: string = '';
   
   // Lokaler Bestätigungsdialog
-  showClearConfirmation: boolean = false;
-  showOrderConfirmation: boolean = false;
+  // showClearConfirmation: boolean = false;
+  // showOrderConfirmation: boolean = false;
+  // showRemoveItemConfirmation: boolean = false;
+  // itemToRemove: any = null;
 
   
 
@@ -53,7 +55,20 @@ export class WarenkorbComponent implements OnInit {
   }
 
   sendOrder() {
-    this.showOrderConfirmation = true;
+    this.dialog.open(MyDialogComponent, {
+      data: {
+        title: 'Bestellung bestätigen',
+        message: 'Möchten Sie die Bestellung abschließen?',
+        buttonLabel: 'Bestellen',
+        cancelLabel: 'Abbrechen'
+      },
+      maxWidth: '400px',
+      minWidth: '300px',
+    }).afterClosed().subscribe(result => {
+      if (result) {
+        this.confirmOrder();
+      }
+    });
   }
 
   confirmOrder() {
@@ -140,11 +155,23 @@ export class WarenkorbComponent implements OnInit {
       }
     });
     
-    this.showOrderConfirmation = false;
   }
 
   cancelOrder() {
-    this.showOrderConfirmation = false;
+    this.dialog.open(MyDialogComponent, {
+      data: {
+        title: 'Bestellung abbrechen',
+        message: 'Möchten Sie die Bestellung wirklich abbrechen?',
+        buttonLabel: 'Abbrechen',
+        cancelLabel: 'Zurück'
+      },
+      maxWidth: '400px',
+      minWidth: '300px',
+    }).afterClosed().subscribe(result => {
+      if (result) {
+        this.isVisible = false;
+      }
+    });
   }
 
   // Neue Methode: PFAND-Artikel automatisch zur Bestellung hinzufügen
@@ -254,38 +281,63 @@ export class WarenkorbComponent implements OnInit {
 
   
   removeItem(artikel: any) {
-    // Warenkorb im GlobalService aktualisieren
-    this.globalService.warenkorb = this.globalService.warenkorb.filter(
-      item => item.article_number !== artikel.article_number
-    );
+    this.dialog.open(MyDialogComponent, {
+      data: {
+        title: 'Artikel entfernen',
+        message: `Möchten Sie das Artikel "${artikel.article_text}" wirklich aus dem Warenkorb entfernen?`,
+        buttonLabel: 'Entfernen',
+        cancelLabel: 'Abbrechen'
+      },
+      maxWidth: '400px',
+      minWidth: '300px',
+    }).afterClosed().subscribe(result => {
+      if (result) {
+        // Warenkorb im GlobalService aktualisieren
+        this.globalService.warenkorb = this.globalService.warenkorb.filter(
+          item => item.article_number !== artikel.article_number
+        );
 
-    // Neue Referenz setzen, damit Angular das UI aktualisiert
-    this.globalService.warenkorb = [...this.globalService.warenkorb];
-    this.getTotalPrice();
-    localStorage.setItem('warenkorb', JSON.stringify(this.globalService.warenkorb))
+        // Neue Referenz setzen, damit Angular das UI aktualisiert
+        this.globalService.warenkorb = [...this.globalService.warenkorb];
+        this.getTotalPrice();
+        localStorage.setItem('warenkorb', JSON.stringify(this.globalService.warenkorb));
+        
+        // Modal schließen und Referenz löschen
+      }
+    });
+  }
+
+  confirmRemoveItem() {
+    // Diese Methode wird nicht mehr benötigt
+  }
+
+  cancelRemoveItem() {
+    // Diese Methode wird nicht mehr benötigt
   }
 
   clearCart() {
-    // Lokalen Bestätigungsdialog anzeigen
-    this.showClearConfirmation = true;
-  }
-
-  confirmClearCart() {
-    // Warenkorb komplett leeren
-    this.globalService.warenkorb = [];
-    this.globalService.totalPrice = 0;
-    localStorage.removeItem('warenkorb');
-    
-    // Ausgewählten Kunden löschen
-    this.globalService.clearSelectedCustomer();
-    
-    // Dialog schließen
-    this.showClearConfirmation = false;
-  }
-
-  cancelClearCart() {
-    // Dialog schließen ohne zu leeren
-    this.showClearConfirmation = false;
+    this.dialog.open(MyDialogComponent, {
+      data: {
+        title: 'Warenkorb leeren',
+        message: 'Möchten Sie den gesamten Warenkorb wirklich leeren?',
+        buttonLabel: 'Leeren',
+        cancelLabel: 'Abbrechen'
+      },
+      maxWidth: '400px',
+      minWidth: '300px',
+    }).afterClosed().subscribe(result => {
+      if (result) {
+        // Warenkorb komplett leeren
+        this.globalService.warenkorb = [];
+        this.globalService.totalPrice = 0;
+        localStorage.removeItem('warenkorb');
+        
+        // Ausgewählten Kunden löschen
+        this.globalService.clearSelectedCustomer();
+        
+        // Dialog schließen
+      }
+    });
   }
 
   closeWarenkorb(){

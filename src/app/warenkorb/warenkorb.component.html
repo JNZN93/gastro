@@ -155,53 +155,5 @@
     }
   </div>
   
-  <!-- Lokaler Bestätigungsdialog -->
-  @if (showClearConfirmation) {
-  <div class="confirmation-overlay" (click)="cancelClearCart()"></div>
-  <div class="confirmation-dialog">
-    <div class="dialog-header">
-      <h3>Warenkorb leeren</h3>
-      <button class="dialog-close-btn" (click)="cancelClearCart()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-        </svg>
-      </button>
-    </div>
-    <div class="dialog-content">
-      <div class="dialog-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.664-.833-2.464 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z"/>
-        </svg>
-      </div>
-      <p>Möchtest du wirklich den gesamten Warenkorb leeren? Diese Aktion kann nicht rückgängig gemacht werden.</p>
-    </div>
-    <div class="dialog-actions">
-      <button class="dialog-btn cancel" (click)="cancelClearCart()">Abbrechen</button>
-      <button class="dialog-btn confirm" (click)="confirmClearCart()">Ja, leeren</button>
-    </div>
-  </div>
-  }
-
-  <!-- Bestellbestätigung -->
-  @if (showOrderConfirmation) {
-  <div class="confirmation-overlay" (click)="cancelOrder()"></div>
-  <div class="confirmation-dialog">
-    <div class="dialog-header">
-      <h3>Bestellung bestätigen</h3>
-      <button class="dialog-close-btn" (click)="cancelOrder()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-        </svg>
-      </button>
-    </div>
-    <div class="dialog-content">
-      <p>Möchtest du die Bestellung wirklich absenden?</p>
-    </div>
-    <div class="dialog-actions">
-      <button class="dialog-btn cancel" (click)="cancelOrder()">Abbrechen</button>
-      <button class="dialog-btn confirm" (click)="confirmOrder()">Bestätigen</button>
-    </div>
-  </div>
-  }
 </div>
 }

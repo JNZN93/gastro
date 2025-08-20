@@ -1,12 +1,14 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MyDialogComponent } from '../my-dialog/my-dialog.component';
 
 
 @Component({
   selector: 'app-public-order-review',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, MatDialogModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="review-page">
@@ -378,6 +380,7 @@ export class PublicOrderReviewComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
+  private dialog = inject(MatDialog);
 
 
   token = '';
@@ -704,21 +707,33 @@ export class PublicOrderReviewComponent implements OnInit {
 
   removeItem(item: any) {
     // Bestätigungsabfrage vor dem Entfernen
-    if (confirm(`Möchten Sie "${item.article_text}" wirklich aus der Bestellung entfernen?`)) {
-      // Artikel aus dem Array entfernen
-      this.items = this.items.filter(i => 
-        (i.article_number || i.product_id) !== (item.article_number || item.product_id)
-      );
-      
-      // Total nach dem Entfernen aktualisieren
-      this.updateTotal();
-      
-      // WICHTIG: localStorage sofort bereinigen - entferne den gelöschten Artikel
-      this.removeItemFromLocalStorage(item);
-      
-      // Change Detection triggern
-      this.cdr.detectChanges();
-    }
+    this.dialog.open(MyDialogComponent, {
+      data: {
+        title: 'Artikel entfernen',
+        message: `Möchten Sie "${item.article_text}" wirklich aus der Bestellung entfernen?`,
+        isConfirmation: true,
+        confirmLabel: 'Entfernen',
+        cancelLabel: 'Abbrechen'
+      },
+      maxWidth: '400px',
+      minWidth: '300px',
+    }).afterClosed().subscribe(result => {
+      if (result) {
+        // Artikel aus dem Array entfernen
+        this.items = this.items.filter(i => 
+          (i.article_number || i.product_id) !== (item.article_number || item.product_id)
+        );
+        
+        // Total nach dem Entfernen aktualisieren
+        this.updateTotal();
+        
+        // WICHTIG: localStorage sofort bereinigen - entferne den gelöschten Artikel
+        this.removeItemFromLocalStorage(item);
+        
+        // Change Detection triggern
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   private updateTotal() {
@@ -756,20 +771,32 @@ export class PublicOrderReviewComponent implements OnInit {
 
     clearCart() {
     // Bestätigungsabfrage
-    if (confirm('Sind Sie sicher, dass Sie den gesamten Warenkorb leeren möchten? Alle ausgewählten Artikel werden entfernt.')) {
-      // Alle Artikel entfernen
-      this.items = [];
-      this.total = 0;
-      
-      // Alle localStorage-Einträge für diesen Kunden löschen
-      this.clearAllLocalStorage();
-      
-      // Haupt-Warenkorb auch leeren (Synchronisation)
-      this.syncToMainLocalStorage();
-      
-      // Change Detection triggern
-      this.cdr.detectChanges();
-    }
+    this.dialog.open(MyDialogComponent, {
+      data: {
+        title: 'Warenkorb leeren',
+        message: 'Sind Sie sicher, dass Sie den gesamten Warenkorb leeren möchten? Alle ausgewählten Artikel werden entfernt.',
+        isConfirmation: true,
+        confirmLabel: 'Leeren',
+        cancelLabel: 'Abbrechen'
+      },
+      maxWidth: '400px',
+      minWidth: '300px',
+    }).afterClosed().subscribe(result => {
+      if (result) {
+        // Alle Artikel entfernen
+        this.items = [];
+        this.total = 0;
+        
+        // Alle localStorage-Einträge für diesen Kunden löschen
+        this.clearAllLocalStorage();
+        
+        // Haupt-Warenkorb auch leeren (Synchronisation)
+        this.syncToMainLocalStorage();
+        
+        // Change Detection triggern
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   async submitOrder() {
@@ -938,9 +965,21 @@ export class PublicOrderReviewComponent implements OnInit {
   }
 
   confirmAndSubmitOrder() {
-    if (confirm('Sind Sie sicher, dass Sie die Bestellung absenden möchten? Alle ausgewählten Artikel werden in Ihre Bestellung aufgenommen.')) {
-      this.submitOrder();
-    }
+    this.dialog.open(MyDialogComponent, {
+      data: {
+        title: 'Bestellung bestätigen',
+        message: 'Sind Sie sicher, dass Sie die Bestellung absenden möchten? Alle ausgewählten Artikel werden in Ihre Bestellung aufgenommen.',
+        isConfirmation: true,
+        confirmLabel: 'Bestellen',
+        cancelLabel: 'Abbrechen'
+      },
+      maxWidth: '400px',
+      minWidth: '300px',
+    }).afterClosed().subscribe(result => {
+      if (result) {
+        this.submitOrder();
+      }
+    });
   }
 
   // Neue Methode: PFAND-Artikel automatisch zur Bestellung hinzufügen
