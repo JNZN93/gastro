@@ -1074,7 +1074,15 @@ export class CustomerOrderPublicComponent implements OnInit {
       // Stelle sicher, dass die aktuelle Auswahl im einheitlichen Key gespeichert ist
       this.saveToLocalStorage();
       
-      this.router.navigate([`/customer-order/${this.token}/review`]);
+      // Navigation mit Fehlerbehandlung
+      this.router.navigate([`/customer-order/${this.token}/review`]).then(() => {
+        console.log('✅ [PUBLIC-ORDER] Navigation zur Review-Seite erfolgreich');
+      }).catch(error => {
+        console.error('❌ [PUBLIC-ORDER] Navigation fehlgeschlagen:', error);
+        
+        // Benutzerfreundliche Fehlermeldung
+        alert('Navigation fehlgeschlagen. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.');
+      });
     }
   }
 
