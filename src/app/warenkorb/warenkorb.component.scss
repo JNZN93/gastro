@@ -279,6 +279,26 @@ h6 {
     width: 1rem;
     height: 1rem;
   }
+
+  // Responsive text display
+  .clear-text-desktop {
+    display: inline;
+  }
+  
+  .clear-text-mobile {
+    display: none;
+  }
+  
+  // Mobile and tablet: show shorter text
+  @media (max-width: 1024px) {
+    .clear-text-desktop {
+      display: none;
+    }
+    
+    .clear-text-mobile {
+      display: inline;
+    }
+  }
 }
 
 .cart-item {

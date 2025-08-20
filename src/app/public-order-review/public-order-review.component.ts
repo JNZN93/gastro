@@ -13,13 +13,14 @@ import { MyDialogComponent } from '../my-dialog/my-dialog.component';
   template: `
     <div class="review-page">
       <div class="topbar">
-        <button class="back" (click)="goBack()">← Zurück</button>
+        <button class="back" (click)="goBack()">←</button>
         <div class="heading">
           <h1>Bestellübersicht</h1>
           <div class="customer" *ngIf="customer?.last_name_company">für {{ customer.last_name_company }}</div>
         </div>
         <button class="clear-cart" (click)="clearCart()" *ngIf="items && items.length > 0">
-          Warenkorb leeren
+          <span class="clear-text-desktop">Warenkorb leeren</span>
+          <span class="clear-text-mobile">Leeren</span>
         </button>
       </div>
 
@@ -115,8 +116,9 @@ import { MyDialogComponent } from '../my-dialog/my-dialog.component';
     }
     .back { 
       appearance: none; 
-      border: 1px solid #ddd; 
-      background: #fff; 
+      border: 1px solid #9ca3af; 
+      background: #f3f4f6; 
+      color: #6b7280;
       padding: 8px 12px; 
       border-radius: 10px; 
       cursor: pointer; 
@@ -141,6 +143,26 @@ import { MyDialogComponent } from '../my-dialog/my-dialog.component';
     .clear-cart:hover {
       background: #dc2626;
       color: #fff;
+    }
+
+    // Responsive text display for clear cart button
+    .clear-text-desktop {
+      display: inline;
+    }
+    
+    .clear-text-mobile {
+      display: none;
+    }
+    
+    // Mobile and tablet: show shorter text
+    @media (max-width: 1024px) {
+      .clear-text-desktop {
+        display: none;
+      }
+      
+      .clear-text-mobile {
+        display: inline;
+      }
     }
     .customer { 
       color: #6b7280; 
