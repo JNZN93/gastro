@@ -95,6 +95,7 @@ import { MyDialogComponent } from '../my-dialog/my-dialog.component';
     /* Safari-spezifische Fixes */
     @supports (-webkit-touch-callout: none) {
       .review-page {
+        height: calc(100vh - 80px - env(safe-area-inset-bottom)); /* Automatisch für alle iPhones */
         -webkit-overflow-scrolling: touch;
         -webkit-transform: translateZ(0); /* Hardware-Beschleunigung */
         transform: translateZ(0);
@@ -155,7 +156,8 @@ import { MyDialogComponent } from '../my-dialog/my-dialog.component';
       -webkit-overflow-scrolling: touch;
       width: 100%;
       box-sizing: border-box;
-      margin-bottom: 250px;
+      padding-bottom: 300px;
+      margin-bottom: 0;
     }
     
     .submit-container {
@@ -256,7 +258,8 @@ import { MyDialogComponent } from '../my-dialog/my-dialog.component';
       .content {
         overflow-y: auto;
         max-height: calc(100vh - 80px - 80px - 80px - 32px); /* viewport - margin-top - header - submit container - padding */
-        margin-bottom: 250px;
+        padding-bottom: 300px;
+        margin-bottom: 0;
       }
     }
     .items { 
