@@ -21,6 +21,14 @@ import { ActivatedRoute, Router } from '@angular/router';
         </button>
       </div>
 
+      <!-- Submit button directly under topbar -->
+      <div class="submit-container" *ngIf="items && items.length">
+        <button class="submit" (click)="openConfirmModal()" [disabled]="isSubmitting">
+          <span *ngIf="!isSubmitting">Bestellung absenden</span>
+          <span *ngIf="isSubmitting">Sende...</span>
+        </button>
+      </div>
+
       <div class="content">
         <ng-container *ngIf="items && items.length; else empty">
           <div class="items">
@@ -49,7 +57,7 @@ import { ActivatedRoute, Router } from '@angular/router';
                 </div>
                 <button class="remove-btn" (click)="removeItem(item)" title="Entfernen">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                   </svg>
                 </button>
               </div>
@@ -59,13 +67,6 @@ import { ActivatedRoute, Router } from '@angular/router';
         <ng-template #empty>
           <div class="empty">Keine Artikel ausgewählt.</div>
         </ng-template>
-      </div>
-
-      <div class="bottombar" *ngIf="items && items.length">
-        <button class="submit" (click)="openConfirmModal()" [disabled]="isSubmitting">
-          <span *ngIf="!isSubmitting">Bestellung absenden</span>
-          <span *ngIf="isSubmitting">Sende...</span>
-        </button>
       </div>
       
       <!-- Confirmation Modal -->
@@ -84,7 +85,7 @@ import { ActivatedRoute, Router } from '@angular/router';
   styles: [`
     :host { display: block; }
     .review-page { 
-      height: 100vh; 
+      min-height: 100vh; 
       background: #f8f9fb; 
       display: flex; 
       flex-direction: column;
@@ -138,7 +139,7 @@ import { ActivatedRoute, Router } from '@angular/router';
       margin-top: 2px; 
     }
     .content { 
-      height: var(--content-height, calc(100vh - 160px));
+      flex: 1;
       max-width: 1000px; 
       margin: 0 auto; 
       padding: 16px; 
@@ -273,20 +274,13 @@ import { ActivatedRoute, Router } from '@angular/router';
       text-align: center; 
       color: #6b7280; 
     }
-    .bottombar { 
-      height: var(--button-height, 80px);
+    .submit-container {
       flex-shrink: 0;
-      max-width: 1000px; 
-      margin: 0 auto; 
-      padding: 16px; 
-      background: #fff; 
-      border-top: 1px solid #eee; 
-      box-shadow: 0 -4px 12px rgba(0,0,0,0.1); 
-      z-index: 10;
-      width: 100%;
-      box-sizing: border-box;
-      display: flex;
-      align-items: center;
+      padding: 16px;
+      background: #fff;
+      border-bottom: 1px solid #eee;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      z-index: 5;
     }
     .submit { 
       width: 100%; 
@@ -317,9 +311,8 @@ import { ActivatedRoute, Router } from '@angular/router';
       .content {
         padding: 12px;
       }
-      .bottombar {
-        padding: 12px 16px;
-        padding-bottom: calc(12px + env(safe-area-inset-bottom));
+      .submit-container {
+        padding: 12px;
       }
       .submit {
         padding: 16px 20px;
@@ -355,6 +348,17 @@ import { ActivatedRoute, Router } from '@angular/router';
       .remove-btn svg {
         width: 12px;
         height: 12px;
+      }
+    }
+    
+    /* Tablet-specific improvements */
+    @media (min-width: 768px) and (max-width: 1023px) {
+      .submit-container {
+        padding: 24px;
+      }
+      .submit {
+        padding: 18px 24px;
+        font-size: 17px;
       }
     }
     
@@ -454,8 +458,7 @@ export class PublicOrderReviewComponent implements OnInit {
     // Artikel aus localStorage laden
     this.loadFromLocalStorage();
 
-    // Gerätespezifische Höhenanpassung
-    this.adjustHeightForDevice();
+
 
     // Automatisch nach oben scrollen, damit die Artikelliste sichtbar ist
     setTimeout(() => {
@@ -741,28 +744,7 @@ export class PublicOrderReviewComponent implements OnInit {
   }
 
 
-  private adjustHeightForDevice() {
-    const userAgent = navigator.userAgent.toLowerCase();
-    const isIOS = /iphone|ipad|ipod/.test(userAgent);
-    const isAndroid = /android/.test(userAgent);
-    
-    if (isIOS) {
-      // iPhone-spezifische Höhen - Content noch kleiner für bessere Sichtbarkeit
-      document.documentElement.style.setProperty('--header-height', '70px');
-      document.documentElement.style.setProperty('--button-height', '70px');
-      document.documentElement.style.setProperty('--content-height', 'calc(100vh - 240px)'); // Noch kleiner gemacht
-    } else if (isAndroid) {
-      // Android-spezifische Höhen - bleiben wie sie sind
-      document.documentElement.style.setProperty('--header-height', '75px');
-      document.documentElement.style.setProperty('--button-height', '75px');
-      document.documentElement.style.setProperty('--content-height', 'calc(100vh - 150px)');
-    } else {
-      // Desktop-Fallback
-      document.documentElement.style.setProperty('--header-height', '80px');
-      document.documentElement.style.setProperty('--button-height', '80px');
-      document.documentElement.style.setProperty('--content-height', 'calc(100vh - 160px)');
-    }
-  }
+
 
   trackByItem(index: number, item: any): string {
     return item.article_number || item.product_id || index.toString();

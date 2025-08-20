@@ -1589,6 +1589,24 @@
   }
 }
 
+/* Tablet Optimizations */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .container {
+    padding: 0 20px;
+  }
+  
+  .order-actions {
+    margin-top: 2.5rem; // Mehr Abstand nach oben auf Tablets
+    margin-bottom: 3rem; // Mehr Abstand nach unten auf Tablets
+  }
+  
+  .btn-submit {
+    padding: 1.2rem 2.5rem; // Größerer Button für Tablets
+    font-size: 1.2rem;
+    min-height: 52px; // Größerer Touch-Bereich
+  }
+}
+
 /* Mobile Optimizations */
 @media (max-width: 768px) {
   .container {
