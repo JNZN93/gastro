@@ -168,6 +168,13 @@ export class AdminComponent implements OnInit {
     return this.orders.filter(order => order.status === status);
   }
 
+  // Hilfsmethode um zu prüfen, ob es offene oder in Bearbeitung befindliche Bestellungen gibt
+  hasActiveOrders(): boolean {
+    const openOrders = this.getOrdersByStatus('open').length;
+    const inProgressOrders = this.getOrdersByStatus('in_progress').length;
+    return openOrders > 0 || inProgressOrders > 0;
+  }
+
   checkUserRole() {
     this.authService.checkToken(localStorage.getItem('token')).subscribe({
       next: (response) => {

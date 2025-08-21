@@ -169,6 +169,7 @@
   </div>
 
   <!-- Orders Table -->
+  @if (hasActiveOrders()) {
   <div class="orders-section">
     <div class="section-header">
       <h2 class="section-title">Bestellungen</h2>
@@ -230,6 +231,7 @@
       </table>
     </div>
   </div>
+  }
 
   <!-- Upload Side Modal -->
   <div class="side-modal-overlay" [class.active]="showUploadModal" (click)="closeUploadModal()"></div>
