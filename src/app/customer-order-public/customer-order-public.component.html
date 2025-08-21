@@ -164,7 +164,7 @@
 
       <!-- Custom Article Form -->
       <div *ngIf="showCustomArticleForm" class="custom-article-form">
-        <h3>Eigenen Artikel hinzufügen</h3>
+        <h3>Artikel hinzufügen</h3>
         
         <!-- Mobile Cards View -->
         <div class="products-cards">
@@ -178,7 +178,7 @@
                   class="custom-article-input"
                   maxlength="100"
                 >
-                <div class="article-number custom-article-label">Eigener Artikel</div>
+                <div class="article-number custom-article-label">Artikel</div>
               </div>
               <div class="article-price">€0.00</div>
             </div>
@@ -246,7 +246,7 @@
                 class="custom-article-input"
                 maxlength="100"
               >
-              <div class="article-number custom-article-label">Eigener Artikel</div>
+              <div class="article-number custom-article-label">Artikel</div>
             </div>
             <div class="col-price">€0.00</div>
             <div class="col-qty">
@@ -298,19 +298,21 @@
 
       <!-- Add Custom Article Button -->
       <div class="add-custom-article">
+        <h3 class="custom-article-heading">Dein Artikel nicht dabei? Teile ihn uns hier mit</h3>
         <button 
           class="btn-add-custom new-category-button"
           (click)="addCustomArticle()"
           *ngIf="!showCustomArticleForm"
         >
           <span class="plus-icon">+</span>
-          Eigenen Artikel hinzufügen
+          Artikel hinzufügen
         </button>
       </div>
     </div>
 
     <!-- Order Summary -->
     <div *ngIf="!isLoading && !error && customerArticlePrices.length > 0" class="order-summary">
+      <div class="section-divider"></div>
       <h2>Bestellung abschließen</h2>
       
       <div class="order-total">

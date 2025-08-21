@@ -265,8 +265,8 @@ export class CustomerOrderPublicComponent implements OnInit {
                   isCustom: true,
                   invoice_date: null,
                   product_database_id: 571,
-                  category: 'NEU HINZUGEFÜGT',
-                  product_category: 'NEU HINZUGEFÜGT',
+                          category: 'Eigene Artikel',
+        product_category: 'Eigene Artikel',
                   main_image_url: storedArticle.main_image_url
                 };
                 this.customerArticlePrices.push(newCustomArticle);
@@ -460,7 +460,7 @@ export class CustomerOrderPublicComponent implements OnInit {
   private getCategoryForArticle(article: any): string {
     // Eigene (neu hinzugefügte) Artikel in eigene Kategorie
     if (article?.isCustom || (typeof article?.product_id === 'string' && article.product_id.startsWith('custom_'))) {
-      return 'NEU HINZUGEFÜGT';
+      return 'Eigene Artikel';
     }
     const category = this.normalizeCategoryName(article?.product_category || article?.category || 'Sonstiges');
     return category || 'Sonstiges';
@@ -474,11 +474,11 @@ export class CustomerOrderPublicComponent implements OnInit {
       groups[category].push(article);
     }
 
-    // Kategorien sortieren (NEU HINZUGEFÜGT nur anzeigen wenn Artikel vorhanden, Rest alphabetisch)
+    // Kategorien sortieren (Eigene Artikel nur anzeigen wenn Artikel vorhanden, Rest alphabetisch)
     const allCategories = Object.keys(groups).sort((a, b) => a.localeCompare(b, 'de', { sensitivity: 'base' }));
-    const NEW_CAT = 'NEU HINZUGEFÜGT';
+    const NEW_CAT = 'Eigene Artikel';
     
-    // Nur NEU HINZUGEFÜGT Kategorie anzeigen wenn Artikel vorhanden
+    // Nur Eigene Artikel Kategorie anzeigen wenn Artikel vorhanden
     if (groups[NEW_CAT] && groups[NEW_CAT].length > 0) {
       this.orderedCategories = allCategories.filter(c => c !== NEW_CAT).concat(NEW_CAT);
     } else {
