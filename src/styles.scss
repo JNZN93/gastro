@@ -19,6 +19,15 @@ body {
     margin-top: 70px; // Account for fixed header
 }
 
+// Sicherstellen, dass Angular Material Overlays immer über Header/Warenkorb liegen
+.cdk-overlay-container, 
+.cdk-global-overlay-wrapper, 
+.cdk-overlay-pane, 
+.cdk-overlay-backdrop, 
+.mat-mdc-dialog-container {
+  z-index: 2000 !important;
+}
+
 // iOS Safari spezifische Fixes
 @supports (-webkit-touch-callout: none) {
     body, html {

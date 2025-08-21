@@ -691,23 +691,7 @@
   }
 }
 
-// Warenkorb in Category-Detail hat höchsten Z-Index
-app-warenkorb {
-  z-index: 2147483647 !important; /* Maximum Z-Index Wert */
-  position: relative !important;
-}
-
-app-warenkorb .cart-overlay,
-app-warenkorb .cart-container {
-  z-index: 2147483647 !important; /* Maximum Z-Index Wert */
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  width: 100vw !important;
-  height: 100vh !important;
-}
+// Entfernt übertriebenen Z-Index für den Warenkorb, damit Dialoge korrekt oben liegen
 
 .products-section {
   margin-top: 100px !important; /* Kein Abstand mehr nötig, da Search Container fixiert ist */
