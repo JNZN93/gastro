@@ -1587,6 +1587,33 @@ export class PublicOrderReviewComponent implements OnInit {
     const lineHeight = 10;
     const pageHeight = 297; // A4 in mm
     const bottomMargin = 20;
+    
+    // Funktion für Text-Umbruch
+    const wrapText = (text: string, maxWidth: number): string[] => {
+      if (!text) return [''];
+      
+      const words = text.split(' ');
+      const lines: string[] = [];
+      let currentLine = '';
+      
+      for (const word of words) {
+        const testLine = currentLine ? currentLine + ' ' + word : word;
+        const testWidth = doc.getTextWidth(testLine);
+        
+        if (testWidth > maxWidth && currentLine) {
+          lines.push(currentLine);
+          currentLine = word;
+        } else {
+          currentLine = testLine;
+        }
+      }
+      
+      if (currentLine) {
+        lines.push(currentLine);
+      }
+      
+      return lines;
+    };
 
     itemsToUse.forEach((item, index) => {
       // Wenn yPosition zu weit unten ist, neue Seite
@@ -1611,11 +1638,49 @@ export class PublicOrderReviewComponent implements OnInit {
         doc.setFont('helvetica', 'normal');
       }
 
-      // Artikeldaten
+            // Artikeldaten
       doc.text(String(item.quantity), 14, yPosition);
-      doc.text(item.article_text || item.product_name || 'Unbekannt', 40, yPosition);
+      
+      // Artikeltext mit Umbruch (max. 70mm Breite für Artikel-Spalte)
+      const articleText = item.article_text || item.product_name || 'Unbekannt';
+      const wrappedArticleText = wrapText(articleText, 70);
+      
+      // Erste Zeile des Artikeltexts
+      doc.text(wrappedArticleText[0], 40, yPosition);
+      
+      // Artikelnummer (immer auf der gleichen Höhe wie die erste Zeile)
       doc.text(item.article_number || item.product_id || 'Unbekannt', 120, yPosition);
+      
+      // Zusätzliche Zeilen des Artikeltexts (falls vorhanden)
+      for (let i = 1; i < wrappedArticleText.length; i++) {
+        yPosition += lineHeight;
+        
+        // Prüfe, ob noch Platz auf der Seite ist
+        if (yPosition + lineHeight > pageHeight - bottomMargin) {
+          doc.addPage();
+          doc.text('Bestellübersicht', 14, 20);
+          doc.text('Datum: ' + dateFormatted, 14, 40);
+          if (this.customer) {
+            doc.text('Kunde: ' + (this.customer.last_name_company || this.customer.customer_number || 'Unbekannt'), 14, 50);
+          }
+          yPosition = 70;
 
+          // Tabellenüberschrift auf neuer Seite wiederholen
+          doc.setFontSize(14);
+          doc.setFont('helvetica', 'bold');
+          doc.text('Menge', 14, yPosition);
+          doc.text('Artikel', 40, yPosition);
+          doc.text('Artikelnr.', 120, yPosition);
+          yPosition += 10;
+          
+          doc.setFontSize(12);
+          doc.setFont('helvetica', 'normal');
+        }
+        
+        // Zusätzliche Zeile des Artikeltexts
+        doc.text(wrappedArticleText[i], 40, yPosition);
+      }
+      
       yPosition += lineHeight;
     });
 
