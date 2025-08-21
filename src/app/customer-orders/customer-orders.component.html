@@ -1052,6 +1052,32 @@
         }
       </div>
       
+      <!-- Existing EANs Section -->
+      <div class="existing-eans-section">
+        <h4>Bereits zugeordnete EAN-Codes:</h4>
+        @if (isLoadingEans) {
+          <div class="loading-eans">
+            <div class="loader"></div>
+            <p>EANs werden geladen...</p>
+          </div>
+        } @else if (existingEans.length > 0) {
+          <div class="existing-eans-list">
+            @for (eanItem of existingEans; track eanItem.id) {
+              <div class="ean-item">
+                <span class="ean-code">{{ eanItem.ean }}</span>
+                <button (click)="removeEanFromItem(eanItem)" 
+                        class="remove-ean-btn"
+                        title="EAN entfernen">
+                  <span class="material-icons">delete</span>
+                </button>
+              </div>
+            }
+          </div>
+        } @else {
+          <p class="no-eans">Keine EAN-Codes zugeordnet</p>
+        }
+      </div>
+      
       <div class="ean-input-section">
         <div class="ean-input-group">
           <label for="eanCode">EAN-Code (8 oder 13 Ziffern):</label>

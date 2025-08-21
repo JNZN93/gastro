@@ -80,6 +80,8 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   isAssigningEan: boolean = false;
   eanErrorMessage: string = '';
   eanSuccessMessage: string = '';
+  existingEans: any[] = [];
+  isLoadingEans: boolean = false;
   
   // Edit mode properties
   editingItemIndex: number = -1;
@@ -3645,6 +3647,9 @@ filteredArtikelData() {
     this.isEanScanning = false;
     this.isAssigningEan = false;
     
+    // Load existing EANs for this article
+    this.loadExistingEans(item.article_number);
+    
     // Set focus on EAN input field after modal is opened
     setTimeout(() => {
       if (this.eanCodeInput) {
@@ -3661,6 +3666,8 @@ filteredArtikelData() {
     this.eanSuccessMessage = '';
     this.isEanScanning = false;
     this.isAssigningEan = false;
+    this.existingEans = [];
+    this.isLoadingEans = false;
   }
 
   startEanScanner(): void {
@@ -3677,6 +3684,34 @@ filteredArtikelData() {
     this.eanCode = result;
     this.stopEanScanner();
     this.playBeep();
+  }
+
+  loadExistingEans(articleNumber: string): void {
+    const token = localStorage.getItem('token');
+    this.isLoadingEans = true;
+    
+    this.http.get(`https://multi-mandant-ecommerce.onrender.com/api/product-eans/article/${articleNumber}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    }).subscribe({
+      next: (response: any) => {
+        this.isLoadingEans = false;
+        if (response.success && response.data) {
+          this.existingEans = response.data.map((item: any) => ({
+            id: item.id,
+            ean: item.ean
+          }));
+        } else {
+          this.existingEans = [];
+        }
+      },
+      error: (error: any) => {
+        this.isLoadingEans = false;
+        console.error('Error loading existing EANs:', error);
+        this.existingEans = [];
+      }
+    });
   }
 
   assignEan(): void {
@@ -3714,6 +3749,12 @@ filteredArtikelData() {
           // Update the item in the order
           this.eanAssignmentItem.ean = this.eanCode.trim();
           
+          // Add to existingEans list
+          this.existingEans.push({
+            id: response.data?.id || Date.now(), // Use response ID or fallback
+            ean: this.eanCode.trim()
+          });
+          
           setTimeout(() => {
             this.closeEanAssignmentModal();
           }, 1000);
@@ -3733,7 +3774,7 @@ filteredArtikelData() {
     if (confirm('Möchten Sie die EAN-Zuordnung für diesen Artikel wirklich entfernen?')) {
       const token = localStorage.getItem('token');
       
-      this.http.delete(`https://multi-mandant-ecommerce.onrender.com/api/product-eans/ean/${item.ean}`, {
+      this.http.delete(`https://multi-mandant-ecommerce.onrender.com/api/product-eans/${item.id}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -3742,6 +3783,10 @@ filteredArtikelData() {
           if (response.success) {
             // Remove EAN from the item
             item.ean = undefined;
+            
+            // Also remove from existingEans list if it's there
+            this.existingEans = this.existingEans.filter(ean => ean.id !== item.id);
+            
             console.log('EAN erfolgreich entfernt');
           } else {
             console.error('Fehler beim Entfernen der EAN:', response.message);
