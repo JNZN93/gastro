@@ -544,10 +544,10 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
       'GEWÜRZ': '/gewuerz.jpg',
       
       // ALKOHOLISCHE GETRÄNKE - Alkohol
-      'ALKOHOLISCHE GETRÄNKE': '/alkohol.jpg',
+      'ALKOHOL': '/alkohol.jpg',
 
       // Frische Hähnchen
-      'FRISCHE HAEHNCHEN': '/chicken.jpg',
+      'FRISCHE HÄHNCHEN': '/chicken.jpg',
       
       // KONSERVEN - Konservendosen
       'KONSERVEN': '/konserven.jpg',
@@ -568,7 +568,7 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
       'OBST': 'https://images.unsplash.com/photo-1619566636858-adf3ef46400b?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60',
       
       // PARFÜM - Parfüm und Düfte
-      'PARFÜM': 'https://images.unsplash.com/photo-1541643600914-78b084683601?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60',
+      'PARFÜM': '/water-feature.jpg',
       
       // KÜCHENBEDARF - Küchenutensilien
       'KÜCHENBEDARF': 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60',
