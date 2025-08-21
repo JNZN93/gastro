@@ -3,6 +3,8 @@ import { Component, OnInit, inject, ChangeDetectionStrategy, ChangeDetectorRef }
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MyDialogComponent } from '../my-dialog/my-dialog.component';
+import { jsPDF } from 'jspdf';
+import 'jspdf-autotable';
 
 
 @Component({
@@ -25,11 +27,26 @@ import { MyDialogComponent } from '../my-dialog/my-dialog.component';
       </div>
 
       <!-- Submit button directly under topbar -->
-      <div class="submit-container" *ngIf="items && items.length">
+      <div class="submit-container" *ngIf="items && items.length && !orderSubmitted">
         <button class="submit" (click)="confirmAndSubmitOrder()" [disabled]="isSubmitting">
           <span *ngIf="!isSubmitting">Bestellung absenden</span>
           <span *ngIf="isSubmitting">Sende...</span>
         </button>
+        
+
+      </div>
+
+      <!-- PDF Download button after successful order -->
+      <div class="pdf-download-container" *ngIf="orderSubmitted">
+        <button class="pdf-download-btn" (click)="downloadOrderPDF()">
+          📄 Bestellung als PDF herunterladen
+        </button>
+        <button class="shop-btn" (click)="goToOnlineShop()">
+          🛒 Zum Online-Shop
+        </button>
+        <div class="success-message">
+          ✅ Bestellung erfolgreich abgesendet!
+        </div>
       </div>
 
       <!-- Content Container mit fester Höhe für mobile/tablet -->
@@ -189,6 +206,8 @@ import { MyDialogComponent } from '../my-dialog/my-dialog.component';
       border-bottom: 1px solid #eee;
       display: flex;
       justify-content: center;
+      align-items: center;
+      gap: 12px;
     }
     
     .submit {
@@ -214,6 +233,64 @@ import { MyDialogComponent } from '../my-dialog/my-dialog.component';
       opacity: 0.6;
       cursor: not-allowed;
       transform: none;
+    }
+
+    /* PDF Download Container */
+    .pdf-download-container {
+      flex-shrink: 0;
+      padding: 16px;
+      background: #fff;
+      border-bottom: 1px solid #eee;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      z-index: 5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .pdf-download-btn {
+      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+      color: white;
+      border: none;
+      padding: 16px 32px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+      min-width: 250px;
+    }
+
+    .pdf-download-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+    }
+
+    .shop-btn {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+      border: none;
+      padding: 16px 32px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+      min-width: 200px;
+    }
+
+    .shop-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+    }
+
+    .success-message {
+      color: #059669;
+      font-weight: 600;
+      font-size: 16px;
     }
     
     /* Content Container für mobile/tablet mit fester Höhe */
@@ -454,6 +531,22 @@ import { MyDialogComponent } from '../my-dialog/my-dialog.component';
         padding: 16px 20px;
         font-size: 16px;
       }
+      
+      .pdf-download-container {
+        padding: 12px;
+      }
+      
+      .pdf-download-btn {
+        padding: 14px 20px;
+        font-size: 15px;
+        min-width: 220px;
+      }
+      
+      .shop-btn {
+        padding: 14px 20px;
+        font-size: 15px;
+        min-width: 180px;
+      }
       .item-card {
         grid-template-columns: 64px 1fr auto;
         gap: 10px;
@@ -534,6 +627,9 @@ export class PublicOrderReviewComponent implements OnInit {
   total = 0;
   isSubmitting = false;
   customer: any = null;
+  orderSubmitted = false;
+  savedItems: any[] = []; // Lokale Kopie der Artikel für PDF-Download
+  savedTotal: number = 0; // Lokale Kopie des Gesamtpreises
 
   ngOnInit(): void {
     // Verhindere Body-Scroll auf Safari
@@ -929,6 +1025,11 @@ export class PublicOrderReviewComponent implements OnInit {
     this.router.navigate([`/customer-order/${this.token}`]);
   }
 
+  goToOnlineShop() {
+    // Zurück zum Online-Shop (customer-order Seite)
+    this.router.navigate([`/customer-order/${this.token}`]);
+  }
+
     clearCart() {
     // Bestätigungsabfrage
     this.dialog.open(MyDialogComponent, {
@@ -1109,13 +1210,21 @@ export class PublicOrderReviewComponent implements OnInit {
       console.log('✅ Bestellung erfolgreich abgesendet:', data);
       this.isSubmitting = false;
       
+      // Artikel und Total vor dem Löschen des localStorage speichern
+      this.savedItems = [...this.items];
+      this.savedTotal = this.total;
+      console.log('💾 Artikel für PDF-Download gespeichert:', this.savedItems.length, 'Artikel');
+      
+      // Bestellung als erfolgreich markieren
+      this.orderSubmitted = true;
+      
       // Alle localStorage-Einträge für diesen Kunden löschen
       this.clearAllLocalStorage();
       
-      // Erfolgreich - zur Startseite weiterleiten
-      setTimeout(() => {
-        this.router.navigate(['/']);
-      }, 1000);
+      // Change Detection triggern
+      this.cdr.detectChanges();
+      
+      // Keine automatische Weiterleitung mehr - Benutzer entscheidet selbst
     })
     .catch(error => {
       console.error('❌ Fehler beim Absenden der Bestellung:', error);
@@ -1420,6 +1529,101 @@ export class PublicOrderReviewComponent implements OnInit {
       console.error('❌ [PUBLIC-PFAND-LOGIC] Fehler beim Laden der PFAND-Artikel:', error);
       return [];
     }
+  }
+
+
+
+  // PDF-Download-Funktion für die Bestellübersicht
+  downloadOrderPDF() {
+    // Verwende gespeicherte Artikel (falls vorhanden) oder aktuelle Artikel
+    const itemsToUse = this.savedItems.length > 0 ? this.savedItems : this.items;
+    const totalToUse = this.savedTotal > 0 ? this.savedTotal : this.total;
+    
+    if (!itemsToUse || itemsToUse.length === 0) {
+      alert('Keine Bestelldaten zum Herunterladen vorhanden.');
+      return;
+    }
+
+    const doc = new jsPDF();
+    
+    // Titel
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Bestellübersicht', 14, 20);
+
+    // Bestellinformationen
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+
+    // Datum und Uhrzeit
+    const currentDate = new Date();
+    const dateFormatted = currentDate.toLocaleDateString('de-DE');
+    const timeFormatted = currentDate.toLocaleTimeString('de-DE');
+
+    doc.text('Datum: ' + dateFormatted, 14, 40);
+    doc.text('Uhrzeit: ' + timeFormatted, 14, 50);
+    
+    // Kundendaten
+    if (this.customer) {
+      doc.text('Kunde: ' + (this.customer.last_name_company || this.customer.customer_number || 'Unbekannt'), 14, 60);
+      doc.text('Kundennummer: ' + (this.customer.customer_number || this.customer.customer_id || 'Unbekannt'), 14, 70);
+    }
+
+    // Trennlinie
+    doc.line(14, 85, 200, 85);
+
+    // Artikelüberschrift
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Menge', 14, 95);
+    doc.text('Artikel', 40, 95);
+    doc.text('Artikelnr.', 120, 95);
+
+    // Artikel und Mengen
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+
+    let yPosition = 105;
+    const lineHeight = 10;
+    const pageHeight = 297; // A4 in mm
+    const bottomMargin = 20;
+
+    itemsToUse.forEach((item, index) => {
+      // Wenn yPosition zu weit unten ist, neue Seite
+      if (yPosition + lineHeight > pageHeight - bottomMargin) {
+        doc.addPage();
+        doc.text('Bestellübersicht', 14, 20);
+        doc.text('Datum: ' + dateFormatted, 14, 40);
+        if (this.customer) {
+          doc.text('Kunde: ' + (this.customer.last_name_company || this.customer.customer_number || 'Unbekannt'), 14, 50);
+        }
+        yPosition = 70;
+
+        // Tabellenüberschrift auf neuer Seite wiederholen
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Menge', 14, yPosition);
+        doc.text('Artikel', 40, yPosition);
+        doc.text('Artikelnr.', 120, yPosition);
+        yPosition += 10;
+        
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'normal');
+      }
+
+      // Artikeldaten
+      doc.text(String(item.quantity), 14, yPosition);
+      doc.text(item.article_text || item.product_name || 'Unbekannt', 40, yPosition);
+      doc.text(item.article_number || item.product_id || 'Unbekannt', 120, yPosition);
+
+      yPosition += lineHeight;
+    });
+
+    // Kein Gesamtpreis mehr in der PDF
+
+    // PDF herunterladen
+    const fileName = `Bestellung_${dateFormatted.replace(/\./g, '-')}_${this.customer?.customer_number || 'Kunde'}.pdf`;
+    doc.save(fileName);
   }
 
   // Neue Methode: Detailliertes PFAND-Verknüpfungs-Logging
