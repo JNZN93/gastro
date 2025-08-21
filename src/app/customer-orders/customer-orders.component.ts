@@ -3716,7 +3716,7 @@ filteredArtikelData() {
           
           setTimeout(() => {
             this.closeEanAssignmentModal();
-          }, 2000);
+          }, 1000);
         } else {
           this.eanErrorMessage = response.message || 'Fehler beim Zuordnen des EAN-Codes.';
         }
