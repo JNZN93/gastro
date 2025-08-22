@@ -549,12 +549,21 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   private loadOrderData(orderData: any): void {
     console.log('🔄 [LOAD-ORDER-DATA] Lade Bestelldaten:', orderData);
     
-    // Setze den Kunden basierend auf der Kundennummer
-    if (orderData.customer && orderData.customer.customer_number) {
-      console.log('👤 [LOAD-ORDER-DATA] Suche Kunde mit Kundennummer:', orderData.customer.customer_number);
-      
-      // Lade den Kunden direkt aus der API
-      this.loadCustomerByNumber(orderData.customer.customer_number, orderData);
+    // Setze den Kunden basierend auf der Kundennummer oder E-Mail
+    if (orderData.customer) {
+      if (orderData.customer.customer_number) {
+        console.log('👤 [LOAD-ORDER-DATA] Suche Kunde mit Kundennummer:', orderData.customer.customer_number);
+        
+        // Lade den Kunden direkt aus der API
+        this.loadCustomerByNumber(orderData.customer.customer_number, orderData);
+      } else if (orderData.customer.email) {
+        console.log('👤 [LOAD-ORDER-DATA] Keine Kundennummer, suche Kunde mit E-Mail:', orderData.customer.email);
+        
+        // Lade den Kunden anhand der E-Mail
+        this.loadCustomerByEmail(orderData.customer.email, orderData);
+      } else {
+        console.log('⚠️ [LOAD-ORDER-DATA] Weder Kundennummer noch E-Mail vorhanden');
+      }
     }
     
     // Setze die Bestellartikel
@@ -640,6 +649,85 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   }
 
 
+
+  // Neue Methode zum Laden eines Kunden anhand der E-Mail
+  private loadCustomerByEmail(email: string, orderData: any): void {
+    console.log('🔍 [LOAD-CUSTOMER-BY-EMAIL] Lade Kunde mit E-Mail:', email);
+    
+    const token = localStorage.getItem('token');
+    
+    // Versuche zuerst, den Kunden aus der bereits geladenen Kundenliste zu finden
+    const foundCustomer = this.customers.find(customer => 
+      customer.email && customer.email.toLowerCase() === email.toLowerCase()
+    );
+    
+    if (foundCustomer) {
+      console.log('✅ [LOAD-CUSTOMER-BY-EMAIL] Kunde in lokaler Liste gefunden:', foundCustomer);
+      this.setCustomerFromOrderData(foundCustomer, orderData);
+      return;
+    }
+    
+    // Wenn nicht in lokaler Liste, lade alle Kunden und suche dann
+    console.log('🔄 [LOAD-CUSTOMER-BY-EMAIL] Kunde nicht in lokaler Liste, lade alle Kunden...');
+    
+    fetch('https://multi-mandant-ecommerce.onrender.com/api/customers', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Fehler beim Laden der Kunden');
+      }
+      return response.json();
+    })
+    .then(data => {
+      this.customers = data;
+      
+      // Suche den Kunden in der geladenen Liste
+      const customer = this.customers.find(c => 
+        c.email && c.email.toLowerCase() === email.toLowerCase()
+      );
+      
+      if (customer) {
+        console.log('✅ [LOAD-CUSTOMER-BY-EMAIL] Kunde gefunden:', customer);
+        this.setCustomerFromOrderData(customer, orderData);
+      } else {
+        console.warn('⚠️ [LOAD-CUSTOMER-BY-EMAIL] Kunde nicht gefunden:', email);
+        // Erstelle einen minimalen Kunden mit nur der E-Mail als Fallback
+        const fallbackCustomer = {
+          id: 0,
+          customer_number: '',
+          last_name_company: `Kunde (${email})`,
+          name_addition: '',
+          email: email,
+          street: '',
+          city: '',
+          postal_code: '',
+          _country_code: ''
+        };
+        this.setCustomerFromOrderData(fallbackCustomer, orderData);
+      }
+    })
+    .catch(error => {
+      console.error('❌ [LOAD-CUSTOMER-BY-EMAIL] Fehler beim Laden der Kunden:', error);
+      // Erstelle einen minimalen Kunden mit nur der E-Mail als Fallback
+      const fallbackCustomer = {
+        id: 0,
+        customer_number: '',
+        last_name_company: `Kunde (${email})`,
+        name_addition: '',
+        email: email,
+        street: '',
+        city: '',
+        postal_code: '',
+        _country_code: ''
+      };
+      this.setCustomerFromOrderData(fallbackCustomer, orderData);
+    });
+  }
 
   // Neue Methode zum Laden eines Kunden anhand der Kundennummer
   private loadCustomerByNumber(customerNumber: string, orderData: any): void {
