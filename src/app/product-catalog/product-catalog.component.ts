@@ -631,7 +631,7 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
       }
       
       // Versuche partielle Übereinstimmung für spezielle Fälle
-      if (!foundImage) {
+      if (!foundImage) {''
         const availableCategories = Object.keys(categoryImages);
         const partialMatch = availableCategories.find(cat => {
           const normalizedCat = normalizeCategory(cat);
