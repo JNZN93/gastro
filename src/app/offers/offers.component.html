@@ -143,52 +143,85 @@
         </div>
         <div class="products-content">
           <div class="products-list">
-            @for (product of offer.products; track product.id) {
-            <div class="product-item">
-              <div class="product-info">
-                <div class="product-details">
-                  <span class="product-name">{{ product.article_text }}</span>
-                  <span class="product-number">{{ product.article_number }}</span>
-                  <span class="product-id">ID: {{ product.product_id }}</span>
-                  @if (product.article_notes) {
-                  <span class="product-notes">{{ product.article_notes }}</span>
-                  }
+                      @for (product of offer.products; track product.id) {
+          <div class="product-item">
+            <div class="product-main-info">
+              <div class="product-header">
+                <h5 class="product-name">{{ product.article_text }}</h5>
+                <div class="product-badges">
                   @if (product.category) {
                   <span class="product-category">{{ product.category }}</span>
                   }
-                </div>
-                <div class="product-pricing">
-                  @if (product.use_offer_price && product.offer_price) {
-                  <span class="product-price">€{{ product.offer_price }}</span>
-                  }
-                  @if (product.sale_price) {
-                  <span class="product-original-price">€{{ product.sale_price }}</span>
-                  }
-                  @if (product.cost_price) {
-                  <span class="product-cost-price">EK: €{{ product.cost_price }}</span>
-                  }
-                </div>
-                <div class="product-meta">
-                  @if (product.min_quantity || product.max_quantity) {
-                  <span class="product-quantity">
-                    {{ product.min_quantity || 0 }} - {{ product.max_quantity || '∞' }}
-                  </span>
-                  }
-                  @if (product.unit) {
-                  <span class="product-unit">{{ product.unit }}</span>
-                  }
-                  @if (product.ean) {
-                  <span class="product-ean">EAN: {{ product.ean }}</span>
+                  @if (product.article_notes) {
+                  <span class="product-notes">{{ product.article_notes }}</span>
                   }
                 </div>
               </div>
-                          <button class="btn-remove" (click)="confirmRemoveProduct(offer, product)" title="Produkt entfernen">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-              </svg>
-            </button>
+              
+              <div class="product-details-grid">
+                <div class="detail-item">
+                  <span class="detail-label">Artikelnummer:</span>
+                  <span class="detail-value">{{ product.article_number }}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Produkt-ID:</span>
+                  <span class="detail-value">{{ product.product_id }}</span>
+                </div>
+                @if (product.ean) {
+                <div class="detail-item">
+                  <span class="detail-label">EAN:</span>
+                  <span class="detail-value">{{ product.ean }}</span>
+                </div>
+                }
+                @if (product.unit) {
+                <div class="detail-item">
+                  <span class="detail-label">Einheit:</span>
+                  <span class="detail-value">{{ product.unit }}</span>
+                </div>
+                }
+              </div>
             </div>
-            }
+
+            <div class="product-pricing-section">
+              <div class="price-display">
+                @if (product.use_offer_price && product.offer_price) {
+                <div class="offer-price-container">
+                  <span class="price-label">Angebotspreis:</span>
+                  <span class="product-price">€{{ product.offer_price }}</span>
+                </div>
+                }
+                @if (product.sale_price) {
+                <div class="original-price-container">
+                  <span class="price-label">Ursprungspreis:</span>
+                  <span class="product-original-price">€{{ product.sale_price }}</span>
+                </div>
+                }
+                @if (product.cost_price) {
+                <div class="cost-price-container">
+                  <span class="price-label">Einkaufspreis:</span>
+                  <span class="product-cost-price">€{{ product.cost_price }}</span>
+                </div>
+                }
+              </div>
+            </div>
+
+            <div class="product-actions">
+              @if (product.min_quantity || product.max_quantity) {
+              <div class="quantity-info">
+                <span class="quantity-label">Menge:</span>
+                <span class="product-quantity">
+                  {{ product.min_quantity || 0 }} - {{ product.max_quantity || '∞' }}
+                </span>
+              </div>
+              }
+              <button class="btn-remove" (click)="confirmRemoveProduct(offer, product)" title="Produkt entfernen">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+          }
           </div>
         </div>
       </div>
