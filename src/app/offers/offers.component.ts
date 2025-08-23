@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { OffersService, Offer, OfferWithProducts, CreateOfferRequest, AddProductRequest } from '../offers.service';
 
 @Component({
@@ -22,7 +23,8 @@ export class OffersComponent implements OnInit {
 
   constructor(
     private offersService: OffersService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private router: Router
   ) {
     this.createOfferForm = this.fb.group({
       name: ['', Validators.required],
@@ -55,14 +57,14 @@ export class OffersComponent implements OnInit {
     
     // Teste einfachen Endpunkt
     this.offersService.getAllOffers().subscribe({
-      next: (response) => console.log('✅ /api/offers/ funktioniert:', response),
-      error: (error) => console.log('❌ /api/offers/ fehlgeschlagen:', error)
+      next: (response: Offer[]) => console.log('✅ /api/offers/ funktioniert:', response),
+      error: (error: any) => console.log('❌ /api/offers/ fehlgeschlagen:', error)
     });
 
     // Teste aktive Angebote
     this.offersService.getActiveOffers().subscribe({
-      next: (response) => console.log('✅ /api/offers/active funktioniert:', response),
-      error: (error) => console.log('❌ /api/offers/active fehlgeschlagen:', error)
+      next: (response: Offer[]) => console.log('✅ /api/offers/active funktioniert:', response),
+      error: (error: any) => console.log('❌ /api/offers/active fehlgeschlagen:', error)
     });
   }
 
@@ -70,7 +72,7 @@ export class OffersComponent implements OnInit {
     this.loading = true;
     // Verwende den korrekten Endpunkt aus der README
     this.offersService.getAllOffersWithProducts().subscribe({
-      next: (response) => {
+      next: (response: any) => {
         console.log('API Response:', response);
         
         // Laut README: { success: true, data: [...], total: number }
@@ -84,7 +86,7 @@ export class OffersComponent implements OnInit {
         
         this.loading = false;
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Fehler beim Laden der Angebote:', error);
         this.loading = false;
         // Zeige Fehlermeldung an
@@ -105,6 +107,10 @@ export class OffersComponent implements OnInit {
     }
   }
 
+  goBackToAdmin(): void {
+    this.router.navigate(['/admin']);
+  }
+
   toggleAddProductForm(offer: OfferWithProducts): void {
     this.selectedOffer = offer;
     this.showAddProductForm = !this.showAddProductForm;
@@ -117,35 +123,35 @@ export class OffersComponent implements OnInit {
 
   onSubmitCreateOffer(): void {
     if (this.createOfferForm.valid) {
-      const formValue = this.createOfferForm.value;
-      
-      // Validierung: Entweder discount_percentage oder discount_amount muss gesetzt sein
-      if (!formValue.discount_percentage && !formValue.discount_amount) {
-        alert('Bitte geben Sie entweder einen Prozentsatz oder einen festen Rabattbetrag an.');
-        return;
-      }
-
-      const offerData: CreateOfferRequest = {
-        name: formValue.name,
-        description: formValue.description,
-        discount_percentage: formValue.discount_percentage,
-        discount_amount: formValue.discount_amount,
-        offer_type: formValue.offer_type,
-        start_date: formValue.start_date,
-        end_date: formValue.end_date,
-        is_active: formValue.is_active
+      const formData = this.createOfferForm.value;
+      const createOfferRequest: CreateOfferRequest = {
+        name: formData.name,
+        description: formData.description,
+        offer_type: formData.offer_type,
+        start_date: formData.start_date,
+        end_date: formData.end_date,
+        is_active: formData.is_active
       };
 
-      this.offersService.createOffer(offerData).subscribe({
-        next: (newOffer) => {
+      if (formData.offer_type === 'percentage' && formData.discount_percentage) {
+        createOfferRequest.discount_percentage = formData.discount_percentage;
+      } else if (formData.offer_type === 'fixed_amount' && formData.discount_amount) {
+        createOfferRequest.discount_amount = formData.discount_amount;
+      }
+
+      this.offersService.createOffer(createOfferRequest).subscribe({
+        next: (newOffer: any) => {
           console.log('Angebot erfolgreich erstellt:', newOffer);
-          this.loadOffers();
+          this.createOfferForm.reset({
+            offer_type: 'fixed_amount',
+            is_active: true
+          });
           this.showCreateForm = false;
-          this.createOfferForm.reset();
+          this.loadOffers();
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Fehler beim Erstellen des Angebots:', error);
-          alert('Fehler beim Erstellen des Angebots');
+          alert('Fehler beim Erstellen des Angebots. Bitte versuchen Sie es erneut.');
         }
       });
     }
@@ -153,58 +159,55 @@ export class OffersComponent implements OnInit {
 
   onSubmitAddProduct(): void {
     if (this.addProductForm.valid && this.selectedOffer) {
-      const formValue = this.addProductForm.value;
-      
-      const productData: AddProductRequest = {
+      const formData = this.addProductForm.value;
+      const addProductRequest: AddProductRequest = {
         offerId: this.selectedOffer.id!,
-        productId: parseInt(formValue.productId),
-        offerPrice: formValue.offerPrice,
-        useOfferPrice: formValue.useOfferPrice,
-        minQuantity: formValue.minQuantity,
-        maxQuantity: formValue.maxQuantity
+        productId: formData.productId,
+        offerPrice: formData.offerPrice || undefined,
+        useOfferPrice: formData.useOfferPrice,
+        minQuantity: formData.minQuantity || undefined,
+        maxQuantity: formData.maxQuantity || undefined
       };
 
-      this.offersService.addProductToOffer(productData).subscribe({
-        next: (response) => {
-          console.log('Produkt erfolgreich hinzugefügt:', response);
-          this.loadOffers();
-          this.showAddProductForm = false;
+      this.offersService.addProductToOffer(addProductRequest).subscribe({
+        next: (response: any) => {
+          console.log('Produkt erfolgreich zum Angebot hinzugefügt:', response);
           this.addProductForm.reset();
+          this.showAddProductForm = false;
           this.selectedOffer = null;
+          this.loadOffers();
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Fehler beim Hinzufügen des Produkts:', error);
-          alert('Fehler beim Hinzufügen des Produkts');
+          alert('Fehler beim Hinzufügen des Produkts. Bitte versuchen Sie es erneut.');
         }
       });
     }
   }
 
   removeProductFromOffer(offerId: number, productId: number): void {
-    if (confirm('Möchten Sie dieses Produkt wirklich aus dem Angebot entfernen?')) {
-      this.offersService.removeProductFromOffer(offerId, productId).subscribe({
-        next: (response) => {
-          console.log('Produkt erfolgreich entfernt:', response);
-          this.loadOffers();
-        },
-        error: (error) => {
-          console.error('Fehler beim Entfernen des Produkts:', error);
-          alert('Fehler beim Entfernen des Produkts');
-        }
-      });
-    }
+    this.offersService.removeProductFromOffer(offerId, productId).subscribe({
+      next: (response: any) => {
+        console.log('Produkt erfolgreich aus Angebot entfernt:', response);
+        this.loadOffers();
+      },
+      error: (error: any) => {
+        console.error('Fehler beim Entfernen des Produkts:', error);
+        alert('Fehler beim Entfernen des Produkts. Bitte versuchen Sie es erneut.');
+      }
+    });
   }
 
   deleteOffer(offerId: number): void {
-    if (confirm('Möchten Sie dieses Angebot wirklich löschen?')) {
+    if (confirm('Sind Sie sicher, dass Sie dieses Angebot löschen möchten?')) {
       this.offersService.deleteOffer(offerId).subscribe({
-        next: (response) => {
+        next: (response: any) => {
           console.log('Angebot erfolgreich gelöscht:', response);
           this.loadOffers();
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Fehler beim Löschen des Angebots:', error);
-          alert('Fehler beim Löschen des Angebots');
+          alert('Fehler beim Löschen des Angebots. Bitte versuchen Sie es erneut.');
         }
       });
     }
