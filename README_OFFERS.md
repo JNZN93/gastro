@@ -118,10 +118,11 @@ const response = await fetch('/api/offers/all-with-products', {
         {
           "id": 5,
           "name": "Produkt A",
-          "offer_price": 75.00,
-          "use_offer_price": true,
-          "min_quantity": 1,
-          "max_quantity": 10
+          "price": 100.00,
+          "offer_price": 75.00,        // ← Direkter Angebotspreis
+          "use_offer_price": true,     // ← Verwendet direkten Preis
+          "min_quantity": 1,           // ← Mindestmenge
+          "max_quantity": 10           // ← Maximalmenge
         }
       ]
     },
@@ -139,9 +140,10 @@ const response = await fetch('/api/offers/all-with-products', {
         {
           "id": 6,
           "name": "Produkt B",
-          "offer_price": null,
-          "use_offer_price": false,
-          "min_quantity": null,
+          "price": 50.00,
+          "offer_price": null,         // ← Kein direkter Preis
+          "use_offer_price": false,    // ← Verwendet Rabatt
+          "min_quantity": null,        // ← Keine Mengenlimits
           "max_quantity": null
         }
       ]
@@ -150,6 +152,11 @@ const response = await fetch('/api/offers/all-with-products', {
   "total": 2
 }
 ```
+
+**Wichtig**: Seit der letzten Aktualisierung werden alle Angebotsdaten korrekt angezeigt, einschließlich:
+- `offer_price`: Der direkte Angebotspreis (wenn gesetzt)
+- `use_offer_price`: Ob der direkte Preis verwendet wird
+- `min_quantity`/`max_quantity`: Mengenlimits für das Angebot
 
 ### 3. Einzelnes Angebot mit Produkten abrufen
 
@@ -164,7 +171,7 @@ const response = await fetch('/api/offers/1/with-products', {
 // Response: Ein einzelnes Angebot mit Produkten (wie oben)
 ```
 
-### 2. Produkt zu Angebot hinzufügen
+### 4. Produkt zu Angebot hinzufügen
 
 #### Einfache Verknüpfung (nur Rabatt)
 ```javascript
@@ -204,7 +211,7 @@ const response = await fetch('/api/offers/add-product', {
 });
 ```
 
-### 3. Endpreis mit Angeboten berechnen
+### 5. Endpreis mit Angeboten berechnen
 
 ```javascript
 const priceData = {
@@ -339,15 +346,6 @@ curl -X POST http://localhost:3000/api/offers/create \
   }'
 ```
 
-## 🔮 Erweiterungen
-
-### Geplante Features
-- **Buy X Get Y**: Komplexere Angebotslogik
-- **Kategorien**: Angebote für Produktkategorien
-- **Kundengruppen**: Spezielle Angebote für bestimmte Kundengruppen
-- **Automatisierung**: Automatische Aktivierung/Deaktivierung
-- **Analytics**: Angebotsstatistiken und Performance
-
 ## 🌍 Multi-Mandant-Beispiele
 
 ### Globale Angebote (company = null)
@@ -379,10 +377,91 @@ const globalOffers = await Offer.findByCompany(null);           // Globale Angeb
 const companyOffers = await Offer.findByCompany("gastro-berlin"); // Mandant-spezifische
 ```
 
+## 🔮 Erweiterungen
+
+### Geplante Features
+- **Buy X Get Y**: Komplexere Angebotslogik
+- **Kategorien**: Angebote für Produktkategorien
+- **Kundengruppen**: Spezielle Angebote für bestimmte Kundengruppen
+- **Automatisierung**: Automatische Aktivierung/Deaktivierung
+- **Analytics**: Angebotsstatistiken und Performance
+
 ### Performance-Optimierungen
 - **Caching**: Redis-Cache für aktive Angebote
 - **Batch-Processing**: Massenverarbeitung von Angeboten
 - **Background Jobs**: Asynchrone Angebotsverarbeitung
+
+## 🔧 Technische Details
+
+### Datenbankabfrage-Optimierung
+
+Die `getProductsForOffer` Methode wurde optimiert, um alle relevanten Angebotsdaten zurückzugeben:
+
+```javascript
+// Vorher: Nur Produktdaten
+.select('products.*')
+
+// Nachher: Produktdaten + Angebotsdaten
+.select(
+  'products.*',
+  'offer_products.offer_price',
+  'offer_products.use_offer_price',
+  'offer_products.min_quantity',
+  'offer_products.max_quantity'
+)
+```
+
+### Betroffene Endpunkte
+
+Diese Optimierung betrifft alle Endpunkte, die Produkte mit Angeboten zurückgeben:
+
+- `GET /all-with-products` - Alle Angebote mit Produkten
+- `GET /:id/with-products` - Einzelnes Angebot mit Produkten
+- `GET /:offerId/products` - Produkte eines Angebots
+
+### Datenstruktur
+
+Jedes Produkt in einem Angebot enthält jetzt:
+
+| Feld | Typ | Beschreibung |
+|------|-----|--------------|
+| `offer_price` | decimal/null | Direkter Angebotspreis |
+| `use_offer_price` | boolean | Verwendet direkten Preis |
+| `min_quantity` | int/null | Mindestmenge für Angebot |
+| `max_quantity` | int/null | Maximalmenge für Angebot |
+
+### Beispiel-Response vor/nach der Optimierung
+
+**Vorher (unvollständig):**
+```json
+{
+  "products": [
+    {
+      "id": 5,
+      "name": "Produkt A",
+      "price": 100.00
+      // Angebotsdaten fehlten!
+    }
+  ]
+}
+```
+
+**Nachher (vollständig):**
+```json
+{
+  "products": [
+    {
+      "id": 5,
+      "name": "Produkt A",
+      "price": 100.00,
+      "offer_price": 75.00,        // ← Jetzt verfügbar
+      "use_offer_price": true,     // ← Jetzt verfügbar
+      "min_quantity": 1,           // ← Jetzt verfügbar
+      "max_quantity": 10           // ← Jetzt verfügbar
+    }
+  ]
+}
+```
 
 ## 📚 Verwandte Dokumentation
 
@@ -397,3 +476,49 @@ Bei Fragen oder Problemen:
 2. Teste mit dem Test-Script
 3. Überprüfe die Datenbankverbindung
 4. Kontaktiere das Entwicklungsteam
+
+## 🐛 Bekannte Probleme & Lösungen
+
+### Problem: Angebotspreise werden nicht angezeigt
+
+**Symptom**: Im `GET /all-with-products` Endpunkt fehlen die `offer_price`, `use_offer_price`, etc. Felder.
+
+**Ursache**: Die `getProductsForOffer` Methode gab nur Produktdaten zurück, nicht die Angebotsdaten.
+
+**Lösung**: ✅ **Behoben** - Die Methode wurde optimiert, um alle relevanten Felder zurückzugeben.
+
+**Überprüfung**: Starte den Server neu und teste den Endpunkt erneut.
+
+### Problem: Angebotspreise werden als null angezeigt
+
+**Symptom**: `offer_price` ist null, obwohl ein Preis gesetzt wurde.
+
+**Ursache**: Das Produkt wurde ohne `offer_price` zum Angebot hinzugefügt.
+
+**Lösung**: Verwende den `add-product` Endpunkt mit den korrekten Parametern:
+
+```javascript
+{
+  "offerId": 1,
+  "productId": 5,
+  "offerPrice": 75.00,        // Direkter Preis
+  "useOfferPrice": true       // Direkten Preis verwenden
+}
+```
+
+### Problem: Mengenlimits funktionieren nicht
+
+**Symptom**: `min_quantity` und `max_quantity` werden ignoriert.
+
+**Ursache**: Diese Felder sind optional und müssen explizit gesetzt werden.
+
+**Lösung**: Setze die Mengenlimits beim Hinzufügen des Produkts:
+
+```javascript
+{
+  "offerId": 1,
+  "productId": 5,
+  "minQuantity": 1,           // Mindestmenge
+  "maxQuantity": 10           // Maximalmenge
+}
+```

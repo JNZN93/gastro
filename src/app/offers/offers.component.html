@@ -132,29 +132,64 @@
 
       <!-- Products List -->
       @if (offer.products && offer.products.length > 0) {
-      <div class="products-section">
-        <h4>Produkte im Angebot ({{ offer.products.length }})</h4>
-        <div class="products-list">
-          @for (product of offer.products; track product.id) {
-          <div class="product-item">
-            <div class="product-info">
-              <span class="product-id">ID: {{ product.product_id }}</span>
-              @if (product.use_offer_price && product.offer_price) {
-              <span class="product-price">€{{ product.offer_price.toFixed(2) }}</span>
-              }
-              @if (product.min_quantity || product.max_quantity) {
-              <span class="product-quantity">
-                {{ product.min_quantity || 0 }} - {{ product.max_quantity || '∞' }}
-              </span>
-              }
-            </div>
-            <button class="btn-remove" (click)="removeProductFromOffer(offer.id!, product.product_id)" title="Produkt entfernen">
+      <div class="products-section" [class.expanded]="offer.isProductsExpanded">
+        <div class="products-header" (click)="toggleProductsSection(offer)">
+          <h4>Produkte im Angebot ({{ offer.products.length }})</h4>
+          <div class="expand-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" [class.rotated]="offer.isProductsExpanded">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </div>
+        </div>
+        <div class="products-content">
+          <div class="products-list">
+            @for (product of offer.products; track product.id) {
+            <div class="product-item">
+              <div class="product-info">
+                <div class="product-details">
+                  <span class="product-name">{{ product.article_text }}</span>
+                  <span class="product-number">{{ product.article_number }}</span>
+                  <span class="product-id">ID: {{ product.product_id }}</span>
+                  @if (product.article_notes) {
+                  <span class="product-notes">{{ product.article_notes }}</span>
+                  }
+                  @if (product.category) {
+                  <span class="product-category">{{ product.category }}</span>
+                  }
+                </div>
+                <div class="product-pricing">
+                  @if (product.use_offer_price && product.offer_price) {
+                  <span class="product-price">€{{ product.offer_price }}</span>
+                  }
+                  @if (product.sale_price) {
+                  <span class="product-original-price">€{{ product.sale_price }}</span>
+                  }
+                  @if (product.cost_price) {
+                  <span class="product-cost-price">EK: €{{ product.cost_price }}</span>
+                  }
+                </div>
+                <div class="product-meta">
+                  @if (product.min_quantity || product.max_quantity) {
+                  <span class="product-quantity">
+                    {{ product.min_quantity || 0 }} - {{ product.max_quantity || '∞' }}
+                  </span>
+                  }
+                  @if (product.unit) {
+                  <span class="product-unit">{{ product.unit }}</span>
+                  }
+                  @if (product.ean) {
+                  <span class="product-ean">EAN: {{ product.ean }}</span>
+                  }
+                </div>
+              </div>
+                          <button class="btn-remove" (click)="confirmRemoveProduct(offer, product)" title="Produkt entfernen">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
               </svg>
             </button>
+            </div>
+            }
           </div>
-          }
         </div>
       </div>
       } @else {
@@ -218,6 +253,46 @@
     <h3>Keine Angebote vorhanden</h3>
     <p>Erstellen Sie Ihr erstes Angebot, um mit der Verwaltung zu beginnen.</p>
     <button class="btn-primary" (click)="toggleCreateForm()">Erstes Angebot erstellen</button>
+  </div>
+  }
+
+  <!-- Confirmation Modal for Product Removal -->
+  @if (showRemoveProductModal) {
+  <div class="modal-overlay" (click)="closeRemoveProductModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Produkt aus Angebot entfernen</h3>
+        <button class="modal-close" (click)="closeRemoveProductModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      
+      <div class="modal-body">
+        <p>Sind Sie sicher, dass Sie das Produkt <strong>"{{ selectedProductForRemoval?.article_text || 'ID: ' + selectedProductForRemoval?.product_id }}"</strong> aus dem Angebot <strong>"{{ selectedOfferForRemoval?.name }}"</strong> entfernen möchten?</p>
+        
+        <div class="product-preview">
+          <div class="product-info-preview">
+            <span class="product-name">{{ selectedProductForRemoval?.article_text }}</span>
+            <span class="product-number">{{ selectedProductForRemoval?.article_number }}</span>
+            @if (selectedProductForRemoval?.offer_price) {
+            <span class="product-price">€{{ selectedProductForRemoval?.offer_price }}</span>
+            }
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-actions">
+        <button class="btn-secondary" (click)="closeRemoveProductModal()">Abbrechen</button>
+        <button class="btn-danger" (click)="confirmRemoveProductAction()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+          </svg>
+          Produkt entfernen
+        </button>
+      </div>
+    </div>
   </div>
   }
 </div>

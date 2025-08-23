@@ -22,16 +22,41 @@ export interface OfferProduct {
   offer_id: number;
   product_id: number;
   company?: string;
-  offer_price?: number;
+  offer_price?: string | number;
   use_offer_price: boolean;
   min_quantity?: number;
   max_quantity?: number;
   created_at?: string;
   updated_at?: string;
+  
+  // Zusätzliche Felder von der API
+  offer_product_id?: number;
+  product_database_id?: number;
+  article_text?: string;
+  article_number?: string;
+  article_notes?: string;
+  article_type?: string;
+  category?: string;
+  cost_price?: number;
+  custom_field_1?: string;
+  db_index?: number;
+  ean?: string;
+  gross_price?: number;
+  is_active?: boolean;
+  main_image_url?: string;
+  sale_price?: number;
+  sale_price_2?: number;
+  sale_price_3?: number;
+  sale_price_quantity_2?: number;
+  sale_price_quantity_3?: number;
+  tax_code?: number;
+  unit?: string;
+  offer_company?: string;
 }
 
 export interface OfferWithProducts extends Offer {
   products: OfferProduct[];
+  isProductsExpanded?: boolean;
 }
 
 export interface CreateOfferRequest {

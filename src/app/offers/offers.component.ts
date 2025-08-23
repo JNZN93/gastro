@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { OffersService, Offer, OfferWithProducts, CreateOfferRequest, AddProductRequest } from '../offers.service';
+import { OffersService, Offer, OfferWithProducts, OfferProduct, CreateOfferRequest, AddProductRequest } from '../offers.service';
 
 @Component({
   selector: 'app-offers',
@@ -17,6 +17,11 @@ export class OffersComponent implements OnInit {
   showCreateForm = false;
   showAddProductForm = false;
   selectedOffer: OfferWithProducts | null = null;
+  
+  // Modal properties
+  showRemoveProductModal = false;
+  selectedProductForRemoval: OfferProduct | null = null;
+  selectedOfferForRemoval: OfferWithProducts | null = null;
   
   createOfferForm: FormGroup;
   addProductForm: FormGroup;
@@ -50,6 +55,29 @@ export class OffersComponent implements OnInit {
     // Debug: Teste verschiedene Endpunkte
     this.testApiEndpoints();
     this.loadOffers();
+  }
+
+  toggleProductsSection(offer: OfferWithProducts): void {
+    offer.isProductsExpanded = !offer.isProductsExpanded;
+  }
+
+  confirmRemoveProduct(offer: OfferWithProducts, product: OfferProduct): void {
+    this.selectedProductForRemoval = product;
+    this.selectedOfferForRemoval = offer;
+    this.showRemoveProductModal = true;
+  }
+
+  closeRemoveProductModal(): void {
+    this.showRemoveProductModal = false;
+    this.selectedProductForRemoval = null;
+    this.selectedOfferForRemoval = null;
+  }
+
+  confirmRemoveProductAction(): void {
+    if (this.selectedProductForRemoval && this.selectedOfferForRemoval) {
+      this.removeProductFromOffer(this.selectedOfferForRemoval.id!, this.selectedProductForRemoval.product_id);
+      this.closeRemoveProductModal();
+    }
   }
 
   private testApiEndpoints(): void {
