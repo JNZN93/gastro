@@ -44,6 +44,7 @@ export class AppComponent implements OnInit, OnDestroy {
                                 event.url.includes('/user-management') ||
                                 event.url.includes('/route-planning') ||
                                 event.url.includes('/reports') ||
+                                event.url.includes('/offers') ||
                                 event.url.includes('/customer-order/');
 
         // Header auf Employees-Route nur auf Mobile/Tablet ausblenden

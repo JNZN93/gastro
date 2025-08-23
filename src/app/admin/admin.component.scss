@@ -735,6 +735,11 @@
   }
 }
 
+// Gastlink ausblenden
+.gastlink-hidden {
+  display: none !important;
+}
+
 // Responsive Design
 @media (max-width: 1024px) {
   .stats-grid {

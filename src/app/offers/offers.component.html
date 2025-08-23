@@ -1,0 +1,226 @@
+<div class="offers-container">
+  <!-- Header -->
+  <div class="offers-header">
+    <div class="header-left">
+      <button class="back-btn" routerLink="/admin">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+        </svg>
+        Zurück
+      </button>
+      <h1 class="offers-title">
+        <svg class="offers-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
+        </svg>
+        Angebotsverwaltung
+      </h1>
+    </div>
+    <button class="create-offer-btn" (click)="toggleCreateForm()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+      </svg>
+      Neues Angebot erstellen
+    </button>
+  </div>
+
+  <!-- Create Offer Form -->
+  @if (showCreateForm) {
+  <div class="create-offer-form">
+    <h2>Neues Angebot erstellen</h2>
+    <form [formGroup]="createOfferForm" (ngSubmit)="onSubmitCreateOffer()">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="name">Angebotsname *</label>
+          <input type="text" id="name" formControlName="name" placeholder="z.B. Sommerschlussverkauf 2025">
+        </div>
+        <div class="form-group">
+          <label for="description">Beschreibung *</label>
+          <textarea id="description" formControlName="description" placeholder="Beschreibung des Angebots"></textarea>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="offer_type">Angebotstyp *</label>
+          <select id="offer_type" formControlName="offer_type">
+            <option value="fixed_amount">Fester Rabattbetrag</option>
+            <option value="percentage">Prozentualer Rabatt</option>
+            <option value="buy_x_get_y">Kauf X bekomme Y</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="discount_percentage" *ngIf="createOfferForm.get('offer_type')?.value === 'percentage'">Rabatt in %</label>
+          <label for="discount_amount" *ngIf="createOfferForm.get('offer_type')?.value === 'fixed_amount'">Rabatt in €</label>
+          <input 
+            type="number" 
+            [id]="createOfferForm.get('offer_type')?.value === 'percentage' ? 'discount_percentage' : 'discount_amount'"
+            [formControlName]="createOfferForm.get('offer_type')?.value === 'percentage' ? 'discount_percentage' : 'discount_amount'"
+            [placeholder]="createOfferForm.get('offer_type')?.value === 'percentage' ? '20' : '10.00'"
+            step="0.01"
+            min="0"
+            [max]="createOfferForm.get('offer_type')?.value === 'percentage' ? '100' : null">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="start_date">Startdatum *</label>
+          <input type="date" id="start_date" formControlName="start_date">
+        </div>
+        <div class="form-group">
+          <label for="end_date">Enddatum *</label>
+          <input type="date" id="end_date" formControlName="end_date">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group checkbox-group">
+          <label class="checkbox-label">
+            <input type="checkbox" formControlName="is_active">
+            <span class="checkmark"></span>
+            Angebot ist aktiv
+          </label>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn-secondary" (click)="toggleCreateForm()">Abbrechen</button>
+        <button type="submit" class="btn-primary" [disabled]="!createOfferForm.valid">Angebot erstellen</button>
+      </div>
+    </form>
+  </div>
+  }
+
+  <!-- Loading State -->
+  @if (loading) {
+  <div class="loading-state">
+    <div class="spinner"></div>
+    <p>Lade Angebote...</p>
+  </div>
+  }
+
+  <!-- Offers List -->
+  @if (!loading && offers.length > 0) {
+  <div class="offers-list">
+    @for (offer of offers; track offer.id) {
+    <div class="offer-card" [class]="getStatusClass(offer)">
+      <div class="offer-header">
+        <div class="offer-info">
+          <h3 class="offer-name">{{ offer.name }}</h3>
+          <p class="offer-description">{{ offer.description }}</p>
+          <div class="offer-meta">
+            <span class="offer-type">{{ getOfferTypeLabel(offer.offer_type) }}</span>
+            <span class="offer-discount">{{ getDiscountDisplay(offer) }}</span>
+            <span class="offer-dates">
+              {{ offer.start_date | date:'dd.MM.yyyy' }} - {{ offer.end_date | date:'dd.MM.yyyy' }}
+            </span>
+          </div>
+        </div>
+        <div class="offer-actions">
+          <button class="btn-icon" (click)="toggleAddProductForm(offer)" title="Produkt hinzufügen">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+            </svg>
+          </button>
+          <button class="btn-icon delete" (click)="deleteOffer(offer.id!)" title="Angebot löschen">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Products List -->
+      @if (offer.products && offer.products.length > 0) {
+      <div class="products-section">
+        <h4>Produkte im Angebot ({{ offer.products.length }})</h4>
+        <div class="products-list">
+          @for (product of offer.products; track product.id) {
+          <div class="product-item">
+            <div class="product-info">
+              <span class="product-id">ID: {{ product.product_id }}</span>
+              @if (product.use_offer_price && product.offer_price) {
+              <span class="product-price">€{{ product.offer_price.toFixed(2) }}</span>
+              }
+              @if (product.min_quantity || product.max_quantity) {
+              <span class="product-quantity">
+                {{ product.min_quantity || 0 }} - {{ product.max_quantity || '∞' }}
+              </span>
+              }
+            </div>
+            <button class="btn-remove" (click)="removeProductFromOffer(offer.id!, product.product_id)" title="Produkt entfernen">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+          }
+        </div>
+      </div>
+      } @else {
+      <div class="no-products">
+        <p>Keine Produkte im Angebot</p>
+      </div>
+      }
+
+      <!-- Add Product Form -->
+      @if (showAddProductForm && selectedOffer?.id === offer.id) {
+      <div class="add-product-form">
+        <h4>Produkt zu Angebot hinzufügen</h4>
+        <form [formGroup]="addProductForm" (ngSubmit)="onSubmitAddProduct()">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="productId">Produkt-ID *</label>
+              <input type="number" id="productId" formControlName="productId" placeholder="123">
+            </div>
+            <div class="form-group">
+              <label for="offerPrice">Angebotspreis (optional)</label>
+              <input type="number" id="offerPrice" formControlName="offerPrice" placeholder="75.00" step="0.01" min="0">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="minQuantity">Mindestmenge (optional)</label>
+              <input type="number" id="minQuantity" formControlName="minQuantity" placeholder="1" min="1">
+            </div>
+            <div class="form-group">
+              <label for="maxQuantity">Maximalmenge (optional)</label>
+              <input type="number" id="maxQuantity" formControlName="maxQuantity" placeholder="10" min="1">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group checkbox-group">
+              <label class="checkbox-label">
+                <input type="checkbox" formControlName="useOfferPrice">
+                <span class="checkmark"></span>
+                Direkten Angebotspreis verwenden
+              </label>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn-secondary" (click)="toggleAddProductForm(offer)">Abbrechen</button>
+            <button type="submit" class="btn-primary" [disabled]="!addProductForm.valid">Produkt hinzufügen</button>
+          </div>
+        </form>
+      </div>
+      }
+    </div>
+    }
+  </div>
+  }
+
+  <!-- Empty State -->
+  @if (!loading && offers.length === 0) {
+  <div class="empty-state">
+    <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
+    </svg>
+    <h3>Keine Angebote vorhanden</h3>
+    <p>Erstellen Sie Ihr erstes Angebot, um mit der Verwaltung zu beginnen.</p>
+    <button class="btn-primary" (click)="toggleCreateForm()">Erstes Angebot erstellen</button>
+  </div>
+  }
+</div>
