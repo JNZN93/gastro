@@ -10,14 +10,14 @@
       </button>
       <h1 class="offers-title">
         <svg class="offers-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
+          <text x="12" y="16" text-anchor="middle" font-size="16" font-weight="bold" stroke="currentColor" fill="currentColor">%</text>
         </svg>
         Angebotsverwaltung
       </h1>
     </div>
     <button class="create-offer-btn" (click)="toggleCreateForm()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+        <text x="12" y="16" text-anchor="middle" font-size="16" font-weight="bold" stroke="currentColor" fill="currentColor">%</text>
       </svg>
       Neues Angebot erstellen
     </button>
@@ -215,9 +215,6 @@
   <!-- Empty State -->
   @if (!loading && offers.length === 0) {
   <div class="empty-state">
-    <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
-    </svg>
     <h3>Keine Angebote vorhanden</h3>
     <p>Erstellen Sie Ihr erstes Angebot, um mit der Verwaltung zu beginnen.</p>
     <button class="btn-primary" (click)="toggleCreateForm()">Erstes Angebot erstellen</button>
