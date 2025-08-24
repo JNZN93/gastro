@@ -1,411 +1,162 @@
-.flyer-container {
+.gd-flyer {
   min-height: 100vh;
-  padding: 0;
-  background: #f3f4f6;
-  font-family: 'Poppins', sans-serif;
-  display: flex;
-  flex-direction: column;
-  overflow: visible;
-}
-
-/* A4 canvas */
-.flyer-a4 {
-  width: 210mm;
-  min-height: 297mm;
-  margin: 0 auto;
   background: #ffffff;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.15);
+  font-family: 'Poppins', sans-serif;
+}
+
+.a4 {
+  width: 210mm;
+  height: 297mm; /* exact DIN A4 portrait */
+  margin: 0 auto;
+  background: #222327;
+  color: #fff;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
-/* Print-specific overrides */
-@media print {
-  .flyer-a4 {
-    width: auto !important;
-    min-height: auto !important;
-    margin: 0 !important;
-  }
-}
+/* large visual spacing between multiple flyers on screen */
+.a4 + .a4 { margin-top: 25mm; }
 
-/* Header */
-.flyer-header {
-  position: relative;
-  padding: 16mm 14mm 12mm 14mm;
-  background: linear-gradient(135deg, #f97316 0%, #ea580c 50%, #dc2626 100%);
-  border-bottom: 2mm solid rgba(220,38,38,0.3);
-
-  .brand {
-    display: flex;
-    align-items: center;
-    gap: 10mm;
-  }
-
-  .logo {
-    width: 18mm;
-    height: 18mm;
-    object-fit: contain;
-  }
-
-  .brand-text {
-    display: flex;
-    flex-direction: column;
-    gap: 2mm;
-
-    .headline {
-      margin: 0;
-      font-size: 16mm;
-      font-weight: 900;
-      letter-spacing: -0.3mm;
-      line-height: 1;
-      color: #ffffff;
-      text-shadow: 0 2mm 4mm rgba(0,0,0,0.3);
-    }
-
-    .subtitle-row {
-      display: flex;
-      align-items: center;
-      gap: 8mm;
-      flex-wrap: wrap;
-    }
-
-    .subtitle {
-      margin: 0;
-      color: #ffffff;
-      font-size: 5mm;
-      max-width: 120mm;
-      opacity: 0.95;
-    }
-
-    .date-badge {
-      background: rgba(0, 0, 0, 0.25);
-      color: #fff;
-      padding: 2mm 4mm;
-      border-radius: 999px;
-      display: inline-flex;
-      gap: 2mm;
-      align-items: center;
-      font-weight: 700;
-      font-size: 3.5mm;
-      white-space: nowrap;
-      border: 0.2mm solid rgba(255,255,255,0.3);
-      .sep { opacity: .7; }
-    }
-  }
-
-  .deal-badge {
-    position: absolute;
-    right: -3mm;
-    top: 50%;
-    transform: translateY(-50%) rotate(-15deg);
-    background: linear-gradient(135deg, #fbbf24, #f59e0b);
-    color: #ffffff;
-    padding: 4mm 6mm;
-    border-radius: 1.5mm;
-    border: 1mm solid rgba(255,255,255,0.9);
-    box-shadow: 0 2mm 6mm rgba(251,191,36,0.4);
-    font-weight: 900;
-    letter-spacing: 0.5mm;
-    font-size: 5mm;
-    text-transform: uppercase;
-    z-index: 10;
-  }
-}
-
-/* Body */
-.flyer-body {
-  padding: 10mm 12mm 8mm 12mm;
-}
-
-.product-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 3mm;
-  width: 100%;
-  padding: 0;
-}
-
-  .product-card {
-    display: flex;
-    flex-direction: column;
-    border: 0.3mm solid rgba(226,232,240,.9);
-    border-radius: 2mm;
-    overflow: hidden;
-    background: #ffffff;
-    box-shadow: 0 2mm 6mm -2mm rgba(15, 23, 42, .08);
-    page-break-inside: avoid;
-    height: 58mm;
-    min-height: 58mm;
-
-  .image-wrap {
-    position: relative;
-    background: linear-gradient(135deg, #f8fafc, #e2e8f0);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 32mm;
-    flex-shrink: 0;
-    width: 100%;
-
-    img { 
-      width: 100%; 
-      height: 100%; 
-      object-fit: cover; 
-    }
-
-    .placeholder { 
-      display:flex; 
-      align-items:center; 
-      justify-content:center; 
-      width:100%; 
-      height:100%;
-      svg { width: 8mm; height: 8mm; color: #94a3b8; }
-    }
-
-    .price-sticker {
-      display: none;
-    }
-  }
-
-  .content {
-    padding: 3mm 2mm 3mm 2mm;
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-
-    .title {
-      margin: 0 0 2mm 0;
-      font-weight: 700;
-      color: #0f172a;
-      font-size: 3mm;
-      line-height: 1.2;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-      min-height: 8mm;
-      flex-shrink: 0;
-    }
-
-    .meta-row {
-      display: none;
-    }
-
-    .price-row {
-      display: flex;
-      align-items: center;
-      gap: 2mm;
-      margin-top: auto;
-
-      .price-badge {
-        background: linear-gradient(135deg, #22c55e, #16a34a);
-        color: #ffffff;
-        font-weight: 900;
-        padding: 1.5mm 2.5mm;
-        border-radius: 2mm;
-        border: 0.2mm solid rgba(255,255,255,.4);
-        box-shadow: 0 1mm 3mm rgba(22,163,74,.25);
-        font-size: 3.5mm;
-        display: inline-block;
-      }
-      .original {
-        color: #b91c1c;
-        text-decoration: line-through;
-        font-size: 2.8mm;
-        opacity: .9;
-        display: inline-block;
-      }
-    }
-  }
-}
-
-/* Footer */
-.flyer-footer {
-  padding: 6mm 12mm 10mm 12mm;
-  border-top: 0.5mm solid rgba(226,232,240,0.9);
+.gd-header {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  color: #475569;
-  font-size: 3.6mm;
-
-  .notes {
-    display: flex;
-    gap: 6mm;
-    span { white-space: nowrap; }
-  }
+  align-items: center;
+  padding: 4mm 7mm; /* much smaller */
+  gap: 4mm;
+  background: #222327;
 }
 
-/* Loading / states */
-.loading { 
-  display:flex; 
-  flex-direction:column; 
-  align-items:center; 
-  gap:12px; 
-  color:#6b7280; 
-  padding: 32px 0; 
-  flex: 1;
-  justify-content: center;
+.header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 3mm; /* tighter */
 }
-.spinner { width: 32px; height:32px; border-radius:50%; border:3px solid rgba(226,232,240,.8); border-top:3px solid #3b82f6; animation: spin 1s linear infinite; }
-@keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }
-.error { 
-  color:#b91c1c; 
-  background: rgba(254,226,226,.7); 
-  border:1px solid rgba(239,68,68,.25); 
-  padding:12px; 
-  border-radius: 8px; 
-  flex-shrink: 0;
+
+.stock-pill {
+  align-self: flex-start;
+  background: #e53935;
+  color: #fff;
+  padding: 1mm 3.5mm; /* smaller */
+  border-radius: 6mm;
+  font-weight: 700;
+  font-size: 3mm;
 }
-.empty { 
-  text-align:center; 
-  color:#64748b; 
-  padding: 32px 0; 
-  font-style: italic; 
+
+.info-row {
+  display: flex;
+  gap: 3mm; /* tighter */
+}
+
+.info-box.green {
+  background: #9acd32;
+  color: #fff;
+  border-radius: 2mm;
+  padding: 2.5mm 4mm; /* smaller */
+}
+.quality .quality-text { font-weight: 700; font-size: 3.2mm; line-height: 1.15; }
+.times .times-title { font-weight: 900; font-size: 3.2mm; margin-bottom: .6mm; }
+.times .times-line { font-weight: 600; font-size: 2.9mm; }
+
+.headline-red {
+  background: #e53935;
+  color: #fff;
+  padding: 2.5mm 5mm; /* smaller */
+  border-radius: 2.5mm;
+  font-size: 9.5mm; /* much smaller */
+  font-weight: 900;
+  letter-spacing: .15mm;
+  width: fit-content;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 2.5mm; /* smaller */
+}
+.gd-logo { width: 16mm; height: 16mm; object-fit: contain; }
+.gd-brand { text-align: center; }
+.gd-name { font-weight: 900; font-size: 4.2mm; letter-spacing: .4mm; }
+.gd-sub { font-weight: 700; font-size: 3mm; }
+
+.gd-body {
+  flex: 1; /* take remaining height between header and footer */
+  padding: 5mm 7mm; /* reduced to give more height to grid */
+  overflow: hidden;
+}
+
+.tiles {
+  height: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr); /* always 3 rows to fit A4 */
+  gap: 6mm; /* tighter */
+}
+
+.tile {
+  background: #2b2d31;
+  border-radius: 3mm;
+  padding: 4.5mm; /* smaller */
+  display: flex;
+  flex-direction: column;
+  min-height: 0; /* allow to shrink inside grid cell */
+  overflow: hidden;
+}
+
+.tile-media {
   flex: 1;
+  min-height: 0; /* important for flex children to shrink */
   display: flex;
   align-items: center;
   justify-content: center;
+  background: #1f2023;
+  border-radius: 2.5mm;
+  overflow: hidden;
+}
+.tile-media img { width: 100%; height: 100%; object-fit: contain; }
+.placeholder { display:flex; align-items:center; justify-content:center; width:100%; height:100%; color:#61646b; }
+.placeholder svg { width: 11mm; height: 11mm; }
+
+.tile-info { display: flex; align-items: flex-end; justify-content: space-between; gap: 3mm; margin-top: 2.5mm; }
+.title { color: #fff; font-weight: 800; font-size: 4.4mm; margin: 0; max-width: 70%; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; }
+
+.price-chip {
+  background: #e53935;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  gap: 2mm;
+  padding: 1.2mm 3mm; /* smaller */
+  border-radius: 7mm;
+  font-weight: 900;
+  flex-shrink: 0;
+  font-size: 3.8mm;
+}
+.price-chip .cart { width: 5mm; height: 5mm; }
+
+.fineprint {
+  color: #231c10;
+  background: #d5b079;
+  padding: 1.2mm 7mm; /* smaller */
+  margin-top: 0;
+  font-weight: 700;
+  border-top: 1mm solid #b89352;
 }
 
-/* Print rules */
+.contact {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #222327;
+  padding: 4mm 7mm 6mm 7mm; /* smaller */
+}
+.company .line { font-weight: 900; font-size: 4.2mm; }
+.contact-list .item { font-weight: 900; font-size: 4.2mm; }
+
 @media print {
-  @page { 
-    size: A4 portrait; 
-    margin: 10mm; 
-  }
-  
-  /* Force everything to be visible and flow */
-  * {
-    box-sizing: border-box !important;
-    max-height: none !important;
-    max-width: none !important;
-    height: auto !important;
-    overflow: visible !important;
-    position: static !important;
-    float: none !important;
-    transform: none !important;
-  }
-  
-  body, html { 
-    background: #ffffff !important; 
-    height: auto !important;
-    min-height: auto !important;
-    overflow: visible !important;
-    width: auto !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    display: block !important;
-  }
-  
-  .flyer-container { 
-    background: #ffffff !important; 
-    padding: 0 !important; 
-    min-height: auto !important; 
-    height: auto !important; 
-    overflow: visible !important;
-    display: block !important;
-    width: auto !important;
-    position: static !important;
-    transform: none !important;
-    max-height: none !important;
-  }
-  
-  .flyer-a4 { 
-    width: auto !important; 
-    min-height: auto !important; 
-    height: auto !important;
-    box-shadow: none !important; 
-    display: block !important;
-    position: static !important;
-    transform: none !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    max-width: none !important;
-    max-height: none !important;
-    overflow: visible !important;
-  }
-  
-  .flyer-header { 
-    position: static !important; 
-    page-break-inside: avoid !important;
-    display: block !important;
-    width: auto !important;
-    height: auto !important;
-    margin: 0 0 10mm 0 !important;
-    padding: 10mm !important;
-    overflow: visible !important;
-  }
-
-  .deal-badge {
-    position: static !important;
-    transform: none !important;
-    margin: 10mm 0 !important;
-    display: inline-block !important;
-    text-align: center !important;
-  }
-  
-  .flyer-body { 
-    padding: 0 !important; 
-    page-break-inside: auto !important;
-    display: block !important;
-    width: auto !important;
-    height: auto !important;
-    margin: 0 !important;
-    overflow: visible !important;
-  }
-  
-  .flyer-footer { 
-    position: static !important; 
-    page-break-inside: avoid !important;
-    display: block !important;
-    width: auto !important;
-    height: auto !important;
-    margin: 10mm 0 0 0 !important;
-    padding: 10mm !important;
-    overflow: visible !important;
-  }
-
-  /* Keep compact grid layout for print */
-  .product-grid { 
-    display: grid !important; 
-    grid-template-columns: repeat(4, 1fr) !important;
-    gap: 3mm !important;
-    width: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    overflow: visible !important;
-    max-height: none !important;
-  }
-  
-  .product-card { 
-    display: flex !important;
-    flex-direction: column !important;
-    break-inside: avoid !important; 
-    page-break-inside: avoid !important; 
-    -webkit-column-break-inside: avoid !important;
-    margin: 0 !important;
-    page-break-after: auto !important;
-    width: auto !important;
-    height: 58mm !important;
-    min-height: 58mm !important;
-    float: none !important;
-    position: static !important;
-    max-height: none !important;
-    max-width: none !important;
-    border: 0.3mm solid rgba(226,232,240,.9) !important;
-    padding: 3mm 2mm !important;
-    overflow: visible !important;
-  }
-
-  /* Force page breaks after every 20th product (5 rows x 4 columns) */
-  .product-card:nth-child(20n) {
-    page-break-after: always !important;
-    break-after: page !important;
-  }
-
-  .spinner { display: none !important; }
+  .a4 { width: auto; height: 297mm; page-break-after: always; margin-top: 0; }
+  .a4 + .a4 { margin-top: 0; } /* spacing only for screen */
+  .tiles { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); }
 }
 
 

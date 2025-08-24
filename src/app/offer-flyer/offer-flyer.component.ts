@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { OffersService, OfferWithProducts } from '../offers.service';
@@ -14,6 +14,10 @@ export class OfferFlyerComponent implements OnInit {
   offer: OfferWithProducts | null = null;
   loading = true;
   error: string | null = null;
+
+  // pages of 9 products each for 3x3 grid
+  readonly pageSize = 9;
+  pages = signal<any[][]>([]);
 
   constructor(
     private route: ActivatedRoute,
@@ -32,6 +36,7 @@ export class OfferFlyerComponent implements OnInit {
         products: stateOffer?.products?.length
       });
       this.offer = this.sortProductsInOffer(stateOffer);
+      this.buildPages();
       this.loading = false;
       return;
     }
@@ -60,6 +65,7 @@ export class OfferFlyerComponent implements OnInit {
         console.log('🔎 Flyer: Ergebnis all-with-products:', { total: list.length, found: !!found });
         if (found) {
           this.offer = this.sortProductsInOffer(found);
+          this.buildPages();
           this.loading = false;
         } else {
           this.error = 'Angebot nicht gefunden.';
@@ -82,6 +88,15 @@ export class OfferFlyerComponent implements OnInit {
       return at.localeCompare(bt);
     });
     return { ...offer, products };
+  }
+
+  private buildPages(): void {
+    const products = this.offer?.products ?? [];
+    const pages: any[][] = [];
+    for (let i = 0; i < products.length; i += this.pageSize) {
+      pages.push(products.slice(i, i + this.pageSize));
+    }
+    this.pages.set(pages.length ? pages : [[]]);
   }
 
   onImageError(event: Event): void {

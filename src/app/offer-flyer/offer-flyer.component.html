@@ -1,4 +1,4 @@
-<div class="flyer-container">
+<div class="gd-flyer">
   @if (loading) {
     <div class="loading">
       <div class="spinner"></div>
@@ -11,33 +11,41 @@
   }
 
   @if (!loading && offer) {
-    <section class="flyer-a4">
-      <header class="flyer-header">
-        <div class="brand">
-          <img class="logo" src="/logo.webp" alt="Logo" />
-          <div class="brand-text">
-            <h1 class="headline">{{ offer.name }}</h1>
-            <div class="subtitle-row">
-              <p class="subtitle">{{ offer.description }}</p>
-              <div class="date-badge">
-                <span>{{ offer.start_date | date:'dd.MM.yyyy' }}</span>
-                <span class="sep">–</span>
-                <span>{{ offer.end_date | date:'dd.MM.yyyy' }}</span>
-              </div>
+    @for (page of pages(); track $index) {
+    <section class="a4">
+      <header class="gd-header">
+        <div class="header-left">
+          <div class="stock-pill">Solange der Vorrat reicht</div>
+
+          <div class="info-row">
+            <div class="info-box green quality">
+              <div class="quality-text">Qualität vor Ort,<br/> geliefert an jeden Ort!</div>
+            </div>
+            <div class="info-box green times">
+              <div class="times-title">Öffnungszeiten</div>
+              <div class="times-line">Mo. - Fr.: 08:00 - 17:00 Uhr</div>
+              <div class="times-line">Sa. : 08:00 - 15:00 Uhr</div>
             </div>
           </div>
+
+          <div class="headline-red">{{ offer.name || 'Preisknaller' }}</div>
         </div>
-        <div class="deal-badge">
-          <span>SALE</span>
+
+        <div class="header-right">
+          <img class="gd-logo" src="/logo.webp" alt="Gastro Depot" />
+          <div class="gd-brand">
+            <div class="gd-name">GASTRO DEPOT</div>
+            <div class="gd-sub">GmbH & Co KG</div>
+          </div>
         </div>
       </header>
 
-      @if (offer.products && offer.products.length > 0) {
-      <section class="flyer-body">
-        <div class="product-grid">
-          @for (product of offer.products; track product.product_id + '_' + product.article_number) {
-          <article class="product-card">
-            <div class="image-wrap">
+      @if (page && page.length > 0) {
+      <section class="gd-body">
+        <div class="tiles">
+          @for (product of page; track product.product_id + '_' + product.article_number) {
+          <article class="tile">
+            <div class="tile-media">
               @if (product.main_image_url) {
                 <img [src]="product.main_image_url" [alt]="product.article_text" (error)="onImageError($event)" />
               } @else {
@@ -47,27 +55,15 @@
                   </svg>
                 </div>
               }
-              @if (product.use_offer_price && product.offer_price) {
-              <div class="price-sticker">
-                <span class="price">€{{ product.offer_price }}</span>
-              </div>
-              }
             </div>
 
-            <div class="content">
+            <div class="tile-info">
               <h3 class="title">{{ product.article_text }}</h3>
-
-
-
-              <div class="price-row">
-                @if (product.use_offer_price && product.offer_price) {
-                  <span class="price-badge">€{{ product.offer_price }}</span>
-                } @else if (product.sale_price) {
-                  <span class="price-badge">€{{ product.sale_price }}</span>
-                }
-                @if (product.sale_price && product.use_offer_price && product.offer_price) {
-                  <span class="original">€{{ product.sale_price }}</span>
-                }
+              <div class="price-chip" [attr.data-kind]="(product.use_offer_price && product.offer_price) ? 'offer' : null">
+                <img class="cart" src="/shoppingcart.png" alt="" />
+                <span>
+                  {{ (product.use_offer_price && product.offer_price ? product.offer_price : product.sale_price) | number:'1.2-2':'de-DE' }}€
+                </span>
               </div>
             </div>
           </article>
@@ -78,13 +74,24 @@
         <div class="empty">Keine Produkte im Angebot vorhanden.</div>
       }
 
-      <footer class="flyer-footer">
-        <div class="notes">
-          <span>Alle Preise in EUR inkl. MwSt.</span>
-          <span>Solange der Vorrat reicht.</span>
+      <div class="fineprint">
+        Angebote gültig, solange der Vorrat reicht. Druck- und Satzfehler vorbehalten. Alle Preise zzgl. MwSt.
+      </div>
+
+      <footer class="contact">
+        <div class="company">
+          <div class="line">Gastro Depot GmbH & Co KG</div>
+          <div class="line">Im Winkel 6</div>
+          <div class="line">67547 Worms</div>
+        </div>
+        <div class="contact-list">
+          <div class="item">06241 - 496 59 36</div>
+          <div class="item">info&#64;gastro-depot-worms.de</div>
+          <div class="item">instagram.com/gastro_depot_gmbh_worms</div>
         </div>
       </footer>
     </section>
+    }
   }
 </div>
 
