@@ -92,6 +92,17 @@ export class OffersComponent implements OnInit {
     const searchTerm = this.addProductForm.get('productSearch')?.value;
     console.log('🔍 Produktsuche gestartet mit Term:', searchTerm);
     
+    // Wenn bereits ein Produkt ausgewählt ist und der Suchbegriff dem ausgewählten Produkt entspricht, 
+    // keine neue Suche starten
+    if (this.selectedProduct && 
+        (this.selectedProduct.article_text === searchTerm || 
+         this.selectedProduct.article_number === searchTerm ||
+         this.selectedProduct.article_text?.toLowerCase() === searchTerm.toLowerCase() ||
+         this.selectedProduct.article_number?.toLowerCase() === searchTerm.toLowerCase())) {
+      console.log('🔍 Produkt bereits ausgewählt, keine neue Suche nötig');
+      return;
+    }
+    
     if (!searchTerm || searchTerm.length < 1) {
       console.log('🔍 Suchbegriff leer, breche ab');
       this.productSearchResults = [];
@@ -212,9 +223,43 @@ export class OffersComponent implements OnInit {
     this.showSearchResults = false;
     this.productSearchResults = [];
     this.selectedIndex = -1;
+    
+    // Stoppe alle laufenden Suchen
+    this.isSearching = false;
+    
+    console.log('✅ Produkt ausgewählt:', product.article_text);
   }
 
   onProductSearchKeyDown(event: KeyboardEvent): void {
+    // Handle Enter key even when no dropdown is shown (for better UX)
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      event.stopPropagation();
+      
+      // If dropdown is shown, select the highlighted product
+      if (this.showSearchResults && this.productSearchResults.length > 0) {
+        if (this.selectedIndex === -1) {
+          this.selectedIndex = 0;
+        }
+        if (this.selectedIndex >= 0 && this.selectedIndex < this.productSearchResults.length) {
+          const selectedProduct = this.productSearchResults[this.selectedIndex];
+          this.selectProduct(selectedProduct);
+          console.log('✅ Produkt aus Dropdown ausgewählt:', selectedProduct.article_text);
+        }
+        return;
+      }
+      
+      // If no dropdown but there's text, try to search and select first result
+      const searchTerm = this.addProductForm.get('productSearch')?.value;
+      if (searchTerm && searchTerm.trim().length > 0) {
+        console.log('🔍 Suche nach Produkt und wähle erstes Ergebnis...');
+        this.searchAndSelectFirstProduct(searchTerm);
+        return;
+      }
+      
+      return;
+    }
+    
     if (!this.showSearchResults || this.productSearchResults.length === 0) {
       // Allow normal typing when no dropdown is shown
       return;
@@ -241,13 +286,6 @@ export class OffersComponent implements OnInit {
         }
         this.scrollToSelectedProduct();
         break;
-      case 'Enter':
-        event.preventDefault();
-        event.stopPropagation();
-        if (this.selectedIndex >= 0 && this.selectedIndex < this.productSearchResults.length) {
-          this.selectProduct(this.productSearchResults[this.selectedIndex]);
-        }
-        break;
       case 'Escape':
         event.preventDefault();
         event.stopPropagation();
@@ -258,6 +296,28 @@ export class OffersComponent implements OnInit {
         this.hideProductSearchResults();
         break;
     }
+  }
+
+  private searchAndSelectFirstProduct(searchTerm: string): void {
+    // Search for products and automatically select the first result
+    this.offersService.searchProducts(searchTerm).subscribe({
+      next: (response: any) => {
+        if (response && Array.isArray(response)) {
+          const filteredResults = this.filterProductsBySearchTerm(response, searchTerm);
+          if (filteredResults.length > 0) {
+            // Select the first product automatically
+            this.selectProduct(filteredResults[0]);
+            // Show a brief success message
+            console.log('✅ Produkt automatisch ausgewählt:', filteredResults[0].article_text);
+          } else {
+            console.log('ℹ️ Keine Produkte für den Suchbegriff gefunden');
+          }
+        }
+      },
+      error: (error: any) => {
+        console.error('Fehler bei der automatischen Produktsuche:', error);
+      }
+    });
   }
 
   private scrollToSelectedProduct(): void {
@@ -277,6 +337,11 @@ export class OffersComponent implements OnInit {
   }
 
   hideProductSearchResults(): void {
+    // Wenn bereits ein Produkt ausgewählt ist, nicht die Ergebnisse verstecken
+    if (this.selectedProduct) {
+      return;
+    }
+    
     this.showSearchResults = false;
     this.productSearchResults = [];
     this.selectedIndex = -1;
@@ -285,7 +350,10 @@ export class OffersComponent implements OnInit {
   onProductSearchBlur(): void {
     // Verzögerung, damit der Klick auf ein Suchergebnis noch funktioniert
     setTimeout(() => {
-      this.hideProductSearchResults();
+      // Wenn bereits ein Produkt ausgewählt ist, nicht die Ergebnisse verstecken
+      if (!this.selectedProduct) {
+        this.hideProductSearchResults();
+      }
     }, 200);
   }
 
@@ -353,6 +421,9 @@ export class OffersComponent implements OnInit {
     this.productSearchResults = [];
     this.showSearchResults = false;
     this.selectedIndex = -1;
+    this.isSearching = false;
+    
+    console.log('🧹 Produktauswahl gelöscht');
   }
 
   private testApiEndpoints(): void {
@@ -434,9 +505,13 @@ export class OffersComponent implements OnInit {
     this.showAddProductForm = !this.showAddProductForm;
     if (this.showAddProductForm) {
       this.addProductForm.reset({
-        useOfferPrice: false
+        useOfferPrice: true  // Standardmäßig auf true gesetzt
       });
       this.clearProductSelection();
+      
+      // Stelle sicher, dass alle Suchzustände zurückgesetzt werden
+      this.isSearching = false;
+      this.showSearchResults = false;
     }
   }
 
@@ -444,6 +519,10 @@ export class OffersComponent implements OnInit {
     this.showAddProductForm = false;
     this.selectedOffer = null;
     this.clearProductSelection();
+    
+    // Stelle sicher, dass alle Suchzustände zurückgesetzt werden
+    this.isSearching = false;
+    this.showSearchResults = false;
   }
 
   onSubmitCreateOffer(): void {

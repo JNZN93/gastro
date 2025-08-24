@@ -359,7 +359,7 @@
               </div>
               }
             </div>
-            } @else if (addProductForm.get('productSearch')?.value && addProductForm.get('productSearch')?.value.length >= 1 && !isSearching) {
+            } @else if (addProductForm.get('productSearch')?.value && addProductForm.get('productSearch')?.value.length >= 1 && !isSearching && !selectedProduct) {
             <div class="modal-no-results">
               <p>Keine Produkte für "{{ addProductForm.get('productSearch')?.value }}" gefunden.</p>
             </div>
