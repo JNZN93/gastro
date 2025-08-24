@@ -27,37 +27,37 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 4mm 7mm; /* much smaller */
-  gap: 4mm;
+  padding: 2.5mm 5.5mm; /* more compact */
+  gap: 2.5mm;
   background: #222327;
 }
 
 .header-left {
   display: flex;
   flex-direction: column;
-  gap: 3mm; /* tighter */
+  gap: 1.5mm; /* more compact */
 }
 
 .stock-pill {
   align-self: flex-start;
   background: #e53935;
   color: #fff;
-  padding: 1mm 3.5mm; /* smaller */
+  padding: 0.7mm 2.8mm; /* more compact */
   border-radius: 6mm;
   font-weight: 700;
-  font-size: 3mm;
+  font-size: 2.6mm;
 }
 
 .info-row {
   display: flex;
-  gap: 3mm; /* tighter */
+  gap: 1.5mm; /* more compact */
 }
 
 .info-box.green {
   background: #9acd32;
   color: #fff;
   border-radius: 2mm;
-  padding: 2.5mm 4mm; /* smaller */
+  padding: 1.8mm 3.2mm; /* more compact */
 }
 .quality .quality-text { font-weight: 700; font-size: 3.2mm; line-height: 1.15; }
 .times .times-title { font-weight: 900; font-size: 3.2mm; margin-bottom: .6mm; }
@@ -66,11 +66,11 @@
 .headline-red {
   background: #e53935;
   color: #fff;
-  padding: 2.5mm 5mm; /* smaller */
-  border-radius: 2.5mm;
-  font-size: 9.5mm; /* much smaller */
+  padding: 1.8mm 4.2mm; /* more compact */
+  border-radius: 2mm;
+  font-size: 8.2mm; /* slightly smaller */
   font-weight: 900;
-  letter-spacing: .15mm;
+  letter-spacing: .1mm;
   width: fit-content;
 }
 
@@ -94,23 +94,29 @@
   height: 100%;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: repeat(3, 1fr); /* always 3 rows to fit A4 */
-  gap: 2.5mm; /* smaller gap to make cards higher */
+  gap: 3mm; /* wider gap to make cards visually narrower */
+  align-items: start; /* prevent stretching to row height */
+  justify-items: center; /* allow cards to be narrower than the track and centered */
 }
 
 .tile {
   background: #2b2d31;
   border-radius: 3mm;
-  padding: 7mm; /* increased padding to make cards higher */
+  padding: 2.5mm; /* even smaller to scale card */
   display: flex;
   flex-direction: column;
   min-height: 0; /* allow to shrink inside grid cell */
   overflow: hidden;
+  height: 260px; /* smaller fixed card height to avoid spanning */
+  width: 100%;
+  max-width: 58mm; /* make cards visually narrower than the grid track */
+  justify-self: center; /* center each card within its grid cell */
+  box-sizing: border-box;
 }
 
 .tile-media {
-  height: 200px; /* fixed height for images */
-  min-height: 200px;
+  height: 140px; /* fixed height for images */
+  min-height: 140px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -122,31 +128,33 @@
 .placeholder { display:flex; align-items:center; justify-content:center; width:100%; height:100%; color:#61646b; }
 .placeholder svg { width: 11mm; height: 11mm; }
 
-.tile-info { display: flex; flex-direction: column; align-items: stretch; gap: 3mm; margin-top: 4mm; }
-.title-wrap { overflow: hidden; min-height: calc(1.2em * 2); max-height: calc(1.2em * 2); }
-.title { color: #fff; font-weight: 400; font-size: 3.6mm; margin: 0; max-width: 100%; line-height: 1.2; overflow: hidden; display: block; }
+.tile-info { display: flex; flex-direction: column; align-items: stretch; gap: 1.2mm; margin-top: 1.5mm; }
+.title-wrap { overflow: hidden; min-height: calc(1.1em * 2); max-height: calc(1.1em * 2); }
+.title { color: #fff; font-weight: 400; font-size: 2.4mm; margin: 0; max-width: 100%; line-height: 1.1; overflow: hidden; display: block; }
 
 .price-chip {
   background: #e53935;
   color: #fff;
   display: inline-flex;
   align-items: center;
-  gap: 2mm;
-  padding: 1.2mm 3mm; /* smaller */
-  border-radius: 7mm;
+  gap: 1mm;
+  padding: 0.6mm 1.8mm; /* even more compact */
+  border-radius: 5mm;
   font-weight: 900;
   flex-shrink: 0;
-  font-size: 3.8mm;
+  font-size: 2.4mm;
 }
-.price-chip .cart { width: 5mm; height: 5mm; }
+.price-chip .cart { width: 3.5mm; height: 3.5mm; }
 
 .fineprint {
   color: #231c10;
   background: #d5b079;
-  padding: 1.2mm 7mm; /* smaller */
+  padding: 0.8mm 6mm; /* more compact */
   margin-top: 0;
   font-weight: 700;
-  border-top: 1mm solid #b89352;
+  font-size: 3mm; /* smaller text */
+  line-height: 1.2;
+  border-top: 0.8mm solid #b89352;
 }
 
 .contact {
@@ -154,10 +162,10 @@
   justify-content: space-between;
   align-items: center;
   background: #222327;
-  padding: 4mm 7mm 6mm 7mm; /* smaller */
+  padding: 2mm 6mm 3mm 6mm; /* more compact */
 }
-.company .line { font-weight: 900; font-size: 4.2mm; }
-.contact-list .item { font-weight: 900; font-size: 4.2mm; }
+.company .line { font-weight: 900; font-size: 3.2mm; line-height: 1.2; }
+.contact-list .item { font-weight: 900; font-size: 3.2mm; line-height: 1.2; }
 
 @media print {
   .a4 { width: auto; height: 297mm; page-break-after: always; margin-top: 0; }
