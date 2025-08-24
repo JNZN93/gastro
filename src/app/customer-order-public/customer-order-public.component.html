@@ -29,6 +29,18 @@
     <div *ngIf="!isLoading && !error && customerArticlePrices.length > 0" class="catalog">
       <h2>Deine Artikel</h2>
       
+      <!-- Angebotsdauer direkt unter der Überschrift -->
+      <div *ngIf="activeOffers.length > 0" class="offers-validity-header">
+        <div class="validity-header-content">
+          <span class="validity-header-label">Aktuelle Angebote gültig:</span>
+          <div class="offers-validity-list">
+            <span *ngFor="let offer of activeOffers; let last = last" class="offer-validity-item">
+              <strong>{{ offer.name }}</strong>: {{ offer.start_date | date:'dd.MM' }} - {{ offer.end_date | date:'dd.MM.yyyy' }}<span *ngIf="!last"> | </span>
+            </span>
+          </div>
+        </div>
+      </div>
+      
 
 
       <!-- Mobile Cards View (hidden on desktop) -->
