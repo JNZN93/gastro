@@ -122,6 +122,11 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
             </svg>
           </button>
+          <button class="btn-icon" (click)="exportOfferPdf(offer)" title="PDF Flyer drucken">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0-1.657-1.343-3-3-3H6a3 3 0 00-3 3v6a3 3 0 003 3h3c1.657 0 3-1.343 3-3v-1m0 0h3m-3 0l2 2m-2-2l2-2M8 8V5a2 2 0 012-2h6l4 4v5"/>
+            </svg>
+          </button>
           <button class="btn-icon delete" (click)="deleteOffer(offer.id!)" title="Angebot löschen">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
@@ -232,6 +237,45 @@
       }
 
 
+      <!-- Hidden flyer template per offer for PDF generation -->
+      <div class="flyer-wrapper" [id]="'offer-flyer-' + offer.id" style="display:none">
+        <div class="flyer">
+          <div class="flyer-header">
+            <img class="flyer-logo" src="/logo.webp" alt="Logo">
+            <div class="flyer-header-text">
+              <h1>{{ offer.name }}</h1>
+              <p>{{ offer.description }}</p>
+              <div class="flyer-dates">{{ offer.start_date | date:'dd.MM.yyyy' }} - {{ offer.end_date | date:'dd.MM.yyyy' }}</div>
+            </div>
+          </div>
+          <div class="flyer-grid">
+            @for (product of offer.products; track product.id) {
+            <div class="flyer-card">
+              <div class="flyer-image-wrap">
+                <img class="flyer-image" [src]="product.main_image_url || '/assets/placeholder-product.svg'" [attr.crossorigin]="'anonymous'" [alt]="product.article_text">
+              </div>
+              <div class="flyer-info">
+                <div class="flyer-title">{{ product.article_text }}</div>
+                <div class="flyer-sub">Art.-Nr: {{ product.article_number }}</div>
+                <div class="flyer-price-row">
+                  @if (product.use_offer_price && product.offer_price) {
+                  <div class="flyer-price">€{{ product.offer_price }}</div>
+                  } @else if (product.sale_price) {
+                  <div class="flyer-price">€{{ product.sale_price }}</div>
+                  }
+                  @if (product.sale_price && product.use_offer_price && product.offer_price) {
+                  <div class="flyer-original">€{{ product.sale_price }}</div>
+                  }
+                </div>
+              </div>
+            </div>
+            }
+          </div>
+          <div class="flyer-footer">
+            <div class="flyer-note">Solange der Vorrat reicht. Alle Preise in EUR inkl. MwSt.</div>
+          </div>
+        </div>
+      </div>
     </div>
     }
   </div>

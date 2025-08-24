@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { OffersService, Offer, OfferWithProducts, OfferProduct, CreateOfferRequest, AddProductRequest } from '../offers.service';
+import { jsPDF } from 'jspdf';
 
 @Component({
   selector: 'app-offers',
@@ -482,6 +483,59 @@ export class OffersComponent implements OnInit {
         alert('Fehler beim Laden der Angebote. Bitte überprüfen Sie die API-Verbindung.');
       }
     });
+  }
+
+  // ===== PDF EXPORT =====
+  exportOfferPdf(offer: OfferWithProducts): void {
+    try {
+      const elementId = `offer-flyer-${offer.id}`;
+      const flyerElement = document.getElementById(elementId);
+      if (!flyerElement) {
+        console.warn('Flyer-Element nicht gefunden:', elementId);
+        return;
+      }
+
+      // Temporär sichtbar machen, damit Render korrekt ist
+      flyerElement.style.display = 'block';
+
+      const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const margins = 16; // Smaller margins for more content
+      
+      // @ts-ignore: jsPDF html typings can be loose in v3
+      doc.html(flyerElement, {
+        callback: (pdf: jsPDF) => {
+          try {
+            pdf.autoPrint();
+            // Öffne in neuem Tab, die AutoPrint-Action triggert den Druckdialog
+            // @ts-ignore
+            pdf.output('dataurlnewwindow');
+          } catch (e) {
+            console.error('Fehler beim Öffnen des PDF-Fensters, speichere stattdessen...', e);
+            pdf.save(`${offer.name || 'Angebot'}-Flyer.pdf`);
+          } finally {
+            flyerElement.style.display = 'none';
+          }
+        },
+        margin: [margins, margins, margins, margins],
+        autoPaging: 'slice',
+        html2canvas: {
+          useCORS: true,
+          allowTaint: true,
+          scale: 1.5, // Reduced scale for better page fitting
+          logging: false,
+          width: pageWidth - margins * 2,
+          height: pageHeight - margins * 2
+        },
+        x: 0,
+        y: 0,
+        width: pageWidth - margins * 2
+      });
+    } catch (error) {
+      console.error('Fehler beim Generieren des PDFs:', error);
+      alert('PDF konnte nicht generiert werden.');
+    }
   }
 
 

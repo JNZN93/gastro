@@ -1311,6 +1311,131 @@
   }
 }
 
+// ===== Flyer (PDF) Styles =====
+.flyer-wrapper {
+  width: 100%;
+}
+
+.flyer {
+  width: 100%;
+  font-family: 'Poppins', Arial, sans-serif;
+  color: #0f172a;
+}
+
+.flyer-header {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 6px;
+  margin-bottom: 8px;
+}
+
+.flyer-logo {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+.flyer-header-text h1 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.flyer-header-text p {
+  margin: 1px 0 2px 0;
+  color: #475569;
+  font-size: 10px;
+}
+
+.flyer-dates {
+  font-size: 8px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.flyer-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr); // 8 columns for maximum density
+  gap: 4px;
+}
+
+.flyer-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+}
+
+.flyer-image-wrap {
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 60px; // much smaller for maximum density
+}
+
+.flyer-image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: cover;
+}
+
+.flyer-info {
+  padding: 3px 4px 4px 4px;
+}
+
+.flyer-title {
+  font-weight: 700;
+  font-size: 8px;
+  margin-bottom: 1px;
+  line-height: 1.1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.flyer-sub {
+  font-size: 6px;
+  color: #64748b;
+  margin-bottom: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.flyer-price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.flyer-price {
+  background: #dcfce7;
+  color: #166534;
+  padding: 1px 3px;
+  border-radius: 3px;
+  font-weight: 800;
+  font-size: 9px;
+}
+
+.flyer-original {
+  text-decoration: line-through;
+  color: #b91c1c;
+  font-size: 6px;
+}
+
+.flyer-footer {
+  border-top: 1px dashed #e2e8f0;
+  margin-top: 6px;
+  padding-top: 3px;
+  font-size: 6px;
+  color: #64748b;
+}
+
 // Empty State
 .empty-state {
   text-align: center;
