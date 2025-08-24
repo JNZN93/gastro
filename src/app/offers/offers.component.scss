@@ -741,6 +741,10 @@
         color: #64748b;
         line-height: 1.5;
         font-size: 0.95rem;
+        /* Reserve exakt 4 Zeilen Höhe, ohne Ellipsis */
+        min-height: calc(1.5em * 4);
+        max-height: calc(1.5em * 4);
+        overflow: hidden;
       }
 
       .offer-meta {

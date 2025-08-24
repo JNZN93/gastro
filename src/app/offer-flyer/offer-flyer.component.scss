@@ -81,7 +81,7 @@
 
 .gd-body {
   flex: 1; /* take remaining height between header and footer */
-  padding: 5mm 7mm; /* reduced to give more height to grid */
+  padding: 4mm 7mm; /* reduced further to give more height to grid */
   overflow: hidden;
 }
 
@@ -90,7 +90,7 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(3, 1fr); /* always 3 rows to fit A4 */
-  gap: 6mm; /* tighter */
+  gap: 4mm; /* smaller gap to make cards a bit higher */
 }
 
 .tile {
@@ -104,7 +104,7 @@
 }
 
 .tile-media {
-  flex: 1;
+  flex: 3.8;
   min-height: 0; /* important for flex children to shrink */
   display: flex;
   align-items: center;
@@ -113,12 +113,12 @@
   border-radius: 2.5mm;
   overflow: hidden;
 }
-.tile-media img { width: 100%; height: 100%; object-fit: contain; }
+.tile-media img { width: 100%; height: 100%; object-fit: cover; }
 .placeholder { display:flex; align-items:center; justify-content:center; width:100%; height:100%; color:#61646b; }
 .placeholder svg { width: 11mm; height: 11mm; }
 
-.tile-info { display: flex; align-items: flex-end; justify-content: space-between; gap: 3mm; margin-top: 2.5mm; }
-.title { color: #fff; font-weight: 800; font-size: 4.4mm; margin: 0; max-width: 70%; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; }
+.tile-info { display: flex; flex-direction: column; align-items: stretch; gap: 2mm; margin-top: 2.5mm; }
+.title { color: #fff; font-weight: 400; font-size: 3.6mm; margin: 0; max-width: 100%; line-height: 1.2; overflow: hidden; display: block; max-height: calc(1.2em * 3); }
 
 .price-chip {
   background: #e53935;
