@@ -231,50 +231,7 @@
       </div>
       }
 
-      <!-- Add Product Form -->
-      @if (showAddProductForm && selectedOffer?.id === offer.id) {
-      <div class="add-product-form">
-        <h4>Produkt zu Angebot hinzufügen</h4>
-        <form [formGroup]="addProductForm" (ngSubmit)="onSubmitAddProduct()">
-          <div class="form-row">
-            <div class="form-group">
-              <label for="productId">Produkt-ID *</label>
-              <input type="number" id="productId" formControlName="productId" placeholder="123">
-            </div>
-            <div class="form-group">
-              <label for="offerPrice">Angebotspreis (optional)</label>
-              <input type="number" id="offerPrice" formControlName="offerPrice" placeholder="75.00" step="0.01" min="0">
-            </div>
-          </div>
 
-          <div class="form-row">
-            <div class="form-group">
-              <label for="minQuantity">Mindestmenge (optional)</label>
-              <input type="number" id="minQuantity" formControlName="minQuantity" placeholder="1" min="1">
-            </div>
-            <div class="form-group">
-              <label for="maxQuantity">Maximalmenge (optional)</label>
-              <input type="number" id="maxQuantity" formControlName="maxQuantity" placeholder="10" min="1">
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group checkbox-group">
-              <label class="checkbox-label">
-                <input type="checkbox" formControlName="useOfferPrice">
-                <span class="checkmark"></span>
-                Direkten Angebotspreis verwenden
-              </label>
-            </div>
-          </div>
-
-          <div class="form-actions">
-            <button type="button" class="btn-secondary" (click)="toggleAddProductForm(offer)">Abbrechen</button>
-            <button type="submit" class="btn-primary" [disabled]="!addProductForm.valid">Produkt hinzufügen</button>
-          </div>
-        </form>
-      </div>
-      }
     </div>
     }
   </div>
@@ -329,3 +286,134 @@
   </div>
   }
 </div>
+
+<!-- Add Product Modal -->
+@if (showAddProductForm && selectedOffer) {
+<div class="add-product-modal">
+  <div class="add-product-modal-content">
+    <div class="add-product-modal-header">
+      <h2>Produkt zu Angebot hinzufügen</h2>
+      <p class="offer-name">{{ selectedOffer.name }}</p>
+      <button class="close-add-product-modal" (click)="closeAddProductModal()">
+        <span class="material-icons">close</span>
+      </button>
+    </div>
+    
+    <div class="add-product-modal-body">
+      <form [formGroup]="addProductForm" (ngSubmit)="onSubmitAddProduct()">
+        <div class="product-search-section">
+          <label for="modalProductSearch">Produkt suchen *</label>
+          <div class="modal-search-container">
+            <div class="modal-search-input-wrapper">
+              <input 
+                type="text" 
+                id="modalProductSearch" 
+                formControlName="productSearch" 
+                placeholder="Artikelname oder -nummer eingeben..."
+                (input)="onProductSearch()"
+                (keydown)="onProductSearchKeyDown($event)"
+                (focus)="onProductSearch()"
+                (blur)="onProductSearchBlur()"
+                [class.searching]="isSearching"
+                #modalSearchInput
+              >
+              @if (addProductForm.get('productSearch')?.value) {
+              <button type="button" (click)="clearProductSelection()" class="clear-search">
+                <span class="material-icons">close</span>
+              </button>
+              }
+            </div>
+            @if (isSearching) {
+            <div class="search-spinner">
+              <div class="spinner"></div>
+            </div>
+            }
+            
+            <!-- Dropdown direkt unter dem Input -->
+            @if (productSearchResults.length > 0 && showSearchResults) {
+            <div class="modal-search-results">
+              @for (product of productSearchResults; track product.id; let i = $index) {
+              <div class="modal-search-result-item" 
+                   [class.selected]="selectedIndex === i"
+                   (click)="selectProduct(product)"
+                   (mouseenter)="selectedIndex = i">
+                <div class="product-info">
+                  <div class="product-main">
+                    <h4 class="product-title">{{ product.article_text }}</h4>
+                    <p class="product-number">Art.-Nr: {{ product.article_number }}</p>
+                    @if (product.category) {
+                    <span class="product-category">{{ product.category }}</span>
+                    }
+                  </div>
+                  <div class="product-pricing">
+                    @if (product.sale_price) {
+                    <span class="product-price">€{{ product.sale_price }}</span>
+                    } @else if (product.gross_price) {
+                    <span class="product-price">€{{ product.gross_price }}</span>
+                    }
+                    @if (product.ean) {
+                    <span class="product-ean">EAN: {{ product.ean }}</span>
+                    }
+                  </div>
+                </div>
+              </div>
+              }
+            </div>
+            } @else if (addProductForm.get('productSearch')?.value && addProductForm.get('productSearch')?.value.length >= 1 && !isSearching) {
+            <div class="modal-no-results">
+              <p>Keine Produkte für "{{ addProductForm.get('productSearch')?.value }}" gefunden.</p>
+            </div>
+            }
+          </div>
+          
+          @if (selectedProduct) {
+          <div class="modal-selected-product">
+            <span class="selected-label">Ausgewähltes Produkt:</span>
+            <div class="selected-info">
+              <strong>{{ selectedProduct.article_text }}</strong>
+              <span>{{ selectedProduct.article_number }}</span>
+              <span class="selected-category">{{ selectedProduct.category }}</span>
+            </div>
+          </div>
+          }
+        </div>
+
+        <div class="product-details-section">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="modalOfferPrice">Angebotspreis (optional)</label>
+              <input type="number" id="modalOfferPrice" formControlName="offerPrice" placeholder="75.00" step="0.01" min="0">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="modalMinQuantity">Mindestmenge (optional)</label>
+              <input type="number" id="modalMinQuantity" formControlName="minQuantity" placeholder="1" min="1">
+            </div>
+            <div class="form-group">
+              <label for="modalMaxQuantity">Maximalmenge (optional)</label>
+              <input type="number" id="modalMaxQuantity" formControlName="maxQuantity" placeholder="10" min="1">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group checkbox-group">
+              <label class="checkbox-label">
+                <input type="checkbox" formControlName="useOfferPrice">
+                <span class="checkmark"></span>
+                Direkten Angebotspreis verwenden
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-form-actions">
+          <button type="button" class="btn-secondary" (click)="closeAddProductModal()">Abbrechen</button>
+          <button type="submit" class="btn-primary" [disabled]="!addProductForm.valid || !selectedProduct">Produkt hinzufügen</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+}

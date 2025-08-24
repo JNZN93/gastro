@@ -187,4 +187,17 @@ export class OffersService {
   deleteOffer(id: number): Observable<any> {
     return this.http.delete<any>(`${this.apiUrl}/delete/${id}`, { headers: this.getAuthHeaders() });
   }
+
+  // Produkte suchen
+  searchProducts(searchTerm: string): Observable<any> {
+    const url = `https://multi-mandant-ecommerce.onrender.com/api/products`;
+    console.log('Suche nach Produkten mit Term:', searchTerm);
+    console.log('API URL:', url);
+    
+    // Verwende den api/products Endpunkt für alle verfügbaren Produkte
+    // Der Endpunkt gibt direkt ein Array von Produkten zurück
+    return this.http.get(url, { 
+      headers: this.getAuthHeaders() 
+    });
+  }
 }
