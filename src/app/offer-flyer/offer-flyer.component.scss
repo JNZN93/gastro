@@ -18,6 +18,11 @@
 /* large visual spacing between multiple flyers on screen */
 .a4 + .a4 { margin-top: 25mm; }
 
+/* Temporär: Nur die erste Flyer-Seite anzeigen */
+.a4:not(:first-of-type) {
+  display: none;
+}
+
 .gd-header {
   display: flex;
   justify-content: space-between;
