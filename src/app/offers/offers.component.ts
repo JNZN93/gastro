@@ -168,18 +168,33 @@ export class OffersComponent implements OnInit {
     console.log('🔍 Filtere mit Suchbegriff:', `"${trimmedTerm}"`);
     console.log('🔍 Anzahl Produkte vor Filterung:', products.length);
     
+    // Teile den Suchbegriff in einzelne Wörter auf
+    const searchWords = trimmedTerm.split(/\s+/).filter(word => word.length > 0);
+    
     const filtered = products.filter(product => {
       const articleText = (product.article_text || '').toLowerCase();
       const articleNumber = (product.article_number || '').toLowerCase();
       const category = (product.category || '').toLowerCase();
       const ean = (product.ean || '').toLowerCase();
       
-      const matchesText = articleText.includes(trimmedTerm);
-      const matchesNumber = articleNumber.includes(trimmedTerm);
-      const matchesCategory = category.includes(trimmedTerm);
-      const matchesEan = ean.includes(trimmedTerm);
+      // Wenn nur ein Wort gesucht wird, verwende die alte Logik
+      if (searchWords.length === 1) {
+        const word = searchWords[0];
+        const matchesText = articleText.includes(word);
+        const matchesNumber = articleNumber.includes(word);
+        const matchesCategory = category.includes(word);
+        const matchesEan = ean.includes(word);
+        
+        return matchesText || matchesNumber || matchesCategory || matchesEan;
+      }
       
-      const matches = matchesText || matchesNumber || matchesCategory || matchesEan;
+      // Bei mehreren Wörtern: mindestens eines muss passen
+      const matchesAnyWord = searchWords.some(word => {
+        return articleText.includes(word) || 
+               articleNumber.includes(word) || 
+               category.includes(word) || 
+               ean.includes(word);
+      });
       
       // Debug für die ersten paar Produkte
       if (products.indexOf(product) < 3) {
@@ -188,15 +203,12 @@ export class OffersComponent implements OnInit {
           articleNumber,
           category,
           ean,
-          matchesText,
-          matchesNumber,
-          matchesCategory,
-          matchesEan,
-          matches
+          searchWords,
+          matchesAnyWord
         });
       }
       
-      return matches;
+      return matchesAnyWord;
     });
     
     console.log('🔍 Anzahl Produkte nach Filterung:', filtered.length);
@@ -486,6 +498,31 @@ export class OffersComponent implements OnInit {
   }
 
   // ===== PDF EXPORT =====
+  onImageError(event: Event): void {
+    const target = event.target as HTMLImageElement;
+    if (target) {
+      target.src = '/assets/placeholder-product.svg';
+    }
+  }
+
+  // Methode um CORS-Probleme mit externen Bildern zu umgehen
+  private async preloadImagesForPDF(products: any[]): Promise<void> {
+    // Einfache Lösung: Verwende die URLs direkt
+    // Die Bilder werden beim PDF-Rendering von html2canvas geladen
+    console.log('Bilder werden direkt von html2canvas geladen');
+    return Promise.resolve();
+  }
+
+  private preloadImage(src: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => resolve();
+      img.onerror = () => reject();
+      img.src = src;
+    });
+  }
+
   exportOfferPdf(offer: OfferWithProducts): void {
     try {
       const elementId = `offer-flyer-${offer.id}`;
@@ -498,44 +535,125 @@ export class OffersComponent implements OnInit {
       // Temporär sichtbar machen, damit Render korrekt ist
       flyerElement.style.display = 'block';
 
-      const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const pageHeight = doc.internal.pageSize.getHeight();
-      const margins = 16; // Smaller margins for more content
-      
-      // @ts-ignore: jsPDF html typings can be loose in v3
-      doc.html(flyerElement, {
-        callback: (pdf: jsPDF) => {
-          try {
-            pdf.autoPrint();
-            // Öffne in neuem Tab, die AutoPrint-Action triggert den Druckdialog
-            // @ts-ignore
-            pdf.output('dataurlnewwindow');
-          } catch (e) {
-            console.error('Fehler beim Öffnen des PDF-Fensters, speichere stattdessen...', e);
-            pdf.save(`${offer.name || 'Angebot'}-Flyer.pdf`);
-          } finally {
-            flyerElement.style.display = 'none';
-          }
-        },
-        margin: [margins, margins, margins, margins],
-        autoPaging: 'slice',
-        html2canvas: {
-          useCORS: true,
-          allowTaint: true,
-          scale: 1.5, // Reduced scale for better page fitting
-          logging: false,
-          width: pageWidth - margins * 2,
-          height: pageHeight - margins * 2
-        },
-        x: 0,
-        y: 0,
-        width: pageWidth - margins * 2
+      // Bilder vorladen und CORS-Probleme behandeln
+      this.preloadImagesForPDF(offer.products).then(() => {
+        this.waitForImagesToLoad(flyerElement).then(() => {
+          this.generatePDF(flyerElement, offer);
+        }).catch(error => {
+          console.error('Fehler beim Laden der Bilder:', error);
+          // Trotzdem PDF generieren
+          this.generatePDF(flyerElement, offer);
+        });
+      }).catch(error => {
+        console.error('Fehler beim Laden der Bilder:', error);
+        // Trotzdem PDF generieren
+        this.generatePDF(flyerElement, offer);
       });
+
     } catch (error) {
       console.error('Fehler beim Generieren des PDFs:', error);
       alert('PDF konnte nicht generiert werden.');
     }
+  }
+
+  private waitForImagesToLoad(element: HTMLElement): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const images = element.querySelectorAll('img');
+      if (images.length === 0) {
+        resolve();
+        return;
+      }
+
+      let loadedCount = 0;
+      const totalImages = images.length;
+      const timeout = setTimeout(() => {
+        console.warn('Timeout beim Laden der Bilder, generiere PDF trotzdem...');
+        resolve();
+      }, 10000); // 10 Sekunden Timeout
+
+      images.forEach((img: HTMLImageElement) => {
+        if (img.complete && img.naturalHeight !== 0) {
+          loadedCount++;
+          if (loadedCount === totalImages) {
+            clearTimeout(timeout);
+            resolve();
+          }
+        } else {
+          img.onload = () => {
+            loadedCount++;
+            if (loadedCount === totalImages) {
+              clearTimeout(timeout);
+              resolve();
+            }
+          };
+          img.onerror = () => {
+            console.warn('Bild konnte nicht geladen werden:', img.src);
+            loadedCount++;
+            if (loadedCount === totalImages) {
+              clearTimeout(timeout);
+              resolve();
+            }
+          };
+        }
+      });
+    });
+  }
+
+  private generatePDF(flyerElement: HTMLElement, offer: OfferWithProducts): void {
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margins = 16; // Smaller margins for more content
+    
+    // @ts-ignore: jsPDF html typings can be loose in v3
+    doc.html(flyerElement, {
+      callback: (pdf: jsPDF) => {
+        try {
+          pdf.autoPrint();
+          // Öffne in neuem Tab, die AutoPrint-Action triggert den Druckdialog
+          // @ts-ignore
+          pdf.output('dataurlnewwindow');
+        } catch (e) {
+          console.error('Fehler beim Öffnen des PDF-Fensters, speichere stattdessen...', e);
+          pdf.save(`${offer.name || 'Angebot'}-Flyer.pdf`);
+        } finally {
+          flyerElement.style.display = 'none';
+        }
+      },
+      margin: [margins, margins, margins, margins],
+      autoPaging: 'slice',
+      html2canvas: {
+        useCORS: true,
+        allowTaint: true,
+        scale: 1.5, // Reduced scale for better page fitting
+        logging: false,
+        width: pageWidth - margins * 2,
+        height: pageHeight - margins * 2,
+        imageTimeout: 15000, // 15 Sekunden Timeout für Bilder
+        onclone: (clonedDoc) => {
+          // Stelle sicher, dass alle Bilder im geklonten Dokument korrekt sind
+          const clonedImages = clonedDoc.querySelectorAll('img');
+          clonedImages.forEach((img: HTMLImageElement) => {
+            if (img.src.includes('placeholder-product.svg')) {
+              img.style.display = 'block';
+            }
+            // Entferne CORS-Attribute für bessere Kompatibilität
+            img.removeAttribute('crossorigin');
+          });
+        },
+        // Zusätzliche CORS-Optionen
+        foreignObjectRendering: false,
+        removeContainer: true,
+        // Versuche Bilder auch ohne CORS zu laden
+        ignoreElements: (element) => {
+          // Ignoriere keine Elemente - lade alle Bilder
+          return false;
+        }
+      },
+      x: 0,
+      y: 0,
+      width: pageWidth - margins * 2
+    });
   }
 
 

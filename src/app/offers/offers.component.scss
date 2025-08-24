@@ -937,13 +937,72 @@
 
       .product-main-info {
         display: flex;
-        flex-direction: column;
-        gap: 1rem;
+        flex-direction: row;
+        gap: 1.5rem;
+        align-items: flex-start;
 
-        .product-header {
+        .product-image-section {
+          display: flex;
+          justify-content: flex-start;
+          align-items: flex-start;
+          flex-shrink: 0;
+          width: auto;
+          margin-bottom: 0;
+          padding: 0.5rem;
+          background: rgba(248, 250, 252, 0.6);
+          border-radius: 0.75rem;
+          border: 1px solid rgba(226, 232, 240, 0.4);
+
+          .product-detail-image {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 0.5rem;
+            border: 2px solid rgba(59, 130, 246, 0.2);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transition: all 0.2s ease;
+
+            &:hover {
+              transform: scale(1.05);
+              border-color: rgba(59, 130, 246, 0.4);
+              box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+            }
+          }
+
+          .product-detail-placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-radius: 0.5rem;
+            border: 2px dashed #cbd5e1;
+            transition: all 0.2s ease;
+            
+            &:hover {
+              background: linear-gradient(135deg, #f1f5f9 0%, #dbeafe 100%);
+              border-color: #94a3b8;
+            }
+            
+            svg {
+              width: 32px;
+              height: 32px;
+              color: #64748b;
+            }
+          }
+        }
+
+        .product-content-right {
+          flex: 1;
           display: flex;
           flex-direction: column;
-          gap: 0.75rem;
+          gap: 1rem;
+
+          .product-header {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
 
           .product-name {
             margin: 0;
@@ -982,6 +1041,7 @@
             }
           }
         }
+      }
 
         .product-details-grid {
           display: grid;
@@ -1356,18 +1416,23 @@
 }
 
 .flyer-grid {
-  display: grid;
-  grid-template-columns: repeat(8, 1fr); // 8 columns for maximum density
-  gap: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px; /* Even smaller gap */
+  max-width: 100%;
+  justify-content: flex-start;
 }
 
 .flyer-card {
   border: 1px solid #e2e8f0;
-  border-radius: 4px;
+  border-radius: 3px;
   overflow: hidden;
   background: #ffffff;
   display: flex;
   flex-direction: column;
+  width: 90px; /* Much narrower width for DIN A4 landscape */
+  flex-shrink: 0; /* Prevent shrinking */
+  margin-bottom: 3px; /* Smaller bottom margin */
 }
 
 .flyer-image-wrap {
@@ -1375,57 +1440,95 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 60px; // much smaller for maximum density
+  height: 45px; /* Even smaller height */
+  min-height: 45px;
+  width: 100%;
 }
 
 .flyer-image {
   max-width: 100%;
   max-height: 100%;
   object-fit: cover;
+  width: auto;
+  height: auto;
+}
+
+.flyer-image-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: #e2e8f0;
+  border-radius: 2px;
+  
+  svg {
+    width: 20px;
+    height: 20px;
+    color: #94a3b8;
+  }
+}
+
+.flyer-image-hidden {
+  position: absolute;
+  top: -9999px;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .flyer-info {
-  padding: 3px 4px 4px 4px;
+  padding: 2px 2px 2px 2px; /* Minimal padding */
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .flyer-title {
   font-weight: 700;
-  font-size: 8px;
+  font-size: 6px; /* Smaller font */
   margin-bottom: 1px;
-  line-height: 1.1;
+  line-height: 1.0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  width: 100%;
 }
 
 .flyer-sub {
-  font-size: 6px;
+  font-size: 4px; /* Very small font */
   color: #64748b;
-  margin-bottom: 2px;
+  margin-bottom: 1px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  width: 100%;
 }
 
 .flyer-price-row {
   display: flex;
   align-items: baseline;
-  gap: 2px;
+  gap: 1px;
+  flex-wrap: wrap;
+  width: 100%;
 }
 
 .flyer-price {
   background: #dcfce7;
   color: #166534;
-  padding: 1px 3px;
-  border-radius: 3px;
+  padding: 1px 2px;
+  border-radius: 2px;
   font-weight: 800;
-  font-size: 9px;
+  font-size: 7px; /* Smaller font */
+  white-space: nowrap;
 }
 
 .flyer-original {
   text-decoration: line-through;
   color: #b91c1c;
-  font-size: 6px;
+  font-size: 4px; /* Very small font */
+  white-space: nowrap;
 }
 
 .flyer-footer {

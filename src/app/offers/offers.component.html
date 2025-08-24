@@ -148,22 +148,37 @@
         </div>
         <div class="products-content">
           <div class="products-list">
-                      @for (product of offer.products; track product.id) {
-          <div class="product-item">
+            @for (product of offer.products; track product.product_id + '_' + product.article_number) {
+            <div class="product-item">
             <div class="product-main-info">
-              <div class="product-header">
-                <h5 class="product-name">{{ product.article_text }}</h5>
-                <div class="product-badges">
-                  @if (product.category) {
-                  <span class="product-category">{{ product.category }}</span>
-                  }
-                  @if (product.article_notes) {
-                  <span class="product-notes">{{ product.article_notes }}</span>
-                  }
+              <div class="product-image-section">
+                @if (product.main_image_url) {
+                <img class="product-detail-image" 
+                     [src]="product.main_image_url" 
+                     [alt]="product.article_text"
+                     (error)="onImageError($event)">
+                } @else {
+                <div class="product-detail-placeholder">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 002 2z"/>
+                  </svg>
                 </div>
+                }
               </div>
-              
-              <div class="product-details-grid">
+              <div class="product-content-right">
+                <div class="product-header">
+                  <h5 class="product-name">{{ product.article_text }}</h5>
+                  <div class="product-badges">
+                    @if (product.category) {
+                    <span class="product-category">{{ product.category }}</span>
+                    }
+                    @if (product.article_notes) {
+                    <span class="product-notes">{{ product.article_notes }}</span>
+                    }
+                  </div>
+                </div>
+                
+                <div class="product-details-grid">
                 <div class="detail-item">
                   <span class="detail-label">Artikelnummer:</span>
                   <span class="detail-value">{{ product.article_number }}</span>
@@ -186,7 +201,7 @@
                 }
               </div>
             </div>
-
+            </div>
             <div class="product-pricing-section">
               <div class="price-display">
                 @if (product.use_offer_price && product.offer_price) {
@@ -249,10 +264,19 @@
             </div>
           </div>
           <div class="flyer-grid">
-            @for (product of offer.products; track product.id) {
+            @for (product of offer.products; track product.product_id + '_' + product.article_number) {
             <div class="flyer-card">
               <div class="flyer-image-wrap">
-                <img class="flyer-image" [src]="product.main_image_url || '/assets/placeholder-product.svg'" [attr.crossorigin]="'anonymous'" [alt]="product.article_text">
+                <img *ngIf="product.main_image_url" 
+                     class="flyer-image" 
+                     [src]="product.main_image_url" 
+                     [alt]="product.article_text"
+                     (error)="onImageError($event)">
+                <div *ngIf="!product.main_image_url" class="flyer-image-placeholder">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 002 2z"/>
+                  </svg>
+                </div>
               </div>
               <div class="flyer-info">
                 <div class="flyer-title">{{ product.article_text }}</div>
