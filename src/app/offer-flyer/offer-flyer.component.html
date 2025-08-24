@@ -28,7 +28,7 @@
             </div>
           </div>
 
-          <div class="headline-red">{{ offer.name || 'Preisknaller' }}</div>
+          <div class="headline-red">{{ sanitizeText(offer.name) || 'Preisknaller' }}</div>
         </div>
 
         <div class="header-right">
@@ -59,7 +59,7 @@
 
             <div class="tile-info">
               <div class="title-wrap">
-                <h3 class="title">{{ product.article_text }}</h3>
+                <h3 class="title">{{ sanitizeText(product.article_text) }}</h3>
               </div>
               <div class="price-chip" [attr.data-kind]="(product.use_offer_price && product.offer_price) ? 'offer' : null">
                 <img class="cart" src="/shoppingcart.png" alt="" />

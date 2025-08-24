@@ -79,8 +79,8 @@
   align-items: center;
   gap: 2.5mm; /* smaller */
 }
-.gd-logo { width: 16mm; height: 16mm; object-fit: contain; }
-.gd-brand { text-align: center; }
+.gd-logo { width: 36mm; height: 36mm; object-fit: contain; }
+.gd-brand { display: none; }
 .gd-name { font-weight: 900; font-size: 4.2mm; letter-spacing: .4mm; }
 .gd-sub { font-weight: 700; font-size: 3mm; }
 

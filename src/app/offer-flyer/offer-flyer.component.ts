@@ -105,6 +105,12 @@ export class OfferFlyerComponent implements OnInit {
       target.src = '/assets/placeholder-product.svg';
     }
   }
+
+  // Replace non-breaking spaces so text can wrap naturally
+  sanitizeText(text?: string | null): string {
+    if (!text) return '';
+    return String(text).replace(/\u00A0/g, ' ').replace(/&nbsp;/g, ' ');
+  }
 }
 
 
