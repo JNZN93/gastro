@@ -1,14 +1,15 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { OffersService, Offer, OfferWithProducts, OfferProduct, CreateOfferRequest, AddProductRequest } from '../offers.service';
+import { HttpClient, HttpClientModule } from '@angular/common/http';
 // import { jsPDF } from 'jspdf';
 
 @Component({
   selector: 'app-offers',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, HttpClientModule],
   templateUrl: './offers.component.html',
   styleUrls: ['./offers.component.scss']
 })
@@ -33,6 +34,9 @@ export class OffersComponent implements OnInit {
   
   createOfferForm: FormGroup;
   addProductForm: FormGroup;
+
+  // Image upload helper
+  private http = inject(HttpClient);
 
   constructor(
     private offersService: OffersService,
@@ -740,5 +744,45 @@ export class OffersComponent implements OnInit {
     if (!offer.is_active) return 'inactive';
     if (this.isOfferActive(offer)) return 'active';
     return 'expired';
+  }
+
+  // === Image Assign (reuse endpoint from product-management) ===
+  onProductImageClick(product: any): void {
+    const productId = product?.id ?? product?.product_id;
+    if (!productId) {
+      console.error('Kein Produkt-ID für Bild-Upload gefunden', product);
+      alert('Fehlende Produkt-ID für Bild-Upload.');
+      return;
+    }
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*';
+    fileInput.style.display = 'none';
+
+    fileInput.addEventListener('change', (event) => {
+      const target = event.target as HTMLInputElement;
+      if (target.files && target.files.length > 0) {
+        const selectedFile = target.files[0];
+        const formData = new FormData();
+        formData.append('image', selectedFile);
+
+        this.http.post(`https://multi-mandant-ecommerce.onrender.com/api/product-images/${productId}/images`, formData)
+          .subscribe({
+            next: () => {
+              // Refresh offers to show updated image
+              this.loadOffers();
+            },
+            error: (error) => {
+              console.error('Error uploading image:', error);
+              alert('Fehler beim Hochladen des Bildes.');
+            }
+          });
+      }
+
+      document.body.removeChild(fileInput);
+    });
+
+    document.body.appendChild(fileInput);
+    fileInput.click();
   }
 }
