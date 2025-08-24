@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { OffersService, Offer, OfferWithProducts, OfferProduct, CreateOfferRequest, AddProductRequest } from '../offers.service';
-import { jsPDF } from 'jspdf';
+// import { jsPDF } from 'jspdf';
 
 @Component({
   selector: 'app-offers',
@@ -497,7 +497,7 @@ export class OffersComponent implements OnInit {
     });
   }
 
-  // ===== PDF EXPORT =====
+  // ===== Flyer Navigation statt PDF =====
   onImageError(event: Event): void {
     const target = event.target as HTMLImageElement;
     if (target) {
@@ -523,37 +523,16 @@ export class OffersComponent implements OnInit {
     });
   }
 
-  exportOfferPdf(offer: OfferWithProducts): void {
+  openFlyer(offer: OfferWithProducts): void {
+    if (!offer.id) return;
     try {
-      const elementId = `offer-flyer-${offer.id}`;
-      const flyerElement = document.getElementById(elementId);
-      if (!flyerElement) {
-        console.warn('Flyer-Element nicht gefunden:', elementId);
-        return;
-      }
-
-      // Temporär sichtbar machen, damit Render korrekt ist
-      flyerElement.style.display = 'block';
-
-      // Bilder vorladen und CORS-Probleme behandeln
-      this.preloadImagesForPDF(offer.products).then(() => {
-        this.waitForImagesToLoad(flyerElement).then(() => {
-          this.generatePDF(flyerElement, offer);
-        }).catch(error => {
-          console.error('Fehler beim Laden der Bilder:', error);
-          // Trotzdem PDF generieren
-          this.generatePDF(flyerElement, offer);
-        });
-      }).catch(error => {
-        console.error('Fehler beim Laden der Bilder:', error);
-        // Trotzdem PDF generieren
-        this.generatePDF(flyerElement, offer);
+      console.log('➡️ Navigiere zum Flyer mit Angebot:', {
+        id: offer.id,
+        name: offer.name,
+        products: offer.products?.length
       });
-
-    } catch (error) {
-      console.error('Fehler beim Generieren des PDFs:', error);
-      alert('PDF konnte nicht generiert werden.');
-    }
+    } catch {}
+    this.router.navigate([`/offers/${offer.id}/flyer`], { state: { offer } });
   }
 
   private waitForImagesToLoad(element: HTMLElement): Promise<void> {
@@ -599,62 +578,7 @@ export class OffersComponent implements OnInit {
     });
   }
 
-  private generatePDF(flyerElement: HTMLElement, offer: OfferWithProducts): void {
-    const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
-    const margins = 16; // Smaller margins for more content
-    
-    // @ts-ignore: jsPDF html typings can be loose in v3
-    doc.html(flyerElement, {
-      callback: (pdf: jsPDF) => {
-        try {
-          pdf.autoPrint();
-          // Öffne in neuem Tab, die AutoPrint-Action triggert den Druckdialog
-          // @ts-ignore
-          pdf.output('dataurlnewwindow');
-        } catch (e) {
-          console.error('Fehler beim Öffnen des PDF-Fensters, speichere stattdessen...', e);
-          pdf.save(`${offer.name || 'Angebot'}-Flyer.pdf`);
-        } finally {
-          flyerElement.style.display = 'none';
-        }
-      },
-      margin: [margins, margins, margins, margins],
-      autoPaging: 'slice',
-      html2canvas: {
-        useCORS: true,
-        allowTaint: true,
-        scale: 1.5, // Reduced scale for better page fitting
-        logging: false,
-        width: pageWidth - margins * 2,
-        height: pageHeight - margins * 2,
-        imageTimeout: 15000, // 15 Sekunden Timeout für Bilder
-        onclone: (clonedDoc) => {
-          // Stelle sicher, dass alle Bilder im geklonten Dokument korrekt sind
-          const clonedImages = clonedDoc.querySelectorAll('img');
-          clonedImages.forEach((img: HTMLImageElement) => {
-            if (img.src.includes('placeholder-product.svg')) {
-              img.style.display = 'block';
-            }
-            // Entferne CORS-Attribute für bessere Kompatibilität
-            img.removeAttribute('crossorigin');
-          });
-        },
-        // Zusätzliche CORS-Optionen
-        foreignObjectRendering: false,
-        removeContainer: true,
-        // Versuche Bilder auch ohne CORS zu laden
-        ignoreElements: (element) => {
-          // Ignoriere keine Elemente - lade alle Bilder
-          return false;
-        }
-      },
-      x: 0,
-      y: 0,
-      width: pageWidth - margins * 2
-    });
-  }
+  // Entfernte PDF-Generierung (jsPDF) – Navigation ersetzt die Funktionalität
 
 
 

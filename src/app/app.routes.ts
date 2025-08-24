@@ -21,6 +21,7 @@ import { ReportsComponent } from './reports/reports.component';
 import { OffersComponent } from './offers/offers.component';
 import { AuthGuard } from './auth.guard';
 import { AdminAuthGuard } from './admin-auth.guard';
+import { OfferFlyerComponent } from './offer-flyer/offer-flyer.component';
 
 export const routes: Routes = [
     { 
@@ -48,6 +49,7 @@ export const routes: Routes = [
     { path: 'route-planning', component: RoutePlanningComponent, canActivate: [AuthGuard] },
     { path: 'reports', component: ReportsComponent, canActivate: [AuthGuard] },
     { path: 'offers', component: OffersComponent, canActivate: [AuthGuard] },
+    { path: 'offers/:id/flyer', component: OfferFlyerComponent, canActivate: [AuthGuard] },
     { path: 'category/:categoryName', component: CategoryDetailComponent },
     // Neue Route für kundenspezifische Bestellungen (öffentlich zugänglich)
     { 

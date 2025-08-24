@@ -1,0 +1,77 @@
+<div class="flyer-container">
+  @if (loading) {
+    <div class="loading">
+      <div class="spinner"></div>
+      <p>Lade Flyer...</p>
+    </div>
+  }
+
+  @if (!loading && error) {
+    <div class="error">{{ error }}</div>
+  }
+
+  @if (!loading && offer) {
+    <section class="flyer-hero">
+      <img class="logo" src="/logo.webp" alt="Logo" />
+      <div class="hero-text">
+        <h1>{{ offer.name }}</h1>
+        <p>{{ offer.description }}</p>
+        <span class="dates">{{ offer.start_date | date:'dd.MM.yyyy' }} - {{ offer.end_date | date:'dd.MM.yyyy' }}</span>
+      </div>
+      <div class="hero-badge" *ngIf="offer.discount_percentage || offer.discount_amount">
+        @if (offer.discount_percentage) {<span>-{{ offer.discount_percentage }}%</span>}
+        @if (!offer.discount_percentage && offer.discount_amount) {<span>-€{{ offer.discount_amount }}</span>}
+      </div>
+    </section>
+
+    @if (offer.products && offer.products.length > 0) {
+    <section class="product-grid">
+      @for (product of offer.products; track product.product_id + '_' + product.article_number) {
+      <article class="product-card">
+        <div class="image-wrap">
+          @if (product.main_image_url) {
+            <img [src]="product.main_image_url" [alt]="product.article_text" (error)="onImageError($event)" />
+          } @else {
+            <div class="placeholder">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2z"/>
+              </svg>
+            </div>
+          }
+        </div>
+
+        <div class="content">
+          <div class="title">{{ product.article_text }}</div>
+          <div class="sub">Art.-Nr: {{ product.article_number }}</div>
+
+          <div class="badges">
+            @if (product.category) { <span class="badge category">{{ product.category }}</span> }
+            @if (product.unit) { <span class="badge unit">{{ product.unit }}</span> }
+            @if (product.ean) { <span class="badge ean">EAN: {{ product.ean }}</span> }
+          </div>
+
+          <div class="price-row">
+            @if (product.use_offer_price && product.offer_price) {
+              <span class="price">€{{ product.offer_price }}</span>
+            } @else if (product.sale_price) {
+              <span class="price">€{{ product.sale_price }}</span>
+            }
+            @if (product.sale_price && product.use_offer_price && product.offer_price) {
+              <span class="original">€{{ product.sale_price }}</span>
+            }
+          </div>
+
+          @if (product.min_quantity || product.max_quantity) {
+          <div class="quantity">Menge: {{ product.min_quantity || 0 }} - {{ product.max_quantity || '∞' }}</div>
+          }
+        </div>
+      </article>
+      }
+    </section>
+    } @else {
+      <div class="empty">Keine Produkte im Angebot vorhanden.</div>
+    }
+  }
+</div>
+
+
