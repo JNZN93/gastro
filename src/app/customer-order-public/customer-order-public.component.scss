@@ -267,15 +267,14 @@
   box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
 }
 
-/* Desktop Category Headers */
-.category-header {
-  margin: 2rem 0 1rem 0;
+/* Gemeinsame Kategorie-Header Basis-Styles */
+.category-header, .category-header-mobile {
   cursor: pointer;
   transition: all 0.3s ease;
+  margin: 2rem 0 1rem 0;
   
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(44, 62, 80, 0.4);
   }
   
   .category-title {
@@ -292,70 +291,47 @@
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
+    
+    .category-name {
+      flex: 1;
+      text-align: center;
+      color: white;
+      font-weight: 600;
+      font-size: 1.1rem;
+    }
+    
+    .category-count {
+      font-size: 0.9rem;
+      opacity: 0.8;
+      font-weight: 400;
+      margin-left: 0.5rem;
+      color: rgba(255, 255, 255, 0.9);
+    }
+    
+    .category-toggle-icon {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: white;
+      transition: all 0.3s ease;
+      flex-shrink: 0;
+    }
   }
   
-  .category-name {
-    flex: 1;
-    text-align: center;
+  /* Spezielle Kategorie-Styles */
+  &.new-category .category-title {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
   }
   
-  .category-toggle-icon {
-    font-size: 1.2rem;
-    font-weight: bold;
-    color: white;
-    transition: all 0.3s ease;
-    flex-shrink: 0;
+  &.offers-category .category-title {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    
+    &:hover {
+      background: linear-gradient(135deg, #5a6fd8, #6a4190);
+    }
   }
 }
 
-/* Category Count Styles */
-.category-count {
-  font-size: 0.9rem;
-  opacity: 0.8;
-  font-weight: 400;
-  margin-left: 0.5rem;
-  color: rgba(255, 255, 255, 0.9);
-}
 
-/* Mobile Category Headers */
-.category-header-mobile {
-  cursor: pointer;
-  transition: all 0.3s ease;
-  margin: 2rem 0 1rem 0;
-  
-  &:hover {
-    transform: translateY(-1px);
-  }
-  
-  .category-title {
-    background: linear-gradient(135deg, #3498db, #2980b9);
-    color: white;
-    padding: 0.75rem 1.5rem;
-    border-radius: 8px;
-    font-size: 1.1rem;
-    font-weight: 600;
-    text-align: center;
-    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
-    margin: 0;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-  }
-  
-  .category-name {
-    flex: 1;
-    text-align: center;
-  }
-  
-  .category-toggle-icon {
-    font-size: 1.2rem;
-    font-weight: bold;
-    color: white;
-    transition: all 0.3s ease;
-    flex-shrink: 0;
-  }
-}
 
 /* Category Content Animation */
 .category-content {
@@ -460,19 +436,7 @@
     font-size: 1rem;
   }
   
-  .category-header .category-title {
-    margin: 1.5rem 0 0.75rem 0;
-    padding: 0.625rem 1.25rem;
-    font-size: 1rem;
-    gap: 0.75rem;
-  }
-  
-  .category-header-mobile .category-title {
-    margin: 1.5rem 0 0.75rem 0;
-    padding: 0.625rem 1.25rem;
-    font-size: 1rem;
-    gap: 0.75rem;
-  }
+
   
   .category-toggle-icon {
     font-size: 1rem;
@@ -490,19 +454,7 @@
     font-size: 0.95rem;
   }
   
-  .category-header .category-title {
-    margin: 1.25rem 0 0.5rem 0;
-    padding: 0.5rem 1rem;
-    font-size: 0.95rem;
-    gap: 0.5rem;
-  }
-  
-  .category-header-mobile .category-title {
-    margin: 1.25rem 0 0.5rem 0;
-    padding: 0.5rem 1rem;
-    font-size: 0.95rem;
-    gap: 0.5rem;
-  }
+
   
   .category-toggle-icon {
     font-size: 0.9rem;
@@ -1802,6 +1754,177 @@
 }
 
 /* Response Modal */
+
+/* Angebote Styles */
+.active-offers-section {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  color: white;
+  
+  h3 {
+    margin: 0 0 1rem 0;
+    font-size: 1.3rem;
+    font-weight: 600;
+    text-align: center;
+  }
+  
+  .offers-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+    
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  .offer-card {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 1rem;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
+    
+    .offer-header {
+      h4 {
+        margin: 0 0 0.5rem 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+      }
+      
+      .offer-description {
+        margin: 0;
+        font-size: 0.9rem;
+        opacity: 0.9;
+        line-height: 1.4;
+      }
+    }
+    
+    .offer-details {
+      margin-top: 1rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+      
+      .offer-discount {
+        .discount-badge {
+          background: #e74c3c;
+          color: white;
+          padding: 0.3rem 0.6rem;
+          border-radius: 20px;
+          font-size: 0.8rem;
+          font-weight: 600;
+        }
+      }
+      
+      .offer-validity {
+        margin-left: auto;
+        font-size: 0.8rem;
+        opacity: 0.8;
+      }
+    }
+  }
+}
+
+/* Angebotspreise in Produktkarten */
+.offer-price-container {
+  text-align: center;
+  
+  .offer-badge {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+    color: white;
+    padding: 0.2rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    margin-bottom: 0.3rem;
+    display: inline-block;
+    cursor: help;
+  }
+  
+  .price-with-offer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+    
+    .offer-price {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #e74c3c;
+    }
+    
+    .original-price {
+      font-size: 0.8rem;
+      text-decoration: line-through;
+      opacity: 0.6;
+    }
+  }
+  
+  .discount-info {
+    background: #f39c12;
+    color: white;
+    padding: 0.2rem 0.4rem;
+    border-radius: 8px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    margin-top: 0.2rem;
+  }
+  
+  .offer-limits {
+    margin-top: 0.3rem;
+    font-size: 0.7rem;
+    opacity: 0.8;
+    color: #7f8c8d;
+  }
+}
+
+/* Desktop Angebotspreise */
+.products-table .offer-price-container {
+  .offer-badge {
+    font-size: 0.65rem;
+    padding: 0.15rem 0.4rem;
+  }
+  
+  .price-with-offer {
+    .offer-price {
+      font-size: 1rem;
+    }
+    
+    .original-price {
+      font-size: 0.75rem;
+    }
+  }
+  
+  .discount-info {
+    font-size: 0.65rem;
+    padding: 0.15rem 0.3rem;
+  }
+  
+  .offer-limits {
+    font-size: 0.65rem;
+  }
+}
+
+/* Normaler Preis ohne Angebot */
+.normal-price {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2c3e50;
+  
+  @media (max-width: 768px) {
+    font-size: 1rem;
+  }
+}
 
 
 
