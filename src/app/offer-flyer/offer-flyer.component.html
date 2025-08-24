@@ -42,14 +42,7 @@
 
         <div class="content">
           <div class="title">{{ product.article_text }}</div>
-          <div class="sub">Art.-Nr: {{ product.article_number }}</div>
-
-          <div class="badges">
-            @if (product.category) { <span class="badge category">{{ product.category }}</span> }
-            @if (product.unit) { <span class="badge unit">{{ product.unit }}</span> }
-            @if (product.ean) { <span class="badge ean">EAN: {{ product.ean }}</span> }
-          </div>
-
+          
           <div class="price-row">
             @if (product.use_offer_price && product.offer_price) {
               <span class="price">€{{ product.offer_price }}</span>
@@ -60,10 +53,6 @@
               <span class="original">€{{ product.sale_price }}</span>
             }
           </div>
-
-          @if (product.min_quantity || product.max_quantity) {
-          <div class="quantity">Menge: {{ product.min_quantity || 0 }} - {{ product.max_quantity || '∞' }}</div>
-          }
         </div>
       </article>
       }
