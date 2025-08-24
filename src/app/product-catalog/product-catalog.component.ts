@@ -679,7 +679,7 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
       'VERPACKUNGEN': 'https://img.freepik.com/premium-photo/non-plastic-boxes-food-delivery-white-background_186260-1466.jpg?ga=GA1.1.551023853.1754094495&semt=ais_hybrid&w=740&q=80',
       
       // TIEFKÜHL - Tiefkühlprodukte
-      'TIEFKÜHL': '/tiefkühl.jpg',
+      'TIEFKÜHL': '/tiefkuehl.jpg',
       
       // DROGERIE - Drogerieartikel und Kosmetik
       'DROGERIE': 'https://images.unsplash.com/photo-1556228720-195a672e8a03?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60',
@@ -709,7 +709,7 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
       'HYGIENEARTIKEL': '/hygiene.jpg',
       
       // KRÄUTER - Frische Kräuter
-      'KRÄUTER': '/kräuter.jpg',
+      'KRÄUTER': '/kraeuter.jpg',
       
       // OBST - Frisches Obst
       'OBST': 'https://images.unsplash.com/photo-1619566636858-adf3ef46400b?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60',
@@ -718,7 +718,7 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
       'PARFÜM': '/water-feature.jpg',
       
       // KÜCHENBEDARF - Küchenutensilien
-      'KÜCHENBEDARF': 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60',
+      'KÜCHENBEDARF': '/kuechenbedarf.jpg',
       
       // FOLIEN - Verpackungsfolien
       'FOLIEN': '/folien.jpg',
