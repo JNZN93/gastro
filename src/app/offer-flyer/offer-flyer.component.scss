@@ -6,7 +6,7 @@
 
 .a4 {
   width: 210mm;
-  height: 297mm; /* exact DIN A4 portrait */
+  height: 420mm; /* increased height further for more content space on screen */
   margin: 0 auto;
   background: #222327;
   color: #fff;
@@ -80,7 +80,7 @@
 .gd-sub { font-weight: 700; font-size: 3mm; }
 
 .gd-body {
-  flex: 1; /* take remaining height between header and footer */
+  flex: 2.2; /* take even more height between header and footer */
   padding: 4mm 7mm; /* reduced further to give more height to grid */
   overflow: hidden;
 }
@@ -90,13 +90,13 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(3, 1fr); /* always 3 rows to fit A4 */
-  gap: 4mm; /* smaller gap to make cards a bit higher */
+  gap: 2.5mm; /* smaller gap to make cards higher */
 }
 
 .tile {
   background: #2b2d31;
   border-radius: 3mm;
-  padding: 4.5mm; /* smaller */
+  padding: 7mm; /* increased padding to make cards higher */
   display: flex;
   flex-direction: column;
   min-height: 0; /* allow to shrink inside grid cell */
@@ -104,8 +104,8 @@
 }
 
 .tile-media {
-  flex: 3.8;
-  min-height: 0; /* important for flex children to shrink */
+  height: 200px; /* fixed height for images */
+  min-height: 200px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -117,8 +117,9 @@
 .placeholder { display:flex; align-items:center; justify-content:center; width:100%; height:100%; color:#61646b; }
 .placeholder svg { width: 11mm; height: 11mm; }
 
-.tile-info { display: flex; flex-direction: column; align-items: stretch; gap: 2mm; margin-top: 2.5mm; }
-.title { color: #fff; font-weight: 400; font-size: 3.6mm; margin: 0; max-width: 100%; line-height: 1.2; overflow: hidden; display: block; max-height: calc(1.2em * 3); }
+.tile-info { display: flex; flex-direction: column; align-items: stretch; gap: 3mm; margin-top: 4mm; }
+.title-wrap { overflow: hidden; min-height: calc(1.2em * 2); max-height: calc(1.2em * 2); }
+.title { color: #fff; font-weight: 400; font-size: 3.6mm; margin: 0; max-width: 100%; line-height: 1.2; overflow: hidden; display: block; }
 
 .price-chip {
   background: #e53935;
