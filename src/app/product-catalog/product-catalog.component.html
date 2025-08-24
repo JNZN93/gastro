@@ -111,8 +111,30 @@
       <div class="section-header">
         <h2 class="section-title">🔥 Angebote</h2>
         <p class="section-subtitle">Sonderpreise - Nur für kurze Zeit verfügbar</p>
+        @if (activeOffers.length > 0) {
+        <div class="offers-info-compact">
+          <p class="offers-flow-text">
+            Gültig von <span class="offers-highlight">{{ formatDate(getEarliestStartDate()) }}</span> 
+            bis <span class="offers-highlight">{{ formatDate(getLatestEndDate()) }}</span>.
+            @if (getActiveOfferName()) {
+            Angebot: <span class="offers-highlight">{{ getActiveOfferName() }}</span>.
+            }
+            @if (getActiveOfferDescription()) {
+            {{ getActiveOfferDescription() }}
+            }
+          </p>
+        </div>
+        }
       </div>
       <div class="featured-grid">
+        @if (isLoadingOffers) {
+        <div class="loading-offers">
+          <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p>Lade Angebote...</p>
+          </div>
+        </div>
+        } @else if (getFeaturedProducts().length > 0) {
         @for (artikel of getFeaturedProducts(); track $index) {
         <div class="featured-card">
           <div class="featured-image-container">
@@ -140,6 +162,21 @@
           <div class="featured-content">
             <h3 class="featured-title">{{ artikel.article_text }}</h3>
             <p class="featured-number">Art.-Nr: {{ artikel.article_number }}</p>
+            
+            <!-- Angebotsinformationen anzeigen -->
+            @if (artikel.use_offer_price) {
+            <div class="offer-price-badge">
+              <span class="price-label">Angebotspreis:</span>
+              <span class="price-value">
+                @if (artikel.offer_price) {
+                {{ artikel.offer_price }}€
+                } @else {
+                Auf Anfrage
+                }
+              </span>
+            </div>
+            }
+            
             @if(globalService.isUserLoggedIn) {
             <button (click)="addToCart($event, artikel)" class="featured-add-btn">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -149,6 +186,11 @@
             </button>
             }
           </div>
+        </div>
+        }
+        } @else {
+        <div class="no-offers">
+          <p>Derzeit sind keine Angebote verfügbar.</p>
         </div>
         }
       </div>
