@@ -1,161 +1,243 @@
 .flyer-container {
-  height: 100vh;
-  padding: 20px 16px;
-  background: radial-gradient(1200px 600px at 10% -10%, rgba(96,165,250,.25), transparent),
-              radial-gradient(1200px 600px at 90% 10%, rgba(74,222,128,.25), transparent),
-              linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  min-height: 100vh;
+  padding: 0;
+  background: #f3f4f6;
   font-family: 'Poppins', sans-serif;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: visible;
 }
 
-.flyer-hero {
+/* A4 canvas */
+.flyer-a4 {
+  width: 210mm;
+  min-height: 297mm;
+  margin: 0 auto;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.15);
   display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 16px;
-  border-radius: 12px;
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(255,255,255,0.75));
-  backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  margin-bottom: 16px;
-  position: relative;
-  overflow: hidden;
-  flex-shrink: 0;
+  flex-direction: column;
+}
 
-  &::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(400px 120px at right -20%, rgba(59,130,246,.08), transparent);
-    pointer-events: none;
+/* Print-specific overrides */
+@media print {
+  .flyer-a4 {
+    width: auto !important;
+    min-height: auto !important;
+    margin: 0 !important;
+  }
+}
+
+/* Header */
+.flyer-header {
+  position: relative;
+  padding: 16mm 14mm 12mm 14mm;
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 50%, #dc2626 100%);
+  border-bottom: 2mm solid rgba(220,38,38,0.3);
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10mm;
   }
 
   .logo {
-    width: 48px;
-    height: 48px;
+    width: 18mm;
+    height: 18mm;
     object-fit: contain;
   }
 
-  .hero-text {
+  .brand-text {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 2mm;
 
-    h1 {
+    .headline {
       margin: 0;
-      font-size: 20px;
-      font-weight: 800;
-      background: linear-gradient(135deg, #1e293b 0%, #475569 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      font-size: 16mm;
+      font-weight: 900;
+      letter-spacing: -0.3mm;
+      line-height: 1;
+      color: #ffffff;
+      text-shadow: 0 2mm 4mm rgba(0,0,0,0.3);
     }
 
-    p { margin: 0; color: #475569; font-size: 14px; }
-    .dates { color: #64748b; font-weight: 600; font-size: 11px; }
+    .subtitle-row {
+      display: flex;
+      align-items: center;
+      gap: 8mm;
+      flex-wrap: wrap;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: #ffffff;
+      font-size: 5mm;
+      max-width: 120mm;
+      opacity: 0.95;
+    }
+
+    .date-badge {
+      background: rgba(0, 0, 0, 0.25);
+      color: #fff;
+      padding: 2mm 4mm;
+      border-radius: 999px;
+      display: inline-flex;
+      gap: 2mm;
+      align-items: center;
+      font-weight: 700;
+      font-size: 3.5mm;
+      white-space: nowrap;
+      border: 0.2mm solid rgba(255,255,255,0.3);
+      .sep { opacity: .7; }
+    }
   }
 
-  .hero-badge {
-    margin-left: auto;
-    padding: 8px 12px;
-    border-radius: 999px;
-    background: linear-gradient(135deg, #22c55e, #16a34a);
-    color: white;
-    font-weight: 800;
-    letter-spacing: .5px;
-    box-shadow: 0 6px 16px rgba(34,197,94,.35);
-    border: 1px solid rgba(255,255,255,.35);
-    font-size: 12px;
+  .deal-badge {
+    position: absolute;
+    right: -3mm;
+    top: 50%;
+    transform: translateY(-50%) rotate(-15deg);
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    color: #ffffff;
+    padding: 4mm 6mm;
+    border-radius: 1.5mm;
+    border: 1mm solid rgba(255,255,255,0.9);
+    box-shadow: 0 2mm 6mm rgba(251,191,36,0.4);
+    font-weight: 900;
+    letter-spacing: 0.5mm;
+    font-size: 5mm;
+    text-transform: uppercase;
+    z-index: 10;
   }
+}
+
+/* Body */
+.flyer-body {
+  padding: 10mm 12mm 8mm 12mm;
 }
 
 .product-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 16px;
-  flex: 1;
-  overflow: hidden;
-  align-content: start;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 3mm;
+  width: 100%;
+  padding: 0;
 }
 
-.product-card {
-  display: flex;
-  flex-direction: column;
-  background: linear-gradient(145deg, rgba(255,255,255,.98), rgba(255,255,255,.9));
-  border: 1px solid rgba(226, 232, 240, 0.6);
-  border-radius: 14px;
-  overflow: hidden;
-  box-shadow: 0 8px 20px -6px rgba(15, 23, 42, .12), 0 4px 8px -4px rgba(15, 23, 42, .08);
-  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
-  height: 280px;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 24px -8px rgba(15, 23, 42, .18), 0 6px 12px -6px rgba(15, 23, 42, .1);
-    border-color: rgba(59,130,246,.35);
-  }
+  .product-card {
+    display: flex;
+    flex-direction: column;
+    border: 0.3mm solid rgba(226,232,240,.9);
+    border-radius: 2mm;
+    overflow: hidden;
+    background: #ffffff;
+    box-shadow: 0 2mm 6mm -2mm rgba(15, 23, 42, .08);
+    page-break-inside: avoid;
+    height: 58mm;
+    min-height: 58mm;
 
   .image-wrap {
-    background: radial-gradient(400px 160px at 20% 0%, rgba(59,130,246,.12), transparent),
-                linear-gradient(135deg, #f1f5f9, #e2e8f0);
+    position: relative;
+    background: linear-gradient(135deg, #f8fafc, #e2e8f0);
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 180px;
+    height: 32mm;
     flex-shrink: 0;
+    width: 100%;
 
-    img { max-width: 100%; max-height: 100%; object-fit: cover; }
+    img { 
+      width: 100%; 
+      height: 100%; 
+      object-fit: cover; 
+    }
 
-    .placeholder { display:flex; align-items:center; justify-content:center; width:100%; height:100%;
-      svg { width: 28px; height: 28px; color: #94a3b8; }
+    .placeholder { 
+      display:flex; 
+      align-items:center; 
+      justify-content:center; 
+      width:100%; 
+      height:100%;
+      svg { width: 8mm; height: 8mm; color: #94a3b8; }
+    }
+
+    .price-sticker {
+      display: none;
     }
   }
 
   .content {
-    padding: 16px 12px;
-    flex: 1;
+    padding: 3mm 2mm 3mm 2mm;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    flex: 1;
 
-    .title { 
-      font-weight: 700; 
-      color: #0f172a; 
-      margin-bottom: 0; 
-      font-size: 15px;
-      line-height: 1.3;
+    .title {
+      margin: 0 0 2mm 0;
+      font-weight: 700;
+      color: #0f172a;
+      font-size: 3mm;
+      line-height: 1.2;
       display: -webkit-box;
-      -webkit-line-clamp: 3;
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
+      min-height: 8mm;
+      flex-shrink: 0;
     }
 
-    .price-row { 
-      display: flex; 
-      align-items: baseline; 
-      gap: 8px; 
+    .meta-row {
+      display: none;
+    }
+
+    .price-row {
+      display: flex;
+      align-items: center;
+      gap: 2mm;
       margin-top: auto;
-    }
-    .price { 
-      background: linear-gradient(135deg, #22c55e, #16a34a); 
-      color: #ffffff; 
-      font-weight: 800; 
-      padding: 6px 10px; 
-      border-radius: 8px; 
-      border: 1px solid rgba(255,255,255,.35); 
-      box-shadow: 0 4px 12px rgba(22,163,74,.25); 
-      font-size: 14px; 
-    }
-    .original { 
-      color: #b91c1c; 
-      text-decoration: line-through; 
-      font-size: 12px; 
+
+      .price-badge {
+        background: linear-gradient(135deg, #22c55e, #16a34a);
+        color: #ffffff;
+        font-weight: 900;
+        padding: 1.5mm 2.5mm;
+        border-radius: 2mm;
+        border: 0.2mm solid rgba(255,255,255,.4);
+        box-shadow: 0 1mm 3mm rgba(22,163,74,.25);
+        font-size: 3.5mm;
+        display: inline-block;
+      }
+      .original {
+        color: #b91c1c;
+        text-decoration: line-through;
+        font-size: 2.8mm;
+        opacity: .9;
+        display: inline-block;
+      }
     }
   }
 }
 
+/* Footer */
+.flyer-footer {
+  padding: 6mm 12mm 10mm 12mm;
+  border-top: 0.5mm solid rgba(226,232,240,0.9);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #475569;
+  font-size: 3.6mm;
+
+  .notes {
+    display: flex;
+    gap: 6mm;
+    span { white-space: nowrap; }
+  }
+}
+
+/* Loading / states */
 .loading { 
   display:flex; 
   flex-direction:column; 
@@ -167,9 +249,7 @@
   justify-content: center;
 }
 .spinner { width: 32px; height:32px; border-radius:50%; border:3px solid rgba(226,232,240,.8); border-top:3px solid #3b82f6; animation: spin 1s linear infinite; }
-
 @keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }
-
 .error { 
   color:#b91c1c; 
   background: rgba(254,226,226,.7); 
@@ -178,7 +258,6 @@
   border-radius: 8px; 
   flex-shrink: 0;
 }
-
 .empty { 
   text-align:center; 
   color:#64748b; 
@@ -188,6 +267,145 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* Print rules */
+@media print {
+  @page { 
+    size: A4 portrait; 
+    margin: 10mm; 
+  }
+  
+  /* Force everything to be visible and flow */
+  * {
+    box-sizing: border-box !important;
+    max-height: none !important;
+    max-width: none !important;
+    height: auto !important;
+    overflow: visible !important;
+    position: static !important;
+    float: none !important;
+    transform: none !important;
+  }
+  
+  body, html { 
+    background: #ffffff !important; 
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    width: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: block !important;
+  }
+  
+  .flyer-container { 
+    background: #ffffff !important; 
+    padding: 0 !important; 
+    min-height: auto !important; 
+    height: auto !important; 
+    overflow: visible !important;
+    display: block !important;
+    width: auto !important;
+    position: static !important;
+    transform: none !important;
+    max-height: none !important;
+  }
+  
+  .flyer-a4 { 
+    width: auto !important; 
+    min-height: auto !important; 
+    height: auto !important;
+    box-shadow: none !important; 
+    display: block !important;
+    position: static !important;
+    transform: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    max-width: none !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  
+  .flyer-header { 
+    position: static !important; 
+    page-break-inside: avoid !important;
+    display: block !important;
+    width: auto !important;
+    height: auto !important;
+    margin: 0 0 10mm 0 !important;
+    padding: 10mm !important;
+    overflow: visible !important;
+  }
+
+  .deal-badge {
+    position: static !important;
+    transform: none !important;
+    margin: 10mm 0 !important;
+    display: inline-block !important;
+    text-align: center !important;
+  }
+  
+  .flyer-body { 
+    padding: 0 !important; 
+    page-break-inside: auto !important;
+    display: block !important;
+    width: auto !important;
+    height: auto !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+  
+  .flyer-footer { 
+    position: static !important; 
+    page-break-inside: avoid !important;
+    display: block !important;
+    width: auto !important;
+    height: auto !important;
+    margin: 10mm 0 0 0 !important;
+    padding: 10mm !important;
+    overflow: visible !important;
+  }
+
+  /* Keep compact grid layout for print */
+  .product-grid { 
+    display: grid !important; 
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 3mm !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    max-height: none !important;
+  }
+  
+  .product-card { 
+    display: flex !important;
+    flex-direction: column !important;
+    break-inside: avoid !important; 
+    page-break-inside: avoid !important; 
+    -webkit-column-break-inside: avoid !important;
+    margin: 0 !important;
+    page-break-after: auto !important;
+    width: auto !important;
+    height: 58mm !important;
+    min-height: 58mm !important;
+    float: none !important;
+    position: static !important;
+    max-height: none !important;
+    max-width: none !important;
+    border: 0.3mm solid rgba(226,232,240,.9) !important;
+    padding: 3mm 2mm !important;
+    overflow: visible !important;
+  }
+
+  /* Force page breaks after every 20th product (5 rows x 4 columns) */
+  .product-card:nth-child(20n) {
+    page-break-after: always !important;
+    break-after: page !important;
+  }
+
+  .spinner { display: none !important; }
 }
 
 
