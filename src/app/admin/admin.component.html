@@ -92,7 +92,7 @@
         <span>Online-Shop</span>
       </button>
 
-      <button class="action-card" routerLink="/guest-link" *ngIf="canCreateGuestLink()">
+      <button class="action-card gastlink-hidden" routerLink="/guest-link" *ngIf="canCreateGuestLink()">
         <div class="action-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
@@ -164,6 +164,15 @@
           </svg>
         </div>
         <span>Reports & Analysen</span>
+      </button>
+
+      <button class="action-card" routerLink="/offers">
+        <div class="action-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <text x="12" y="16" text-anchor="middle" font-size="16" font-weight="bold" stroke="currentColor" fill="currentColor">%</text>
+          </svg>
+        </div>
+        <span>Angebote verwalten</span>
       </button>
     </div>
   </div>

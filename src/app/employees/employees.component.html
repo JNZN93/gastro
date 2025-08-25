@@ -112,6 +112,7 @@
                 @for (item of orderItems; track $index; let i = $index) {
                 <tr class="order-row" 
                     [class.editing]="editingItemIndex === i"
+                    [class.offer-item]="item.use_offer_price && item.offer_price !== undefined"
                     [draggable]="editingItemIndex !== i && editingArticleNameIndex !== i"
                     (dragstart)="onDragStart($event, i)"
                     (dragover)="onDragOver($event)"
@@ -139,6 +140,9 @@
                     <div class="article-name-container" 
                          [class.editing-name]="editingArticleNameIndex === i"
                          title="Klicken zum Bearbeiten des Artikelnamens">
+                      @if (item.use_offer_price && item.offer_price !== undefined) {
+                        <span class="offer-badge" title="Angebotspreis aktiv">🏷️</span>
+                      }
                       @if (editingArticleNameIndex === i) {
                         <input type="text" 
                                [(ngModel)]="editingArticleName"
@@ -177,9 +181,18 @@
                   </td>
                   <td class="cost-price" [title]="'EK-Preis: €' + (item.cost_price || 0).toFixed(2)">€{{ (item.cost_price || 0).toFixed(2) }}</td>
                   <td class="customer-price">
-                    <span class="price-display" [title]="'Standard-Preis: €' + item.sale_price">
-                      €{{ getItemPrice(item).toFixed(2) }}
-                    </span>
+                    @if (item.use_offer_price && item.offer_price !== undefined) {
+                      <div class="offer-price-container">
+                        <span class="offer-price-label">Angebot:</span>
+                        <span class="price-display offer-price" [title]="'Angebotspreis: €' + item.offer_price + ' | Standard-Preis: €' + item.sale_price">
+                          €{{ getItemPrice(item).toFixed(2) }}
+                        </span>
+                      </div>
+                    } @else {
+                      <span class="price-display" [title]="'Standard-Preis: €' + item.sale_price">
+                        €{{ getItemPrice(item).toFixed(2) }}
+                      </span>
+                    }
                   </td>
                   <td class="total-price">€{{ (getItemPrice(item) * item.quantity).toFixed(2) }}</td>
                   <td class="remove-column">
@@ -314,7 +327,10 @@
                   <p class="article-number">Art.-Nr: {{ artikel.article_number }}</p>
                   <p class="article-price">
                     <span class="cost-price" [title]="'EK-Preis: €' + (artikel.cost_price || 0).toFixed(2)">EK: €{{ (artikel.cost_price || 0).toFixed(2) }}</span>
-                    @if (artikel.different_price !== undefined) {
+                    @if (artikel.use_offer_price && artikel.offer_price !== undefined) {
+                      <span class="customer-price">Angebot: €{{ artikel.offer_price }}</span>
+                      <span class="original-price">(Standard: €{{ artikel.sale_price }})</span>
+                    } @else if (artikel.different_price !== undefined) {
                       <span class="customer-price">Kundenpreis: €{{ artikel.different_price }}</span>
                       <span class="original-price">(Standard: €{{ artikel.sale_price }})</span>
                     } @else {
@@ -404,7 +420,10 @@
                 <p class="article-number">Art.-Nr: {{ artikel.article_number }}</p>
                 <p class="article-price">
                   <span class="cost-price" [title]="'EK-Preis: €' + (artikel.cost_price || 0).toFixed(2)">EK: €{{ (artikel.cost_price || 0).toFixed(2) }}</span>
-                  @if (artikel.different_price !== undefined) {
+                  @if (artikel.use_offer_price && artikel.offer_price !== undefined) {
+                    <span class="customer-price">Angebot: €{{ artikel.offer_price }}</span>
+                    <span class="original-price">(Standard: €{{ artikel.sale_price }})</span>
+                  } @else if (artikel.different_price !== undefined) {
                     <span class="customer-price">Kundenpreis: €{{ artikel.different_price }}</span>
                     <span class="original-price">(Standard: €{{ artikel.sale_price }})</span>
                   } @else {

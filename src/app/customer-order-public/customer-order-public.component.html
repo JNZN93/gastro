@@ -28,13 +28,30 @@
     <!-- Product Catalog -->
     <div *ngIf="!isLoading && !error && customerArticlePrices.length > 0" class="catalog">
       <h2>Deine Artikel</h2>
+      
+      <!-- Angebotsdauer direkt unter der Überschrift -->
+      <div *ngIf="activeOffers.length > 0" class="offers-validity-header">
+        <div class="validity-header-content">
+          <span class="validity-header-label">Aktuelle Angebote gültig:</span>
+          <div class="offers-validity-list">
+            <span *ngFor="let offer of activeOffers; let last = last" class="offer-validity-item">
+              <strong>{{ offer.name }}</strong>: {{ offer.start_date | date:'dd.MM' }} - {{ offer.end_date | date:'dd.MM.yyyy' }}<span *ngIf="!last"> | </span>
+            </span>
+          </div>
+        </div>
+      </div>
+      
+
 
       <!-- Mobile Cards View (hidden on desktop) -->
       <div class="products-cards">
         <ng-container *ngFor="let category of orderedCategories">
           <div class="category-header-mobile" 
                (click)="toggleCategory(category)"
-               [ngClass]="{'new-category': category === 'NEU HINZUGEFÜGT'}">
+               [ngClass]="{
+                 'new-category': category === 'NEU HINZUGEFÜGT',
+                 'offers-category': category === 'Aktuelle Angebote'
+               }">
             <div class="category-title">
               <span class="category-name">{{ category }}</span>
               <span class="category-count">({{ groupedArticles[category].length }} Artikel)</span>
@@ -57,7 +74,34 @@
                     <span class="placeholder-icon">📦</span>
                   </div>
                 </div>
-                <div class="article-price">€{{ toNumber(article.unit_price_net).toFixed(2) }}</div>
+                <div class="article-price">
+                <!-- Angebotspreis anzeigen -->
+                <div *ngIf="article.hasOffer" class="offer-price-container">
+                  <div class="offer-badge" [title]="article.offerDescription">
+                    🎯 {{ article.offerName }}
+                  </div>
+                  <div class="price-with-offer">
+                    <span class="offer-price">€{{ article.offerPrice?.toFixed(2) }}</span>
+                    <span class="original-price">€{{ article.originalPrice?.toFixed(2) }}</span>
+                  </div>
+                  <div *ngIf="article.offerDiscountPercentage" class="discount-info">
+                    -{{ article.offerDiscountPercentage }}%
+                  </div>
+                  <div *ngIf="article.offerDiscountAmount" class="discount-info">
+                    -€{{ article.offerDiscountAmount?.toFixed(2) }}
+                  </div>
+                  <div *ngIf="article.offerMinQuantity || article.offerMaxQuantity" class="offer-limits">
+                    <small>
+                      {{ article.offerMinQuantity ? 'Min: ' + article.offerMinQuantity : '' }}
+                      {{ article.offerMaxQuantity ? 'Max: ' + article.offerMaxQuantity : '' }}
+                    </small>
+                  </div>
+                </div>
+                <!-- Normaler Preis ohne Angebot -->
+                <div *ngIf="!article.hasOffer" class="normal-price">
+                  €{{ toNumber(article.unit_price_net).toFixed(2) }}
+                </div>
+              </div>
               </div>
               
               <div class="card-actions">
@@ -103,7 +147,10 @@
         <ng-container *ngFor="let category of orderedCategories">
           <div class="category-header" 
                (click)="toggleCategory(category)"
-               [ngClass]="{'new-category': category === 'NEU HINZUGEFÜGT'}">
+               [ngClass]="{
+                 'new-category': category === 'NEU HINZUGEFÜGT',
+                 'offers-category': category === 'Aktuelle Angebote'
+               }">
             <div class="category-title">
               <span class="category-name">{{ category }}</span>
               <span class="category-count">({{ groupedArticles[category].length }} Artikel)</span>
@@ -129,7 +176,34 @@
                   </div>
                 </div>
               </div>
-              <div class="col-price">€{{ toNumber(article.unit_price_net).toFixed(2) }}</div>
+              <div class="col-price">
+                <!-- Angebotspreis anzeigen -->
+                <div *ngIf="article.hasOffer" class="offer-price-container">
+                  <div class="offer-badge" [title]="article.offerDescription">
+                    🎯 {{ article.offerName }}
+                  </div>
+                  <div class="price-with-offer">
+                    <span class="offer-price">€{{ article.offerPrice?.toFixed(2) }}</span>
+                    <span class="original-price">€{{ article.originalPrice?.toFixed(2) }}</span>
+                  </div>
+                  <div *ngIf="article.offerDiscountPercentage" class="discount-info">
+                    -{{ article.offerDiscountPercentage }}%
+                  </div>
+                  <div *ngIf="article.offerDiscountAmount" class="discount-info">
+                    -€{{ article.offerDiscountAmount?.toFixed(2) }}
+                  </div>
+                  <div *ngIf="article.offerMinQuantity || article.offerMaxQuantity" class="offer-limits">
+                    <small>
+                      {{ article.offerMinQuantity ? 'Min: ' + article.offerMinQuantity : '' }}
+                      {{ article.offerMaxQuantity ? 'Max: ' + article.offerMaxQuantity : '' }}
+                    </small>
+                  </div>
+                </div>
+                <!-- Normaler Preis ohne Angebot -->
+                <div *ngIf="!article.hasOffer" class="normal-price">
+                  €{{ toNumber(article.unit_price_net).toFixed(2) }}
+                </div>
+              </div>
               <div class="col-qty">
                 <div class="quantity-controls">
                   <button 

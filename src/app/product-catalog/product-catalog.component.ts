@@ -8,6 +8,7 @@ import { WarenkorbComponent } from '../warenkorb/warenkorb.component';
 import { GlobalService } from '../global.service';
 import { ZXingScannerComponent, ZXingScannerModule } from '@zxing/ngx-scanner';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { OffersService, OfferWithProducts } from '../offers.service';
 
 // Interface für die letzten Bestellungen
 interface CustomerArticlePrice {
@@ -71,6 +72,10 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
   toastMessage: string = '';
   toastType: 'success' | 'error' = 'success';
 
+  // Neue Eigenschaften für Angebote
+  activeOffers: OfferWithProducts[] = [];
+  isLoadingOffers: boolean = false;
+
   videoConstraints: MediaTrackConstraints = {
     width: { ideal: 1920 },
     height: { ideal: 1080 }
@@ -81,7 +86,8 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private authService: AuthService,
     public globalService: GlobalService,
-    private viewportScroller: ViewportScroller
+    private viewportScroller: ViewportScroller,
+    private offersService: OffersService
   ) {}
 
   ngOnInit(): void {
@@ -133,12 +139,15 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
             
             // Loading-Screen mit angepasster Verzögerung basierend auf Navigation
             this.hideLoadingScreenWithDelay(this.isFromCategoryDetail ? 500 : 1000);
+            
+            // Lade aktive Angebote
+            this.loadActiveOffers();
           });
         },
         error: (error) => {
           // Token ungültig - als Gast behandeln
           this.loadAsGuest();
-        },
+        }
       });
     } else {
       // Kein Token - als Gast laden
@@ -166,6 +175,9 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
       
       // Loading-Screen mit angepasster Verzögerung basierend auf Navigation
       this.hideLoadingScreenWithDelay(this.isFromCategoryDetail ? 500 : 1000);
+      
+      // Lade aktive Angebote auch für Gäste
+      this.loadActiveOffers();
     });
   }
 
@@ -235,6 +247,89 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
       });
   }
 
+  // Neue Methode zum Laden aktiver Angebote
+  loadActiveOffers(): void {
+    this.isLoadingOffers = true;
+    this.offersService.getAllOffersWithProducts().subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          console.log('Alle Angebote von API:', response.data);
+          
+          // Debug: Zeige Datumsdetails
+          response.data.forEach((offer, index) => {
+            const startDate = new Date(offer.start_date);
+            const endDate = new Date(offer.end_date);
+            const now = new Date();
+            console.log(`Angebot ${index + 1}:`, {
+              name: offer.name,
+              is_active: offer.is_active,
+              start_date: offer.start_date,
+              end_date: offer.end_date,
+              startDate: startDate,
+              endDate: endDate,
+              now: now,
+              startValid: startDate <= now,
+              endValid: endDate >= now,
+              wouldBeActive: offer.is_active && startDate <= now && endDate >= now
+            });
+          });
+          
+          // Filtere nur aktive Angebote
+          this.activeOffers = response.data.filter(offer => {
+            const startDate = new Date(offer.start_date);
+            const endDate = new Date(offer.end_date);
+            const now = new Date();
+            
+            // Setze die Zeit auf Mitternacht für besseren Vergleich
+            const startDateMidnight = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+            const endDateMidnight = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+            const nowMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            
+            const isActive = offer.is_active && 
+                           startDateMidnight <= nowMidnight && 
+                           endDateMidnight >= nowMidnight;
+            
+            console.log(`Filterung für "${offer.name}":`, {
+              is_active: offer.is_active,
+              startDateMidnight,
+              endDateMidnight,
+              nowMidnight,
+              isActive
+            });
+            
+            return isActive;
+          });
+          
+          console.log('Aktive Angebote nach Filterung:', this.activeOffers);
+        }
+        this.isLoadingOffers = false;
+      },
+      error: (error) => {
+        console.error('Fehler beim Laden der Angebote:', error);
+        this.isLoadingOffers = false;
+      }
+    });
+  }
+
+  // Hilfsmethode für die Anzeige des Rabatts
+  getDiscountDisplay(product: any): string {
+    if (product.use_offer_price && product.offer_price) {
+      return `Angebotspreis: ${product.offer_price}€`;
+    }
+    
+    if (product.discount_percentage) {
+      return `${product.discount_percentage}% Rabatt`;
+    }
+    
+    if (product.discount_amount) {
+      return `${product.discount_amount}€ Rabatt`;
+    }
+    
+    return 'Sonderangebot';
+  }
+
+
+
   // Methode zum Umschalten der letzten Bestellungen
   toggleLastOrders(): void {
     this.showLastOrders = !this.showLastOrders;
@@ -270,10 +365,62 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
     return date.toLocaleDateString('de-DE', {
       day: '2-digit',
       month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+      year: 'numeric'
     });
+  }
+
+  // Hilfsmethode für das früheste Startdatum aller aktiven Angebote
+  getEarliestStartDate(): string {
+    if (this.activeOffers.length === 0) return '';
+    
+    const startDates = this.activeOffers.map(offer => new Date(offer.start_date));
+    const earliestDate = startDates.reduce((earliest, current) => 
+      current < earliest ? current : earliest
+    );
+    return earliestDate.toISOString();
+  }
+
+  // Hilfsmethode für das späteste Enddatum aller aktiven Angebote
+  getLatestEndDate(): string {
+    if (this.activeOffers.length === 0) return '';
+    
+    const endDates = this.activeOffers.map(offer => new Date(offer.end_date));
+    const latestDate = endDates.reduce((latest, current) => 
+      current > latest ? current : latest
+    );
+    return latestDate.toISOString();
+  }
+
+  // Hilfsmethode für den Namen des aktiven Angebots
+  getActiveOfferName(): string {
+    if (this.activeOffers.length === 0) return '';
+    
+    // Wenn alle Angebote den gleichen Namen haben, zeige diesen an
+    const firstOfferName = this.activeOffers[0].name;
+    const allSameName = this.activeOffers.every(offer => offer.name === firstOfferName);
+    
+    if (allSameName) {
+      return firstOfferName;
+    }
+    
+    // Wenn verschiedene Namen, zeige "Mehrere Angebote" an
+    return 'Mehrere Angebote';
+  }
+
+  // Hilfsmethode für die Beschreibung des aktiven Angebots
+  getActiveOfferDescription(): string {
+    if (this.activeOffers.length === 0) return '';
+    
+    // Wenn alle Angebote die gleiche Beschreibung haben, zeige diese an
+    const firstOfferDescription = this.activeOffers[0].description;
+    const allSameDescription = this.activeOffers.every(offer => offer.description === firstOfferDescription);
+    
+    if (allSameDescription) {
+      return firstOfferDescription;
+    }
+    
+    // Wenn verschiedene Beschreibungen, zeige eine allgemeine Beschreibung an
+    return 'Verschiedene Sonderangebote verfügbar';
   }
 
   isFavorite(artikel: any): boolean {
@@ -532,7 +679,7 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
       'VERPACKUNGEN': 'https://img.freepik.com/premium-photo/non-plastic-boxes-food-delivery-white-background_186260-1466.jpg?ga=GA1.1.551023853.1754094495&semt=ais_hybrid&w=740&q=80',
       
       // TIEFKÜHL - Tiefkühlprodukte
-      'TIEFKÜHL': '/tiefkühl.jpg',
+      'TIEFKÜHL': '/tiefkuehl.jpg',
       
       // DROGERIE - Drogerieartikel und Kosmetik
       'DROGERIE': 'https://images.unsplash.com/photo-1556228720-195a672e8a03?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60',
@@ -562,7 +709,7 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
       'HYGIENEARTIKEL': '/hygiene.jpg',
       
       // KRÄUTER - Frische Kräuter
-      'KRÄUTER': '/kräuter.jpg',
+      'KRÄUTER': '/kraeuter.jpg',
       
       // OBST - Frisches Obst
       'OBST': 'https://images.unsplash.com/photo-1619566636858-adf3ef46400b?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60',
@@ -571,7 +718,7 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
       'PARFÜM': '/water-feature.jpg',
       
       // KÜCHENBEDARF - Küchenutensilien
-      'KÜCHENBEDARF': 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60',
+      'KÜCHENBEDARF': '/kuechenbedarf.jpg',
       
       // FOLIEN - Verpackungsfolien
       'FOLIEN': '/folien.jpg',
@@ -930,7 +1077,80 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
   }
 
   getFeaturedProducts(): any[] {
-    // Filtere Produkte mit Bildern (main_image_url)
+    // Wenn aktive Angebote vorhanden sind, zeige Produkte aus diesen Angeboten
+    if (this.activeOffers.length > 0) {
+      const offerProducts: any[] = [];
+      
+      // Sammle alle Produkte aus aktiven Angeboten
+      this.activeOffers.forEach(offer => {
+        offer.products.forEach(product => {
+          // Normalisiere das Produkt auf das Standard-Schema
+          const normalizedProduct = {
+            // Standard-Produktfelder (wie normale Produkte)
+            id: product.product_id || product.id,
+            article_number: product.article_number || product.ean || product.product_id?.toString(),
+            article_text: product.article_text || 'Produkt',
+            main_image_url: product.main_image_url,
+            sale_price: product.offer_price || product.sale_price || product.gross_price || 0,
+            cost_price: product.cost_price || 0,
+            category: product.category || 'Angebot',
+            unit: product.unit || 'Stück',
+            ean: product.ean || '',
+            is_active: product.is_active !== undefined ? product.is_active : true,
+            
+            // Angebotsinformationen
+            offer_name: offer.name,
+            offer_description: offer.description,
+            discount_percentage: offer.discount_percentage,
+            discount_amount: offer.discount_amount,
+            offer_type: offer.offer_type,
+            start_date: offer.start_date,
+            end_date: offer.end_date,
+            offer_price: product.offer_price,
+            use_offer_price: product.use_offer_price,
+            
+            // Zusätzliche Felder für Kompatibilität
+            product_id: product.product_id,
+            article_notes: product.article_notes || '',
+            article_type: product.article_type || '',
+            custom_field_1: product.custom_field_1 || '',
+            db_index: product.db_index || 0,
+            tax_code: product.tax_code || 0,
+            sale_price_2: product.sale_price_2 || 0,
+            sale_price_3: product.sale_price_3 || 0,
+            sale_price_quantity_2: product.sale_price_quantity_2 || 0,
+            sale_price_quantity_3: product.sale_price_quantity_3 || 0
+          };
+          
+          offerProducts.push(normalizedProduct);
+        });
+      });
+      
+      // Debug: Zeige alle Produkte aus Angeboten
+      console.log('Alle Produkte aus Angeboten:', offerProducts);
+      
+      // Filtere nur Duplikate heraus (keine Bildfilterung)
+      const uniqueProducts = offerProducts.filter((product, index, self) => 
+        index === self.findIndex(p => p.product_id === product.product_id)
+      );
+      
+      console.log('Produkte nach Duplikatentfernung:', uniqueProducts);
+      console.log('Normalisierte Produkte (Schema):', uniqueProducts.map(p => ({
+        id: p.id,
+        article_number: p.article_number,
+        article_text: p.article_text,
+        sale_price: p.sale_price,
+        offer_price: p.offer_price,
+        use_offer_price: p.use_offer_price
+      })));
+      console.log('Produkte mit Bildern:', uniqueProducts.filter(p => p.main_image_url && p.main_image_url.trim() !== '' && p.main_image_url !== 'null' && p.main_image_url !== 'undefined'));
+      console.log('Produkte ohne Bilder:', uniqueProducts.filter(p => !p.main_image_url || p.main_image_url.trim() === '' || p.main_image_url === 'null' || p.main_image_url === 'undefined'));
+      
+      // Zeige alle Produkte aus Angeboten (keine Begrenzung)
+      return uniqueProducts;
+    }
+    
+    // Fallback: Filtere normale Produkte mit Bildern (main_image_url)
     const productsWithImages = this.artikelData.filter(artikel => 
       artikel.main_image_url && 
       artikel.main_image_url.trim() !== '' && 

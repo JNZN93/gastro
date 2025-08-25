@@ -1,0 +1,100 @@
+<div class="gd-flyer">
+  @if (loading) {
+    <div class="loading">
+      <div class="spinner"></div>
+      <p>Lade Flyer...</p>
+    </div>
+  }
+
+  @if (!loading && error) {
+    <div class="error">{{ error }}</div>
+  }
+
+  @if (!loading && offer) {
+    @for (page of pages(); track $index) {
+    <section class="a4">
+      <header class="gd-header">
+        <div class="header-left">
+          <div class="stock-pill">Solange der Vorrat reicht</div>
+
+          <div class="info-row">
+            <div class="info-box green quality">
+              <div class="quality-text">Qualität vor Ort,<br/> geliefert an jeden Ort!</div>
+            </div>
+            <div class="info-box green times">
+              <div class="times-title">Öffnungszeiten</div>
+              <div class="times-line">Mo. - Fr.: 08:00 - 17:00 Uhr</div>
+              <div class="times-line">Sa. : 08:00 - 15:00 Uhr</div>
+            </div>
+          </div>
+
+          <div class="headline-red">{{ sanitizeText(offer.name) || 'Preisknaller' }}</div>
+        </div>
+
+        <div class="header-right">
+          <img class="gd-logo" src="/logo.webp" alt="Gastro Depot" />
+          <div class="gd-brand">
+            <div class="gd-name">GASTRO DEPOT</div>
+            <div class="gd-sub">GmbH & Co KG</div>
+          </div>
+        </div>
+      </header>
+
+      @if (page && page.length > 0) {
+      <section class="gd-body">
+        <div class="tiles">
+          @for (product of page; track product.product_id + '_' + product.article_number) {
+          <article class="tile">
+            <div class="tile-media">
+              @if (product.main_image_url) {
+                <img [src]="product.main_image_url" [alt]="product.article_text" (error)="onImageError($event)" />
+              } @else {
+                <div class="placeholder">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2z"/>
+                  </svg>
+                </div>
+              }
+            </div>
+
+            <div class="tile-info">
+              <div class="title-wrap">
+                <h3 class="title">{{ sanitizeText(product.article_text) }}</h3>
+              </div>
+              <div class="price-chip" [attr.data-kind]="(product.use_offer_price && product.offer_price) ? 'offer' : null">
+                <img class="cart" src="/shoppingcart.png" alt="" />
+                <span>
+                  {{ (product.use_offer_price && product.offer_price ? product.offer_price : product.sale_price) | number:'1.2-2':'de-DE' }}€
+                </span>
+              </div>
+            </div>
+          </article>
+          }
+        </div>
+      </section>
+      } @else {
+        <div class="empty">Keine Produkte im Angebot vorhanden.</div>
+      }
+
+      <div class="fineprint">
+        Angebote gültig, solange der Vorrat reicht. Druck- und Satzfehler vorbehalten. Alle Preise zzgl. MwSt.
+      </div>
+
+      <footer class="contact">
+        <div class="company">
+          <div class="line">Gastro Depot GmbH & Co KG</div>
+          <div class="line">Im Winkel 6</div>
+          <div class="line">67547 Worms</div>
+        </div>
+        <div class="contact-list">
+          <div class="item">06241 - 496 59 36</div>
+          <div class="item">info&#64;gastro-depot-worms.de</div>
+          <div class="item">instagram.com/gastro_depot_gmbh_worms</div>
+        </div>
+      </footer>
+    </section>
+    }
+  }
+</div>
+
+

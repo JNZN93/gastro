@@ -44,15 +44,17 @@ export class AppComponent implements OnInit, OnDestroy {
                                 event.url.includes('/user-management') ||
                                 event.url.includes('/route-planning') ||
                                 event.url.includes('/reports') ||
+                                event.url.includes('/offers') ||
                                 event.url.includes('/customer-order/');
 
         // Header auf Employees-Route nur auf Mobile/Tablet ausblenden
         this.isEmployeesRoute = event.url.includes('/employees');
         
-        // Header auf Public Order Review Route ausblenden
+        // Header auf bestimmten Routen ausblenden
         const isPublicOrderReview = event.url.includes('/customer-order/') && event.url.includes('/review');
+        const isOfferFlyer = event.url.includes('/offers/') && event.url.includes('/flyer');
         const isMobileOrTablet = typeof window !== 'undefined' ? window.innerWidth <= 1023 : false;
-        this.shouldHideHeader = (this.isEmployeesRoute && isMobileOrTablet) || isPublicOrderReview;
+        this.shouldHideHeader = (this.isEmployeesRoute && isMobileOrTablet) || isPublicOrderReview || isOfferFlyer;
         
         this.updateHeaderVisibility();
       });
@@ -66,8 +68,9 @@ export class AppComponent implements OnInit, OnDestroy {
   private updateHeaderVisibility() {
     const isMobileOrTablet = typeof window !== 'undefined' ? window.innerWidth <= 1023 : false;
     const isPublicOrderReview = this.router.url.includes('/customer-order/') && this.router.url.includes('/review');
-    
-    this.shouldHideHeader = (this.isEmployeesRoute && isMobileOrTablet) || isPublicOrderReview;
+    const isOfferFlyer = this.router.url.includes('/offers/') && this.router.url.includes('/flyer');
+
+    this.shouldHideHeader = (this.isEmployeesRoute && isMobileOrTablet) || isPublicOrderReview || isOfferFlyer;
   }
 
   ngOnDestroy() {
