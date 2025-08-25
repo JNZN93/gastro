@@ -794,10 +794,24 @@
       .flyer-page-select {
         display: flex;
         align-items: center;
+        position: relative;
         background: rgba(243, 244, 246, 0.8);
         border: 1px solid rgba(226, 232, 240, 0.8);
         border-radius: 0.5rem;
         padding: 0.25rem 0.5rem;
+        &::after {
+          content: '';
+          position: absolute;
+          right: 8px;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 0;
+          height: 0;
+          border-left: 5px solid transparent;
+          border-right: 5px solid transparent;
+          border-top: 6px solid #6b7280; // gray-500
+          pointer-events: none;
+        }
         select {
           appearance: none;
           background: transparent;
