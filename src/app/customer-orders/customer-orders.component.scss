@@ -359,6 +359,21 @@
     background-color: #e3f2fd;
     border-left: 4px solid #007bff;
   }
+
+  // Angebotsartikel hervorheben
+  &.offer-item {
+    background-color: #fef3c7;
+    border-left: 4px solid #f59e0b;
+    
+    &:hover {
+      background-color: #fde68a;
+    }
+    
+    &.selected {
+      background-color: #fde68a;
+      border-left: 4px solid #f59e0b;
+    }
+  }
 }
 
 .articles-list {
@@ -514,6 +529,12 @@
   border-radius: 6px;
   margin-top: 8px;
   font-size: 12px;
+}
+
+// Angebotspreis in der Artikelsuche
+.offer-price {
+  color: #f59e0b !important;
+  font-weight: 600;
 }
 
 // Auftragssektion
@@ -746,12 +767,15 @@
   }
 }
 
+// Auftragstabelle
 .order-table-container {
   overflow: auto;
   flex: 1;
-  display: flex;
-  flex-direction: column;
   max-height: calc(100vh - 280px); // Reduzierte Höhe für kompaktere Darstellung
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 16px;
 }
 
 .order-table {
@@ -833,6 +857,16 @@
       background-color: #f8f9fa;
     }
     
+    // Angebotsartikel dezent hervorheben
+    &.offer-item {
+      background-color: #fef3c7; // Sehr helles Gelb
+      border-left: 3px solid #f59e0b; // Orange Akzent
+      
+      &:hover {
+        background-color: #fde68a; // Etwas dunkleres Gelb beim Hover
+      }
+    }
+    
     &.editing {
       background: linear-gradient(135deg, #fff3e0, #ffe0b2);
       border-left: 4px solid #ff6b35;
@@ -874,6 +908,40 @@
     }
   }
 
+  // Angebots-Badge
+  .offer-badge {
+    display: inline-block;
+    margin-right: 8px;
+    font-size: 12px;
+    opacity: 0.8;
+    vertical-align: middle;
+  }
+
+  // Angebotspreis-Container
+  .offer-price-container {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    .offer-price-label {
+      font-size: 11px;
+      color: #f59e0b;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+      .offer-price {
+    border-color: #f59e0b;
+    background-color: #fef3c7;
+    
+    &:focus {
+      border-color: #d97706;
+      box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+    }
+  }
+}
+
   .position {
     font-weight: 600;
     color: #666;
@@ -910,8 +978,6 @@
     text-align: center;
     padding: 0;
   }
-
-
 
   .info-btn {
     background: linear-gradient(135deg, #dbeafe, #eff6ff);
@@ -991,11 +1057,9 @@
           
           .material-icons {
             font-size: 12px;
+            }
           }
         }
-      }
-      
-
       
       .article-text {
         flex: 1;
@@ -1056,7 +1120,7 @@
     color: #666;
     font-size: 11px;
     width: 80px;
-    text-align: left;
+    text-align: center;
     
     .article-number-container {
       display: flex;
@@ -1131,21 +1195,6 @@
     width: 60px;
   }
 
-  .standard-price {
-    text-align: center;
-    color: #666;
-    font-size: 12px;
-    
-    .price-display {
-      background-color: #f8f9fa;
-      padding: 4px 6px;
-      border-radius: 4px;
-      border: 1px solid #e0e0e0;
-      display: inline-block;
-      min-width: 60px;
-    }
-  }
-
   .cost-price {
     text-align: center;
     color: #dc3545;
@@ -1202,48 +1251,6 @@
 
     .material-icons {
       font-size: 12px;
-    }
-  }
-
-  .info-btn {
-    width: 24px !important;
-    height: 24px !important;
-    min-width: 24px !important;
-    min-height: 24px !important;
-    max-width: 24px !important;
-    max-height: 24px !important;
-    padding: 4px;
-    color: #3b82f6;
-    background: linear-gradient(135deg, #dbeafe, #eff6ff);
-    border: 1px solid #bfdbfe;
-    border-radius: 6px;
-    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.1);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    box-sizing: border-box;
-
-    .material-icons {
-      font-size: 16px;
-      font-weight: 500;
-    }
-
-    &:hover {
-      background: linear-gradient(135deg, #3b82f6, #2563eb);
-      color: white;
-      border-color: #1d4ed8;
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-      
-      .material-icons {
-        color: white;
-      }
-    }
-    
-    &:active {
-      transform: translateY(0);
     }
   }
 
@@ -3494,6 +3501,21 @@
           height: 3px;
           background: linear-gradient(90deg, #007bff, #28a745);
         }
+
+        // Angebotsartikel hervorheben
+        &.offer-item {
+          background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+          border-color: #f59e0b;
+          border-left: 4px solid #f59e0b;
+          
+          &:before {
+            background: linear-gradient(90deg, #f59e0b, #d97706);
+          }
+          
+          &:hover {
+            background: linear-gradient(135deg, #fde68a 0%, #fbbf24 100%);
+          }
+        }
         
         .card-header {
           display: flex;
@@ -4765,6 +4787,21 @@
         background: #f8f9fa;
       }
 
+      // Angebotsartikel hervorheben
+      &.offer-item {
+        background-color: #fef3c7;
+        border-left: 4px solid #f59e0b;
+        
+        &:hover {
+          background-color: #fde68a;
+        }
+        
+        &.selected {
+          background-color: #fde68a;
+          border-left: 4px solid #f59e0b;
+        }
+      }
+
       .article-info {
         display: flex;
         flex-direction: column;
@@ -5261,6 +5298,18 @@
       border-radius: 8px;
       padding: 12px;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      transition: all 0.2s ease;
+
+      // Angebotsartikel hervorheben
+      &.offer-item {
+        background-color: #fef3c7;
+        border-color: #f59e0b;
+        border-left: 4px solid #f59e0b;
+        
+        .price-badge.offer-badge {
+          background: linear-gradient(135deg, #f59e0b, #d97706);
+        }
+      }
 
       .price-card-header {
         display: flex;

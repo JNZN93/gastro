@@ -15,6 +15,7 @@ import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import { IndexedDBService } from '../indexeddb.service';
+import { OffersService, OfferWithProducts, OfferProduct } from '../offers.service';
 import * as QRCode from 'qrcode';
 import { firstValueFrom } from 'rxjs';
 
@@ -35,6 +36,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   private artikelService = inject(ArtikelDataService);
   private http = inject(HttpClient);
   private indexedDBService = inject(IndexedDBService);
+  private offersService = inject(OffersService);
   artikelData: any[] = [];
   orderItems: any[] = [];
   searchTerm: string = '';
@@ -45,6 +47,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   isVisible: boolean = true;
   isScanning = false;
   isAnalyzingImages = false;
+  activeOfferFirst: OfferWithProducts | null = null;
   
   // Neue Properties für Dropdown-Navigation
   selectedIndex: number = -1;
@@ -209,6 +212,9 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
             this.artikelData = this.globalArtikels;
             this.isVisible = false;
             
+            // Angebote laden und anwenden (erstes Angebot verwenden)
+            this.loadAndApplyFirstOffer();
+
             // Nach dem Laden der Artikel: Aktualisiere kundenspezifische Preise falls ein Kunde gespeichert ist
             if (this.pendingCustomerForPriceUpdate) {
               console.log('🔄 [INIT] Lade kundenspezifische Preise für gespeicherten Kunden:', this.pendingCustomerForPriceUpdate.customer_number);
@@ -228,6 +234,160 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       console.log('Kein Token gefunden.');
       this.router.navigate(['/login']);
     }
+  }
+
+  // ===== OFFERS INTEGRATION =====
+  private loadAndApplyFirstOffer(): void {
+    try {
+      this.offersService.getAllOffersWithProducts().subscribe({
+        next: (response: any) => {
+          const offers: OfferWithProducts[] = response?.data || [];
+          if (!offers || offers.length === 0) {
+            return;
+          }
+          const firstOffer = offers[0];
+          this.activeOfferFirst = firstOffer;
+          this.applyOfferPricingToGlobalArtikels(firstOffer);
+          // Falls bereits kundenspezifische Preise geladen sind, Angebotslogik anwenden
+          if (Array.isArray(this.customerArticlePrices) && this.customerArticlePrices.length > 0) {
+            this.annotateCustomerPricesWithOffer(firstOffer);
+          }
+        },
+        error: () => {
+          // still usable without offers
+        }
+      });
+    } catch {}
+  }
+
+  private applyOfferPricingToGlobalArtikels(offer: OfferWithProducts): void {
+    if (!offer || !Array.isArray(this.globalArtikels) || this.globalArtikels.length === 0) return;
+
+    const products = offer.products || [];
+    if (!products.length) return;
+
+    // Map for quick lookup by product identifiers
+    const byProductId = new Map<number, OfferProduct>();
+    const byArticleNumber = new Map<string, OfferProduct>();
+    products.forEach((p) => {
+      if (p?.product_id != null) byProductId.set(Number(p.product_id), p);
+      if (p?.article_number) byArticleNumber.set(String(p.article_number), p);
+    });
+
+    const updated = this.globalArtikels.map((artikel: any) => {
+      const idNum = artikel?.id != null ? Number(artikel.id) : undefined;
+      const artNum = artikel?.article_number != null ? String(artikel.article_number) : undefined;
+
+      let matched: OfferProduct | undefined = undefined;
+      if (idNum !== undefined) matched = byProductId.get(idNum);
+      if (!matched && artNum) matched = byArticleNumber.get(artNum);
+
+      if (!matched) return artikel;
+
+      const basePriceRaw = artikel?.sale_price ?? 0;
+      const basePrice = typeof basePriceRaw === 'number' ? basePriceRaw : parseFloat(basePriceRaw) || 0;
+
+      let offerPrice: number | undefined;
+      if (matched.use_offer_price && matched.offer_price != null && matched.offer_price !== '') {
+        const op = typeof matched.offer_price === 'number' ? matched.offer_price : parseFloat(String(matched.offer_price));
+        if (!isNaN(op)) offerPrice = Math.max(0, Math.round(op * 100) / 100);
+      } else if (offer?.discount_percentage) {
+        const pct = Number(offer.discount_percentage);
+        if (!isNaN(pct)) offerPrice = Math.max(0, Math.round((basePrice * (1 - pct / 100)) * 100) / 100);
+      } else if (offer?.discount_amount) {
+        const amt = Number(offer.discount_amount);
+        if (!isNaN(amt)) offerPrice = Math.max(0, Math.round((basePrice - amt) * 100) / 100);
+      }
+
+      if (offerPrice === undefined) return artikel;
+
+      return {
+        ...artikel,
+        original_price: basePrice,
+        offer_price: offerPrice,
+        use_offer_price: true,
+        isOfferProduct: true,
+        offerId: offer.id,
+        offer_name: offer.name
+      };
+    });
+
+    this.globalArtikels = updated;
+    this.artikelData = [...this.globalArtikels];
+  }
+
+  private annotateCustomerPricesWithOffer(offer: OfferWithProducts): void {
+    if (!offer || !Array.isArray(this.customerArticlePrices) || this.customerArticlePrices.length === 0) return;
+
+    const products = offer.products || [];
+    if (!products.length) return;
+
+    const byProductId = new Map<number, OfferProduct>();
+    const byArticleNumber = new Map<string, OfferProduct>();
+    products.forEach((p) => {
+      if (p?.product_id != null) byProductId.set(Number(p.product_id), p);
+      if (p?.article_number) byArticleNumber.set(String(p.article_number), p);
+    });
+
+    this.customerArticlePrices = this.customerArticlePrices.map((price: any) => {
+      const pid = price?.product_id != null ? Number(price.product_id) : undefined;
+      const an = price?.article_number != null ? String(price.article_number) : undefined;
+
+      let matched: OfferProduct | undefined = undefined;
+      if (pid !== undefined) matched = byProductId.get(pid);
+      if (!matched && an) matched = byArticleNumber.get(an);
+      if (!matched) return price;
+
+      const basePriceRaw = price?.unit_price_net ?? price?.sale_price ?? 0;
+      const basePrice = typeof basePriceRaw === 'number' ? basePriceRaw : parseFloat(basePriceRaw) || 0;
+
+      let offerPrice: number | undefined;
+      if (matched.use_offer_price && matched.offer_price != null && matched.offer_price !== '') {
+        const op = typeof matched.offer_price === 'number' ? matched.offer_price : parseFloat(String(matched.offer_price));
+        if (!isNaN(op)) offerPrice = Math.max(0, Math.round(op * 100) / 100);
+      } else if (offer?.discount_percentage) {
+        const pct = Number(offer.discount_percentage);
+        if (!isNaN(pct)) offerPrice = Math.max(0, Math.round((basePrice * (1 - pct / 100)) * 100) / 100);
+      } else if (offer?.discount_amount) {
+        const amt = Number(offer.discount_amount);
+        if (!isNaN(amt)) offerPrice = Math.max(0, Math.round((basePrice - amt) * 100) / 100);
+      }
+
+      if (offerPrice === undefined) return price;
+
+      return {
+        ...price,
+        original_unit_price_net: basePrice,
+        unit_price_net: offerPrice,
+        offer_price: offerPrice,
+        use_offer_price: true,
+        isOfferProduct: true,
+        offerId: offer.id,
+        offer_name: offer.name
+      };
+    });
+
+    // Aktualisiere gefilterte Liste falls Suchmodal offen ist
+    if (Array.isArray(this.filteredArticlePrices) && this.filteredArticlePrices.length > 0) {
+      this.filteredArticlePrices = this.filteredArticlePrices.map((p: any) => {
+        const ref = this.customerArticlePrices.find((cp: any) => (cp.product_id === p.product_id) || (cp.article_number === p.article_number));
+        return ref || p;
+      });
+    }
+  }
+
+  // Preisermittlung: bevorzugt Angebotspreis, dann manueller, sonst Standard
+  private resolveEffectivePrice(item: any): number {
+    if (item && item.use_offer_price && item.offer_price !== undefined && item.offer_price !== null && item.offer_price !== '') {
+      const p = typeof item.offer_price === 'number' ? item.offer_price : parseFloat(item.offer_price);
+      if (!isNaN(p)) return p;
+    }
+    if (item && item.different_price !== undefined && item.different_price !== null && item.different_price !== '') {
+      const d = typeof item.different_price === 'number' ? item.different_price : parseFloat(item.different_price);
+      if (!isNaN(d)) return d;
+    }
+    const s = typeof item?.sale_price === 'number' ? item.sale_price : parseFloat(item?.sale_price) || 0;
+    return s;
   }
 
   ngOnDestroy(): void {
@@ -1980,19 +2140,7 @@ filteredArtikelData() {
 
   // Hilfsmethode um den korrekten Preis für ein orderItem zu bekommen
   getItemPrice(item: any): number {
-    // Robuste Preis-Validierung für getItemPrice
-    if (item.different_price !== undefined && item.different_price !== null && item.different_price !== '') {
-      const parsedDifferentPrice = parseFloat(item.different_price);
-      if (!isNaN(parsedDifferentPrice) && parsedDifferentPrice >= 0) {
-        return parsedDifferentPrice;
-      } else {
-        // Ungültiger different_price - verwende sale_price
-        console.warn('⚠️ [GET-ITEM-PRICE] Ungültiger different_price:', item.different_price, 'für Artikel:', item.article_text, '- verwende sale_price');
-      }
-    }
-    
-    // Fallback auf sale_price
-    return parseFloat(item.sale_price) || 0;
+    return this.resolveEffectivePrice(item);
   }
 
   // Neue Methode für Input-Event - nur Gesamtsumme aktualisieren, keine Validierung

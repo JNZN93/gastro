@@ -114,6 +114,7 @@
                 @for (item of orderItems; track $index; let i = $index) {
                 <tr class="order-row" 
                     [class.editing]="editingItemIndex === i"
+                    [class.offer-item]="item.use_offer_price && item.offer_price !== undefined"
                     [draggable]="editingItemIndex !== i && editingArticleNameIndex !== i"
                     (dragstart)="onDragStart($event, i)"
                     (dragover)="onDragOver($event)"
@@ -141,6 +142,9 @@
                     <div class="article-name-container" 
                          [class.editing-name]="editingArticleNameIndex === i"
                          title="Klicken zum Bearbeiten des Artikelnamens">
+                      @if (item.use_offer_price && item.offer_price !== undefined) {
+                        <span class="offer-badge" title="Angebotspreis aktiv">🏷️</span>
+                      }
                       @if (editingArticleNameIndex === i) {
                         <input type="text" 
                                [(ngModel)]="editingArticleName"
@@ -179,16 +183,29 @@
                   </td>
                   <td class="cost-price" [title]="'EK-Preis: €' + (item.cost_price || 0).toFixed(2)">€{{ (item.cost_price || 0).toFixed(2) }}</td>
                   <td class="customer-price">
-                    <input type="number" 
-                           [(ngModel)]="item.different_price" 
-                           step="0.01" 
-                           class="price-edit" 
-                           [class.custom-price]="item.different_price !== undefined && item.different_price !== null && item.different_price !== ''"
-                           (input)="onPriceInput(item)"
-                           (change)="updateItemTotal(item)"
-                           (blur)="validateAndUpdatePrice(item)"
-                           [placeholder]="item.sale_price"
-                           [title]="'Standard-Preis: €' + item.sale_price">
+                    @if (item.use_offer_price && item.offer_price !== undefined) {
+                      <input type="number" 
+                             [(ngModel)]="item.different_price" 
+                             step="0.01" 
+                             class="price-edit offer-price" 
+                             [class.custom-price]="item.different_price !== undefined && item.different_price !== null && item.different_price !== ''"
+                             (input)="onPriceInput(item)"
+                             (change)="updateItemTotal(item)"
+                             (blur)="validateAndUpdatePrice(item)"
+                             [placeholder]="item.offer_price"
+                             [title]="'Angebotspreis: €' + item.offer_price + ' | Standard-Preis: €' + item.sale_price">
+                    } @else {
+                      <input type="number" 
+                             [(ngModel)]="item.different_price" 
+                             step="0.01" 
+                             class="price-edit" 
+                             [class.custom-price]="item.different_price !== undefined && item.different_price !== null && item.different_price !== ''"
+                             (input)="onPriceInput(item)"
+                             (change)="updateItemTotal(item)"
+                             (blur)="validateAndUpdatePrice(item)"
+                             [placeholder]="item.sale_price"
+                             [title]="'Standard-Preis: €' + item.sale_price">
+                    }
                   </td>
                   <td class="total-price">€{{ (getItemPrice(item) * item.quantity).toFixed(2) }}</td>
                   <td class="remove-column">
@@ -316,6 +333,7 @@
             @for (artikel of filteredArtikels; track $index) {
             <div class="article-dropdown-item" 
                  [class.selected]="selectedIndex === $index"
+                 [class.offer-item]="artikel.use_offer_price && artikel.offer_price !== undefined"
                  (click)="onArticleClick(artikel)">
               <div class="article-info">
                 <div class="article-details">
@@ -323,7 +341,10 @@
                   <p class="article-number">Art.-Nr: {{ artikel.article_number }}</p>
                   <p class="article-price">
                     <span class="cost-price" [title]="'EK-Preis: €' + (artikel.cost_price || 0).toFixed(2)">EK: €{{ (artikel.cost_price || 0).toFixed(2) }}</span>
-                    @if (artikel.different_price !== undefined) {
+                    @if (artikel.use_offer_price && artikel.offer_price !== undefined) {
+                      <span class="customer-price offer-price">Angebot: €{{ artikel.offer_price }}</span>
+                      <span class="original-price">(Standard: €{{ artikel.sale_price }})</span>
+                    } @else if (artikel.different_price !== undefined) {
                       <span class="customer-price">Kundenpreis: €{{ artikel.different_price }}</span>
                       <span class="original-price">(Standard: €{{ artikel.sale_price }})</span>
                     } @else {
@@ -457,6 +478,7 @@
                 @for (artikel of filteredArtikels; track $index) {
                 <div class="mobile-article-dropdown-item" 
                      [class.selected]="selectedIndex === $index"
+                     [class.offer-item]="artikel.use_offer_price && artikel.offer_price !== undefined"
                      (click)="onArticleClick(artikel)">
                   <div class="article-info">
                     <div class="article-details">
@@ -464,7 +486,10 @@
                       <p class="article-number">Art.-Nr: {{ artikel.article_number }}</p>
                       <p class="article-price">
                         <span class="cost-price" [title]="'EK-Preis: €' + (artikel.cost_price || 0).toFixed(2)">EK: €{{ (artikel.cost_price || 0).toFixed(2) }}</span>
-                        @if (artikel.different_price !== undefined) {
+                        @if (artikel.use_offer_price && artikel.offer_price !== undefined) {
+                          <span class="customer-price offer-price">Angebot: €{{ artikel.offer_price }}</span>
+                          <span class="original-price">(Standard: €{{ artikel.sale_price }})</span>
+                        } @else if (artikel.different_price !== undefined) {
                           <span class="customer-price">Kundenpreis: €{{ artikel.different_price }}</span>
                           <span class="original-price">(Standard: €{{ artikel.sale_price }})</span>
                         } @else {
@@ -509,6 +534,7 @@
                 @for (item of orderItems; track $index; let i = $index) {
                 <div class="order-card" 
                      [class.editing]="editingItemIndex === i"
+                     [class.offer-item]="item.use_offer_price && item.offer_price !== undefined"
                      [draggable]="editingItemIndex !== i && editingArticleNameIndex !== i"
                      (dragstart)="onDragStart($event, i)"
                      (dragover)="onDragOver($event)"
@@ -572,6 +598,12 @@
                         <span class="price-label">Standard-Preis:</span>
                         <span class="price-value standard-price">€{{ item.sale_price }}</span>
                       </div>
+                      @if (item.use_offer_price && item.offer_price !== undefined) {
+                        <div class="price-row offer-price-row">
+                          <span class="price-label">Angebotspreis:</span>
+                          <span class="price-value offer-price">€{{ item.offer_price }}</span>
+                        </div>
+                      }
                       <div class="price-row" [class.active]="item.different_price !== undefined && item.different_price !== null && item.different_price !== ''">
                         <span class="price-label">Kundenpreis:</span>
                         <input type="number" 
@@ -691,11 +723,18 @@
                 
                 <div class="mobile-article-prices-cards">
                   @for (customerPrice of filteredArticlePrices; track customerPrice.product_id) {
-                  <div class="mobile-article-price-card">
+                  <div class="mobile-article-price-card" 
+                       [class.offer-item]="customerPrice.use_offer_price && customerPrice.offer_price !== undefined">
                     <div class="price-card-header">
-                      <div class="price-badge">
+                      <div class="price-badge" [class.offer-badge]="customerPrice.use_offer_price && customerPrice.offer_price !== undefined">
                         <span class="price-amount">€{{ customerPrice.unit_price_net }}</span>
-                        <span class="price-label">Kundenpreis</span>
+                        <span class="price-label">
+                          @if (customerPrice.use_offer_price && customerPrice.offer_price !== undefined) {
+                            Angebotspreis
+                          } @else {
+                            Kundenpreis
+                          }
+                        </span>
                       </div>
                     </div>
                     
