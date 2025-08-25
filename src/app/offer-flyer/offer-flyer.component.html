@@ -28,7 +28,12 @@
             </div>
           </div>
 
-          <div class="headline-red">{{ sanitizeText(offer.name) || 'Preisknaller' }}</div>
+          <div class="headline-container">
+            <div class="headline-red">{{ sanitizeText(offer.name) || 'Preisknaller' }}</div>
+            @if (offer.description) {
+              <div class="headline-description">{{ sanitizeText(offer.description) }}</div>
+            }
+          </div>
         </div>
 
         <div class="header-right">

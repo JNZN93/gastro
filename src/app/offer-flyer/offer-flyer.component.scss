@@ -63,6 +63,12 @@
 .times .times-title { font-weight: 900; font-size: 3.2mm; margin-bottom: .6mm; }
 .times .times-line { font-weight: 600; font-size: 2.9mm; }
 
+.headline-container {
+  display: flex;
+  align-items: center;
+  gap: 3mm;
+}
+
 .headline-red {
   background: #e53935;
   color: #fff;
@@ -72,6 +78,20 @@
   font-weight: 900;
   letter-spacing: .1mm;
   width: fit-content;
+}
+
+.headline-description {
+  background: #ff8c00; /* orange color */
+  color: #fff;
+  padding: 3.4mm 4.2mm; /* adjusted padding to match height of offer name container */
+  border-radius: 2mm;
+  font-size: 6.2mm; /* smaller font size than offer name */
+  font-weight: 900; /* same font weight as offer name */
+  letter-spacing: .1mm; /* same letter spacing as offer name */
+  max-width: 60mm;
+  height: fit-content;
+  display: flex;
+  align-items: center;
 }
 
 .header-right {
@@ -130,7 +150,7 @@
 
 .tile-info { display: flex; flex-direction: column; align-items: stretch; gap: 1.2mm; margin-top: 1.5mm; }
 .title-wrap { overflow: hidden; min-height: calc(1.1em * 2); max-height: calc(1.1em * 2); }
-.title { color: #fff; font-weight: 400; font-size: 2.4mm; margin: 0; max-width: 100%; line-height: 1.1; overflow: hidden; display: block; }
+.title { color: #fff; font-weight: 400; font-size: 3.2mm; margin: 0; max-width: 100%; line-height: 1.1; overflow: hidden; display: block; }
 
 .price-chip {
   background: #e53935;
@@ -142,7 +162,10 @@
   border-radius: 5mm;
   font-weight: 900;
   flex-shrink: 0;
-  font-size: 2.4mm;
+  font-size: 4mm; /* very large font size for prices */
+  align-self: flex-end; /* position on the right side */
+  width: fit-content; /* only take the width needed */
+  margin-top: -2.5mm; /* move button slightly upward */
 }
 .price-chip .cart { width: 3.5mm; height: 3.5mm; }
 
