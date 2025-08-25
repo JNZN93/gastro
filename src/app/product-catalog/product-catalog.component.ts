@@ -1077,7 +1077,7 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
   }
 
   getFeaturedProducts(): any[] {
-    // Wenn aktive Angebote vorhanden sind, zeige Produkte aus diesen Angeboten
+    // Nur Produkte aus aktiven Angeboten anzeigen
     if (this.activeOffers.length > 0) {
       const offerProducts: any[] = [];
       
@@ -1126,40 +1126,16 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
         });
       });
       
-      // Debug: Zeige alle Produkte aus Angeboten
-      console.log('Alle Produkte aus Angeboten:', offerProducts);
-      
-      // Filtere nur Duplikate heraus (keine Bildfilterung)
+      // Filtere nur Duplikate heraus
       const uniqueProducts = offerProducts.filter((product, index, self) => 
         index === self.findIndex(p => p.product_id === product.product_id)
       );
       
-      console.log('Produkte nach Duplikatentfernung:', uniqueProducts);
-      console.log('Normalisierte Produkte (Schema):', uniqueProducts.map(p => ({
-        id: p.id,
-        article_number: p.article_number,
-        article_text: p.article_text,
-        sale_price: p.sale_price,
-        offer_price: p.offer_price,
-        use_offer_price: p.use_offer_price
-      })));
-      console.log('Produkte mit Bildern:', uniqueProducts.filter(p => p.main_image_url && p.main_image_url.trim() !== '' && p.main_image_url !== 'null' && p.main_image_url !== 'undefined'));
-      console.log('Produkte ohne Bilder:', uniqueProducts.filter(p => !p.main_image_url || p.main_image_url.trim() === '' || p.main_image_url === 'null' || p.main_image_url === 'undefined'));
-      
-      // Zeige alle Produkte aus Angeboten (keine Begrenzung)
       return uniqueProducts;
     }
     
-    // Fallback: Filtere normale Produkte mit Bildern (main_image_url)
-    const productsWithImages = this.artikelData.filter(artikel => 
-      artikel.main_image_url && 
-      artikel.main_image_url.trim() !== '' && 
-      artikel.main_image_url !== 'null' &&
-      artikel.main_image_url !== 'undefined'
-    );
-    
-    // Zeige die ersten 6 Produkte mit Bildern als "empfohlene Produkte"
-    return productsWithImages.slice(0, 6);
+    // Keine Fallback-Produkte mehr - leeres Array zurückgeben
+    return [];
   }
 
 

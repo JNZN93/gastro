@@ -124,7 +124,7 @@
           </button>
           <!-- Flyer page selector -->
           <label class="flyer-page-select" [attr.aria-label]="'Flyer-Seite wählen für ' + offer.name">
-            <select [value]="selectedFlyerPageIndexByOfferId[offer.id!] ?? 0" (change)="onFlyerPageChange(offer, $event)">
+            <select [value]="selectedFlyerPageIndexByOfferId[offer.id!] || 0" (change)="onFlyerPageChange(offer, $event)">
               @for (p of [].constructor(getFlyerPageCount(offer)); let i = $index; track i) {
               <option [value]="i">Seite {{ i + 1 }}</option>
               }
