@@ -31,6 +31,7 @@ export class OffersComponent implements OnInit {
   isSearching = false;
   showSearchResults = false;
   selectedIndex = -1;
+  globalArtikels: any[] = []; // Neue Property für lokale Artikel-Daten
   
   createOfferForm: FormGroup;
   addProductForm: FormGroup;
@@ -68,6 +69,23 @@ export class OffersComponent implements OnInit {
     this.testApiEndpoints();
     this.testProductsApi();
     this.loadOffers();
+    this.loadGlobalArtikels(); // Lade lokale Artikel-Daten
+  }
+
+  // Neue Methode zum Laden der lokalen Artikel-Daten
+  private loadGlobalArtikels(): void {
+    // Lade alle verfügbaren Artikel für lokale Suche
+    this.offersService.searchProducts('').subscribe({
+      next: (response: any) => {
+        if (response && Array.isArray(response)) {
+          this.globalArtikels = response;
+          console.log('📦 Lokale Artikel-Daten geladen:', this.globalArtikels.length);
+        }
+      },
+      error: (error: any) => {
+        console.error('❌ Fehler beim Laden der lokalen Artikel:', error);
+      }
+    });
   }
 
   toggleProductsSection(offer: OfferWithProducts): void {
@@ -118,118 +136,171 @@ export class OffersComponent implements OnInit {
 
     this.isSearching = true;
     this.showSearchResults = true;
-    console.log('🔍 Starte API-Aufruf...');
+    console.log('🔍 Starte lokale Suche...');
 
-    // API-Aufruf für Produktsuche - verwende api/products Endpunkt
-    this.offersService.searchProducts(searchTerm).subscribe({
-      next: (response: any) => {
+    // Verwende die verbesserte Suchlogik aus Customer Orders
+    this.performLocalSearch(searchTerm);
+  }
+
+  // Neue Methode für lokale Suche (basierend auf Customer Orders)
+  private performLocalSearch(searchTerm: string): void {
+    const trimmedTerm = searchTerm.trim();
+    
+    // Mindestlänge prüfen (außer bei EAN)
+    const isEanSearch = /^\d{8}$|^\d{13}$/.test(trimmedTerm);
+    if (!isEanSearch && trimmedTerm.length < 3) {
+      this.isSearching = false;
+      this.productSearchResults = [];
+      this.showSearchResults = false;
+      this.selectedIndex = -1;
+      return; // Suche abbrechen
+    }
+
+    if (isEanSearch) {
+      // EAN-Suche: Zuerst in lokalen Artikeln suchen
+      const localEanResults = this.globalArtikels.filter(artikel =>
+        artikel.ean?.toLowerCase() === trimmedTerm.toLowerCase()
+      );
+
+      if (localEanResults.length > 0) {
+        this.productSearchResults = localEanResults;
+        this.showSearchResults = true;
+        this.selectedIndex = -1;
         this.isSearching = false;
-        console.log('🔍 API Response für Produktsuche:', response);
-        console.log('🔍 Response Type:', typeof response);
-        console.log('🔍 Is Array:', Array.isArray(response));
-        console.log('🔍 Response Length:', response?.length);
-        
-        // Der api/products Endpunkt gibt direkt ein Array von Produkten zurück
-        if (response && Array.isArray(response)) {
-          console.log('🔍 Alle Produkte von API:', response.length);
+
+        console.log('🔍 [EAN-LOCAL] EAN in lokalen Artikeln gefunden:', this.productSearchResults.length);
+      } else {
+        // EAN nicht gefunden → API-Suche
+        this.searchEanInApi(trimmedTerm);
+        return;
+      }
+    } else {
+      // Normale Text-Suche
+      const terms = trimmedTerm.toLowerCase().split(/\s+/);
+
+      const filtered = this.globalArtikels.filter((artikel) =>
+        terms.every((term) =>
+          artikel.article_text.toLowerCase().includes(term) ||
+          artikel.article_number?.toLowerCase().includes(term) ||
+          artikel.ean?.toLowerCase().includes(term)
+        )
+      );
+
+      // Sortierlogik aus Customer Orders
+      this.productSearchResults = filtered.sort((a, b) => {
+        const searchTermLower = trimmedTerm.toLowerCase();
+        const aArticleNumberExact = a.article_number?.toLowerCase() === searchTermLower;
+        const bArticleNumberExact = b.article_number?.toLowerCase() === searchTermLower;
+        const aArticleTextExact = a.article_text.toLowerCase() === searchTermLower;
+        const bArticleTextExact = b.article_text.toLowerCase() === searchTermLower;
+        const aEanExact = a.ean?.toLowerCase() === searchTermLower;
+        const bEanExact = b.ean?.toLowerCase() === searchTermLower;
+
+        const aArticleNumberStartsWith = a.article_number?.toLowerCase().startsWith(searchTermLower);
+        const bArticleNumberStartsWith = b.article_number?.toLowerCase().startsWith(searchTermLower);
+        const aArticleTextStartsWith = a.article_text.toLowerCase().startsWith(searchTermLower);
+        const bArticleTextStartsWith = b.article_text.toLowerCase().startsWith(searchTermLower);
+        const aEanStartsWith = a.ean?.toLowerCase().startsWith(searchTermLower);
+        const bEanStartsWith = b.ean?.toLowerCase().startsWith(searchTermLower);
+
+        if (aArticleNumberExact && !bArticleNumberExact) return -1;
+        if (!aArticleNumberExact && bArticleNumberExact) return 1;
+        if (aArticleTextExact && !bArticleTextExact) return -1;
+        if (!aArticleTextExact && bArticleTextExact) return 1;
+        if (aEanExact && !bEanExact) return -1;
+        if (!aEanExact && bEanExact) return 1;
+        if (aArticleNumberStartsWith && !bArticleNumberStartsWith) return -1;
+        if (!aArticleNumberStartsWith && bArticleNumberStartsWith) return 1;
+        if (aArticleTextStartsWith && !bArticleTextStartsWith) return -1;
+        if (!aArticleTextStartsWith && bArticleTextStartsWith) return 1;
+        if (aEanStartsWith && !bEanStartsWith) return -1;
+        if (!aEanStartsWith && bEanStartsWith) return 1;
+
+        const articleNumberComparison = this.compareArticleNumbers(a.article_number, b.article_number);
+        if (articleNumberComparison !== 0) {
+          return articleNumberComparison;
+        }
+        return a.article_text.localeCompare(b.article_text);
+      });
+
+      this.showSearchResults = this.productSearchResults.length > 0;
+      this.selectedIndex = -1;
+      this.isSearching = false;
+      
+      console.log('🔍 Lokale Suche abgeschlossen:', this.productSearchResults.length);
+    }
+  }
+
+  // Neue Methode für EAN-API-Suche (basierend auf Customer Orders)
+  private searchEanInApi(eanCode: string): void {
+    const token = localStorage.getItem('token');
+    
+    this.http.get(`https://multi-mandant-ecommerce.onrender.com/api/product-eans/ean/${eanCode}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    }).subscribe({
+      next: (response: any) => {
+        if (response.success && response.data) {
+          // EAN in products_ean Tabelle gefunden
+          const foundArticleNumber = response.data.article_number;
           
-          // Filtere die Ergebnisse basierend auf dem Suchbegriff
-          const filteredResults = this.filterProductsBySearchTerm(response, searchTerm);
-          this.productSearchResults = filteredResults.slice(0, 10); // Maximal 10 Ergebnisse
-          this.selectedIndex = -1; // Reset selection
+          // Prüfe ob dieser Artikel bereits in globalArtikels existiert
+          const existingProduct = this.globalArtikels.find(artikel => 
+            artikel.article_number === foundArticleNumber
+          );
           
-          console.log('🔍 Gefilterte Produkte:', this.productSearchResults.length);
-          console.log('🔍 Erste 3 gefilterte Produkte:', this.productSearchResults.slice(0, 3));
-          
-          // Debug: Überprüfe Dropdown-Status
-          console.log('🔍 showSearchResults vor Update:', this.showSearchResults);
-          console.log('🔍 productSearchResults Länge:', this.productSearchResults.length);
-          
-          // Stelle sicher, dass das Dropdown angezeigt wird
-          if (this.productSearchResults.length > 0) {
+          if (existingProduct) {
+            // Artikel existiert bereits - zeige ihn an
+            this.productSearchResults = [existingProduct];
             this.showSearchResults = true;
-            console.log('🔍 Dropdown wird angezeigt:', this.showSearchResults);
+            this.selectedIndex = -1;
+            this.isSearching = false;
+            
+            console.log('🔍 [EAN-API] EAN gefunden und Artikel in globalArtikels vorhanden:', existingProduct.article_text);
           } else {
+            // Artikel existiert nicht in globalArtikels - keine Ergebnisse
+            this.productSearchResults = [];
             this.showSearchResults = false;
-            console.log('🔍 Keine Ergebnisse, Dropdown versteckt');
+            this.isSearching = false;
+            
+            console.log('🔍 [EAN-API] EAN gefunden aber Artikel nicht in globalArtikels:', foundArticleNumber);
           }
         } else {
-          console.warn('❌ Unerwartetes Response-Format:', response);
+          // EAN nicht in products_ean Tabelle gefunden
           this.productSearchResults = [];
           this.showSearchResults = false;
+          this.isSearching = false;
+          
+          console.log('🔍 [EAN-API] EAN nicht in products_ean Tabelle gefunden:', eanCode);
         }
       },
       error: (error: any) => {
-        console.error('❌ Fehler bei der Produktsuche:', error);
-        this.isSearching = false;
-        this.productSearchResults = [];
+        console.error('Error searching EAN in API:', error);
+        // Bei Fehler: normale lokale Suche durchführen
+        this.performLocalSearch(this.addProductForm.get('productSearch')?.value || '');
       }
     });
   }
 
-  private filterProductsBySearchTerm(products: any[], searchTerm: string): any[] {
-    const trimmedTerm = searchTerm.trim().toLowerCase();
-    console.log('🔍 Filtere mit Suchbegriff:', `"${trimmedTerm}"`);
-    console.log('🔍 Anzahl Produkte vor Filterung:', products.length);
+  // Neue Methode zum Vergleichen von Artikelnummern (aus Customer Orders)
+  private compareArticleNumbers(a: string | undefined, b: string | undefined): number {
+    // Behandle undefined/null Werte
+    if (!a && !b) return 0;
+    if (!a) return 1;
+    if (!b) return -1;
     
-    // Teile den Suchbegriff in einzelne Wörter auf
-    const searchWords = trimmedTerm.split(/\s+/).filter(word => word.length > 0);
+    // Versuche numerischen Vergleich für reine Zahlen
+    const aNum = parseFloat(a);
+    const bNum = parseFloat(b);
     
-    const filtered = products.filter(product => {
-      const articleText = (product.article_text || '').toLowerCase();
-      const articleNumber = (product.article_number || '').toLowerCase();
-      const category = (product.category || '').toLowerCase();
-      const ean = (product.ean || '').toLowerCase();
-      
-      // Wenn nur ein Wort gesucht wird, verwende die alte Logik
-      if (searchWords.length === 1) {
-        const word = searchWords[0];
-        const matchesText = articleText.includes(word);
-        const matchesNumber = articleNumber.includes(word);
-        const matchesCategory = category.includes(word);
-        const matchesEan = ean.includes(word);
-        
-        return matchesText || matchesNumber || matchesCategory || matchesEan;
-      }
-      
-      // Bei mehreren Wörtern: mindestens eines muss passen
-      const matchesAnyWord = searchWords.some(word => {
-        return articleText.includes(word) || 
-               articleNumber.includes(word) || 
-               category.includes(word) || 
-               ean.includes(word);
-      });
-      
-      // Debug für die ersten paar Produkte
-      if (products.indexOf(product) < 3) {
-        console.log(`🔍 Produkt ${product.article_number} (${product.article_text}):`, {
-          articleText,
-          articleNumber,
-          category,
-          ean,
-          searchWords,
-          matchesAnyWord
-        });
-      }
-      
-      return matchesAnyWord;
-    });
+    // Wenn beide Artikelnummern reine Zahlen sind, vergleiche sie numerisch
+    if (!isNaN(aNum) && !isNaN(bNum) && a.toString() === aNum.toString() && b.toString() === bNum.toString()) {
+      return aNum - bNum;
+    }
     
-    console.log('🔍 Anzahl Produkte nach Filterung:', filtered.length);
-    
-    return filtered.sort((a, b) => {
-      // Priorität: exakte Übereinstimmungen zuerst
-      const aExact = a.article_text?.toLowerCase() === trimmedTerm || 
-                     a.article_number?.toLowerCase() === trimmedTerm;
-      const bExact = b.article_text?.toLowerCase() === trimmedTerm || 
-                     b.article_number?.toLowerCase() === trimmedTerm;
-      
-      if (aExact && !bExact) return -1;
-      if (!aExact && bExact) return 1;
-      
-      // Dann nach article_text sortieren
-      return a.article_text?.localeCompare(b.article_text || '') || 0;
-    });
+    // Ansonsten alphabetischen Vergleich
+    return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
   }
 
   selectProduct(product: any): void {
@@ -320,12 +391,13 @@ export class OffersComponent implements OnInit {
     this.offersService.searchProducts(searchTerm).subscribe({
       next: (response: any) => {
         if (response && Array.isArray(response)) {
-          const filteredResults = this.filterProductsBySearchTerm(response, searchTerm);
-          if (filteredResults.length > 0) {
+          // Verwende die lokale Suchlogik
+          this.performLocalSearch(searchTerm);
+          if (this.productSearchResults.length > 0) {
             // Select the first product automatically
-            this.selectProduct(filteredResults[0]);
+            this.selectProduct(this.productSearchResults[0]);
             // Show a brief success message
-            console.log('✅ Produkt automatisch ausgewählt:', filteredResults[0].article_text);
+            console.log('✅ Produkt automatisch ausgewählt:', this.productSearchResults[0].article_text);
           } else {
             console.log('ℹ️ Keine Produkte für den Suchbegriff gefunden');
           }

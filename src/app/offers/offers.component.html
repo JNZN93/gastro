@@ -369,9 +369,12 @@
                   </div>
                   <div class="product-pricing">
                     @if (product.sale_price) {
-                    <span class="product-price">€{{ product.sale_price }}</span>
+                    <span class="product-price">VK: €{{ product.sale_price }}</span>
                     } @else if (product.gross_price) {
-                    <span class="product-price">€{{ product.gross_price }}</span>
+                    <span class="product-price">VK: €{{ product.gross_price }}</span>
+                    }
+                    @if (product.cost_price) {
+                    <span class="cost-price" title="EK-Preis: €{{ product.cost_price }}">EK: €{{ product.cost_price }}</span>
                     }
                     @if (product.ean) {
                     <span class="product-ean">EAN: {{ product.ean }}</span>
@@ -381,9 +384,13 @@
               </div>
               }
             </div>
-            } @else if (addProductForm.get('productSearch')?.value && addProductForm.get('productSearch')?.value.length >= 1 && !isSearching && !selectedProduct) {
+            } @else if (addProductForm.get('productSearch')?.value && addProductForm.get('productSearch')?.value.length >= 3 && !isSearching && !selectedProduct) {
             <div class="modal-no-results">
-              <p>Keine Produkte für "{{ addProductForm.get('productSearch')?.value }}" gefunden.</p>
+              <p>Keine Artikel für "{{ addProductForm.get('productSearch')?.value }}" gefunden.</p>
+            </div>
+            } @else if (addProductForm.get('productSearch')?.value && addProductForm.get('productSearch')?.value.length < 3 && !isSearching && !selectedProduct) {
+            <div class="modal-no-results">
+              <p>Geben Sie mindestens 3 Zeichen ein, um Artikel zu finden.</p>
             </div>
             }
           </div>
