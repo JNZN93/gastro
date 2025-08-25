@@ -18,6 +18,8 @@ export class OfferFlyerComponent implements OnInit {
   // pages of 9 products each for 3x3 grid
   readonly pageSize = 9;
   pages = signal<any[][]>([]);
+  // optional page selection coming from router state or query params
+  selectedPageIndex: number | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -29,6 +31,10 @@ export class OfferFlyerComponent implements OnInit {
     // 1) Versuche Daten aus Router State zu verwenden
     const nav = this.router.getCurrentNavigation();
     const stateOffer = nav?.extras?.state && (nav.extras.state as any).offer;
+    const statePageIndex = nav?.extras?.state && (nav.extras.state as any).pageIndex;
+    if (Number.isInteger(statePageIndex)) {
+      this.selectedPageIndex = Math.max(0, Number(statePageIndex));
+    }
     if (stateOffer) {
       console.log('✅ Flyer: Angebot aus Router-State empfangen:', {
         id: stateOffer?.id,
@@ -37,6 +43,7 @@ export class OfferFlyerComponent implements OnInit {
       });
       this.offer = this.sortProductsInOffer(stateOffer);
       this.buildPages();
+      this.applySelectedPageIfAny();
       this.loading = false;
       return;
     }
@@ -44,6 +51,14 @@ export class OfferFlyerComponent implements OnInit {
     // 2) Hole ID aus der URL und lade das Angebot per API (all-with-products)
     const idParam = this.route.snapshot.paramMap.get('id');
     const offerId = idParam ? Number(idParam) : NaN;
+    // Support pageIndex from query params (zero-based)
+    const qpPageIndex = this.route.snapshot.queryParamMap.get('pageIndex');
+    if (qpPageIndex !== null) {
+      const parsed = Number(qpPageIndex);
+      if (!Number.isNaN(parsed)) {
+        this.selectedPageIndex = Math.max(0, parsed);
+      }
+    }
     if (!offerId || Number.isNaN(offerId)) {
       console.warn('⚠️ Flyer: Ungültige Angebots-ID in Route:', idParam);
       this.error = 'Ungültige Angebots-ID.';
@@ -66,6 +81,7 @@ export class OfferFlyerComponent implements OnInit {
         if (found) {
           this.offer = this.sortProductsInOffer(found);
           this.buildPages();
+          this.applySelectedPageIfAny();
           this.loading = false;
         } else {
           this.error = 'Angebot nicht gefunden.';
@@ -97,6 +113,14 @@ export class OfferFlyerComponent implements OnInit {
       pages.push(products.slice(i, i + this.pageSize));
     }
     this.pages.set(pages.length ? pages : [[]]);
+  }
+
+  private applySelectedPageIfAny(): void {
+    if (this.selectedPageIndex === null) return;
+    const allPages = this.pages();
+    if (!allPages || allPages.length === 0) return;
+    const idx = Math.min(Math.max(0, this.selectedPageIndex), allPages.length - 1);
+    this.pages.set([allPages[idx]]);
   }
 
   onImageError(event: Event): void {

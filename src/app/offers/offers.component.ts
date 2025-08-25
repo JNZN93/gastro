@@ -19,6 +19,8 @@ export class OffersComponent implements OnInit {
   showCreateForm = false;
   showAddProductForm = false;
   selectedOffer: OfferWithProducts | null = null;
+  // track selected flyer page per offer id (zero-based)
+  selectedFlyerPageIndexByOfferId: Record<number, number> = {};
   
   // Modal properties
   showRemoveProductModal = false;
@@ -608,7 +610,23 @@ export class OffersComponent implements OnInit {
         products: offer.products?.length
       });
     } catch {}
-    this.router.navigate([`/offers/${offer.id}/flyer`], { state: { offer } });
+    const pageIndex = this.selectedFlyerPageIndexByOfferId[offer.id] ?? 0;
+    this.router.navigate([`/offers/${offer.id}/flyer`], { state: { offer, pageIndex }, queryParams: { pageIndex } });
+  }
+
+  // compute number of pages for an offer (page size = 9)
+  getFlyerPageCount(offer: OfferWithProducts): number {
+    const total = offer?.products?.length || 0;
+    return Math.max(1, Math.ceil(total / 9));
+  }
+
+  // handle page selection change for a given offer
+  onFlyerPageChange(offer: OfferWithProducts, event: Event): void {
+    const target = event.target as HTMLSelectElement;
+    const idx = Number(target.value);
+    if (!Number.isNaN(idx) && offer.id) {
+      this.selectedFlyerPageIndexByOfferId[offer.id] = idx;
+    }
   }
 
   private waitForImagesToLoad(element: HTMLElement): Promise<void> {

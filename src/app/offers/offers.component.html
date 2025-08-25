@@ -117,6 +117,14 @@
           </div>
         </div>
         <div class="offer-actions">
+          <!-- Flyer page selector -->
+          <label class="flyer-page-select" [attr.aria-label]="'Flyer-Seite wählen für ' + offer.name">
+            <select [value]="selectedFlyerPageIndexByOfferId[offer.id!] ?? 0" (change)="onFlyerPageChange(offer, $event)">
+              @for (p of [].constructor(getFlyerPageCount(offer)); let i = $index; track i) {
+              <option [value]="i">Seite {{ i + 1 }}</option>
+              }
+            </select>
+          </label>
           <button class="btn-icon" (click)="toggleAddProductForm(offer)" title="Produkt hinzufügen">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
