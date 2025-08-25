@@ -376,18 +376,39 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Preisermittlung: bevorzugt Angebotspreis, dann manueller, sonst Standard
+  // Intelligente Preisermittlung: wählt den günstigsten verfügbaren Preis und speichert ihn als different_price
   private resolveEffectivePrice(item: any): number {
+    let bestPrice = item?.sale_price || 0; // Standardpreis als Basis
+    let priceSource = 'sale_price'; // Quelle des besten Preises
+    
+    // Angebotspreis prüfen - nur wenn günstiger als Standardpreis
     if (item && item.use_offer_price && item.offer_price !== undefined && item.offer_price !== null && item.offer_price !== '') {
-      const p = typeof item.offer_price === 'number' ? item.offer_price : parseFloat(item.offer_price);
-      if (!isNaN(p)) return p;
+      const offerPrice = typeof item.offer_price === 'number' ? item.offer_price : parseFloat(item.offer_price);
+      if (!isNaN(offerPrice) && offerPrice < bestPrice) {
+        bestPrice = offerPrice; // Angebotspreis ist günstiger
+        priceSource = 'offer_price';
+        console.log(`🏷️ [PRICE-LOGIC] Angebotspreis €${offerPrice} ist günstiger als Standardpreis €${item.sale_price}`);
+      }
     }
+    
+    // Kundenpreis prüfen - nur wenn günstiger als bisher bester Preis
     if (item && item.different_price !== undefined && item.different_price !== null && item.different_price !== '') {
-      const d = typeof item.different_price === 'number' ? item.different_price : parseFloat(item.different_price);
-      if (!isNaN(d)) return d;
+      const customerPrice = typeof item.different_price === 'number' ? item.different_price : parseFloat(item.different_price);
+      if (!isNaN(customerPrice) && customerPrice < bestPrice) {
+        bestPrice = customerPrice; // Kundenpreis ist am günstigsten
+        priceSource = 'different_price';
+        console.log(`💰 [PRICE-LOGIC] Kundenpreis €${customerPrice} ist am günstigsten (vorher: €${bestPrice})`);
+      }
     }
-    const s = typeof item?.sale_price === 'number' ? item.sale_price : parseFloat(item?.sale_price) || 0;
-    return s;
+    
+    // Speichere den besten Preis als different_price (außer wenn es bereits der different_price ist)
+    if (priceSource !== 'different_price') {
+      item.different_price = bestPrice;
+      console.log(`💾 [PRICE-LOGIC] Finaler Preis €${bestPrice} als different_price gespeichert (Quelle: ${priceSource})`);
+    }
+    
+    console.log(`✅ [PRICE-LOGIC] Finaler Preis für ${item?.article_text}: €${bestPrice} (Quelle: ${priceSource})`);
+    return bestPrice;
   }
 
   ngOnDestroy(): void {
