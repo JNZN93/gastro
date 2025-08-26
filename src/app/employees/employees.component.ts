@@ -238,11 +238,45 @@ export class EmployeesComponent implements OnInit, OnDestroy {
           if (!offers || offers.length === 0) {
             return;
           }
-          const firstOffer = offers[0];
-          this.activeOfferFirst = firstOffer;
-          this.applyOfferPricingToGlobalArtikels(firstOffer);
+          
+          // Filtere nur aktive Angebote mit gültigem Datumsbereich
+          const activeOffers = offers.filter(offer => {
+            const startDate = new Date(offer.start_date);
+            const endDate = new Date(offer.end_date);
+            const now = new Date();
+            
+            // Setze die Zeit auf Mitternacht für besseren Vergleich
+            const startDateMidnight = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+            const endDateMidnight = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+            const nowMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            
+            const isActive = offer.is_active && 
+                           startDateMidnight <= nowMidnight && 
+                           endDateMidnight >= nowMidnight;
+            
+            console.log(`[EMPLOYEES] Angebot "${offer.name}":`, {
+              is_active: offer.is_active,
+              startDateMidnight,
+              endDateMidnight,
+              nowMidnight,
+              isActive
+            });
+            
+            return isActive;
+          });
+          
+          if (activeOffers.length === 0) {
+            console.log('[EMPLOYEES] Keine aktiven Angebote gefunden');
+            return;
+          }
+          
+          // Verwende das erste aktive Angebot
+          const firstActiveOffer = activeOffers[0];
+          this.activeOfferFirst = firstActiveOffer;
+          this.applyOfferPricingToGlobalArtikels(firstActiveOffer);
+          
           if (Array.isArray(this.customerArticlePrices) && this.customerArticlePrices.length > 0) {
-            this.annotateCustomerPricesWithOffer(firstOffer);
+            this.annotateCustomerPricesWithOffer(firstActiveOffer);
           }
         },
         error: () => {
