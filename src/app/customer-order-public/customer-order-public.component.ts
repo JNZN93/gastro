@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { OffersService, OfferWithProducts } from '../offers.service';
+import { forkJoin } from 'rxjs';
 // private stateService = inject(CustomerOrderStateService); // Entferne State Service
 
 @Component({
@@ -379,20 +380,7 @@ export class CustomerOrderPublicComponent implements OnInit {
   loadAllProducts() {
     console.log('🔍 [PUBLIC-ORDER] Lade alle Produkte von api/products...');
     
-    this.http.get('https://multi-mandant-ecommerce.onrender.com/api/products').subscribe({
-      next: (products: any) => {
-        this.allProducts = products;
-        console.log('🔍 [PUBLIC-ORDER] Alle Produkte geladen:', this.allProducts.length);
-        
-        // Nach dem Laden der Produkte die Artikel filtern
-        this.filterArticlesByProducts();
-      },
-      error: (error: any) => {
-        console.error('❌ [PUBLIC-ORDER] Fehler beim Laden der Produkte:', error);
-        // Bei Fehler trotzdem mit den ursprünglichen Artikeln fortfahren
-        this.filterArticlesByProducts();
-      }
-    });
+    return this.http.get('https://multi-mandant-ecommerce.onrender.com/api/products');
   }
 
   // Neue Methode zum Laden aktiver Angebote
@@ -400,33 +388,79 @@ export class CustomerOrderPublicComponent implements OnInit {
     console.log('🔍 [PUBLIC-ORDER] Lade aktive Angebote...');
     
     // Verwende den Endpunkt für aktive Angebote mit Produkten
-    this.offersService.getAllOffersWithProducts().subscribe({
-      next: (response: any) => {
-        console.log('🔍 [PUBLIC-ORDER] Angebote mit Produkten geladen:', response);
+    return this.offersService.getAllOffersWithProducts();
+  }
+
+  // Neue Methode: Lade alle Produkte und Angebote parallel und warte auf beide
+  private loadAllProductsAndOffers() {
+    console.log('🔍 [PUBLIC-ORDER] Starte paralleles Laden von Produkten und Angeboten...');
+    
+    forkJoin({
+      products: this.loadAllProducts(),
+      offers: this.loadActiveOffers()
+    }).subscribe({
+      next: (result: any) => {
+        console.log('🔍 [PUBLIC-ORDER] Alle Daten erfolgreich geladen');
         
-        // Filtere nur aktive Angebote
-        if (response && response.data) {
-          this.activeOffers = response.data.filter((offer: OfferWithProducts) => 
+        // Produkte verarbeiten
+        if (result.products) {
+          this.allProducts = result.products;
+          console.log('🔍 [PUBLIC-ORDER] Alle Produkte geladen:', this.allProducts.length);
+        } else {
+          this.allProducts = [];
+          console.log('🔍 [PUBLIC-ORDER] Keine Produkte geladen, verwende leeres Array');
+        }
+        
+        // Angebote verarbeiten
+        if (result.offers && result.offers.data) {
+          this.activeOffers = result.offers.data.filter((offer: OfferWithProducts) => 
             offer.is_active && 
             new Date(offer.start_date) <= new Date() && 
             new Date(offer.end_date) >= new Date()
           );
+          console.log('🔍 [PUBLIC-ORDER] Aktive Angebote gefiltert:', this.activeOffers.length);
         } else {
           this.activeOffers = [];
+          console.log('🔍 [PUBLIC-ORDER] Keine Angebote geladen, verwende leeres Array');
         }
         
-        console.log('🔍 [PUBLIC-ORDER] Aktive Angebote gefiltert:', this.activeOffers);
-        
-        // Nach dem Laden der Angebote die Artikel mit Angebotspreisen aktualisieren
-        this.updateArticlesWithOffers();
+        // Jetzt alle Daten verarbeiten (Produkte filtern, Angebote hinzufügen, gruppieren)
+        this.processAllData();
       },
       error: (error: any) => {
-        console.error('❌ [PUBLIC-ORDER] Fehler beim Laden der Angebote:', error);
-        // Bei Fehler trotzdem fortfahren, aber ohne Angebote
+        console.error('❌ [PUBLIC-ORDER] Fehler beim parallelen Laden der Daten:', error);
+        
+        // Bei Fehler trotzdem mit leeren Arrays fortfahren
+        this.allProducts = [];
         this.activeOffers = [];
-        this.updateArticlesWithOffers();
+        
+        // Trotzdem verarbeiten
+        this.processAllData();
       }
     });
+  }
+
+  // Neue Methode: Verarbeite alle geladenen Daten
+  private processAllData() {
+    console.log('🔍 [PUBLIC-ORDER] Starte finale Datenverarbeitung...');
+    
+    // Artikel mit Produktdaten anreichern und filtern
+    this.filterArticlesByProducts();
+    
+    // Artikel mit Angebotspreisen aktualisieren
+    this.updateArticlesWithOffers();
+    
+    // Gruppen neu aufbauen
+    this.buildGroups();
+    
+    // Gespeicherte Bestellung aus localStorage wiederherstellen
+    this.loadFromLocalStorage();
+    
+    // Loading beenden
+    this.isLoading = false;
+    
+    // Pending Submit prüfen
+    this.triggerPendingSubmitIfReady();
   }
 
   // Neue Methode zum Aktualisieren der Artikel mit Angebotspreisen
@@ -618,9 +652,9 @@ export class CustomerOrderPublicComponent implements OnInit {
     // Gespeicherte Bestellung aus localStorage wiederherstellen
     this.loadFromLocalStorage();
 
-    // Loading beenden, da alle Daten geladen und gefiltert wurden
-    this.isLoading = false;
-    this.triggerPendingSubmitIfReady();
+    // Loading wird in processAllData() beendet
+    // this.isLoading = false;
+    // this.triggerPendingSubmitIfReady();
   }
 
   private normalizeCategoryName(name: any): string {
@@ -735,13 +769,12 @@ export class CustomerOrderPublicComponent implements OnInit {
             console.log('🔍 [PUBLIC-ORDER] Kunde erstellt:', this.customer);
             console.log('🔍 [PUBLIC-ORDER] Artikel geladen:', this.customerArticlePrices.length);
             
-            // Nach dem Laden der Kundendaten alle Produkte laden und Artikel filtern
-            this.loadAllProducts();
-            this.loadActiveOffers(); // Aktive Angebote laden
+            // Nach dem Laden der Kundendaten alle Produkte und Angebote parallel laden
+            this.loadAllProductsAndOffers();
             
             // Gespeicherte Bestellung aus localStorage wiederherstellen
-            // Warte bis die Produkte geladen sind, dann stelle localStorage wieder her
-            // Dies geschieht in filterArticlesByProducts() nach dem Aufbau der Gruppen
+            // Warte bis alle Daten geladen sind, dann stelle localStorage wieder her
+            // Dies geschieht in der finalen Verarbeitung nach dem Aufbau der Gruppen
           } else {
             this.error = 'Ungültige API-Response: Artikel fehlen';
             this.isLoading = false;
