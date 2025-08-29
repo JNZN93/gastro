@@ -2577,8 +2577,14 @@ export class EmployeesComponent implements OnInit, OnDestroy {
     
     if (artikel) {
       // Prüfe auf Unterschiede im Artikeltext zwischen Modal und globaler Datenbank
-      const modalText = customerPrice.article_text?.trim();
+      const modalText = (customerPrice.article_text || customerPrice.product_name)?.trim();
       const globalText = artikel.article_text?.trim();
+
+      console.log('🔍 [ARTICLE-COMPARISON] Vergleiche Artikeltexte:');
+      console.log('   - Modal-Daten:', customerPrice);
+      console.log('   - Modal-Text (mit Fallback):', modalText);
+      console.log('   - Globaler Artikel:', artikel);
+      console.log('   - Globaler Text:', globalText);
 
       if (modalText && globalText && modalText !== globalText) {
         console.warn('⚠️ [ARTICLE-TEXT-MISMATCH] Unterschiedlicher Artikeltext gefunden:', {
@@ -2717,6 +2723,19 @@ export class EmployeesComponent implements OnInit, OnDestroy {
     return artikel ? artikel.sale_price : null;
   }
 
+  // Debug-Methode für Modal-Anzeige
+  logModalDisplay(customerPrice: any): string {
+    const displayedText = customerPrice.article_text || customerPrice.product_name || 'Unbekannter Artikel';
+    const displayedNumber = customerPrice.article_number || customerPrice.product_id;
+
+    console.log('📱 [MODAL-DISPLAY] Einzelner Artikel im Modal:');
+    console.log('   - Artikeltext:', displayedText);
+    console.log('   - Artikelnummer:', displayedNumber);
+    console.log('   - Rohdaten:', customerPrice);
+
+    return ''; // Leerer String für Template
+  }
+
   formatInvoiceDate(dateString: string | null | undefined): string {
     if (!dateString) {
       return '-';
@@ -2791,6 +2810,19 @@ export class EmployeesComponent implements OnInit, OnDestroy {
           console.log('🔍 [CUSTOMER-ARTICLE-PRICES] Verfügbare Felder im ersten Eintrag:', Object.keys(data[0]));
           console.log('🔍 [CUSTOMER-ARTICLE-PRICES] product_id:', data[0].product_id);
           console.log('🔍 [CUSTOMER-ARTICLE-PRICES] article_number:', data[0].article_number);
+
+          // Logge was im Modal angezeigt wird
+          const firstItem = data[0];
+          const displayedText = firstItem.article_text || firstItem.product_name || 'Unbekannter Artikel';
+          const displayedNumber = firstItem.article_number || firstItem.product_id;
+
+          console.log('📱 [MODAL-DISPLAY] Was wird im Modal angezeigt:');
+          console.log('   - Artikeltext:', displayedText);
+          console.log('   - Artikelnummer:', displayedNumber);
+          console.log('   - article_text vorhanden:', !!firstItem.article_text);
+          console.log('   - product_name vorhanden:', !!firstItem.product_name);
+          console.log('   - article_number vorhanden:', !!firstItem.article_number);
+          console.log('   - product_id vorhanden:', !!firstItem.product_id);
           console.log('🔍 [CUSTOMER-ARTICLE-PRICES] unit_price_net:', data[0].unit_price_net);
         }
       }
