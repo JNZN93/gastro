@@ -2576,6 +2576,34 @@ export class EmployeesComponent implements OnInit, OnDestroy {
     }
     
     if (artikel) {
+      // Prüfe auf Unterschiede im Artikeltext zwischen Modal und globaler Datenbank
+      const modalText = customerPrice.article_text?.trim();
+      const globalText = artikel.article_text?.trim();
+
+      if (modalText && globalText && modalText !== globalText) {
+        console.warn('⚠️ [ARTICLE-TEXT-MISMATCH] Unterschiedlicher Artikeltext gefunden:', {
+          modal: modalText,
+          global: globalText,
+          article_number: artikel.article_number
+        });
+
+        // Frage den Benutzer, ob er trotzdem fortfahren möchte
+        const confirmMessage = `⚠️ Dateninkonsistenz erkannt!\n\n` +
+          `Artikelnummer: ${artikel.article_number}\n\n` +
+          `Im Modal angezeigt:\n"${modalText}"\n\n` +
+          `In der Datenbank gefunden:\n"${globalText}"\n\n` +
+          `Möchten Sie den Artikel trotzdem mit dem Datenbank-Text hinzufügen?`;
+
+        const userConfirmed = confirm(confirmMessage);
+
+        if (!userConfirmed) {
+          console.log('❌ [ARTICLE-TEXT-MISMATCH] Benutzer hat Hinzufügen abgebrochen');
+          return; // Breche die Methode ab
+        }
+
+        console.log('✅ [ARTICLE-TEXT-MISMATCH] Benutzer hat Fortfahren bestätigt');
+      }
+      
       // Verwende die eingegebene Menge oder Standard 1
       const quantity = customerPrice.tempQuantity && customerPrice.tempQuantity > 0 ? parseInt(customerPrice.tempQuantity) : 1;
       
