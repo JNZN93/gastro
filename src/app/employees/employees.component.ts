@@ -1280,7 +1280,8 @@ export class EmployeesComponent implements OnInit, OnDestroy {
     // Replace the item at the editing index
     this.orderItems[this.editingItemIndex] = {
       ...newArtikel,
-      quantity: newQuantity
+      quantity: newQuantity,
+      different_price_manually_set: false
     };
 
     // Check if the new article needs PFAND and add it automatically
@@ -1296,7 +1297,10 @@ export class EmployeesComponent implements OnInit, OnDestroy {
         };
         
         // Insert the PFAND item at the position right after the replaced item
-        this.orderItems.splice(this.editingItemIndex + 1, 0, pfandItem);
+        this.orderItems.splice(this.editingItemIndex + 1, 0, {
+          ...pfandItem,
+          different_price_manually_set: false
+        });
         
         console.log('✅ [PFAND-REPLACE] PFAND-Artikel direkt unter dem ersetzten Artikel eingefügt:', matchingPfand.article_text, 'Menge:', newQuantity);
       }
@@ -1605,9 +1609,11 @@ export class EmployeesComponent implements OnInit, OnDestroy {
         ...this.orderItems,
         { 
           ...artikel, 
-          quantity: Number(artikel.quantity)
+          quantity: Number(artikel.quantity),
           // sale_price bleibt unverändert (Standard-Preis)
           // different_price bleibt als separates Attribut (falls vorhanden)
+          // Setze Flag für automatisch geladene Preise
+          different_price_manually_set: false
         },
       ];
     } else {
@@ -1623,9 +1629,11 @@ export class EmployeesComponent implements OnInit, OnDestroy {
           ...this.orderItems,
           { 
             ...artikel, 
-            quantity: Number(artikel.quantity)
+            quantity: Number(artikel.quantity),
             // sale_price bleibt unverändert (Standard-Preis)
             // different_price bleibt als separates Attribut (falls vorhanden)
+            // Setze Flag für automatisch geladene Preise
+            different_price_manually_set: false
           },
         ];
       }
@@ -1646,7 +1654,8 @@ export class EmployeesComponent implements OnInit, OnDestroy {
           ...this.orderItems,
           { 
             ...matchingPfand, 
-            quantity: originalQuantity
+            quantity: originalQuantity,
+            different_price_manually_set: false
           },
         ];
         console.log('✅ [PFAND-ADD] PFAND-Artikel automatisch hinzugefügt:', matchingPfand.article_text, 'Menge:', originalQuantity);
