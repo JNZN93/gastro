@@ -410,7 +410,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Intelligente Preisermittlung: wählt den günstigsten verfügbaren Preis und speichert ihn als different_price
+  // Intelligente Preisermittlung: übernimmt Kundenpreise direkt, Angebotspreise nur wenn günstiger
   private resolveEffectivePrice(item: any): number {
     let bestPrice = item?.sale_price || 0; // Standardpreis als Basis
     let priceSource = 'sale_price'; // Quelle des besten Preises
@@ -425,18 +425,19 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       }
     }
     
-    // Kundenpreis prüfen - nur wenn günstiger als bisher bester Preis
+    // Kundenpreis prüfen - IMMER übernehmen, auch wenn teurer
     if (item && item.different_price !== undefined && item.different_price !== null && item.different_price !== '') {
       const customerPrice = typeof item.different_price === 'number' ? item.different_price : parseFloat(item.different_price);
-      if (!isNaN(customerPrice) && customerPrice < bestPrice) {
-        bestPrice = customerPrice; // Kundenpreis ist am günstigsten
+      if (!isNaN(customerPrice)) {
+        bestPrice = customerPrice; // Kundenpreis wird immer übernommen
         priceSource = 'different_price';
-        console.log(`💰 [PRICE-LOGIC] Kundenpreis €${customerPrice} ist am günstigsten (vorher: €${bestPrice})`);
+        console.log(`💰 [PRICE-LOGIC] Kundenpreis €${customerPrice} wird übernommen (Standardpreis: €${item.sale_price})`);
       }
     }
     
-    // Speichere den besten Preis als different_price (außer wenn es bereits der different_price ist)
-    if (priceSource !== 'different_price') {
+    // WICHTIG: Überschreibe different_price nur beim ersten Laden, nicht bei manuellen Änderungen
+    // Wenn different_price bereits gesetzt ist, lass ihn unverändert
+    if (priceSource !== 'different_price' && !item.different_price_manually_set) {
       item.different_price = bestPrice;
       console.log(`💾 [PRICE-LOGIC] Finaler Preis €${bestPrice} als different_price gespeichert (Quelle: ${priceSource})`);
     }
@@ -2255,7 +2256,9 @@ filteredArtikelData() {
       } else {
         // Runde auf 2 Dezimalstellen für Konsistenz
         item.different_price = Math.round(newPrice * 100) / 100;
-        console.log('✅ [VALIDATE-PRICE] different_price aktualisiert auf:', item.different_price);
+        // Markiere, dass der Preis manuell gesetzt wurde
+        item.different_price_manually_set = true;
+        console.log('✅ [VALIDATE-PRICE] different_price manuell gesetzt auf:', item.different_price);
       }
     }
     
@@ -3846,14 +3849,16 @@ filteredArtikelData() {
           return {
             ...artikel,
             different_price: customerNetPrice, // Füge den kundenspezifischen Preis als different_price hinzu
-            original_price: originalPrice // Behalte den ursprünglichen Preis
+            original_price: originalPrice, // Behalte den ursprünglichen Preis
+            different_price_manually_set: false // Markiere, dass der Preis automatisch geladen wurde
           };
         } else {
           unchangedCount++;
           return {
             ...artikel,
             different_price: undefined, // Stelle sicher, dass keine alten kundenspezifischen Preise übrig bleiben
-            original_price: undefined
+            original_price: undefined,
+            different_price_manually_set: false // Reset des manuellen Flags
           };
         }
       });
@@ -3950,7 +3955,8 @@ filteredArtikelData() {
           ...orderItem,
           sale_price: standardPrice,
           different_price: undefined, // Entferne kundenspezifischen Preis
-          original_price: standardPrice
+          original_price: standardPrice,
+          different_price_manually_set: false // Reset des manuellen Flags
         };
       }
     });
@@ -3977,7 +3983,8 @@ filteredArtikelData() {
         ...orderItem,
         sale_price: standardPrice, // Stelle sicher, dass sale_price den Standard-Preis verwendet
         different_price: undefined, // Entferne kundenspezifischen Preis
-        original_price: standardPrice
+        original_price: standardPrice,
+        different_price_manually_set: false // Reset des manuellen Flags
       };
     });
 
