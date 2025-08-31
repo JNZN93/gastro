@@ -16,8 +16,9 @@ import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import { IndexedDBService } from '../indexeddb.service';
 import { OffersService, OfferWithProducts, OfferProduct } from '../offers.service';
+import { ForceActiveService } from '../force-active.service';
 import * as QRCode from 'qrcode';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-customer-orders',
@@ -37,6 +38,8 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   private http = inject(HttpClient);
   private indexedDBService = inject(IndexedDBService);
   private offersService = inject(OffersService);
+  private forceActiveService = inject(ForceActiveService);
+  private forceActiveSubscription: Subscription | null = null;
   artikelData: any[] = [];
   orderItems: any[] = [];
   searchTerm: string = '';
@@ -215,6 +218,18 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
             // Angebote laden und anwenden (erstes Angebot verwenden)
             this.loadAndApplyFirstOffer();
 
+            // Subscription für force_active Änderungen
+            this.forceActiveSubscription = this.forceActiveService.getActiveOfferObservable().subscribe({
+              next: (forceActiveOffer) => {
+                console.log('🔄 [CUSTOMER-ORDERS] Force Active Status geändert:', forceActiveOffer);
+                // Angebote neu laden und anwenden
+                this.loadAndApplyFirstOffer();
+              },
+              error: (error) => {
+                console.error('❌ [CUSTOMER-ORDERS] Fehler beim Force Active Subscription:', error);
+              }
+            });
+
             // Nach dem Laden der Artikel: Aktualisiere kundenspezifische Preise falls ein Kunde gespeichert ist
             if (this.pendingCustomerForPriceUpdate) {
               console.log('🔄 [INIT] Lade kundenspezifische Preise für gespeicherten Kunden:', this.pendingCustomerForPriceUpdate.customer_number);
@@ -239,59 +254,100 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   // ===== OFFERS INTEGRATION =====
   private loadAndApplyFirstOffer(): void {
     try {
-      this.offersService.getAllOffersWithProducts().subscribe({
-        next: (response: any) => {
-          const offers: OfferWithProducts[] = response?.data || [];
-          if (!offers || offers.length === 0) {
-            return;
+      // Zuerst prüfen ob ein force_active Angebot gesetzt ist
+      const forceActiveOffer = this.forceActiveService.getActiveOffer();
+
+      if (forceActiveOffer) {
+        console.log('🔥 [CUSTOMER-ORDERS] Force Active Angebot gefunden:', forceActiveOffer);
+
+        // Lade alle Angebote und suche das force_active Angebot
+        this.offersService.getAllOffersWithProducts().subscribe({
+          next: (response: any) => {
+            const offers: OfferWithProducts[] = response?.data || [];
+            const activeForceOffer = offers.find(offer => offer.id === forceActiveOffer.offerId);
+
+            if (activeForceOffer) {
+              console.log('🔥 [CUSTOMER-ORDERS] Force Active Angebot angewendet:', activeForceOffer.name);
+              this.activeOfferFirst = activeForceOffer;
+              this.applyOfferPricingToGlobalArtikels(activeForceOffer);
+
+              // Falls bereits kundenspezifische Preise geladen sind, Angebotslogik anwenden
+              if (Array.isArray(this.customerArticlePrices) && this.customerArticlePrices.length > 0) {
+                this.annotateCustomerPricesWithOffer(activeForceOffer);
+              }
+            } else {
+              console.log('⚠️ [CUSTOMER-ORDERS] Force Active Angebot nicht gefunden, verwende reguläre Logik');
+              this.loadRegularOffers();
+            }
+          },
+          error: () => {
+            console.log('⚠️ [CUSTOMER-ORDERS] Fehler beim Laden von Force Active Angebot, verwende reguläre Logik');
+            this.loadRegularOffers();
           }
-          
-          // Filtere nur aktive Angebote mit gültigem Datumsbereich
-          const activeOffers = offers.filter(offer => {
-            const startDate = new Date(offer.start_date);
-            const endDate = new Date(offer.end_date);
-            const now = new Date();
-            
-            // Setze die Zeit auf Mitternacht für besseren Vergleich
-            const startDateMidnight = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
-            const endDateMidnight = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
-            const nowMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-            
-            const isActive = offer.is_active && 
-                           startDateMidnight <= nowMidnight && 
-                           endDateMidnight >= nowMidnight;
-            
-            console.log(`[CUSTOMER-ORDERS] Angebot "${offer.name}":`, {
-              is_active: offer.is_active,
-              startDateMidnight,
-              endDateMidnight,
-              nowMidnight,
-              isActive
-            });
-            
-            return isActive;
-          });
-          
-          if (activeOffers.length === 0) {
-            console.log('[CUSTOMER-ORDERS] Keine aktiven Angebote gefunden');
-            return;
-          }
-          
-          // Verwende das erste aktive Angebot
-          const firstActiveOffer = activeOffers[0];
-          this.activeOfferFirst = firstActiveOffer;
-          this.applyOfferPricingToGlobalArtikels(firstActiveOffer);
-          
-          // Falls bereits kundenspezifische Preise geladen sind, Angebotslogik anwenden
-          if (Array.isArray(this.customerArticlePrices) && this.customerArticlePrices.length > 0) {
-            this.annotateCustomerPricesWithOffer(firstActiveOffer);
-          }
-        },
-        error: () => {
-          // still usable without offers
+        });
+      } else {
+        // Kein force_active Angebot gesetzt, verwende reguläre Logik
+        this.loadRegularOffers();
+      }
+    } catch (error) {
+      console.error('❌ [CUSTOMER-ORDERS] Fehler in loadAndApplyFirstOffer:', error);
+      this.loadRegularOffers();
+    }
+  }
+
+  private loadRegularOffers(): void {
+    this.offersService.getAllOffersWithProducts().subscribe({
+      next: (response: any) => {
+        const offers: OfferWithProducts[] = response?.data || [];
+        if (!offers || offers.length === 0) {
+          return;
         }
-      });
-    } catch {}
+
+        // Filtere nur aktive Angebote mit gültigem Datumsbereich
+        const activeOffers = offers.filter(offer => {
+          const startDate = new Date(offer.start_date);
+          const endDate = new Date(offer.end_date);
+          const now = new Date();
+
+          // Setze die Zeit auf Mitternacht für besseren Vergleich
+          const startDateMidnight = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+          const endDateMidnight = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+          const nowMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+          const isActive = offer.is_active &&
+                         startDateMidnight <= nowMidnight &&
+                         endDateMidnight >= nowMidnight;
+
+          console.log(`[CUSTOMER-ORDERS] Angebot "${offer.name}":`, {
+            is_active: offer.is_active,
+            startDateMidnight,
+            endDateMidnight,
+            nowMidnight,
+            isActive
+          });
+
+          return isActive;
+        });
+
+        if (activeOffers.length === 0) {
+          console.log('[CUSTOMER-ORDERS] Keine aktiven Angebote gefunden');
+          return;
+        }
+
+        // Verwende das erste aktive Angebot
+        const firstActiveOffer = activeOffers[0];
+        this.activeOfferFirst = firstActiveOffer;
+        this.applyOfferPricingToGlobalArtikels(firstActiveOffer);
+
+        // Falls bereits kundenspezifische Preise geladen sind, Angebotslogik anwenden
+        if (Array.isArray(this.customerArticlePrices) && this.customerArticlePrices.length > 0) {
+          this.annotateCustomerPricesWithOffer(firstActiveOffer);
+        }
+      },
+      error: () => {
+        // still usable without offers
+      }
+    });
   }
 
   private applyOfferPricingToGlobalArtikels(offer: OfferWithProducts): void {
@@ -449,6 +505,12 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     // Footer wieder anzeigen beim Verlassen der Komponente
     this.showFooter();
+
+    // Force Active Subscription aufräumen
+    if (this.forceActiveSubscription) {
+      this.forceActiveSubscription.unsubscribe();
+      this.forceActiveSubscription = null;
+    }
   }
 
   // Footer verstecken

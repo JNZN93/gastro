@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { OffersService, Offer, OfferWithProducts, OfferProduct, CreateOfferRequest, AddProductRequest } from '../offers.service';
+import { ForceActiveService } from '../force-active.service';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 // import { jsPDF } from 'jspdf';
 
@@ -41,6 +42,10 @@ export class OffersComponent implements OnInit {
   // Image upload helper
   private http = inject(HttpClient);
 
+  // Force Active Service
+  forceActiveService = inject(ForceActiveService);
+  currentForceActiveOfferId: number | null = null;
+
   constructor(
     private offersService: OffersService,
     private fb: FormBuilder,
@@ -72,6 +77,7 @@ export class OffersComponent implements OnInit {
     this.testProductsApi();
     this.loadOffers();
     this.loadGlobalArtikels(); // Lade lokale Artikel-Daten
+    this.loadForceActiveStatus(); // Lade force_active Status
   }
 
   // Neue Methode zum Laden der lokalen Artikel-Daten
@@ -88,6 +94,33 @@ export class OffersComponent implements OnInit {
         console.error('❌ Fehler beim Laden der lokalen Artikel:', error);
       }
     });
+  }
+
+  // Methode zum Laden des force_active Status
+  private loadForceActiveStatus(): void {
+    const activeOffer = this.forceActiveService.getActiveOffer();
+    this.currentForceActiveOfferId = activeOffer ? activeOffer.offerId : null;
+    console.log('🔥 Force Active Status geladen:', this.currentForceActiveOfferId);
+  }
+
+  // Methode zum Toggle des force_active Status für ein Angebot
+  toggleForceActive(offer: OfferWithProducts): void {
+    if (this.isOfferForceActive(offer.id!)) {
+      // Angebot ist bereits force_active, deaktivieren
+      this.forceActiveService.deactivateOffer();
+      this.currentForceActiveOfferId = null;
+      console.log('❌ Force Active für Angebot deaktiviert:', offer.name);
+    } else {
+      // Angebot als force_active aktivieren
+      this.forceActiveService.activateOffer(offer.id!, offer.name);
+      this.currentForceActiveOfferId = offer.id!;
+      console.log('🔥 Force Active für Angebot aktiviert:', offer.name);
+    }
+  }
+
+  // Prüft ob ein Angebot als force_active markiert ist
+  isOfferForceActive(offerId: number): boolean {
+    return this.forceActiveService.isOfferForceActive(offerId);
   }
 
   toggleProductsSection(offer: OfferWithProducts): void {
