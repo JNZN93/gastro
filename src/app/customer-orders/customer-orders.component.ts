@@ -470,33 +470,33 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   private resolveEffectivePrice(item: any): number {
     let bestPrice = item?.sale_price || 0; // Standardpreis als Basis
     let priceSource = 'sale_price'; // Quelle des besten Preises
+    let originalCustomerPrice: number | undefined = undefined;
 
-    // Kundenpreis prüfen - IMMER übernehmen, auch wenn teurer
+    // Kundenpreis zwischenspeichern (falls vorhanden)
     if (item && item.different_price !== undefined && item.different_price !== null && item.different_price !== '') {
       const customerPrice = typeof item.different_price === 'number' ? item.different_price : parseFloat(item.different_price);
       if (!isNaN(customerPrice)) {
-        bestPrice = customerPrice; // Kundenpreis wird immer übernommen
+        originalCustomerPrice = customerPrice;
+        bestPrice = customerPrice; // Kundenpreis schlägt Standardpreis
         priceSource = 'different_price';
-        console.log(`💰 [PRICE-LOGIC] Kundenpreis €${customerPrice} wird übernommen (Standardpreis: €${item.sale_price})`);
+        console.log(`💰 [PRICE-LOGIC] Kundenpreis €${customerPrice} schlägt Standardpreis €${item.sale_price}`);
       }
     }
 
-    // Angebotspreis prüfen - wenn günstiger als aktueller bester Preis
+    // Angebotspreis prüfen - nimmt den günstigeren zwischen Angebot und aktuellem Preis (Kunde oder Standard)
     if (item && item.use_offer_price && item.offer_price !== undefined && item.offer_price !== null && item.offer_price !== '') {
       const offerPrice = typeof item.offer_price === 'number' ? item.offer_price : parseFloat(item.offer_price);
       if (!isNaN(offerPrice) && offerPrice < bestPrice) {
-        bestPrice = offerPrice; // Angebotspreis ist günstiger als aktueller Preis
+        bestPrice = offerPrice; // Angebotspreis ist günstiger
         priceSource = 'offer_price';
-        console.log(`🏷️ [PRICE-LOGIC] Angebotspreis €${offerPrice} ist günstiger als aktueller Preis €${bestPrice} (Quelle: ${priceSource === 'different_price' ? 'Kundenpreis' : 'Standardpreis'})`);
+        console.log(`🏷️ [PRICE-LOGIC] Angebotspreis €${offerPrice} ist günstiger als ${priceSource === 'different_price' ? 'Kundenpreis' : 'Standardpreis'} €${bestPrice}`);
       }
     }
 
-    // WICHTIG: In Customer Orders sind Kundenpreise IMMER editierbar!
-    // Überschreibe different_price nur wenn er noch nicht gesetzt ist
-    if (priceSource !== 'different_price' && item.different_price === undefined) {
-      item.different_price = bestPrice;
-      console.log(`💾 [PRICE-LOGIC] Finaler Preis €${bestPrice} als different_price gespeichert (Quelle: ${priceSource})`);
-    }
+    // WICHTIG: Setze different_price immer auf den günstigsten ermittelten Preis
+    // Dadurch wird in der UI der richtige Preis angezeigt
+    item.different_price = bestPrice;
+    console.log(`💾 [PRICE-LOGIC] Günstigster Preis €${bestPrice} als different_price gespeichert (Quelle: ${priceSource})`);
 
     console.log(`✅ [PRICE-LOGIC] Finaler Preis für ${item?.article_text}: €${bestPrice} (Quelle: ${priceSource})`);
     return bestPrice;
