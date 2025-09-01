@@ -401,6 +401,34 @@ export class CustomerOrderPublicComponent implements OnInit {
     }).subscribe({
       next: (result: any) => {
         console.log('🔍 [PUBLIC-ORDER] Alle Daten erfolgreich geladen');
+
+        // Logge die Rohdaten vom Offers-Endpunkt
+        if (result.offers && result.offers.data) {
+          console.log('🔍 [PUBLIC-ORDER] ROHDATEN vom Offers-Endpunkt:', {
+            total: result.offers.total,
+            dataLength: result.offers.data.length,
+            offers: result.offers.data.map((offer: any) => ({
+              id: offer.id,
+              name: offer.name,
+              is_active: offer.is_active,
+              start_date: offer.start_date,
+              end_date: offer.end_date,
+              products_count: offer.products?.length || 0,
+              discount_percentage: offer.discount_percentage,
+              discount_amount: offer.discount_amount,
+              offer_type: offer.offer_type,
+              products: offer.products?.map((p: any) => ({
+                id: p.id,
+                article_text: p.article_text,
+                article_number: p.article_number,
+                product_id: p.product_id,
+                product_database_id: p.product_database_id,
+                offer_price: p.offer_price,
+                use_offer_price: p.use_offer_price
+              })) || []
+            }))
+          });
+        }
         
         // Produkte verarbeiten
         if (result.products) {
@@ -413,12 +441,48 @@ export class CustomerOrderPublicComponent implements OnInit {
         
         // Angebote verarbeiten
         if (result.offers && result.offers.data) {
-          this.activeOffers = result.offers.data.filter((offer: OfferWithProducts) => 
-            offer.is_active && 
-            new Date(offer.start_date) <= new Date() && 
-            new Date(offer.end_date) >= new Date()
-          );
+          console.log('🔍 [PUBLIC-ORDER] Alle Angebote von API erhalten:', result.offers.data.length);
+          console.log('🔍 [PUBLIC-ORDER] Übersicht aller Angebote mit Produktanzahlen:', result.offers.data.map((offer: OfferWithProducts) => ({
+            name: offer.name,
+            productsCount: offer.products?.length || 0,
+            is_active: offer.is_active
+          })));
+
+          console.log('🔍 [PUBLIC-ORDER] Alle Angebote Details:', result.offers.data.map((offer: OfferWithProducts) => ({
+            name: offer.name,
+            is_active: offer.is_active,
+            start_date: offer.start_date,
+            end_date: offer.end_date,
+            startDateObj: new Date(offer.start_date),
+            endDateObj: new Date(offer.end_date),
+            now: new Date(),
+            isActive: offer.is_active && new Date(offer.start_date) <= new Date() && new Date(offer.end_date) >= new Date()
+          })));
+
+          this.activeOffers = result.offers.data.filter((offer: OfferWithProducts) => {
+            const isActive = offer.is_active &&
+              new Date(offer.start_date) <= new Date() &&
+              new Date(offer.end_date) >= new Date();
+
+            if (!isActive) {
+              console.log('🔍 [PUBLIC-ORDER] Angebot gefiltert:', offer.name, {
+                is_active: offer.is_active,
+                start_date: offer.start_date,
+                end_date: offer.end_date,
+                startValid: new Date(offer.start_date) <= new Date(),
+                endValid: new Date(offer.end_date) >= new Date()
+              });
+            }
+
+            return isActive;
+          });
+
           console.log('🔍 [PUBLIC-ORDER] Aktive Angebote gefiltert:', this.activeOffers.length);
+          console.log('🔍 [PUBLIC-ORDER] Aktive Angebote Namen:', this.activeOffers.map(offer => offer.name));
+          console.log('🔍 [PUBLIC-ORDER] Aktive Angebote mit Produktzahlen:', this.activeOffers.map(offer => ({
+            name: offer.name,
+            productsCount: offer.products?.length || 0
+          })));
         } else {
           this.activeOffers = [];
           console.log('🔍 [PUBLIC-ORDER] Keine Angebote geladen, verwende leeres Array');
@@ -471,27 +535,62 @@ export class CustomerOrderPublicComponent implements OnInit {
     }
 
     console.log('🔍 [PUBLIC-ORDER] Aktualisiere Artikel mit Angebotspreisen...');
-    
+    console.log('🔍 [PUBLIC-ORDER] Anzahl aktiver Angebote für Verarbeitung:', this.activeOffers.length);
+
+    const totalExpectedOfferProducts = this.activeOffers.reduce((sum, offer) => sum + (offer.products?.length || 0), 0);
+    console.log('🔍 [PUBLIC-ORDER] Erwartete Gesamtanzahl Offer Products:', totalExpectedOfferProducts);
+
+    let totalOfferProductsAdded = 0;
+
     // Durchlaufe alle aktiven Angebote
     this.activeOffers.forEach(offer => {
+      console.log(`🔍 [PUBLIC-ORDER] Verarbeite Angebot "${offer.name}" mit ${offer.products?.length || 0} Produkten`);
+
       if (offer.products && offer.products.length > 0) {
-        offer.products.forEach(offerProduct => {
+        offer.products.forEach((offerProduct, index) => {
+          console.log(`🔍 [PUBLIC-ORDER] Offer Product ${index + 1}:`, {
+            article_text: offerProduct.article_text,
+            article_number: offerProduct.article_number,
+            product_id: offerProduct.product_id,
+            product_database_id: offerProduct.product_database_id,
+            offer_price: offerProduct.offer_price,
+            use_offer_price: offerProduct.use_offer_price,
+            sale_price: offerProduct.sale_price,
+            min_quantity: offerProduct.min_quantity,
+            max_quantity: offerProduct.max_quantity,
+            main_image_url: offerProduct.main_image_url,
+            ean: offerProduct.ean,
+            unit: offerProduct.unit,
+            article_notes: offerProduct.article_notes,
+            article_type: offerProduct.article_type,
+            custom_field_1: offerProduct.custom_field_1,
+            db_index: offerProduct.db_index
+          });
           // Finde den entsprechenden Artikel in customerArticlePrices
-          const articleIndex = this.customerArticlePrices.findIndex(article => 
+          const articleIndex = this.customerArticlePrices.findIndex(article =>
             article.article_number === offerProduct.article_number ||
             article.product_id === offerProduct.product_id ||
             article.product_database_id === offerProduct.product_database_id
           );
+
+          console.log(`🔍 [PUBLIC-ORDER] Suche nach Artikel für Offer Product:`, {
+            offerProduct_article_number: offerProduct.article_number,
+            offerProduct_product_id: offerProduct.product_id,
+            offerProduct_product_database_id: offerProduct.product_database_id,
+            articleFound: articleIndex !== -1,
+            articleIndex: articleIndex
+          });
           
           if (articleIndex !== -1) {
             const article = this.customerArticlePrices[articleIndex];
-            
-            // Füge Angebotsinformationen hinzu
+
+            // Füge Angebotsinformationen hinzu - Produkt bleibt in seiner ursprünglichen Kategorie!
             article.hasOffer = true;
+            article.isOfferProduct = true; // Markiere als Offer Product
             article.offerName = offer.name;
             article.offerDescription = offer.description;
             article.offerType = offer.offer_type;
-            
+
             if (offerProduct.use_offer_price && offerProduct.offer_price) {
               article.offerPrice = Number(offerProduct.offer_price);
               article.originalPrice = article.sale_price || article.unit_price_net;
@@ -504,7 +603,7 @@ export class CustomerOrderPublicComponent implements OnInit {
               article.originalPrice = article.sale_price || article.unit_price_net;
               article.offerPrice = Math.max(0, article.originalPrice - offer.discount_amount);
             }
-            
+
             // Angebotsbeschränkungen
             if (offerProduct.min_quantity) {
               article.offerMinQuantity = offerProduct.min_quantity;
@@ -512,11 +611,18 @@ export class CustomerOrderPublicComponent implements OnInit {
             if (offerProduct.max_quantity) {
               article.offerMaxQuantity = offerProduct.max_quantity;
             }
-            
+
+            console.log(`🔍 [PUBLIC-ORDER] ✅ BESTEHENDER ARTIKEL mit Angebot angereichert: ${article.article_text} (${article.category})`);
             console.log(`🔍 [PUBLIC-ORDER] Angebot für Artikel ${article.article_text}: ${offer.name}`);
           } else {
             // Artikel nicht in customerArticlePrices gefunden - als neues Angebotsprodukt hinzufügen
-            console.log(`🔍 [PUBLIC-ORDER] Füge neues Angebotsprodukt hinzu: ${offerProduct.article_text}`);
+            console.log(`🔍 [PUBLIC-ORDER] ❌ KEIN ARTIKEL GEFUNDEN - Füge neues Angebotsprodukt hinzu:`, {
+              offerProduct: offerProduct.article_text,
+              article_number: offerProduct.article_number,
+              product_id: offerProduct.product_id,
+              product_database_id: offerProduct.product_database_id,
+              reason: 'Artikel nicht in customerArticlePrices gefunden'
+            });
             
             const newOfferArticle = {
               // Basis-Artikel-Informationen
@@ -528,6 +634,7 @@ export class CustomerOrderPublicComponent implements OnInit {
               sale_price: offerProduct.offer_price || 0,
               cost_price: 0,
               category: 'Aktuelle Angebote',
+              product_category: 'Aktuelle Angebote', // Beide Kategorie-Felder setzen
               main_image_url: offerProduct.main_image_url,
               ean: offerProduct.ean,
               unit: offerProduct.unit,
@@ -576,14 +683,62 @@ export class CustomerOrderPublicComponent implements OnInit {
             };
             
             this.customerArticlePrices.push(newOfferArticle);
-            console.log(`🔍 [PUBLIC-ORDER] Neues Angebotsprodukt hinzugefügt:`, newOfferArticle);
+            totalOfferProductsAdded++;
+            console.log(`🔍 [PUBLIC-ORDER] Neues Angebotsprodukt hinzugefügt:`, newOfferArticle.article_text);
           }
         });
       }
     });
+
+    console.log('🔍 [PUBLIC-ORDER] Gesamt Angebotsprodukte hinzugefügt:', totalOfferProductsAdded);
+    console.log('🔍 [PUBLIC-ORDER] Vergleich: Erwartet vs. Hinzugefügt:', {
+      erwartet: totalExpectedOfferProducts,
+      hinzugefuegt: totalOfferProductsAdded,
+      differenz: totalExpectedOfferProducts - totalOfferProductsAdded,
+      note: 'Nach Filterung sollten alle erhalten bleiben!'
+    });
     
     // Nach dem Hinzufügen der Angebotsprodukte die Gruppen neu aufbauen
     this.buildGroups();
+
+    // Debug: Anzahl der Angebotsprodukte in der Kategorie zählen
+    const offersCategoryCount = this.groupedArticles['Aktuelle Angebote']?.length || 0;
+    const allOfferProductsInArticles = this.customerArticlePrices.filter(article => article.isOfferProduct).length;
+    const productsWithOffers = this.customerArticlePrices.filter(article => article.hasOffer).length;
+
+    console.log('🔍 [PUBLIC-ORDER] Angebotsprodukte in Kategorie "Aktuelle Angebote":', offersCategoryCount);
+    console.log('🔍 [PUBLIC-ORDER] Gesamt Offer Products in customerArticlePrices:', allOfferProductsInArticles);
+    console.log('🔍 [PUBLIC-ORDER] Produkte mit Angeboten (hasOffer):', productsWithOffers);
+    console.log('🔍 [PUBLIC-ORDER] Alle Kategorien und deren Anzahl:', Object.keys(this.groupedArticles).map(cat => `${cat}: ${this.groupedArticles[cat].length}`));
+
+    // Debug: Zeige alle Produkte in der Angebotskategorie
+    if (this.groupedArticles['Aktuelle Angebote']) {
+      console.log('🔍 [PUBLIC-ORDER] Produkte in "Aktuelle Angebote" Kategorie:');
+      this.groupedArticles['Aktuelle Angebote'].forEach((product, index) => {
+        console.log(`🔍 [PUBLIC-ORDER] Angebot ${index + 1}: ${product.article_text}`, {
+          product_id: product.product_id,
+          isOfferProduct: product.isOfferProduct,
+          offerName: product.offerName,
+          category: product.category
+        });
+      });
+    }
+
+    // Debug: Zeige alle Produkte mit Angeboten, die nicht in der Angebotskategorie sind
+    const productsWithOffersNotInOffersCategory = this.customerArticlePrices.filter(article =>
+      (article.isOfferProduct || article.hasOffer) && this.getCategoryForArticle(article) !== 'Aktuelle Angebote'
+    );
+
+    if (productsWithOffersNotInOffersCategory.length > 0) {
+      console.log('🔍 [PUBLIC-ORDER] ❌ Produkte mit Angeboten NICHT in "Aktuelle Angebote" Kategorie:', productsWithOffersNotInOffersCategory.map(p => ({
+        article_text: p.article_text,
+        category: p.category,
+        isOfferProduct: p.isOfferProduct,
+        hasOffer: p.hasOffer
+      })));
+    } else {
+      console.log('🔍 [PUBLIC-ORDER] ✅ Alle Produkte mit Angeboten sind korrekt in "Aktuelle Angebote" Kategorie');
+    }
   }
 
   // Neue Methode zum Filtern der Artikel basierend auf der Produktliste
@@ -606,22 +761,52 @@ export class CustomerOrderPublicComponent implements OnInit {
     );
     
     console.log('🔍 [PUBLIC-ORDER] Verfügbare Artikelnummern:', Array.from(availableArticleNumbers));
+    console.log('🔍 [PUBLIC-ORDER] Verfügbare Produkte Details:', this.allProducts.map(p => ({
+      article_number: p.article_number,
+      article_text: p.article_text
+    })));
     
     // Filtere die customerArticlePrices und füge Bilder hinzu
     const originalCount = this.customerArticlePrices.length;
     this.customerArticlePrices = this.customerArticlePrices.filter(article => {
       const productId = article.product_id;
-      
+
       // Benutzerdefinierte Artikel (custom_*) immer anzeigen
       if (productId && productId.toString().startsWith('custom_')) {
         console.log(`🔍 [PUBLIC-ORDER] Benutzerdefinierter Artikel beibehalten: ${article.article_text}`);
         return true;
       }
-      
+
+      // Offer Products IMMER behalten, auch wenn sie nicht in der Produktliste stehen
+      if (article.isOfferProduct) {
+        console.log(`🔍 [PUBLIC-ORDER] Offer Product behalten: ${article.article_text} (product_id: ${productId})`, {
+          offerName: article.offerName || 'N/A'
+        });
+
+        // Versuche trotzdem Bild und custom_field_1 hinzuzufügen, falls verfügbar
+        const matchingProduct = this.allProducts.find(product => product.article_number === productId);
+        if (matchingProduct) {
+          if (matchingProduct.main_image_url) {
+            article.main_image_url = matchingProduct.main_image_url;
+            console.log(`🔍 [PUBLIC-ORDER] Bild hinzugefügt für Offer Product: ${article.article_text}`);
+          }
+
+          if (!article.product_custom_field_1 && matchingProduct.product_custom_field_1) {
+            article.product_custom_field_1 = matchingProduct.product_custom_field_1;
+            console.log(`🔍 [PUBLIC-ORDER] product_custom_field_1 ergänzt für Offer Product: ${article.article_text}: ${matchingProduct.product_custom_field_1}`);
+          }
+        }
+
+        return true; // Offer Products immer behalten!
+      }
+
       const isAvailable = availableArticleNumbers.has(productId);
-      
+
       if (!isAvailable) {
-        console.log(`🔍 [PUBLIC-ORDER] Artikel gefiltert: ${article.article_text} (product_id: ${productId})`);
+        console.log(`🔍 [PUBLIC-ORDER] Artikel gefiltert: ${article.article_text} (product_id: ${productId})`, {
+          isOfferProduct: article.isOfferProduct || false,
+          offerName: article.offerName || 'N/A'
+        });
       } else {
         // Füge das Bild und custom_field_1 zum Artikel hinzu
         const matchingProduct = this.allProducts.find(product => product.article_number === productId);
@@ -631,7 +816,7 @@ export class CustomerOrderPublicComponent implements OnInit {
             article.main_image_url = matchingProduct.main_image_url;
             console.log(`🔍 [PUBLIC-ORDER] Bild hinzugefügt für Artikel: ${article.article_text}`);
           }
-          
+
           // product_custom_field_1 anreichern (für PFAND-Logik), aber niemals vorhandenen API-Wert überschreiben
           if (!article.product_custom_field_1 && matchingProduct.product_custom_field_1) {
             article.product_custom_field_1 = matchingProduct.product_custom_field_1;
@@ -639,11 +824,29 @@ export class CustomerOrderPublicComponent implements OnInit {
           }
         }
       }
-      
+
       return isAvailable;
     });
     
     console.log(`🔍 [PUBLIC-ORDER] Artikel gefiltert: ${originalCount} → ${this.customerArticlePrices.length}`);
+
+    // Debug: Zähle Angebotsprodukte nach Filterung
+    const offerProductsAfterFilter = this.customerArticlePrices.filter(article => article.isOfferProduct).length;
+    console.log('🔍 [PUBLIC-ORDER] Angebotsprodukte nach Filterung:', offerProductsAfterFilter);
+
+    // Debug: Vergleich vor/nach Filterung für Offer Products
+    const filteredCount = originalCount - this.customerArticlePrices.length;
+    const filteredOfferProducts = this.customerArticlePrices.filter(article =>
+      !article.isOfferProduct && !article.product_id?.toString().startsWith('custom_')
+    ).length;
+
+    console.log('🔍 [PUBLIC-ORDER] Offer Products Filterung:', {
+      vorFilterung: offerProductsAfterFilter + filteredCount,
+      nachFilterung: offerProductsAfterFilter,
+      gefiltert: filteredCount,
+      offerProductsErhalten: offerProductsAfterFilter,
+      note: 'Offer Products werden nicht mehr gefiltert!'
+    });
     
     
     // Nach dem Filtern gruppieren
@@ -666,6 +869,17 @@ export class CustomerOrderPublicComponent implements OnInit {
     if (article?.isCustom || (typeof article?.product_id === 'string' && article.product_id.startsWith('custom_'))) {
       return 'Eigene Artikel';
     }
+
+    // Offer Products und Produkte mit Angeboten immer in "Aktuelle Angebote" Kategorie
+    if (article?.isOfferProduct || article?.hasOffer) {
+      console.log(`🔍 [PUBLIC-ORDER] Produkt mit Angebot "${article.article_text}" wird in "Aktuelle Angebote" Kategorie einsortiert`, {
+        isOfferProduct: article?.isOfferProduct,
+        hasOffer: article?.hasOffer,
+        originalCategory: article?.category || article?.product_category
+      });
+      return 'Aktuelle Angebote';
+    }
+
     const category = this.normalizeCategoryName(article?.product_category || article?.category || 'Sonstiges');
     return category || 'Sonstiges';
   }
