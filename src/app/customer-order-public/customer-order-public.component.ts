@@ -1314,7 +1314,7 @@ export class CustomerOrderPublicComponent implements OnInit {
     this.showCustomArticleForm = true;
     this.customArticle = {
       article_text: '',
-      tempQuantity: null,
+      tempQuantity: 1,
       isCustom: true
     };
   }
