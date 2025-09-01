@@ -132,7 +132,21 @@
               <h3 class="product-title">{{ artikel.article_text }}</h3>
               <p class="product-number">Art.-Nr: {{ artikel.article_number }}</p>
 
-              
+              <!-- Angebotspreise anzeigen -->
+              @if (getProductOfferPrice(artikel).hasOffer) {
+              <div class="offer-price-info">
+                <div class="offer-price-badge">
+                  <span class="price-label">Angebotspreis:</span>
+                  <span class="price-value">{{ getProductOfferPrice(artikel).offerPrice }}€</span>
+                </div>
+                @if (getProductOfferPrice(artikel).offerName) {
+                <div class="offer-discount-display">
+                  <span class="offer-name">aus {{ getProductOfferPrice(artikel).offerName }}</span>
+                </div>
+                }
+              </div>
+              }
+
               <!-- Zuletzt gekaufte Artikel anzeigen -->
               <!-- Debug: {{ categoryName }} - {{ artikel.customer_price_net }} -->
               @if ((categoryName === '🕒 Zuletzt gekauft' || categoryName === 'Zuletzt gekauft') && artikel.customer_price_net) {

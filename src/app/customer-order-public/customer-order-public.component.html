@@ -78,17 +78,10 @@
                 <!-- Angebotspreis anzeigen -->
                 <div *ngIf="article.hasOffer" class="offer-price-container">
                   <div class="offer-badge" [title]="article.offerDescription">
-                    🎯 {{ article.offerName }}
+                    {{ article.offerName }}
                   </div>
                   <div class="price-with-offer">
                     <span class="offer-price">€{{ article.offerPrice?.toFixed(2) }}</span>
-                    <span class="original-price">€{{ article.originalPrice?.toFixed(2) }}</span>
-                  </div>
-                  <div *ngIf="article.offerDiscountPercentage" class="discount-info">
-                    -{{ article.offerDiscountPercentage }}%
-                  </div>
-                  <div *ngIf="article.offerDiscountAmount" class="discount-info">
-                    -€{{ article.offerDiscountAmount?.toFixed(2) }}
                   </div>
                   <div *ngIf="article.offerMinQuantity || article.offerMaxQuantity" class="offer-limits">
                     <small>
@@ -180,17 +173,10 @@
                 <!-- Angebotspreis anzeigen -->
                 <div *ngIf="article.hasOffer" class="offer-price-container">
                   <div class="offer-badge" [title]="article.offerDescription">
-                    🎯 {{ article.offerName }}
+                    {{ article.offerName }}
                   </div>
                   <div class="price-with-offer">
                     <span class="offer-price">€{{ article.offerPrice?.toFixed(2) }}</span>
-                    <span class="original-price">€{{ article.originalPrice?.toFixed(2) }}</span>
-                  </div>
-                  <div *ngIf="article.offerDiscountPercentage" class="discount-info">
-                    -{{ article.offerDiscountPercentage }}%
-                  </div>
-                  <div *ngIf="article.offerDiscountAmount" class="discount-info">
-                    -€{{ article.offerDiscountAmount?.toFixed(2) }}
                   </div>
                   <div *ngIf="article.offerMinQuantity || article.offerMaxQuantity" class="offer-limits">
                     <small>

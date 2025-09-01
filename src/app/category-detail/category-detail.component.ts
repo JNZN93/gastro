@@ -10,6 +10,7 @@ import { UploadLoadingComponent } from '../upload-loading/upload-loading.compone
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { ZXingScannerComponent, ZXingScannerModule } from '@zxing/ngx-scanner';
 import { BarcodeFormat } from '@zxing/browser';
+import { OffersService, OfferWithProducts, OfferProduct } from '../offers.service';
 
 // Interface für kundenspezifische Preise
 interface CustomerArticlePrice {
@@ -87,6 +88,11 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
     BarcodeFormat.ITF
   ];
 
+  // Eigenschaften für Angebote
+  activeOffers: OfferWithProducts[] = [];
+  isLoadingOffers: boolean = false;
+  offerProductsMap: Map<string, OfferProduct> = new Map();
+
   videoConstraints: MediaTrackConstraints = {
     width: { ideal: 1920 },
     height: { ideal: 1080 }
@@ -94,7 +100,8 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
 
   constructor(
     private authService: AuthService,
-    public globalService: GlobalService
+    public globalService: GlobalService,
+    private offersService: OffersService
   ) {}
 
   private scrollToTop(): void {
@@ -150,9 +157,9 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
 
   loadCategoryProducts(): void {
     this.isVisible = true;
-    
+
     const token = localStorage.getItem('token');
-    
+
     if (token) {
       // Benutzer ist angemeldet
       this.authService.checkToken(token).subscribe({
@@ -160,16 +167,19 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
           this.globalService.setUserRole(response.user.role);
           this.globalService.setUserName(response.user.name || response.user.email || 'Benutzer');
           this.globalService.setUserLoggedIn(true);
-          
+
           this.artikelService.getData().subscribe((res) => {
             if(response.user.role == 'admin') {
               this.globalService.isAdmin = true;
             }
-            
+
             // SCHNELLVERKAUF-Artikel basierend auf Benutzerrolle filtern
             this.globalArtikels = this.globalService.filterSchnellverkaufArticles(res);
             this.globalService.setPfandArtikels(this.globalArtikels);
-            
+
+            // Aktive Angebote laden für Angebotspreise
+            this.loadActiveOffers();
+
             // WICHTIG: Kundenspezifische Preise laden (falls Benutzer angemeldet)
             if (this.categoryName !== '🕒 Zuletzt gekauft') {
               this.loadCustomerPricesForAllArticles();
@@ -177,9 +187,9 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
               // Produkte der spezifischen Kategorie filtern
               this.filterCategoryProducts();
             }
-            
+
             this.isVisible = false;
-            
+
             // Scroll to top after data is loaded
             setTimeout(() => this.scrollToTop(), 100);
           });
@@ -196,18 +206,77 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
   loadAsGuest(): void {
     this.globalService.setUserLoggedIn(false);
     this.globalService.isAdmin = false;
-    
+
     this.artikelService.getData().subscribe((res) => {
       // Für Gäste nur normale Artikel anzeigen (keine SCHNELLVERKAUF)
       this.globalArtikels = res.filter((artikel: any) => artikel.category !== 'SCHNELLVERKAUF');
       this.globalService.setPfandArtikels(this.globalArtikels);
-      
+
+      // Aktive Angebote laden für Angebotspreise (auch für Gäste)
+      this.loadActiveOffers();
+
       // Produkte der spezifischen Kategorie filtern
       this.filterCategoryProducts();
       this.isVisible = false;
-      
+
       // Scroll to top after data is loaded
       setTimeout(() => this.scrollToTop(), 100);
+    });
+  }
+
+  // Methode zum Laden aktiver Angebote
+  loadActiveOffers(): void {
+    this.isLoadingOffers = true;
+    this.offersService.getAllOffersWithProducts().subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          console.log('Alle Angebote von API:', response.data);
+
+          // Filtere nur aktive Angebote
+          this.activeOffers = response.data.filter(offer => {
+            const startDate = new Date(offer.start_date);
+            const endDate = new Date(offer.end_date);
+            const now = new Date();
+
+            // Setze die Zeit auf Mitternacht für besseren Vergleich
+            const startDateMidnight = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+            const endDateMidnight = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+            const nowMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+            const isActive = offer.is_active &&
+                           startDateMidnight <= nowMidnight &&
+                           endDateMidnight >= nowMidnight;
+
+            console.log(`Filterung für "${offer.name}":`, {
+              is_active: offer.is_active,
+              startDateMidnight,
+              endDateMidnight,
+              nowMidnight,
+              isActive
+            });
+
+            return isActive;
+          });
+
+          // Erstelle eine Map der Angebotspreise für schnellen Zugriff
+          this.offerProductsMap.clear();
+          this.activeOffers.forEach(offer => {
+            offer.products.forEach(product => {
+              if (product.product_id && product.use_offer_price && product.offer_price) {
+                this.offerProductsMap.set(product.product_id.toString(), product);
+              }
+            });
+          });
+
+          console.log('Aktive Angebote nach Filterung:', this.activeOffers);
+          console.log('Angebotspreise Map erstellt:', this.offerProductsMap.size, 'Einträge');
+        }
+        this.isLoadingOffers = false;
+      },
+      error: (error) => {
+        console.error('Fehler beim Laden der Angebote:', error);
+        this.isLoadingOffers = false;
+      }
     });
   }
 
@@ -973,14 +1042,56 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
     document.body.style.overflow = '';
   }
 
+  // Methode zum Prüfen, ob ein Produkt in einem aktiven Angebot ist
+  getProductOfferPrice(product: any): { hasOffer: boolean; offerPrice?: number; originalPrice?: number; offerName?: string } {
+    if (!product || !product.id) {
+      return { hasOffer: false };
+    }
+
+    const offerProduct = this.offerProductsMap.get(product.id.toString());
+    if (offerProduct && offerProduct.use_offer_price && offerProduct.offer_price) {
+      // Finde das entsprechende Angebot für den Namen
+      const offer = this.activeOffers.find(o =>
+        o.products.some(p => p.product_id === offerProduct.product_id)
+      );
+
+      return {
+        hasOffer: true,
+        offerPrice: parseFloat(offerProduct.offer_price.toString()),
+        originalPrice: product.sale_price || product.price || 0,
+        offerName: offer ? offer.name : 'Angebot'
+      };
+    }
+
+    return { hasOffer: false };
+  }
+
+  // Methode zum Formatieren des Rabatts
+  getOfferDiscountDisplay(product: any): string {
+    const offerInfo = this.getProductOfferPrice(product);
+
+    if (!offerInfo.hasOffer || !offerInfo.offerPrice || !offerInfo.originalPrice) {
+      return '';
+    }
+
+    const discount = offerInfo.originalPrice - offerInfo.offerPrice;
+    const percentage = offerInfo.originalPrice > 0 ? (discount / offerInfo.originalPrice) * 100 : 0;
+
+    if (percentage >= 1) {
+      return `${percentage.toFixed(0)}% Rabatt`;
+    } else {
+      return `€${discount.toFixed(2)} Rabatt`;
+    }
+  }
+
   ngOnDestroy(): void {
     this.stopScanner();
-    
+
     // Cleanup Performance-Optimierungen
     if (this.scrollTimeout) {
       clearTimeout(this.scrollTimeout);
     }
-    
+
     // Cleanup Bild-Promises
     this.imageLoadPromises = [];
   }

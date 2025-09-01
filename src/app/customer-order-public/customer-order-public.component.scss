@@ -550,6 +550,22 @@
     .article-price {
       display: none; // Preis wird nicht angezeigt
     }
+
+    // Ausnahme für Angebotsprodukte in der Kategorie "Aktuelle Angebote"
+    // Mobile: Wenn der Header die offers-category Klasse hat, zeige Preise in den Karten
+    .offers-category ~ .category-content .product-card .article-price,
+    .offers-category ~ .category-content .table-row .col-price {
+      display: block !important; // Preise für Angebotsprodukte anzeigen
+    }
+
+    .col-price {
+      display: none; // Preis-Spalte wird nicht angezeigt
+    }
+
+    // Ausnahme für Angebotsprodukte in der Desktop-Tabelle
+    .offers-category ~ .category-content .table-row .col-price {
+      display: block !important; // Preise für Angebotsprodukte in Tabelle anzeigen
+    }
   }
   
   .card-actions {
@@ -644,6 +660,17 @@
       }
     }
   }
+}
+
+/* ===== Angebotspreise sichtbar machen, wenn Kategorie "Aktuelle Angebote" ===== */
+/* Mobile Cards View */
+.category-header-mobile.offers-category + .category-content .product-card .card-header .article-price {
+  display: block !important;
+}
+
+/* Desktop Table View */
+.category-header.offers-category + .category-content .table-row .col-price {
+  display: block !important;
 }
 
 /* Desktop Table View */
