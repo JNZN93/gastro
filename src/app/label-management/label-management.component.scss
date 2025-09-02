@@ -1129,3 +1129,96 @@
     height: 50vh;
   }
 }
+
+// Angebot Styles
+.has-offer {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(5, 150, 105, 0.05) 100%);
+  border-left: 3px solid #10b981;
+}
+
+.offer-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-left: 0.5rem;
+  white-space: nowrap;
+
+  i {
+    font-size: 0.75rem;
+  }
+}
+
+.cart-offer-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  padding: 0.2rem 0.4rem;
+  border-radius: 8px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  margin-left: 0.25rem;
+  white-space: nowrap;
+
+  i {
+    font-size: 0.7rem;
+  }
+}
+
+.article-number-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.article-name-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.offer-price-info {
+  margin-top: 0.25rem;
+  padding: 0.25rem 0;
+  border-radius: 4px;
+  background: rgba(16, 185, 129, 0.1);
+
+  s {
+    color: #6b7280;
+  }
+
+  strong {
+    color: #059669;
+  }
+}
+
+.cart-offer-price-info {
+  margin-top: 0.25rem;
+  padding: 0.25rem 0;
+  border-radius: 4px;
+  background: rgba(16, 185, 129, 0.1);
+
+  s {
+    color: #6b7280;
+    font-size: 0.75rem;
+  }
+
+  strong {
+    color: #059669;
+    font-size: 0.75rem;
+  }
+}
+
+.product-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

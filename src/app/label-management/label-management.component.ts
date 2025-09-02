@@ -9,6 +9,7 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MyDialogComponent } from '../my-dialog/my-dialog.component';
 import { ZXingScannerComponent, ZXingScannerModule } from '@zxing/ngx-scanner';
 import { BarcodeFormat } from '@zxing/browser';
+import { OffersService, OfferWithProducts } from '../offers.service';
 
 interface Product {
   id: number;
@@ -21,6 +22,18 @@ interface Product {
   sale_price?: number;
   tax_code?: number;
   isExpanded?: boolean;
+
+  // Neue Angebotsfelder
+  offer_name?: string;
+  offer_description?: string;
+  discount_percentage?: number;
+  discount_amount?: number;
+  offer_type?: string;
+  start_date?: string;
+  end_date?: string;
+  offer_price?: number;
+  use_offer_price?: boolean;
+  has_active_offer?: boolean;
 }
 
 @Component({
@@ -60,11 +73,16 @@ export class LabelManagementComponent implements OnInit {
 
   private readonly CART_STORAGE_KEY = 'label-management-cart';
 
-  constructor(private http: HttpClient, private router: Router, private dialog: MatDialog) {}
+  // Neue Eigenschaften für Angebote
+  activeOffers: OfferWithProducts[] = [];
+  isLoadingOffers: boolean = false;
+
+  constructor(private http: HttpClient, private router: Router, private dialog: MatDialog, private offersService: OffersService) {}
 
   ngOnInit(): void {
     this.loadProducts();
     this.loadCartFromLocalStorage();
+    this.loadActiveOffers();
   }
 
   historyBack(): void {
@@ -80,12 +98,105 @@ export class LabelManagementComponent implements OnInit {
         this.isLoading = false;
         // After loading products, restore cart items that are still available
         this.restoreCartItems();
+        // Enrich products with offer information after both products and offers are loaded
+        this.enrichProductsWithOffers();
       },
       error: (error) => {
         console.error('Fehler beim Laden der Produkte:', error);
         this.isLoading = false;
       }
     });
+  }
+
+  // Neue Methode zum Laden aktiver Angebote
+  loadActiveOffers(): void {
+    this.isLoadingOffers = true;
+    this.offersService.getAllOffersWithProducts().subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          // Filtere nur aktive Angebote
+          this.activeOffers = response.data.filter(offer => {
+            const startDate = new Date(offer.start_date);
+            const endDate = new Date(offer.end_date);
+            const now = new Date();
+
+            // Setze die Zeit auf Mitternacht für besseren Vergleich
+            const startDateMidnight = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+            const endDateMidnight = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+            const nowMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+            const isActive = offer.is_active &&
+                             startDateMidnight <= nowMidnight &&
+                             endDateMidnight >= nowMidnight;
+
+            return isActive;
+          });
+
+          console.log('Aktive Angebote für Label-Management geladen:', this.activeOffers);
+
+          // Enrich products with offer information after offers are loaded
+          this.enrichProductsWithOffers();
+        }
+        this.isLoadingOffers = false;
+      },
+      error: (error) => {
+        console.error('Fehler beim Laden der Angebote:', error);
+        this.isLoadingOffers = false;
+      }
+    });
+  }
+
+  // Neue Methode zum Anreichern der Produkte mit Angebotsinformationen
+  private enrichProductsWithOffers(): void {
+    if (!this.products.length || !this.activeOffers.length) {
+      return; // Warte bis beide Daten vorhanden sind
+    }
+
+    this.products.forEach(product => {
+      // Finde das passende Angebot für dieses Produkt
+      let activeOffer: OfferWithProducts | null = null;
+      let offerProduct: any = null;
+
+      for (const offer of this.activeOffers) {
+        const foundProduct = offer.products.find(op => op.product_id === product.id || op.article_number === product.article_number);
+        if (foundProduct) {
+          activeOffer = offer;
+          offerProduct = foundProduct;
+          break;
+        }
+      }
+
+      if (activeOffer && offerProduct) {
+        // Produkt hat ein aktives Angebot - reichere es mit Angebotsinformationen an
+        product.has_active_offer = true;
+        product.offer_name = activeOffer.name;
+        product.offer_description = activeOffer.description;
+        product.discount_percentage = activeOffer.discount_percentage;
+        product.discount_amount = activeOffer.discount_amount;
+        product.offer_type = activeOffer.offer_type;
+        product.start_date = activeOffer.start_date;
+        product.end_date = activeOffer.end_date;
+        product.offer_price = offerProduct.offer_price;
+        product.use_offer_price = offerProduct.use_offer_price;
+      } else {
+        // Produkt hat kein aktives Angebot
+        product.has_active_offer = false;
+        product.offer_name = undefined;
+        product.offer_description = undefined;
+        product.discount_percentage = undefined;
+        product.discount_amount = undefined;
+        product.offer_type = undefined;
+        product.start_date = undefined;
+        product.end_date = undefined;
+        product.offer_price = undefined;
+        product.use_offer_price = false;
+      }
+    });
+
+    // Aktualisiere auch filteredProducts
+    this.filteredProducts = [...this.products];
+
+    console.log('Produkte mit Angebotsinformationen angereichert:', this.products.filter(p => p.has_active_offer));
   }
 
   // Save cart to localStorage
@@ -368,23 +479,42 @@ export class LabelManagementComponent implements OnInit {
         }
       }
 
-      // Preis rechts platzieren
-      if (product.sale_price) {
+      // Preis rechts platzieren - Angebotspreis verwenden wenn verfügbar
+      let displayPrice = product.sale_price;
+      let isOfferPrice = false;
+
+      if (product.has_active_offer && product.use_offer_price && product.offer_price) {
+        displayPrice = product.offer_price;
+        isOfferPrice = true;
+      }
+
+            if (displayPrice) {
+        // Angebot Badge über dem Preis
+        if (isOfferPrice) {
+          doc.setFontSize(8);
+          doc.setFont('helvetica', 'bold');
+          doc.setFillColor(16, 185, 129); // Grün
+          doc.rect(currentX + cardWidth - 25, currentY + 15, 22, 5, 'F');
+          doc.setTextColor(255, 255, 255); // Weiß
+          doc.text('ANGEBOT', currentX + cardWidth - 23, currentY + 18.5);
+          doc.setTextColor(0, 0, 0); // Schwarz zurücksetzen
+        }
+
         doc.setFontSize(16);
         doc.setFont('helvetica', 'bold');
-        const priceText = `€ ${product.sale_price.toFixed(2).replace('.', ',')}`;
+        const priceText = `€ ${displayPrice.toFixed(2).replace('.', ',')}`;
         const priceWidth = doc.getTextWidth(priceText);
-        doc.text(priceText, currentX + cardWidth - priceWidth - 3, currentY + 24);
-        
+        doc.text(priceText, currentX + cardWidth - priceWidth - 3, currentY + (isOfferPrice ? 26 : 24));
+
         // MwSt.-Information unter dem Preis
         if (product.tax_code) {
           doc.setFontSize(6);
           doc.setFont('helvetica', 'normal');
-          const taxText = product.tax_code === 1 ? 'zzgl. 19% MwSt.' : 
-                         product.tax_code === 2 ? 'zzgl. 7% MwSt.' : 
+          const taxText = product.tax_code === 1 ? 'zzgl. 19% MwSt.' :
+                         product.tax_code === 2 ? 'zzgl. 7% MwSt.' :
                          ` zzgl. ${product.tax_code}% MwSt.`;
           const taxWidth = doc.getTextWidth(taxText);
-          doc.text(taxText, currentX + cardWidth - taxWidth - 3, currentY + 28);
+          doc.text(taxText, currentX + cardWidth - taxWidth - 3, currentY + (isOfferPrice ? 30 : 28));
         }
       }
 
@@ -485,22 +615,41 @@ export class LabelManagementComponent implements OnInit {
         }
       }
 
-      // Preis (sehr groß und prominent)
-      if (product.sale_price) {
+      // Preis (sehr groß und prominent) - Angebotspreis verwenden wenn verfügbar
+      let displayPrice = product.sale_price;
+      let isOfferPrice = false;
+
+      if (product.has_active_offer && product.use_offer_price && product.offer_price) {
+        displayPrice = product.offer_price;
+        isOfferPrice = true;
+      }
+
+                        if (displayPrice) {
+        // Angebot Badge weit über dem Preis
+        if (isOfferPrice) {
+          doc.setFontSize(16);
+          doc.setFont('helvetica', 'bold');
+          doc.setFillColor(16, 185, 129); // Grün
+          doc.rect(pageWidth - margin - 55, pageHeight - margin - 110, 50, 10, 'F');
+          doc.setTextColor(255, 255, 255); // Weiß
+          doc.text('ANGEBOT', pageWidth - margin - 52, pageHeight - margin - 104);
+          doc.setTextColor(0, 0, 0); // Schwarz zurücksetzen
+        }
+
         doc.setFontSize(96);
         doc.setFont('helvetica', 'bold');
-        const priceText = `€ ${product.sale_price.toFixed(2).replace('.', ',')}`;
+        const priceText = `€ ${displayPrice.toFixed(2).replace('.', ',')}`;
         const priceWidth = doc.getTextWidth(priceText);
         const priceX = pageWidth - margin - priceWidth - 10;
         const priceY = pageHeight - margin - 60;
         doc.text(priceText, priceX, priceY);
-        
+
         // MwSt.-Information unter dem Preis
         if (product.tax_code) {
           doc.setFontSize(14);
           doc.setFont('helvetica', 'normal');
-          const taxText = product.tax_code === 1 ? 'zzgl. 19% MwSt.' : 
-                         product.tax_code === 2 ? 'zzgl. 7% MwSt.' : 
+          const taxText = product.tax_code === 1 ? 'zzgl. 19% MwSt.' :
+                         product.tax_code === 2 ? 'zzgl. 7% MwSt.' :
                          `zzgl. ${product.tax_code}% MwSt.`;
           const taxWidth = doc.getTextWidth(taxText);
           const taxX = pageWidth - margin - taxWidth - 10;

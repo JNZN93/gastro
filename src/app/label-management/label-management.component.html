@@ -64,20 +64,30 @@
                 </div>
                 
                 <div class="cart-items" *ngIf="isCartExpanded">
-                    <div *ngFor="let product of selectedProducts; trackBy: trackByProductId" class="cart-item">
+                    <div *ngFor="let product of selectedProducts; trackBy: trackByProductId" class="cart-item" [class.has-offer]="product.has_active_offer">
                         <div class="cart-item-content">
                             <div class="cart-item-main">
-                                <div class="cart-item-name" 
+                                <div class="cart-item-name"
                                      [class.expanded]="product.isExpanded"
                                      (click)="toggleProductExpansion(product)">
-                                    {{ formatProductName(product) }}
-                                    <i class="bi expand-icon" 
-                                       [class.bi-chevron-down]="!product.isExpanded" 
+                                    <span class="product-name">{{ formatProductName(product) }}</span>
+                                    <span class="cart-offer-badge" *ngIf="product.has_active_offer && product.use_offer_price">
+                                        <i class="bi bi-tag-fill"></i>
+                                        Angebot
+                                    </span>
+                                    <i class="bi expand-icon"
+                                       [class.bi-chevron-down]="!product.isExpanded"
                                        [class.bi-chevron-up]="product.isExpanded"></i>
                                 </div>
                                 <div class="cart-item-details" *ngIf="product.isExpanded">
                                     <span class="cart-item-number">{{ product.article_number }}</span>
                                     <span class="cart-item-ean" *ngIf="product.ean">EAN: {{ product.ean }}</span>
+                                    <div class="cart-offer-price-info" *ngIf="product.has_active_offer && product.use_offer_price">
+                                        <small class="text-muted">
+                                            <s *ngIf="product.sale_price">€ {{ product.sale_price.toFixed(2).replace('.', ',') }}</s>
+                                            <strong class="text-success ms-2" *ngIf="product.offer_price">€ {{ product.offer_price.toFixed(2).replace('.', ',') }}</strong>
+                                        </small>
+                                    </div>
                                 </div>
                             </div>
                             <button type="button" class="btn btn-sm btn-outline-danger remove-btn" (click)="removeFromCart(product.id)">
@@ -108,9 +118,27 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr *ngFor="let product of filteredProducts; trackBy: trackByProductId">
-                        <td>{{ product.article_number }}</td>
-                        <td class="article-name-cell">{{ product.article_text }}</td>
+                    <tr *ngFor="let product of filteredProducts; trackBy: trackByProductId" [class.has-offer]="product.has_active_offer">
+                        <td>
+                            <div class="article-number-container">
+                                {{ product.article_number }}
+                                <span class="offer-badge" *ngIf="product.has_active_offer && product.use_offer_price">
+                                    <i class="bi bi-tag-fill"></i>
+                                    Angebot
+                                </span>
+                            </div>
+                        </td>
+                        <td class="article-name-cell">
+                            <div class="article-name-container">
+                                {{ product.article_text }}
+                                <div class="offer-price-info" *ngIf="product.has_active_offer && product.use_offer_price">
+                                    <small class="text-muted">
+                                        <s *ngIf="product.sale_price">€ {{ product.sale_price.toFixed(2).replace('.', ',') }}</s>
+                                        <strong class="text-success ms-2" *ngIf="product.offer_price">€ {{ product.offer_price.toFixed(2).replace('.', ',') }}</strong>
+                                    </small>
+                                </div>
+                            </div>
+                        </td>
                         <td>
                             <div class="action-container">
                                 <button type="button"
