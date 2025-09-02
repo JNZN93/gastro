@@ -1132,15 +1132,15 @@
 
 // Angebot Styles
 .has-offer {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(5, 150, 105, 0.05) 100%);
-  border-left: 3px solid #10b981;
+  background: linear-gradient(135deg, rgba(220, 38, 38, 0.05) 0%, rgba(185, 28, 28, 0.05) 100%);
+  border-left: 3px solid #dc2626;
 }
 
 .offer-badge {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
   color: white;
   padding: 0.25rem 0.5rem;
   border-radius: 12px;
@@ -1158,7 +1158,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
   color: white;
   padding: 0.2rem 0.4rem;
   border-radius: 8px;
@@ -1188,14 +1188,14 @@
   margin-top: 0.25rem;
   padding: 0.25rem 0;
   border-radius: 4px;
-  background: rgba(16, 185, 129, 0.1);
+  background: rgba(220, 38, 38, 0.1);
 
   s {
     color: #6b7280;
   }
 
   strong {
-    color: #059669;
+    color: #dc2626;
   }
 }
 
@@ -1203,7 +1203,7 @@
   margin-top: 0.25rem;
   padding: 0.25rem 0;
   border-radius: 4px;
-  background: rgba(16, 185, 129, 0.1);
+  background: rgba(220, 38, 38, 0.1);
 
   s {
     color: #6b7280;
@@ -1211,7 +1211,7 @@
   }
 
   strong {
-    color: #059669;
+    color: #dc2626;
     font-size: 0.75rem;
   }
 }

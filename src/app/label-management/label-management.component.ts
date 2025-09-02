@@ -493,7 +493,7 @@ export class LabelManagementComponent implements OnInit {
         if (isOfferPrice) {
           doc.setFontSize(8);
           doc.setFont('helvetica', 'bold');
-          doc.setFillColor(16, 185, 129); // Grün
+          doc.setFillColor(220, 38, 38); // Rot
           doc.rect(currentX + cardWidth - 25, currentY + 15, 22, 5, 'F');
           doc.setTextColor(255, 255, 255); // Weiß
           doc.text('ANGEBOT', currentX + cardWidth - 23, currentY + 18.5);
@@ -502,9 +502,20 @@ export class LabelManagementComponent implements OnInit {
 
         doc.setFontSize(16);
         doc.setFont('helvetica', 'bold');
+
+        // Preis in Rot bei Angeboten
+        if (isOfferPrice) {
+          doc.setTextColor(220, 38, 38); // Rot
+        }
+
         const priceText = `€ ${displayPrice.toFixed(2).replace('.', ',')}`;
         const priceWidth = doc.getTextWidth(priceText);
         doc.text(priceText, currentX + cardWidth - priceWidth - 3, currentY + (isOfferPrice ? 26 : 24));
+
+        // Textfarbe zurücksetzen
+        if (isOfferPrice) {
+          doc.setTextColor(0, 0, 0); // Schwarz
+        }
 
         // MwSt.-Information unter dem Preis
         if (product.tax_code) {
@@ -629,7 +640,7 @@ export class LabelManagementComponent implements OnInit {
         if (isOfferPrice) {
           doc.setFontSize(16);
           doc.setFont('helvetica', 'bold');
-          doc.setFillColor(16, 185, 129); // Grün
+          doc.setFillColor(220, 38, 38); // Rot
           doc.rect(pageWidth - margin - 55, pageHeight - margin - 110, 50, 10, 'F');
           doc.setTextColor(255, 255, 255); // Weiß
           doc.text('ANGEBOT', pageWidth - margin - 52, pageHeight - margin - 104);
@@ -638,11 +649,22 @@ export class LabelManagementComponent implements OnInit {
 
         doc.setFontSize(96);
         doc.setFont('helvetica', 'bold');
+
+        // Preis in Rot bei Angeboten
+        if (isOfferPrice) {
+          doc.setTextColor(220, 38, 38); // Rot
+        }
+
         const priceText = `€ ${displayPrice.toFixed(2).replace('.', ',')}`;
         const priceWidth = doc.getTextWidth(priceText);
         const priceX = pageWidth - margin - priceWidth - 10;
         const priceY = pageHeight - margin - 60;
         doc.text(priceText, priceX, priceY);
+
+        // Textfarbe zurücksetzen
+        if (isOfferPrice) {
+          doc.setTextColor(0, 0, 0); // Schwarz
+        }
 
         // MwSt.-Information unter dem Preis
         if (product.tax_code) {
