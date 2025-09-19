@@ -134,6 +134,7 @@
                       (change)="updateInvoiceFieldLocally(newInvoiceRow, 'status', $any($event.target).value)">
                 <option value="open">Offen</option>
                 <option value="paid">Bezahlt</option>
+                <option value="sepa">SEPA</option>
                 <option value="overdue">Überfällig</option>
               </select>
             </td>
@@ -231,6 +232,7 @@
                       (change)="confirmStatusChange(invoice, $any($event.target).value)">
                 <option value="open">Offen</option>
                 <option value="paid">Bezahlt</option>
+                <option value="sepa">SEPA</option>
                 <option value="overdue">Überfällig</option>
               </select>
             </td>

@@ -312,6 +312,11 @@
       color: #166534;
     }
 
+    &.status-sepa {
+      background: rgba(168, 85, 247, 0.1);
+      color: #7c3aed;
+    }
+
     &.status-overdue {
       background: rgba(239, 68, 68, 0.1);
       color: #dc2626;
@@ -1063,6 +1068,12 @@
     background: rgba(59, 130, 246, 0.1);
     color: #2563eb;
     border: 1px solid rgba(59, 130, 246, 0.2);
+  }
+
+  &.status-sepa {
+    background: rgba(168, 85, 247, 0.1);
+    color: #7c3aed;
+    border: 1px solid rgba(168, 85, 247, 0.2);
   }
 
   &.status-overdue {

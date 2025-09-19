@@ -11,7 +11,7 @@ interface Invoice {
   due_date: string;
   supplier_name: string;
   amount: number;
-  status: 'open' | 'paid' | 'overdue';
+  status: 'open' | 'paid' | 'overdue' | 'sepa';
   file?: File;
   file_name?: string;
 }
@@ -67,7 +67,7 @@ export class OpenInvoicesComponent implements OnInit {
         return;
       }
 
-      if (invoice.due_date && invoice.status !== 'paid' && invoice.status !== 'overdue') {
+      if (invoice.due_date && invoice.status !== 'paid' && invoice.status !== 'overdue' && invoice.status !== 'sepa') {
         const dueDate = new Date(invoice.due_date);
         dueDate.setHours(0, 0, 0, 0);
 
@@ -583,7 +583,7 @@ export class OpenInvoicesComponent implements OnInit {
 
   get totalOpenAmount(): number {
     return this.filteredInvoices
-      .filter(inv => inv.status === 'open' || inv.status === 'overdue')
+      .filter(inv => inv.status === 'open' || inv.status === 'overdue' || inv.status === 'sepa')
       .reduce((sum, inv) => {
         // Ensure amount is a valid number
         const amount = typeof inv.amount === 'string' ? parseFloat(inv.amount) : inv.amount;
@@ -764,12 +764,14 @@ export class OpenInvoicesComponent implements OnInit {
   }
 
   // Confirm status change with user
-  confirmStatusChange(invoice: Invoice, newStatus: 'open' | 'paid' | 'overdue') {
+  confirmStatusChange(invoice: Invoice, newStatus: 'open' | 'paid' | 'overdue' | 'sepa') {
     const oldStatus = invoice.status;
     const statusText = newStatus === 'open' ? 'Offen' :
-                      newStatus === 'paid' ? 'Bezahlt' : 'Überfällig';
+                      newStatus === 'paid' ? 'Bezahlt' :
+                      newStatus === 'sepa' ? 'SEPA' : 'Überfällig';
     const oldStatusText = oldStatus === 'open' ? 'Offen' :
-                         oldStatus === 'paid' ? 'Bezahlt' : 'Überfällig';
+                         oldStatus === 'paid' ? 'Bezahlt' :
+                         oldStatus === 'sepa' ? 'SEPA' : 'Überfällig';
 
     // Ask for confirmation
     const confirmed = confirm(`Möchten Sie den Status von "${oldStatusText}" zu "${statusText}" ändern?`);
@@ -827,6 +829,7 @@ export class OpenInvoicesComponent implements OnInit {
       case 'open': return 'status-open';
       case 'paid': return 'status-paid';
       case 'overdue': return 'status-overdue';
+      case 'sepa': return 'status-sepa';
       default: return '';
     }
   }
@@ -846,8 +849,8 @@ export class OpenInvoicesComponent implements OnInit {
       return 'row-due-today';
     }
 
-    // Wenn Fälligkeitstag überschritten ist und Status nicht bereits "paid" ist
-    if (dueDate < today && invoice.status !== 'paid') {
+    // Wenn Fälligkeitstag überschritten ist und Status nicht bereits "paid" oder "sepa" ist
+    if (dueDate < today && invoice.status !== 'paid' && invoice.status !== 'sepa') {
       return 'row-overdue';
     }
 
@@ -856,8 +859,8 @@ export class OpenInvoicesComponent implements OnInit {
 
   // Automatisch Status auf "overdue" setzen
   private autoUpdateOverdueStatus(invoice: Invoice): void {
-    // Vermeide doppelte API-Calls
-    if (invoice.status === 'overdue') return;
+    // Vermeide doppelte API-Calls und überspringe SEPA-Zahlungen
+    if (invoice.status === 'overdue' || invoice.status === 'sepa') return;
 
     invoice.status = 'overdue';
 
