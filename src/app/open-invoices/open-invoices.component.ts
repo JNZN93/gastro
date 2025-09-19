@@ -401,6 +401,47 @@ export class OpenInvoicesComponent implements OnInit {
     return this.editingInvoiceId === invoice.id;
   }
 
+  // Confirm deletion of an invoice
+  confirmDeleteInvoice(invoice: Invoice): void {
+    const confirmed = confirm(`Sind Sie sicher, dass Sie die Rechnung "${invoice.invoice_number}" von "${invoice.supplier_name}" löschen möchten?\n\nDiese Aktion kann nicht rückgängig gemacht werden!`);
+
+    if (confirmed) {
+      this.deleteInvoice(invoice);
+    }
+  }
+
+  // Delete an invoice
+  deleteInvoice(invoice: Invoice): void {
+    this.errorMessage = '';
+
+    this.http.delete<{success: boolean, message?: string}>(
+      `${environment.apiUrl}/api/incoming-invoices/${invoice.id}`,
+      { headers: this.getAuthHeaders() }
+    ).subscribe({
+      next: (response) => {
+        if (response.success) {
+          // Remove the invoice from the local array
+          this.invoices = this.invoices.filter(inv => inv.id !== invoice.id);
+          alert(`Rechnung "${invoice.invoice_number}" wurde erfolgreich gelöscht.`);
+        } else {
+          this.errorMessage = response.message || 'Fehler beim Löschen der Rechnung';
+        }
+      },
+      error: (error: any) => {
+        console.error('Error deleting invoice:', error);
+        this.errorMessage = 'Fehler beim Löschen der Rechnung. Bitte versuchen Sie es erneut.';
+
+        // Handle authentication errors
+        if (error?.status === 401) {
+          console.warn('Authentication token is invalid. User needs to login again.');
+          localStorage.removeItem('token');
+          alert('Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.');
+          window.location.href = '/login';
+        }
+      }
+    });
+  }
+
   // Focus the first input field of the new invoice row
   private focusFirstInputOfNewRow(): void {
     if (!this.newInvoiceRow) return;
