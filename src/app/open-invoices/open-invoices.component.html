@@ -6,13 +6,13 @@
         <svg class="dashboard-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
         </svg>
-        Offene Rechnungen
+        Incoming Invoices
       </h1>
       <button class="upload-toggle-btn" (click)="toggleUploadModal()">
         <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
         </svg>
-        Rechnung hochladen
+        Upload Invoice
       </button>
     </div>
   </div>
@@ -23,20 +23,43 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
       </svg>
-      <span><strong>Tab:</strong> Zwischen Feldern navigieren • <strong>Enter:</strong> Nächste Zeile • <strong>Pfeiltasten:</strong> Navigation</span>
+      <span><strong>Tab:</strong> Navigate between fields • <strong>Enter:</strong> Next row • <strong>Arrow keys:</strong> Navigation</span>
     </div>
   </div>
 
   <!-- Invoices Section -->
   <div class="invoices-section">
-    <div class="section-header">
-      <h2 class="section-title">Rechnungsübersicht</h2>
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="loading-container">
+      <div class="loading-spinner">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+        </svg>
+        <span>Loading invoices...</span>
+      </div>
+    </div>
+
+    <!-- Error Message -->
+    <div *ngIf="errorMessage && !isLoading" class="error-container">
+      <div class="error-message">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <span>{{ errorMessage }}</span>
+        <button (click)="loadInvoices()" class="retry-btn">Retry</button>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div *ngIf="!isLoading && !errorMessage">
+      <div class="section-header">
+        <h2 class="section-title">Invoice Overview</h2>
       <div class="table-controls">
         <div class="search-box">
           <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
           </svg>
-          <input type="text" placeholder="Rechnungen durchsuchen..." [(ngModel)]="searchTerm" class="search-input">
+          <input type="text" placeholder="Search invoices..." [(ngModel)]="searchTerm" class="search-input">
         </div>
       </div>
     </div>
@@ -45,32 +68,32 @@
       <table class="invoices-table">
         <thead>
           <tr>
-            <th>Rechnungsnummer</th>
-            <th>Datum</th>
-            <th>Fällig am</th>
-            <th>Kunde</th>
-            <th>Kundennummer</th>
-            <th>Betrag</th>
+            <th>Invoice Number</th>
+            <th>Date</th>
+            <th>Due Date</th>
+            <th>Supplier</th>
+            <th>Supplier Number</th>
+            <th>Amount</th>
             <th>Status</th>
-            <th>Anhang</th>
+            <th>Attachment</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let invoice of filteredInvoices; let i = index; trackBy: trackByInvoiceId"
               class="invoice-row"
               [class.selected-row]="selectedRow === i">
-            <!-- Rechnungsnummer -->
+            <!-- Invoice Number -->
             <td class="invoice-cell"
                 [class.selected-cell]="selectedRow === i && selectedCol === 0"
                 (click)="selectCell(i, 0)">
               <input type="text"
-                     [(ngModel)]="invoice.invoiceNumber"
+                     [(ngModel)]="invoice.invoice_number"
                      class="editable-input"
-                     (input)="updateInvoiceField(invoice, 'invoiceNumber', $any($event.target).value)"
+                     (input)="updateInvoiceField(invoice, 'invoice_number', $any($event.target).value)"
                      [class.focused]="selectedRow === i && selectedCol === 0">
             </td>
 
-            <!-- Datum -->
+            <!-- Date -->
             <td class="invoice-cell"
                 [class.selected-cell]="selectedRow === i && selectedCol === 1"
                 (click)="selectCell(i, 1)">
@@ -81,36 +104,36 @@
                      [class.focused]="selectedRow === i && selectedCol === 1">
             </td>
 
-            <!-- Fälligkeitsdatum -->
+            <!-- Due Date -->
             <td class="invoice-cell"
                 [class.selected-cell]="selectedRow === i && selectedCol === 2"
                 (click)="selectCell(i, 2)">
               <input type="date"
-                     [(ngModel)]="invoice.dueDate"
+                     [(ngModel)]="invoice.due_date"
                      class="editable-input"
-                     (input)="updateInvoiceField(invoice, 'dueDate', $any($event.target).value)"
+                     (input)="updateInvoiceField(invoice, 'due_date', $any($event.target).value)"
                      [class.focused]="selectedRow === i && selectedCol === 2">
             </td>
 
-            <!-- Kundenname -->
+            <!-- Supplier Name -->
             <td class="invoice-cell"
                 [class.selected-cell]="selectedRow === i && selectedCol === 3"
                 (click)="selectCell(i, 3)">
               <input type="text"
-                     [(ngModel)]="invoice.customerName"
+                     [(ngModel)]="invoice.supplier_name"
                      class="editable-input"
-                     (input)="updateInvoiceField(invoice, 'customerName', $any($event.target).value)"
+                     (input)="updateInvoiceField(invoice, 'supplier_name', $any($event.target).value)"
                      [class.focused]="selectedRow === i && selectedCol === 3">
             </td>
 
-            <!-- Kundennummer -->
+            <!-- Supplier Number -->
             <td class="invoice-cell"
                 [class.selected-cell]="selectedRow === i && selectedCol === 4"
                 (click)="selectCell(i, 4)">
               <input type="text"
-                     [(ngModel)]="invoice.customerNumber"
+                     [(ngModel)]="invoice.supplier_number"
                      class="editable-input"
-                     (input)="updateInvoiceField(invoice, 'customerNumber', $any($event.target).value)"
+                     (input)="updateInvoiceField(invoice, 'supplier_number', $any($event.target).value)"
                      [class.focused]="selectedRow === i && selectedCol === 4">
             </td>
 
@@ -135,20 +158,20 @@
                       [class]="getStatusClass(invoice.status)"
                       (change)="updateInvoiceField(invoice, 'status', $any($event.target).value)"
                       [class.focused]="selectedRow === i && selectedCol === 6">
-                <option value="offen">Offen</option>
-                <option value="bezahlt">Bezahlt</option>
-                <option value="überfällig">Überfällig</option>
+                <option value="open">Open</option>
+                <option value="paid">Paid</option>
+                <option value="overdue">Overdue</option>
               </select>
             </td>
 
-            <!-- Anhang -->
+            <!-- Attachment -->
             <td class="attachment-cell">
               <div class="attachment-info">
-                <svg *ngIf="invoice.fileName" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="attachment-icon">
+                <svg *ngIf="invoice.file_name" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="attachment-icon">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
                 </svg>
-                <span *ngIf="invoice.fileName" class="file-name">{{ invoice.fileName }}</span>
-                <span *ngIf="!invoice.fileName" class="no-file">-</span>
+                <span *ngIf="invoice.file_name" class="file-name">{{ invoice.file_name }}</span>
+                <span *ngIf="!invoice.file_name" class="no-file">-</span>
               </div>
             </td>
           </tr>
@@ -159,19 +182,19 @@
     <!-- Summary Stats -->
     <div class="summary-stats">
       <div class="stat-item">
-        <span class="stat-label">Gesamt Rechnungen:</span>
+        <span class="stat-label">Total Invoices:</span>
         <span class="stat-value">{{ filteredInvoices.length }}</span>
       </div>
       <div class="stat-item">
-        <span class="stat-label">Offene Rechnungen:</span>
+        <span class="stat-label">Open Invoices:</span>
         <span class="stat-value">{{ openInvoicesCount }}</span>
       </div>
       <div class="stat-item">
-        <span class="stat-label">Überfällige:</span>
+        <span class="stat-label">Overdue:</span>
         <span class="stat-value">{{ overdueInvoicesCount }}</span>
       </div>
       <div class="stat-item">
-        <span class="stat-label">Gesamtbetrag offen:</span>
+        <span class="stat-label">Total Open Amount:</span>
         <span class="stat-value">{{ formatCurrency(totalOpenAmount) }}</span>
       </div>
     </div>
@@ -181,7 +204,7 @@
   <div class="modal-overlay" [class.active]="showUploadModal" (click)="toggleUploadModal()"></div>
   <div class="upload-modal" [class.active]="showUploadModal">
     <div class="modal-header">
-      <h2>Rechnung hochladen</h2>
+      <h2>Upload Invoice</h2>
       <button class="close-btn" (click)="toggleUploadModal()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
@@ -192,8 +215,8 @@
     <div class="modal-content">
       <div class="upload-section">
         <div class="upload-info">
-          <h3>Rechnungsdatei auswählen</h3>
-          <p>Wählen Sie eine PDF- oder Bilddatei Ihrer Rechnung aus</p>
+          <h3>Select Invoice File</h3>
+          <p>Choose a PDF or image file of your invoice</p>
         </div>
 
         <input #fileInput type="file" id="invoiceFile" accept=".pdf,.jpg,.jpeg,.png" class="file-input" (change)="onFileSelected($event)" />
@@ -202,16 +225,20 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="upload-icon">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
           </svg>
-          <span>{{ selectedFileName || 'Datei auswählen' }}</span>
+          <span>{{ selectedFileName || 'Select file' }}</span>
         </label>
 
-        <button class="upload-btn" [disabled]="!selectedFile" (click)="uploadInvoice()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="btn-icon">
+        <button class="upload-btn" [disabled]="!selectedFile || isUploading" (click)="uploadInvoice()">
+          <svg *ngIf="!isUploading" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="btn-icon">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
           </svg>
-          Rechnung hochladen
+          <svg *ngIf="isUploading" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="btn-icon spinning">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+          </svg>
+          {{ isUploading ? 'Uploading...' : 'Upload Invoice' }}
         </button>
       </div>
     </div>
+    </div> <!-- End of Content -->
   </div>
 </div>
