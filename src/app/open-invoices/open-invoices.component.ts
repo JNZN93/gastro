@@ -620,11 +620,57 @@ export class OpenInvoicesComponent implements OnInit {
     const inputSelector = this.getInputSelector(row, col);
     if (!inputSelector) return null;
 
+    // Special handling for date fields (columns 1 and 2)
+    if (col === 1 || col === 2) {
+      return this.findDateInputElement(row, col);
+    }
+
     return document.querySelector(inputSelector) as HTMLInputElement | HTMLSelectElement;
+  }
+
+  // Special method for finding date input elements with improved accuracy
+  private findDateInputElement(row: number, col: number): HTMLInputElement | null {
+    // For new invoice row
+    if (this.newInvoiceRow && row === 0) {
+      const newRow = document.querySelector('.new-invoice-row');
+      if (!newRow) return null;
+
+      const dateInputs = newRow.querySelectorAll('input[type="date"]');
+      // Column 1 = Date (first date input), Column 2 = Due Date (second date input)
+      const targetIndex = col === 1 ? 0 : 1;
+
+      if (targetIndex < dateInputs.length) {
+        return dateInputs[targetIndex] as HTMLInputElement;
+      }
+    }
+
+    // For existing rows
+    const actualRowIndex = this.newInvoiceRow ? row - 1 : row;
+    const tableRows = document.querySelectorAll('.invoices-table tbody tr:not(.new-invoice-row)');
+
+    if (actualRowIndex >= 0 && actualRowIndex < tableRows.length) {
+      const targetRow = tableRows[actualRowIndex];
+      const cells = targetRow.querySelectorAll('td');
+
+      // Date is in nth-child(2), Due Date is in nth-child(3)
+      const targetCellIndex = col === 1 ? 1 : 2;
+
+      if (targetCellIndex < cells.length) {
+        const cell = cells[targetCellIndex];
+        return cell.querySelector('input[type="date"]') as HTMLInputElement;
+      }
+    }
+
+    return null;
   }
 
   // Alternative method to find input element using DOM traversal
   private findInputElementAlternative(row: number, col: number): HTMLInputElement | HTMLSelectElement | null {
+    // Special handling for date fields (columns 1 and 2) - use the same improved method
+    if (col === 1 || col === 2) {
+      return this.findDateInputElement(row, col);
+    }
+
     // For new invoice row
     if (this.newInvoiceRow && row === 0) {
       const newRow = document.querySelector('.new-invoice-row');
@@ -809,7 +855,7 @@ export class OpenInvoicesComponent implements OnInit {
       return columnSelectors[col] || '';
     }
 
-    // For existing rows - use more specific selectors
+    // For existing rows - use more specific selectors with better date field distinction
     const actualRowIndex = this.newInvoiceRow ? row - 1 : row;
     const tableRows = document.querySelectorAll('.invoices-table tbody tr:not(.new-invoice-row)');
 
@@ -820,10 +866,11 @@ export class OpenInvoicesComponent implements OnInit {
       const rowId = `row-${actualRowIndex}`;
       targetRow.setAttribute('data-row-id', rowId);
 
+      // More specific selectors for date fields to avoid confusion
       const columnSelectors = [
         `[data-row-id="${rowId}"] .invoice-cell:nth-child(1) input[type="text"]`, // Invoice Number
-        `[data-row-id="${rowId}"] .invoice-cell:nth-child(2) input[type="date"]`, // Date
-        `[data-row-id="${rowId}"] .invoice-cell:nth-child(3) input[type="date"]`, // Due Date
+        `[data-row-id="${rowId}"] .invoice-cell:nth-child(2) input[type="date"]`, // Date (nth-child(2) for date)
+        `[data-row-id="${rowId}"] .invoice-cell:nth-child(3) input[type="date"]`, // Due Date (nth-child(3) for due_date)
         `[data-row-id="${rowId}"] .invoice-cell:nth-child(4) input[type="text"]`, // Supplier Name
         `[data-row-id="${rowId}"] .invoice-cell:nth-child(5) input[type="text"]`, // Supplier Number
         `[data-row-id="${rowId}"] .invoice-cell:nth-child(6) input[type="number"]`, // Amount
@@ -860,23 +907,25 @@ export class OpenInvoicesComponent implements OnInit {
       case 'ArrowUp':
         event.preventDefault();
         this.navigateUp();
-        this.focusInputWithMultipleStrategies(this.selectedRow, this.selectedCol);
+        // Focus is already handled in navigateUp method
         break;
       case 'ArrowDown':
         event.preventDefault();
         this.navigateDown();
-        this.focusInputWithMultipleStrategies(this.selectedRow, this.selectedCol);
+        // Focus is already handled in navigateDown method
         break;
       case 'ArrowLeft':
         if (event.shiftKey) {
           event.preventDefault();
           this.navigateLeft();
+          // Focus is already handled in navigateLeft method
         }
         break;
       case 'ArrowRight':
         if (event.shiftKey) {
           event.preventDefault();
           this.navigateRight();
+          // Focus is already handled in navigateRight method
         }
         break;
     }
@@ -906,8 +955,75 @@ export class OpenInvoicesComponent implements OnInit {
       }
     }
 
-    // Focus the input after navigation with enhanced reliability
-    this.focusInputWithMultipleStrategies(this.selectedRow, this.selectedCol);
+    // Enhanced focus handling for date field transitions
+    this.focusInputWithEnhancedDateHandling(this.selectedRow, this.selectedCol);
+  }
+
+  // Enhanced focus method with special handling for date field transitions
+  private focusInputWithEnhancedDateHandling(row: number, col: number): void {
+    // For date fields (columns 1 and 2), use a more reliable approach
+    if (col === 1 || col === 2) {
+      this.focusDateFieldWithRetry(row, col);
+    } else {
+      // Use the standard multi-strategy approach for other fields
+      this.focusInputWithMultipleStrategies(row, col);
+    }
+  }
+
+  // Special focus method for date fields with improved reliability
+  private focusDateFieldWithRetry(row: number, col: number, attempt: number = 0): void {
+    const maxAttempts = 5;
+    const retryDelay = 25; // Shorter delay for date fields
+
+    if (attempt >= maxAttempts) {
+      console.warn(`Date field focus failed after ${maxAttempts} attempts for row ${row}, col ${col}`);
+      return;
+    }
+
+    // Use the improved date input finder
+    const dateInput = this.findDateInputElement(row, col);
+
+    if (!dateInput) {
+      console.warn(`Date input not found for row ${row}, col ${col}, attempt ${attempt + 1}`);
+      setTimeout(() => this.focusDateFieldWithRetry(row, col, attempt + 1), retryDelay);
+      return;
+    }
+
+    // Check if the input is focusable
+    if (!this.isInputFocusable(dateInput)) {
+      console.warn(`Date input not focusable for row ${row}, col ${col}, attempt ${attempt + 1}`);
+      setTimeout(() => this.focusDateFieldWithRetry(row, col, attempt + 1), retryDelay);
+      return;
+    }
+
+    try {
+      // Ensure element is visible
+      this.ensureElementVisible(dateInput);
+
+      // Focus the date input
+      dateInput.focus();
+
+      // Small delay to ensure focus has settled
+      setTimeout(() => {
+        // Verify focus was successful
+        if (document.activeElement !== dateInput) {
+          console.warn(`Date field focus verification failed for row ${row}, col ${col}, retrying...`);
+          setTimeout(() => this.focusDateFieldWithRetry(row, col, attempt + 1), retryDelay);
+          return;
+        }
+
+        // Success - update focus state
+        this.updateFocusState(row, col, true);
+
+        // For date inputs, we don't need to select text as it's not applicable
+        console.log(`Successfully focused date field at row ${row}, col ${col}`);
+
+      }, 10);
+
+    } catch (error) {
+      console.error(`Error focusing date field at row ${row}, col ${col}:`, error);
+      setTimeout(() => this.focusDateFieldWithRetry(row, col, attempt + 1), retryDelay);
+    }
   }
 
   navigateUp() {
@@ -916,6 +1032,9 @@ export class OpenInvoicesComponent implements OnInit {
       const maxRows = this.newInvoiceRow ? this.filteredInvoices.length + 1 : this.filteredInvoices.length;
       this.selectedRow = maxRows - 1;
     }
+
+    // Use enhanced focus handling for date field transitions
+    this.focusInputWithEnhancedDateHandling(this.selectedRow, this.selectedCol);
   }
 
   navigateDown() {
@@ -923,6 +1042,9 @@ export class OpenInvoicesComponent implements OnInit {
     if (this.selectedRow >= (this.newInvoiceRow ? this.filteredInvoices.length + 1 : this.filteredInvoices.length)) {
       this.selectedRow = this.newInvoiceRow ? 1 : 0;
     }
+
+    // Use enhanced focus handling for date field transitions
+    this.focusInputWithEnhancedDateHandling(this.selectedRow, this.selectedCol);
   }
 
   // Navigate to next row and first column (for Enter key)
@@ -935,9 +1057,9 @@ export class OpenInvoicesComponent implements OnInit {
       this.selectedRow = this.newInvoiceRow ? 1 : 0;
     }
 
-    // Focus the input in the new position
+    // Use enhanced focus handling for the new position
     setTimeout(() => {
-      this.focusAndSelectInput(this.selectedRow, this.selectedCol);
+      this.focusInputWithEnhancedDateHandling(this.selectedRow, this.selectedCol);
     }, 10);
   }
 
@@ -947,8 +1069,8 @@ export class OpenInvoicesComponent implements OnInit {
       this.selectedCol = this.columns.length - 1;
     }
 
-    // Focus the input after navigation with enhanced reliability
-    this.focusInputWithMultipleStrategies(this.selectedRow, this.selectedCol);
+    // Use enhanced focus handling for date field transitions
+    this.focusInputWithEnhancedDateHandling(this.selectedRow, this.selectedCol);
   }
 
   navigateRight() {
@@ -957,8 +1079,8 @@ export class OpenInvoicesComponent implements OnInit {
       this.selectedCol = 0;
     }
 
-    // Focus the input after navigation with enhanced reliability
-    this.focusInputWithMultipleStrategies(this.selectedRow, this.selectedCol);
+    // Use enhanced focus handling for date field transitions
+    this.focusInputWithEnhancedDateHandling(this.selectedRow, this.selectedCol);
   }
 
   onAmountInput(event: any, target: Invoice | 'new') {
