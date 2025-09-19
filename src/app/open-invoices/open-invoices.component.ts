@@ -24,20 +24,19 @@ interface Invoice {
   styleUrl: './open-invoices.component.scss'
 })
 export class OpenInvoicesComponent implements OnInit {
-  @ViewChild('fileInput') fileInput!: ElementRef;
 
   invoices: Invoice[] = [];
   searchTerm: string = '';
   selectedRow: number = -1;
   selectedCol: number = -1;
-  showUploadModal = false;
-  selectedFile: File | null = null;
-  selectedFileName: string = '';
-
   // Loading und Error States
   isLoading: boolean = true;
-  isUploading: boolean = false;
+  isCreatingInvoice: boolean = false;
+  isUploadingInvoice: string | null = null;
   errorMessage: string = '';
+
+  // Temporary new invoice for inline editing
+  newInvoiceRow: Invoice | null = null;
 
   constructor(private http: HttpClient) {}
 
@@ -90,6 +89,164 @@ export class OpenInvoicesComponent implements OnInit {
     });
   }
 
+  // Add new invoice row to table
+  addNewInvoiceRow() {
+    // Prevent adding multiple new rows
+    if (this.newInvoiceRow) {
+      this.errorMessage = 'Please save or cancel the current new invoice first';
+      return;
+    }
+
+    // Create a temporary invoice with a unique ID
+    this.newInvoiceRow = {
+      id: 'new-' + Date.now(),
+      invoice_number: '',
+      supplier_name: '',
+      supplier_number: '',
+      date: new Date().toISOString().split('T')[0], // Today's date
+      due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days from now
+      amount: 0,
+      status: 'open',
+      file_name: undefined
+    };
+
+    // Add to the beginning of the invoices array
+    this.invoices.unshift(this.newInvoiceRow);
+    this.errorMessage = '';
+
+    // Focus on the first cell of the new row
+    setTimeout(() => {
+      this.selectedRow = 0;
+      this.selectedCol = 0;
+    }, 100);
+  }
+
+  // Save the new invoice row
+  saveNewInvoice() {
+    if (!this.newInvoiceRow) return;
+
+    // Validate required fields
+    if (!this.newInvoiceRow.invoice_number?.trim() ||
+        !this.newInvoiceRow.supplier_name?.trim() ||
+        !this.newInvoiceRow.date ||
+        !this.newInvoiceRow.due_date ||
+        this.newInvoiceRow.amount === null || this.newInvoiceRow.amount === undefined) {
+      this.errorMessage = 'Please fill in all required fields (Invoice Number, Supplier Name, Date, Due Date, Amount)';
+      return;
+    }
+
+    if (this.newInvoiceRow.amount <= 0) {
+      this.errorMessage = 'Amount must be greater than 0';
+      return;
+    }
+
+    this.isCreatingInvoice = true;
+    this.errorMessage = '';
+
+    const invoiceData = {
+      invoice_number: this.newInvoiceRow.invoice_number.trim(),
+      supplier_name: this.newInvoiceRow.supplier_name.trim(),
+      supplier_number: this.newInvoiceRow.supplier_number?.trim() || '',
+      date: this.newInvoiceRow.date,
+      due_date: this.newInvoiceRow.due_date,
+      amount: this.newInvoiceRow.amount,
+      status: this.newInvoiceRow.status || 'open'
+    };
+
+    this.http.post<{success: boolean, data: Invoice, message?: string}>(
+      `${environment.apiUrl}/api/incoming-invoices`,
+      invoiceData,
+      { headers: this.getAuthHeaders() }
+    ).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          // Replace the temporary row with the real one
+          const index = this.invoices.findIndex(inv => inv.id === this.newInvoiceRow!.id);
+          if (index !== -1) {
+            this.invoices[index] = response.data;
+          }
+          this.newInvoiceRow = null;
+          this.errorMessage = '';
+          // Optional: alert(`Invoice "${response.data.invoice_number}" was successfully created!`);
+        } else {
+          this.errorMessage = response.message || 'Failed to create invoice';
+        }
+        this.isCreatingInvoice = false;
+      },
+      error: (error) => {
+        console.error('Error creating invoice:', error);
+        this.errorMessage = 'Failed to create invoice. Please try again.';
+        this.isCreatingInvoice = false;
+      }
+    });
+  }
+
+  // Cancel the new invoice row
+  cancelNewInvoice() {
+    if (!this.newInvoiceRow) return;
+
+    // Remove the temporary row
+    this.invoices = this.invoices.filter(inv => inv.id !== this.newInvoiceRow!.id);
+    this.newInvoiceRow = null;
+    this.errorMessage = '';
+    this.selectedRow = -1;
+    this.selectedCol = -1;
+  }
+
+  // Trigger file input for specific row
+  triggerFileInput(rowIndex: number) {
+    const fileInput = document.getElementById(`file-${rowIndex}`) as HTMLInputElement;
+    if (fileInput) {
+      fileInput.click();
+    }
+  }
+
+  // Handle file selection for specific invoice
+  onFileSelectedForInvoice(event: any, invoiceId: string) {
+    const file = event.target.files[0];
+    if (file) {
+      this.uploadFileForInvoice(file, invoiceId);
+    }
+  }
+
+  // Upload file for specific invoice
+  private uploadFileForInvoice(file: File, invoiceId: string) {
+    this.isUploadingInvoice = invoiceId;
+    this.errorMessage = '';
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${localStorage.getItem('token')}`
+    });
+
+    this.http.post<{success: boolean, data: Invoice, message?: string}>(
+      `${environment.apiUrl}/api/incoming-invoices/${invoiceId}/upload`,
+      formData,
+      { headers }
+    ).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          // Update the invoice in the local array
+          const index = this.invoices.findIndex(inv => inv.id === invoiceId);
+          if (index !== -1) {
+            this.invoices[index] = response.data;
+          }
+          alert(`File "${file.name}" was successfully uploaded to invoice!`);
+        } else {
+          this.errorMessage = response.message || 'Failed to upload file';
+        }
+        this.isUploadingInvoice = null;
+      },
+      error: (error) => {
+        console.error('Error uploading file:', error);
+        this.errorMessage = 'Failed to upload file. Please try again.';
+        this.isUploadingInvoice = null;
+      }
+    });
+  }
+
   loadMockInvoices() {
     this.invoices = [
       {
@@ -136,13 +293,16 @@ export class OpenInvoicesComponent implements OnInit {
   }
 
   get filteredInvoices() {
+    // Filter out the temporary new invoice row from search results
+    let filtered = this.invoices.filter(inv => !this.newInvoiceRow || inv.id !== this.newInvoiceRow.id);
+
     if (!this.searchTerm) {
-      return this.invoices;
+      return filtered;
     }
-    return this.invoices.filter(invoice =>
-      invoice.invoice_number.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-      invoice.supplier_name.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-      invoice.supplier_number.toLowerCase().includes(this.searchTerm.toLowerCase())
+    return filtered.filter(invoice =>
+      invoice.invoice_number?.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+      invoice.supplier_name?.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+      invoice.supplier_number?.toLowerCase().includes(this.searchTerm.toLowerCase())
     );
   }
 
@@ -287,74 +447,6 @@ export class OpenInvoicesComponent implements OnInit {
     });
   }
 
-  toggleUploadModal() {
-    this.showUploadModal = !this.showUploadModal;
-    this.selectedFile = null;
-    this.selectedFileName = '';
-  }
-
-  onFileSelected(event: any) {
-    const file = event.target.files[0];
-    if (file) {
-      this.selectedFile = file;
-      this.selectedFileName = file.name;
-    } else {
-      this.selectedFile = null;
-      this.selectedFileName = '';
-    }
-  }
-
-  uploadInvoice() {
-    if (this.selectedFile) {
-      this.isUploading = true;
-      this.errorMessage = '';
-
-      const formData = new FormData();
-      formData.append('file', this.selectedFile);
-
-      // Add invoice metadata as form fields
-      const invoiceData = {
-        invoice_number: 'INV-2024-' + (this.invoices.length + 1).toString().padStart(3, '0'),
-        date: new Date().toISOString().split('T')[0],
-        due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        supplier_name: 'New Supplier',
-        supplier_number: 'SUP-' + (this.invoices.length + 1).toString().padStart(3, '0'),
-        amount: '0',
-        notes: 'Uploaded via web interface'
-      };
-
-      Object.entries(invoiceData).forEach(([key, value]) => {
-        formData.append(key, value);
-      });
-
-      const headers = new HttpHeaders({
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-        // Don't set Content-Type for FormData, let browser set it with boundary
-      });
-
-      this.http.post<{success: boolean, data: Invoice, message?: string}>(
-        `${environment.apiUrl}/api/incoming-invoices/upload`,
-        formData,
-        { headers }
-      ).subscribe({
-        next: (response) => {
-          if (response.success && response.data) {
-            this.invoices.unshift(response.data);
-            this.toggleUploadModal();
-            alert(`Invoice "${this.selectedFileName}" was successfully uploaded and added to the list!`);
-          } else {
-            this.errorMessage = response.message || 'Failed to upload invoice';
-          }
-          this.isUploading = false;
-        },
-        error: (error) => {
-          console.error('Error uploading invoice:', error);
-          this.errorMessage = 'Failed to upload invoice. Please try again.';
-          this.isUploading = false;
-        }
-      });
-    }
-  }
 
   getStatusClass(status: string): string {
     switch (status) {
