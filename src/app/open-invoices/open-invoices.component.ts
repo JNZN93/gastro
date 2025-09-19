@@ -52,6 +52,28 @@ export class OpenInvoicesComponent implements OnInit {
     this.loadInvoices();
   }
 
+  // Automatisch überfällige Rechnungen aktualisieren (nur beim ersten Laden)
+  private updateOverdueStatuses(): void {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    this.invoices.forEach(invoice => {
+      // Überspringe Rechnungen die gerade bearbeitet werden oder neue temporäre Rechnungen
+      if (this.editingInvoiceId === invoice.id || (this.newInvoiceRow && this.newInvoiceRow.id === invoice.id)) {
+        return;
+      }
+
+      if (invoice.due_date && invoice.status !== 'paid' && invoice.status !== 'overdue') {
+        const dueDate = new Date(invoice.due_date);
+        dueDate.setHours(0, 0, 0, 0);
+
+        if (dueDate < today) {
+          this.autoUpdateOverdueStatus(invoice);
+        }
+      }
+    });
+  }
+
   // Helper method to get auth headers
   private getAuthHeaders(): HttpHeaders {
     const token = localStorage.getItem('token');
@@ -62,7 +84,7 @@ export class OpenInvoicesComponent implements OnInit {
   }
 
   // Load invoices from API
-  loadInvoices() {
+  loadInvoices(autoUpdateOverdue = true) {
     this.isLoading = true;
     this.errorMessage = '';
 
@@ -79,6 +101,12 @@ export class OpenInvoicesComponent implements OnInit {
             date: this.normalizeDateValue(invoice.date),
             due_date: this.normalizeDateValue(invoice.due_date)
           }));
+
+          // Automatisch überfällige Rechnungen aktualisieren (nur beim ersten Laden)
+          if (autoUpdateOverdue) {
+            this.updateOverdueStatuses();
+            this.autoUpdateOverdueInvoices();
+          }
         } else {
           this.errorMessage = response.message || 'Failed to load invoices';
         }
@@ -88,6 +116,46 @@ export class OpenInvoicesComponent implements OnInit {
         console.error('Error loading invoices:', error);
         this.errorMessage = 'Failed to load invoices. Please try again.';
         this.isLoading = false;
+      }
+    });
+  }
+
+  // Automatisch überfällige Rechnungen im Backend aktualisieren
+  private autoUpdateOverdueInvoices(): void {
+    this.http.put<{success: boolean, message?: string, updatedCount?: number}>(
+      `${environment.apiUrl}/api/incoming-invoices/auto-update-overdue`,
+      {},
+      { headers: this.getAuthHeaders() }
+    ).subscribe({
+      next: (response) => {
+        if (response.success && response.updatedCount && response.updatedCount > 0) {
+          console.log(`Auto-updated ${response.updatedCount} overdue invoices`);
+          // Rechnungen neu laden, um die aktualisierten Status zu zeigen (ohne erneute Auto-Update)
+          this.loadInvoices(false);
+        }
+      },
+      error: (error) => {
+        console.error('Error auto-updating overdue invoices:', error);
+
+        // Handle authentication errors
+        if (error?.status === 400 && error?.error?.error === 'Invalid token!') {
+          console.warn('Authentication token is invalid. User needs to login again.');
+          // Clear invalid token and redirect to login
+          localStorage.removeItem('token');
+          // Optionally redirect to login page or show authentication error
+          alert('Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.');
+          window.location.href = '/login'; // Adjust this to your login route
+          return;
+        }
+
+        // Handle other API errors
+        if (error?.status === 404) {
+          console.warn('Auto-update-overdue endpoint not found or no overdue invoices found');
+        } else if (error?.status >= 500) {
+          console.error('Server error during auto-update:', error?.status, error?.statusText);
+        }
+
+        // Bei Fehler trotzdem fortfahren - die Frontend-Logik wird trotzdem funktionieren
       }
     });
   }
@@ -171,6 +239,8 @@ export class OpenInvoicesComponent implements OnInit {
           }
           this.newInvoiceRow = null;
           this.errorMessage = '';
+          // Automatisch überfällige Status aktualisieren nach dem Speichern
+          this.updateOverdueStatuses();
           // Optional: alert(`Invoice "${response.data.invoice_number}" was successfully created!`);
         } else {
           this.errorMessage = response.message || 'Failed to create invoice';
@@ -290,6 +360,8 @@ export class OpenInvoicesComponent implements OnInit {
           this.originalValues.delete(invoice.id);
           this.pendingUpdates.clear(); // Clear any pending updates
           this.errorMessage = '';
+          // Automatisch überfällige Status aktualisieren nach dem Speichern
+          this.updateOverdueStatuses();
         } else {
           this.errorMessage = response.message || 'Failed to update invoice';
         }
@@ -670,7 +742,33 @@ export class OpenInvoicesComponent implements OnInit {
       invoice.status = newStatus;
 
       // Send update to API
-      this.updateInvoice(invoice.id, { status: newStatus });
+      this.updateInvoice(invoice.id, { status: newStatus }).subscribe({
+        next: (response) => {
+          if (response.success && response.data) {
+            // Update local data with server response, normalize amount and dates
+            const normalizedInvoice = {
+              ...response.data,
+              amount: typeof response.data.amount === 'string' ? parseFloat(response.data.amount) || 0 : response.data.amount || 0,
+              date: this.normalizeDateValue(response.data.date),
+              due_date: this.normalizeDateValue(response.data.due_date)
+            };
+            const index = this.invoices.findIndex(inv => inv.id === invoice.id);
+            if (index !== -1) {
+              this.invoices[index] = normalizedInvoice;
+            }
+          } else {
+            this.errorMessage = response.message || 'Failed to update invoice';
+            // Reload data to revert local changes
+            this.loadInvoices();
+          }
+        },
+        error: (error: any) => {
+          console.error('Error updating invoice:', error);
+          this.errorMessage = 'Failed to update invoice. Please try again.';
+          // Reload data to revert local changes
+          this.loadInvoices();
+        }
+      });
     } else {
       // Revert to old status
       invoice.status = oldStatus;
@@ -679,37 +777,11 @@ export class OpenInvoicesComponent implements OnInit {
 
   // Update invoice via API
   private updateInvoice(id: string, updateData: Partial<Invoice>) {
-    this.http.put<{success: boolean, data: Invoice, message?: string}>(
+    return this.http.put<{success: boolean, data: Invoice, message?: string}>(
       `${environment.apiUrl}/api/incoming-invoices/${id}`,
       updateData,
       { headers: this.getAuthHeaders() }
-    ).subscribe({
-      next: (response) => {
-        if (response.success && response.data) {
-          // Update local data with server response, normalize amount and dates
-          const normalizedInvoice = {
-            ...response.data,
-            amount: typeof response.data.amount === 'string' ? parseFloat(response.data.amount) || 0 : response.data.amount || 0,
-            date: this.normalizeDateValue(response.data.date),
-            due_date: this.normalizeDateValue(response.data.due_date)
-          };
-          const index = this.invoices.findIndex(inv => inv.id === id);
-          if (index !== -1) {
-            this.invoices[index] = normalizedInvoice;
-          }
-        } else {
-          this.errorMessage = response.message || 'Failed to update invoice';
-          // Reload data to revert local changes
-          this.loadInvoices();
-        }
-      },
-      error: (error) => {
-        console.error('Error updating invoice:', error);
-        this.errorMessage = 'Failed to update invoice. Please try again.';
-        // Reload data to revert local changes
-        this.loadInvoices();
-      }
-    });
+    );
   }
 
 
@@ -720,6 +792,55 @@ export class OpenInvoicesComponent implements OnInit {
       case 'overdue': return 'status-overdue';
       default: return '';
     }
+  }
+
+  // Bestimmt die Zeilen-Farbmarkierung basierend auf dem Fälligkeitstag
+  getRowClass(invoice: Invoice): string {
+    if (!invoice.due_date) return '';
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Setze Zeit auf 00:00:00 für korrekten Vergleich
+
+    const dueDate = new Date(invoice.due_date);
+    dueDate.setHours(0, 0, 0, 0);
+
+    // Wenn Fälligkeitstag heute ist
+    if (dueDate.getTime() === today.getTime()) {
+      return 'row-due-today';
+    }
+
+    // Wenn Fälligkeitstag überschritten ist und Status nicht bereits "paid" ist
+    if (dueDate < today && invoice.status !== 'paid') {
+      return 'row-overdue';
+    }
+
+    return '';
+  }
+
+  // Automatisch Status auf "overdue" setzen
+  private autoUpdateOverdueStatus(invoice: Invoice): void {
+    // Vermeide doppelte API-Calls
+    if (invoice.status === 'overdue') return;
+
+    invoice.status = 'overdue';
+
+    // API-Call um Status zu aktualisieren
+    this.updateInvoice(invoice.id, { status: 'overdue' }).subscribe({
+      next: (response) => {
+        if (response.success) {
+          console.log(`Invoice ${invoice.invoice_number} automatically marked as overdue`);
+        } else {
+          console.error('Failed to update overdue status:', response.message);
+          // Bei Fehler Status zurücksetzen
+          invoice.status = 'open';
+        }
+      },
+      error: (error: any) => {
+        console.error('Error updating overdue status:', error);
+        // Bei Fehler Status zurücksetzen
+        invoice.status = 'open';
+      }
+    });
   }
 
   formatCurrency(amount: any): string {

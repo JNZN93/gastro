@@ -80,7 +80,7 @@
         </thead>
         <tbody>
           <!-- New Invoice Row (shown when adding) -->
-          <tr *ngIf="newInvoiceRow" class="invoice-row new-invoice-row">
+          <tr *ngIf="newInvoiceRow" class="invoice-row new-invoice-row" [class]="getRowClass(newInvoiceRow)">
             <!-- Supplier Name -->
             <td class="invoice-cell">
               <input type="text"
@@ -168,7 +168,7 @@
 
           <!-- Existing Invoice Rows -->
           <tr *ngFor="let invoice of filteredInvoices; let i = index; trackBy: trackByInvoiceId"
-              class="invoice-row">
+              class="invoice-row" [class]="getRowClass(invoice)">
             <!-- Supplier Name -->
             <td class="invoice-cell">
               <span *ngIf="!isInvoiceEditing(invoice)" class="display-text">{{ invoice.supplier_name }}</span>

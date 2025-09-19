@@ -206,6 +206,25 @@
         background: rgba(102, 126, 234, 0.05);
         border-left: 3px solid #667eea;
       }
+
+      // Zeilen-Farbmarkierung basierend auf Fälligkeitstag
+      &.row-due-today {
+        background: rgba(251, 191, 36, 0.1); // Gelb für heute fällig
+        border-left: 3px solid #fbbf24;
+
+        &:hover {
+          background: rgba(251, 191, 36, 0.15);
+        }
+      }
+
+      &.row-overdue {
+        background: rgba(239, 68, 68, 0.1); // Rot für überfällig
+        border-left: 3px solid #ef4444;
+
+        &:hover {
+          background: rgba(239, 68, 68, 0.15);
+        }
+      }
     }
   }
 
