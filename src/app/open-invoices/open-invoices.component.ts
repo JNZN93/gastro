@@ -10,7 +10,6 @@ interface Invoice {
   date: string;
   due_date: string;
   supplier_name: string;
-  supplier_number: string;
   amount: number;
   status: 'open' | 'paid' | 'overdue';
   file?: File;
@@ -106,7 +105,6 @@ export class OpenInvoicesComponent implements OnInit {
       id: 'new-' + Date.now(),
       invoice_number: '',
       supplier_name: '',
-      supplier_number: '',
       date: new Date().toISOString().split('T')[0], // Today's date
       due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days from now
       amount: 0,
@@ -147,7 +145,6 @@ export class OpenInvoicesComponent implements OnInit {
     const invoiceData = {
       invoice_number: this.newInvoiceRow.invoice_number.trim(),
       supplier_name: this.newInvoiceRow.supplier_name.trim(),
-      supplier_number: this.newInvoiceRow.supplier_number?.trim() || '',
       date: this.newInvoiceRow.date,
       due_date: this.newInvoiceRow.due_date,
       amount: this.newInvoiceRow.amount,
@@ -213,7 +210,6 @@ export class OpenInvoicesComponent implements OnInit {
       date: invoice.date,
       due_date: invoice.due_date,
       supplier_name: invoice.supplier_name,
-      supplier_number: invoice.supplier_number,
       amount: invoice.amount,
       status: invoice.status
     });
@@ -263,7 +259,6 @@ export class OpenInvoicesComponent implements OnInit {
     const updateData = {
       invoice_number: invoice.invoice_number.trim(),
       supplier_name: invoice.supplier_name.trim(),
-      supplier_number: invoice.supplier_number?.trim() || '',
       date: invoice.date,
       due_date: invoice.due_date,
       amount: invoice.amount,
@@ -423,7 +418,6 @@ export class OpenInvoicesComponent implements OnInit {
         date: '2024-09-01',
         due_date: '2024-09-30',
         supplier_name: 'Fresh Produce GmbH',
-        supplier_number: 'SUP-001',
         amount: 1250.50,
         status: 'open'
       },
@@ -433,7 +427,6 @@ export class OpenInvoicesComponent implements OnInit {
         date: '2024-09-05',
         due_date: '2024-09-25',
         supplier_name: 'Meat & Poultry Ltd',
-        supplier_number: 'SUP-002',
         amount: 875.25,
         status: 'overdue'
       },
@@ -443,7 +436,6 @@ export class OpenInvoicesComponent implements OnInit {
         date: '2024-09-10',
         due_date: '2024-10-10',
         supplier_name: 'Dairy Products AG',
-        supplier_number: 'SUP-003',
         amount: 2100.75,
         status: 'paid'
       },
@@ -453,7 +445,6 @@ export class OpenInvoicesComponent implements OnInit {
         date: '2024-09-15',
         due_date: '2024-10-15',
         supplier_name: 'Beverage Distributors',
-        supplier_number: 'SUP-004',
         amount: 650.00,
         status: 'open'
       }
@@ -469,8 +460,7 @@ export class OpenInvoicesComponent implements OnInit {
     }
     return filtered.filter(invoice =>
       invoice.invoice_number?.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-      invoice.supplier_name?.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-      invoice.supplier_number?.toLowerCase().includes(this.searchTerm.toLowerCase())
+      invoice.supplier_name?.toLowerCase().includes(this.searchTerm.toLowerCase())
     );
   }
 
