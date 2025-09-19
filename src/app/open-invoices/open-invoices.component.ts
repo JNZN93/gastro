@@ -118,6 +118,8 @@ export class OpenInvoicesComponent implements OnInit {
     this.invoices.unshift(this.newInvoiceRow);
     this.errorMessage = '';
 
+    // Focus the first input field of the new row
+    setTimeout(() => this.focusFirstInputOfNewRow(), 100);
   }
 
   // Save the new invoice row
@@ -217,6 +219,9 @@ export class OpenInvoicesComponent implements OnInit {
     });
 
     this.errorMessage = '';
+
+    // Focus the first input field of the edited row
+    setTimeout(() => this.focusFirstInputOfEditedRow(invoice.id), 100);
   }
 
   // Save the edited invoice
@@ -323,6 +328,37 @@ export class OpenInvoicesComponent implements OnInit {
   // Check if an invoice is currently being edited
   isInvoiceEditing(invoice: Invoice): boolean {
     return this.editingInvoiceId === invoice.id;
+  }
+
+  // Focus the first input field of the new invoice row
+  private focusFirstInputOfNewRow(): void {
+    if (!this.newInvoiceRow) return;
+
+    // Find the first input field in the new invoice row
+    const newRow = document.querySelector('.new-invoice-row');
+    if (!newRow) return;
+
+    const firstInput = newRow.querySelector('input[type="text"]') as HTMLInputElement;
+    if (firstInput) {
+      firstInput.focus();
+      firstInput.select(); // Select all text for better UX
+    }
+  }
+
+  // Focus the first input field of an edited invoice row
+  private focusFirstInputOfEditedRow(invoiceId: string): void {
+    // Find the edited row
+    const tableRows = document.querySelectorAll('.invoices-table tbody tr');
+    for (const row of tableRows) {
+      if (row.classList.contains('new-invoice-row')) continue; // Skip new invoice row
+
+      const firstInput = row.querySelector('input[type="text"]') as HTMLInputElement;
+      if (firstInput) {
+        firstInput.focus();
+        firstInput.select(); // Select all text for better UX
+        break;
+      }
+    }
   }
 
   // Trigger file input for specific row
