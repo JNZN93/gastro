@@ -25,7 +25,6 @@ interface Invoice {
 export class OpenInvoicesComponent implements OnInit {
 
   invoices: Invoice[] = [];
-  searchTerm: string = '';
   // Loading und Error States
   isLoading: boolean = true;
   isCreatingInvoice: boolean = false;
@@ -41,6 +40,25 @@ export class OpenInvoicesComponent implements OnInit {
 
   // Track which existing invoice is in edit mode
   editingInvoiceId: string | null = null;
+
+  // Tab navigation
+  activeTab: 'all' | 'open' | 'paid' | 'overdue' | 'sepa' = 'all';
+
+  // Filtered invoices cache for better performance
+  private _filteredInvoices: Invoice[] = [];
+
+  // Search term with setter for automatic filtering
+  private _searchTerm: string = '';
+
+  // Getter and setter for searchTerm with automatic filtering
+  get searchTerm(): string {
+    return this._searchTerm;
+  }
+
+  set searchTerm(value: string) {
+    this._searchTerm = value;
+    this.updateFilteredInvoices();
+  }
 
   // Store original values for cancellation
   private originalValues = new Map<string, any>();
@@ -105,6 +123,9 @@ export class OpenInvoicesComponent implements OnInit {
             date: this.normalizeDateValue(invoice.date),
             due_date: this.normalizeDateValue(invoice.due_date)
           }));
+
+          // Update filtered invoices cache
+          this.updateFilteredInvoices();
 
           // Automatisch überfällige Rechnungen aktualisieren (nur beim ersten Laden)
           if (autoUpdateOverdue) {
@@ -243,6 +264,8 @@ export class OpenInvoicesComponent implements OnInit {
           }
           this.newInvoiceRow = null;
           this.errorMessage = '';
+          // Update filtered invoices cache after adding new invoice
+          this.updateFilteredInvoices();
           // Automatisch überfällige Status aktualisieren nach dem Speichern
           this.updateOverdueStatuses();
           // Optional: alert(`Invoice "${response.data.invoice_number}" was successfully created!`);
@@ -267,6 +290,8 @@ export class OpenInvoicesComponent implements OnInit {
     this.invoices = this.invoices.filter(inv => inv.id !== this.newInvoiceRow!.id);
     this.newInvoiceRow = null;
     this.errorMessage = '';
+    // Update filtered invoices cache after cancelling new invoice
+    this.updateFilteredInvoices();
   }
 
   // Start editing an existing invoice
@@ -364,6 +389,8 @@ export class OpenInvoicesComponent implements OnInit {
           this.originalValues.delete(invoice.id);
           this.pendingUpdates.clear(); // Clear any pending updates
           this.errorMessage = '';
+          // Update filtered invoices cache after editing invoice
+          this.updateFilteredInvoices();
           // Automatisch überfällige Status aktualisieren nach dem Speichern
           this.updateOverdueStatuses();
         } else {
@@ -422,6 +449,8 @@ export class OpenInvoicesComponent implements OnInit {
         if (response.success) {
           // Remove the invoice from the local array
           this.invoices = this.invoices.filter(inv => inv.id !== invoice.id);
+          // Update filtered invoices cache after deleting invoice
+          this.updateFilteredInvoices();
           alert(`Rechnung "${invoice.invoice_number}" wurde erfolgreich gelöscht.`);
         } else {
           this.errorMessage = response.message || 'Fehler beim Löschen der Rechnung';
@@ -513,6 +542,8 @@ export class OpenInvoicesComponent implements OnInit {
           if (index !== -1) {
             this.invoices[index] = response.data;
           }
+          // Update filtered invoices cache after file upload
+          this.updateFilteredInvoices();
           alert(`File "${file.name}" was successfully uploaded to invoice!`);
         } else {
           this.errorMessage = response.message || 'Failed to upload file';
@@ -566,6 +597,8 @@ export class OpenInvoicesComponent implements OnInit {
         status: 'open'
       }
     ];
+    // Update filtered invoices cache after loading mock data
+    this.updateFilteredInvoices();
   }
 
   // Sortieren nach Lieferant (alphabetisch) und dann nach Rechnungsdatum
@@ -578,18 +611,35 @@ export class OpenInvoicesComponent implements OnInit {
     }
   }
 
-  get filteredInvoices() {
+  // Method to switch tabs
+  switchTab(tab: 'all' | 'open' | 'paid' | 'overdue' | 'sepa') {
+    this.activeTab = tab;
+    this.updateFilteredInvoices();
+  }
+
+  // Method to update filtered invoices cache
+  private updateFilteredInvoices() {
     // Filter out the temporary new invoice row from search results
     let filtered = this.invoices.filter(inv => !this.newInvoiceRow || inv.id !== this.newInvoiceRow.id);
 
-    if (!this.searchTerm) {
-      return this.sortInvoices(filtered);
+    // Apply tab filter first
+    if (this.activeTab !== 'all') {
+      filtered = filtered.filter(invoice => invoice.status === this.activeTab);
     }
-    const filteredBySearch = filtered.filter(invoice =>
-      invoice.invoice_number?.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-      invoice.supplier_name?.toLowerCase().includes(this.searchTerm.toLowerCase())
-    );
-    return this.sortInvoices(filteredBySearch);
+
+    // Apply search filter
+    if (this.searchTerm) {
+      filtered = filtered.filter(invoice =>
+        invoice.invoice_number?.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+        invoice.supplier_name?.toLowerCase().includes(this.searchTerm.toLowerCase())
+      );
+    }
+
+    this._filteredInvoices = this.sortInvoices(filtered);
+  }
+
+  get filteredInvoices() {
+    return this._filteredInvoices;
   }
 
   private sortInvoices(invoices: Invoice[]): Invoice[] {
@@ -631,6 +681,23 @@ export class OpenInvoicesComponent implements OnInit {
         const validAmount = isNaN(amount) ? 0 : amount;
         return sum + validAmount;
       }, 0);
+  }
+
+  // Get tab-specific statistics
+  getTabStats(tab: 'all' | 'open' | 'paid' | 'overdue' | 'sepa') {
+    let invoices = this.invoices.filter(inv => !this.newInvoiceRow || inv.id !== this.newInvoiceRow.id);
+
+    if (tab !== 'all') {
+      invoices = invoices.filter(inv => inv.status === tab);
+    }
+
+    return {
+      count: invoices.length,
+      amount: invoices.reduce((sum, inv) => {
+        const amount = typeof inv.amount === 'string' ? parseFloat(inv.amount) : inv.amount;
+        return sum + (isNaN(amount) ? 0 : amount);
+      }, 0)
+    };
   }
 
 
@@ -809,13 +876,11 @@ export class OpenInvoicesComponent implements OnInit {
     const oldStatus = invoice.status;
     const statusText = newStatus === 'open' ? 'Offen' :
                       newStatus === 'paid' ? 'Bezahlt' :
-                      newStatus === 'sepa' ? 'SEPA' : 'Überfällig';
-    const oldStatusText = oldStatus === 'open' ? 'Offen' :
-                         oldStatus === 'paid' ? 'Bezahlt' :
-                         oldStatus === 'sepa' ? 'SEPA' : 'Überfällig';
+                      newStatus === 'sepa' ? 'SEPA' :
+                      newStatus === 'overdue' ? 'Überfällig' : 'Unbekannt';
 
-    // Ask for confirmation
-    const confirmed = confirm(`Möchten Sie den Status von "${oldStatusText}" zu "${statusText}" ändern?`);
+    // Ask for confirmation with simplified message
+    const confirmed = confirm(`Möchten Sie den Status der Rechnung "${invoice.invoice_number}" wirklich zu "${statusText}" ändern?\n\nDiese Aktion kann nicht rückgängig gemacht werden.`);
 
     if (confirmed) {
       // Update locally first for immediate UI feedback
@@ -835,6 +900,8 @@ export class OpenInvoicesComponent implements OnInit {
             const index = this.invoices.findIndex(inv => inv.id === invoice.id);
             if (index !== -1) {
               this.invoices[index] = normalizedInvoice;
+              // Update filtered invoices cache after status change
+              this.updateFilteredInvoices();
             }
           } else {
             this.errorMessage = response.message || 'Failed to update invoice';
@@ -910,16 +977,20 @@ export class OpenInvoicesComponent implements OnInit {
       next: (response) => {
         if (response.success) {
           console.log(`Invoice ${invoice.invoice_number} automatically marked as overdue`);
+          // Update filtered invoices cache after status change
+          this.updateFilteredInvoices();
         } else {
           console.error('Failed to update overdue status:', response.message);
           // Bei Fehler Status zurücksetzen
           invoice.status = 'open';
+          this.updateFilteredInvoices();
         }
       },
       error: (error: any) => {
         console.error('Error updating overdue status:', error);
         // Bei Fehler Status zurücksetzen
         invoice.status = 'open';
+        this.updateFilteredInvoices();
       }
     });
   }

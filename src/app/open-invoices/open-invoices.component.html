@@ -54,15 +54,51 @@
     <div *ngIf="!isLoading && !errorMessage">
       <div class="section-header">
         <h2 class="section-title">Rechnungsübersicht</h2>
-      <div class="table-controls">
-        <div class="search-box">
-          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-          </svg>
-          <input type="text" placeholder="Rechnungen suchen..." [(ngModel)]="searchTerm" class="search-input">
+        <div class="table-controls">
+          <div class="search-box">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+            <input type="text" placeholder="Rechnungen suchen..." [(ngModel)]="searchTerm" class="search-input">
+          </div>
         </div>
       </div>
-    </div>
+
+      <!-- Tab Navigation -->
+      <div class="tab-navigation">
+        <div class="tabs-container">
+          <button class="tab-button"
+                  [class.active]="activeTab === 'all'"
+                  (click)="switchTab('all')">
+            <span class="tab-label">Alle</span>
+            <span class="tab-count">{{ getTabStats('all').count }}</span>
+          </button>
+          <button class="tab-button"
+                  [class.active]="activeTab === 'open'"
+                  (click)="switchTab('open')">
+            <span class="tab-label">Offen</span>
+            <span class="tab-count">{{ getTabStats('open').count }}</span>
+          </button>
+          <button class="tab-button"
+                  [class.active]="activeTab === 'paid'"
+                  (click)="switchTab('paid')">
+            <span class="tab-label">Bezahlt</span>
+            <span class="tab-count">{{ getTabStats('paid').count }}</span>
+          </button>
+          <button class="tab-button"
+                  [class.active]="activeTab === 'overdue'"
+                  (click)="switchTab('overdue')">
+            <span class="tab-label">Überfällig</span>
+            <span class="tab-count">{{ getTabStats('overdue').count }}</span>
+          </button>
+          <button class="tab-button"
+                  [class.active]="activeTab === 'sepa'"
+                  (click)="switchTab('sepa')">
+            <span class="tab-label">SEPA</span>
+            <span class="tab-count">{{ getTabStats('sepa').count }}</span>
+          </button>
+        </div>
+      </div>
 
     <div class="table-container">
       <table class="invoices-table">
@@ -312,20 +348,24 @@
     <!-- Summary Stats -->
     <div class="summary-stats">
       <div class="stat-item">
-        <span class="stat-label">Gesamt Rechnungen:</span>
+        <span class="stat-label">
+          {{ activeTab === 'all' ? 'Gesamt Rechnungen:' : activeTab === 'open' ? 'Offene Rechnungen:' : activeTab === 'paid' ? 'Bezahlte Rechnungen:' : activeTab === 'overdue' ? 'Überfällige Rechnungen:' : 'SEPA Rechnungen:' }}
+        </span>
         <span class="stat-value">{{ filteredInvoices.length }}</span>
       </div>
-      <div class="stat-item">
+      <div class="stat-item" *ngIf="activeTab === 'all'">
         <span class="stat-label">Offene Rechnungen:</span>
         <span class="stat-value">{{ openInvoicesCount }}</span>
       </div>
-      <div class="stat-item">
+      <div class="stat-item" *ngIf="activeTab === 'all'">
         <span class="stat-label">Überfällig:</span>
         <span class="stat-value">{{ overdueInvoicesCount }}</span>
       </div>
       <div class="stat-item">
-        <span class="stat-label">Gesamtbetrag offen:</span>
-        <span class="stat-value">{{ formatCurrency(totalOpenAmount) }}</span>
+        <span class="stat-label">
+          {{ activeTab === 'all' ? 'Gesamtbetrag offen:' : 'Gesamtbetrag:' }}
+        </span>
+        <span class="stat-value">{{ formatCurrency(getTabStats(activeTab).amount) }}</span>
       </div>
     </div>
   </div>
