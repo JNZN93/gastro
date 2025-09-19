@@ -474,7 +474,7 @@ export class OpenInvoicesComponent implements OnInit {
 
   get totalOpenAmount(): number {
     return this.filteredInvoices
-      .filter(inv => inv.status === 'open')
+      .filter(inv => inv.status === 'open' || inv.status === 'overdue')
       .reduce((sum, inv) => {
         // Ensure amount is a valid number
         const amount = typeof inv.amount === 'string' ? parseFloat(inv.amount) : inv.amount;
@@ -652,6 +652,29 @@ export class OpenInvoicesComponent implements OnInit {
 
     // Update locally for immediate UI feedback
     (invoice as any)[field] = processedValue;
+  }
+
+  // Confirm status change with user
+  confirmStatusChange(invoice: Invoice, newStatus: 'open' | 'paid' | 'overdue') {
+    const oldStatus = invoice.status;
+    const statusText = newStatus === 'open' ? 'Offen' :
+                      newStatus === 'paid' ? 'Bezahlt' : 'Überfällig';
+    const oldStatusText = oldStatus === 'open' ? 'Offen' :
+                         oldStatus === 'paid' ? 'Bezahlt' : 'Überfällig';
+
+    // Ask for confirmation
+    const confirmed = confirm(`Möchten Sie den Status von "${oldStatusText}" zu "${statusText}" ändern?`);
+
+    if (confirmed) {
+      // Update locally first for immediate UI feedback
+      invoice.status = newStatus;
+
+      // Send update to API
+      this.updateInvoice(invoice.id, { status: newStatus });
+    } else {
+      // Revert to old status
+      invoice.status = oldStatus;
+    }
   }
 
   // Update invoice via API

@@ -127,7 +127,8 @@
             <td class="status-cell">
               <select [(ngModel)]="newInvoiceRow.status"
                       class="status-select"
-                      [class]="getStatusClass(newInvoiceRow.status)">
+                      [class]="getStatusClass(newInvoiceRow.status)"
+                      (change)="updateInvoiceFieldLocally(newInvoiceRow, 'status', $any($event.target).value)">
                 <option value="open">Offen</option>
                 <option value="paid">Bezahlt</option>
                 <option value="overdue">Überfällig</option>
@@ -221,13 +222,10 @@
 
             <!-- Status -->
             <td class="status-cell">
-              <span *ngIf="!isInvoiceEditing(invoice)" class="status-display {{ getStatusClass(invoice.status) }}">
-                {{ invoice.status === 'open' ? 'Offen' : invoice.status === 'paid' ? 'Bezahlt' : 'Überfällig' }}
-              </span>
-              <select *ngIf="isInvoiceEditing(invoice)" [(ngModel)]="invoice.status"
+              <select [(ngModel)]="invoice.status"
                       class="status-select"
                       [class]="getStatusClass(invoice.status)"
-                      (change)="updateInvoiceFieldLocally(invoice, 'status', $any($event.target).value)">
+                      (change)="confirmStatusChange(invoice, $any($event.target).value)">
                 <option value="open">Offen</option>
                 <option value="paid">Bezahlt</option>
                 <option value="overdue">Überfällig</option>
