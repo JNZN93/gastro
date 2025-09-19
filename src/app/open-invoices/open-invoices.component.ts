@@ -32,6 +32,10 @@ export class OpenInvoicesComponent implements OnInit {
   isUploadingInvoice: string | null = null;
   errorMessage: string = '';
 
+  // Sorting
+  sortDirection: 'asc' | 'desc' = 'asc';
+  sortColumn: string = 'supplier_name';
+
   // Temporary new invoice for inline editing
   newInvoiceRow: Invoice | null = null;
 
@@ -523,17 +527,50 @@ export class OpenInvoicesComponent implements OnInit {
     ];
   }
 
+  // Sortieren nach Lieferant (alphabetisch) und dann nach Rechnungsdatum
+  sortBySupplier() {
+    if (this.sortColumn !== 'supplier_name') {
+      this.sortColumn = 'supplier_name';
+      this.sortDirection = 'asc';
+    } else {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    }
+  }
+
   get filteredInvoices() {
     // Filter out the temporary new invoice row from search results
     let filtered = this.invoices.filter(inv => !this.newInvoiceRow || inv.id !== this.newInvoiceRow.id);
 
     if (!this.searchTerm) {
-      return filtered;
+      return this.sortInvoices(filtered);
     }
-    return filtered.filter(invoice =>
+    const filteredBySearch = filtered.filter(invoice =>
       invoice.invoice_number?.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
       invoice.supplier_name?.toLowerCase().includes(this.searchTerm.toLowerCase())
     );
+    return this.sortInvoices(filteredBySearch);
+  }
+
+  private sortInvoices(invoices: Invoice[]): Invoice[] {
+    return invoices.sort((a, b) => {
+      // Sortiere zuerst nach Lieferant (alphabetisch)
+      const supplierA = a.supplier_name?.toLowerCase() || '';
+      const supplierB = b.supplier_name?.toLowerCase() || '';
+
+      let comparison = 0;
+      if (supplierA < supplierB) {
+        comparison = -1;
+      } else if (supplierA > supplierB) {
+        comparison = 1;
+      } else {
+        // Bei gleichen Lieferanten nach Rechnungsdatum sortieren
+        const dateA = new Date(a.date || '1970-01-01').getTime();
+        const dateB = new Date(b.date || '1970-01-01').getTime();
+        comparison = dateA - dateB;
+      }
+
+      return this.sortDirection === 'asc' ? comparison : -comparison;
+    });
   }
 
   get openInvoicesCount(): number {
@@ -867,5 +904,11 @@ export class OpenInvoicesComponent implements OnInit {
 
   trackByInvoiceId(index: number, invoice: Invoice): string {
     return invoice.id;
+  }
+
+  // Gibt das Sortiersymbol für die Lieferant-Spalte zurück
+  getSortIcon(): string {
+    if (this.sortColumn !== 'supplier_name') return '';
+    return this.sortDirection === 'asc' ? '↑' : '↓';
   }
 }

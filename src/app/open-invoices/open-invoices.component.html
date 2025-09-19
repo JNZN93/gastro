@@ -68,7 +68,10 @@
       <table class="invoices-table">
         <thead>
           <tr>
-            <th>Lieferant</th>
+            <th class="sortable-header" (click)="sortBySupplier()">
+              <span class="header-text">Lieferant</span>
+              <span class="sort-icon">{{ getSortIcon() }}</span>
+            </th>
             <th>Rechnungsnummer</th>
             <th>Datum</th>
             <th>Fälligkeitsdatum</th>

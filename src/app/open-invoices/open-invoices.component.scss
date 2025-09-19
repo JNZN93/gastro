@@ -191,6 +191,30 @@
       text-transform: uppercase;
       letter-spacing: 0.05em;
       border-bottom: 1px solid #e5e7eb;
+
+      // Sortierbare Header
+      &.sortable-header {
+        cursor: pointer;
+        user-select: none;
+        position: relative;
+
+        &:hover {
+          background: rgba(102, 126, 234, 0.05);
+          color: #667eea;
+        }
+
+        .header-text {
+          display: inline-block;
+          margin-right: 0.5rem;
+        }
+
+        .sort-icon {
+          font-size: 0.75rem;
+          color: #667eea;
+          font-weight: bold;
+          transition: transform 0.2s ease;
+        }
+      }
     }
   }
 
