@@ -81,83 +81,62 @@
         </thead>
         <tbody>
           <!-- New Invoice Row (shown when adding) -->
-          <tr *ngIf="newInvoiceRow" class="new-invoice-row">
+          <tr *ngIf="newInvoiceRow" class="invoice-row new-invoice-row">
             <!-- Invoice Number -->
-            <td class="invoice-cell new-invoice-cell"
-                [class.selected-cell]="selectedRow === 0 && selectedCol === 0"
-                (click)="onCellClick(0, 0, $event)">
+            <td class="invoice-cell">
               <input type="text"
                      [(ngModel)]="newInvoiceRow.invoice_number"
-                     class="editable-input new-invoice-input"
-                     placeholder="Invoice Number"
-                     [class.focused]="selectedRow === 0 && selectedCol === 0">
+                     class="editable-input"
+                     placeholder="Invoice Number">
             </td>
 
             <!-- Date -->
-            <td class="invoice-cell new-invoice-cell"
-                [class.selected-cell]="selectedRow === 0 && selectedCol === 1"
-                (click)="onCellClick(0, 1, $event)">
+            <td class="invoice-cell">
               <input type="date"
                      [(ngModel)]="newInvoiceRow.date"
-                     class="editable-input new-invoice-input"
-                     (input)="onDateInput($event, 'new', 'date')"
-                     [class.focused]="selectedRow === 0 && selectedCol === 1">
+                     class="editable-input"
+                     (input)="onDateInput($event, 'new', 'date')">
             </td>
 
             <!-- Due Date -->
-            <td class="invoice-cell new-invoice-cell"
-                [class.selected-cell]="selectedRow === 0 && selectedCol === 2"
-                (click)="onCellClick(0, 2, $event)">
+            <td class="invoice-cell">
               <input type="date"
                      [(ngModel)]="newInvoiceRow.due_date"
-                     class="editable-input new-invoice-input"
-                     (input)="onDateInput($event, 'new', 'due_date')"
-                     [class.focused]="selectedRow === 0 && selectedCol === 2">
+                     class="editable-input"
+                     (input)="onDateInput($event, 'new', 'due_date')">
             </td>
 
             <!-- Supplier Name -->
-            <td class="invoice-cell new-invoice-cell"
-                [class.selected-cell]="selectedRow === 0 && selectedCol === 3"
-                (click)="onCellClick(0, 3, $event)">
+            <td class="invoice-cell">
               <input type="text"
                      [(ngModel)]="newInvoiceRow.supplier_name"
-                     class="editable-input new-invoice-input"
-                     placeholder="Supplier Name"
-                     [class.focused]="selectedRow === 0 && selectedCol === 3">
+                     class="editable-input"
+                     placeholder="Supplier Name">
             </td>
 
             <!-- Supplier Number -->
-            <td class="invoice-cell new-invoice-cell"
-                [class.selected-cell]="selectedRow === 0 && selectedCol === 4"
-                (click)="onCellClick(0, 4, $event)">
+            <td class="invoice-cell">
               <input type="text"
                      [(ngModel)]="newInvoiceRow.supplier_number"
-                     class="editable-input new-invoice-input"
-                     placeholder="Supplier Number"
-                     [class.focused]="selectedRow === 0 && selectedCol === 4">
+                     class="editable-input"
+                     placeholder="Supplier Number">
             </td>
 
             <!-- Amount -->
-            <td class="invoice-cell new-invoice-cell"
-                [class.selected-cell]="selectedRow === 0 && selectedCol === 5"
-                (click)="onCellClick(0, 5, $event)">
+            <td class="invoice-cell">
               <input type="number"
                      step="0.01"
                      [(ngModel)]="newInvoiceRow.amount"
-                     class="editable-input new-invoice-input"
+                     class="editable-input"
                      placeholder="0.00"
-                     (input)="onAmountInput($event, 'new')"
-                     [class.focused]="selectedRow === 0 && selectedCol === 5">
+                     (input)="onAmountInput($event, 'new')">
             </td>
 
             <!-- Status -->
-            <td class="status-cell new-invoice-cell"
-                [class.selected-cell]="selectedRow === 0 && selectedCol === 6"
-                (click)="onCellClick(0, 6, $event)">
+            <td class="status-cell">
               <select [(ngModel)]="newInvoiceRow.status"
-                      class="status-select new-invoice-select"
-                      [class]="getStatusClass(newInvoiceRow.status)"
-                      [class.focused]="selectedRow === 0 && selectedCol === 6">
+                      class="status-select"
+                      [class]="getStatusClass(newInvoiceRow.status)">
                 <option value="open">Open</option>
                 <option value="paid">Paid</option>
                 <option value="overdue">Overdue</option>
@@ -165,7 +144,7 @@
             </td>
 
             <!-- Actions (Save/Cancel) -->
-            <td class="actions-cell new-invoice-actions">
+            <td class="actions-cell">
               <div class="new-invoice-buttons">
                 <button class="save-btn" (click)="saveNewInvoice()" [disabled]="isCreatingInvoice">
                   <svg *ngIf="!isCreatingInvoice" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="btn-icon">
@@ -188,8 +167,7 @@
 
           <!-- Existing Invoice Rows -->
           <tr *ngFor="let invoice of filteredInvoices; let i = index; trackBy: trackByInvoiceId"
-              class="invoice-row"
-              [class.editing-row]="isInvoiceEditing(invoice)">
+              class="invoice-row">
             <!-- Invoice Number -->
             <td class="invoice-cell">
               <span *ngIf="!isInvoiceEditing(invoice)" class="display-text">{{ invoice.invoice_number }}</span>
