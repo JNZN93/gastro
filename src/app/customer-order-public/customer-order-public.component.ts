@@ -5,6 +5,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { OffersService, OfferWithProducts } from '../offers.service';
 import { forkJoin } from 'rxjs';
+import { environment } from '../../environments/environment';
 // private stateService = inject(CustomerOrderStateService); // Entferne State Service
 
 @Component({
@@ -328,10 +329,10 @@ export class CustomerOrderPublicComponent implements OnInit {
       console.log('🔍 [PUBLIC-ORDER] Token aus URL:', this.token);
       
       console.log('🔍 [PUBLIC-ORDER] Sende Token an API:', this.token);
-      console.log('🔍 [PUBLIC-ORDER] API URL:', 'https://multi-mandant-ecommerce.onrender.com/api/auth/decode-customer-token');
+      console.log('🔍 [PUBLIC-ORDER] API URL:', `${environment.apiUrl}/api/auth/decode-customer-token`);
       console.log('🔍 [PUBLIC-ORDER] Request Body:', { token: this.token });
-    
-    this.http.post('https://multi-mandant-ecommerce.onrender.com/api/auth/decode-customer-token', {
+
+    this.http.post(`${environment.apiUrl}/api/auth/decode-customer-token`, {
       token: this.token
     }).subscribe({
       next: (response: any) => {
@@ -379,8 +380,8 @@ export class CustomerOrderPublicComponent implements OnInit {
   // Neue Methode zum Laden aller Produkte
   loadAllProducts() {
     console.log('🔍 [PUBLIC-ORDER] Lade alle Produkte von api/products...');
-    
-    return this.http.get('https://multi-mandant-ecommerce.onrender.com/api/products');
+
+    return this.http.get(`${environment.apiUrl}/api/products`);
   }
 
   // Neue Methode zum Laden aktiver Angebote
@@ -925,7 +926,7 @@ export class CustomerOrderPublicComponent implements OnInit {
     console.log('🔍 [PUBLIC-ORDER] Starte Laden der Kundendaten für Nummer:', this.customerNumber);
     
     // Neuer Endpoint: Kundendaten + Artikel mit Preisen in einem Call
-    const apiUrl = 'https://multi-mandant-ecommerce.onrender.com/api/customer-article-prices/customer-without-auth';
+    const apiUrl = `${environment.apiUrl}/api/customer-article-prices/customer-without-auth`;
     const requestBody = { customerNumber: this.customerNumber };
     
     console.log('🔍 [PUBLIC-ORDER] Lade Daten von:', apiUrl, 'mit Body:', requestBody);
@@ -1112,10 +1113,10 @@ export class CustomerOrderPublicComponent implements OnInit {
     console.log('👤 [PUBLIC-ORDER] Kunde:', completeOrder.orderData.customer_number);
     console.log('📅 [PUBLIC-ORDER] Lieferdatum:', completeOrder.orderData.delivery_date);
     console.log('📍 [PUBLIC-ORDER] Lieferart:', completeOrder.orderData.fulfillment_type);
-    console.log('🌐 [PUBLIC-ORDER] Endpoint:', 'https://multi-mandant-ecommerce.onrender.com/api/orders/without-auth');
+    console.log('🌐 [PUBLIC-ORDER] Endpoint:', `${environment.apiUrl}/api/orders/without-auth`);
 
     // Verwende den neuen Endpoint ohne Auth
-    this.http.post('https://multi-mandant-ecommerce.onrender.com/api/orders/without-auth', completeOrder).subscribe({
+    this.http.post(`${environment.apiUrl}/api/orders/without-auth`, completeOrder).subscribe({
       next: (response: any) => {
         console.log('✅ [PUBLIC-ORDER] Bestellung erfolgreich abgesendet! Response:', response);
         

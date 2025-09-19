@@ -11,6 +11,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { ZXingScannerComponent, ZXingScannerModule } from '@zxing/ngx-scanner';
 import { BarcodeFormat } from '@zxing/browser';
 import { OffersService, OfferWithProducts, OfferProduct } from '../offers.service';
+import { environment } from '../../environments/environment';
 
 // Interface für kundenspezifische Preise
 interface CustomerArticlePrice {
@@ -416,7 +417,7 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
       'Authorization': `Bearer ${token}`
     });
 
-    this.http.get<CustomerArticlePrice[]>(`https://multi-mandant-ecommerce.onrender.com/api/customer-article-prices/user`, { headers })
+    this.http.get<CustomerArticlePrice[]>(`${environment.apiUrl}/api/customer-article-prices/user`, { headers })
       .subscribe({
         next: (data) => {
           console.log('📡 [CUSTOMER-PRICES-ALL] API Response erhalten:', data);
@@ -502,7 +503,7 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
       'Authorization': `Bearer ${token}`
     });
 
-    this.http.get<CustomerArticlePrice[]>(`https://multi-mandant-ecommerce.onrender.com/api/customer-article-prices/user`, { headers })
+    this.http.get<CustomerArticlePrice[]>(`${environment.apiUrl}/api/customer-article-prices/user`, { headers })
       .subscribe({
         next: (data) => {
           console.log('📡 [CUSTOMER-PRICES] API Response erhalten:', data);

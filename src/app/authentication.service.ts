@@ -1,17 +1,18 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = 'https://multi-mandant-ecommerce.onrender.com/api/auth/register'; // Backend-URL anpassen!
-  private apiUrlLogIn = 'https://multi-mandant-ecommerce.onrender.com/api/auth/login'
-  private apiUrlCheckToken = 'https://multi-mandant-ecommerce.onrender.com/api/auth/validate'; // URL für Token-Validierung
-  private apiUrlGenerate = 'https://multi-mandant-ecommerce.onrender.com/api/auth/generate-link';
-  private apiUrlVerifyPin = 'https://multi-mandant-ecommerce.onrender.com/api/auth/validate-pin';
-  private apiUrlForgotPassword = 'https://multi-mandant-ecommerce.onrender.com/api/auth/forgot-password';
+  private apiUrl = `${environment.apiUrl}/api/auth/register`;
+  private apiUrlLogIn = `${environment.apiUrl}/api/auth/login`;
+  private apiUrlCheckToken = `${environment.apiUrl}/api/auth/validate`;
+  private apiUrlGenerate = `${environment.apiUrl}/api/auth/generate-link`;
+  private apiUrlVerifyPin = `${environment.apiUrl}/api/auth/validate-pin`;
+  private apiUrlForgotPassword = `${environment.apiUrl}/api/auth/forgot-password`;
 
   constructor(private http: HttpClient) {}
 

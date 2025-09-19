@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { OffersService, Offer, OfferWithProducts, OfferProduct, CreateOfferRequest, AddProductRequest } from '../offers.service';
 import { ForceActiveService } from '../force-active.service';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { environment } from '../../environments/environment';
 // import { jsPDF } from 'jspdf';
 
 @Component({
@@ -270,7 +271,7 @@ export class OffersComponent implements OnInit {
   private searchEanInApi(eanCode: string): void {
     const token = localStorage.getItem('token');
     
-    this.http.get(`https://multi-mandant-ecommerce.onrender.com/api/product-eans/ean/${eanCode}`, {
+    this.http.get(`${environment.apiUrl}/api/product-eans/ean/${eanCode}`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }
@@ -889,7 +890,7 @@ export class OffersComponent implements OnInit {
         const formData = new FormData();
         formData.append('image', selectedFile);
 
-        this.http.post(`https://multi-mandant-ecommerce.onrender.com/api/product-images/${productId}/images`, formData)
+        this.http.post(`${environment.apiUrl}/api/product-images/${productId}/images`, formData)
           .subscribe({
             next: () => {
               // Refresh offers to show updated image

@@ -1,4 +1,5 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
+import { environment } from '../../environments/environment';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
@@ -91,7 +92,7 @@ export class LabelManagementComponent implements OnInit {
 
   loadProducts(): void {
     this.isLoading = true;
-    this.http.get<Product[]>('https://multi-mandant-ecommerce.onrender.com/api/products').subscribe({
+    this.http.get<Product[]>('${environment.apiUrl}/api/products').subscribe({
       next: (data) => {
         this.products = data;
         this.filteredProducts = [...this.products];

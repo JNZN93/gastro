@@ -8,6 +8,7 @@ import { WarenkorbComponent } from '../warenkorb/warenkorb.component';
 import { GlobalService } from '../global.service';
 import { ZXingScannerComponent, ZXingScannerModule } from '@zxing/ngx-scanner';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { environment } from '../../environments/environment';
 import { OffersService, OfferWithProducts } from '../offers.service';
 
 // Interface für die letzten Bestellungen
@@ -206,7 +207,7 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
       'Authorization': `Bearer ${token}`
     });
 
-    this.http.get<CustomerArticlePrice[]>(`https://multi-mandant-ecommerce.onrender.com/api/customer-article-prices/user`, { headers })
+    this.http.get<CustomerArticlePrice[]>(`${environment.apiUrl}/api/customer-article-prices/user`, { headers })
       .subscribe({
         next: (data) => {
           console.log('📡 [LAST-ORDERS] API Response erhalten:', data);

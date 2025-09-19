@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { environment } from '../../environments/environment';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
@@ -130,7 +131,7 @@ export class OrderOverviewComponent implements OnInit {
       'Authorization': `Bearer ${token}`
     });
 
-    this.http.get<OrdersResponse>('https://multi-mandant-ecommerce.onrender.com/api/orders/all-orders', { headers })
+    this.http.get<OrdersResponse>('${environment.apiUrl}/api/orders/all-orders', { headers })
       .subscribe({
         next: (response) => {
           this.orders = response.orders || [];
@@ -156,7 +157,7 @@ export class OrderOverviewComponent implements OnInit {
     });
 
     this.http.get<any[]>(
-      'https://multi-mandant-ecommerce.onrender.com/api/customers',
+      '${environment.apiUrl}/api/customers',
       { headers }
     ).subscribe({
       next: (data) => {

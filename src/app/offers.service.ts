@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../environments/environment';
 
 export interface Offer {
   id?: number;
@@ -101,7 +102,7 @@ export interface PriceCalculationResponse {
   providedIn: 'root'
 })
 export class OffersService {
-  private apiUrl = 'https://multi-mandant-ecommerce.onrender.com/api/offers';
+  private apiUrl = `${environment.apiUrl}/api/offers`;
 
   constructor(private http: HttpClient) { }
 
@@ -190,14 +191,14 @@ export class OffersService {
 
   // Produkte suchen
   searchProducts(searchTerm: string): Observable<any> {
-    const url = `https://multi-mandant-ecommerce.onrender.com/api/products`;
+    const url = `${environment.apiUrl}/api/products`;
     console.log('Suche nach Produkten mit Term:', searchTerm);
     console.log('API URL:', url);
-    
+
     // Verwende den api/products Endpunkt für alle verfügbaren Produkte
     // Der Endpunkt gibt direkt ein Array von Produkten zurück
-    return this.http.get(url, { 
-      headers: this.getAuthHeaders() 
+    return this.http.get(url, {
+      headers: this.getAuthHeaders()
     });
   }
 }

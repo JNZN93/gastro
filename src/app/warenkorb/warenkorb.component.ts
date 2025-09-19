@@ -5,6 +5,7 @@ import { OrderService } from '../order.service';
 import { FormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { MyDialogComponent } from '../my-dialog/my-dialog.component';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-warenkorb',
@@ -131,7 +132,7 @@ export class WarenkorbComponent implements OnInit {
     console.log('🏠 [WARENKORB] Lieferadresse:', completeOrder.orderData.shipping_address);
     console.log('📝 [WARENKORB] Anmerkungen:', completeOrder.orderData.customer_notes);
     console.log('🔑 [WARENKORB] Token vorhanden:', !!getToken);
-    console.log('🌐 [WARENKORB] Endpoint:', 'https://multi-mandant-ecommerce.onrender.com/api/orders');
+    console.log('🌐 [WARENKORB] Endpoint:', '${environment.apiUrl}/api/orders');
 
     this.orderService.placeOrder(completeOrder, getToken).subscribe({
       next: (response) => {

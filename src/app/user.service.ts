@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../environments/environment';
 
 export interface User {
   id: number;
@@ -28,7 +29,7 @@ export interface UserFormData {
   providedIn: 'root'
 })
 export class UserService {
-  private apiUrl = 'https://multi-mandant-ecommerce.onrender.com/api';
+  private apiUrl = `${environment.apiUrl}/api`;
 
   constructor(private http: HttpClient) { }
 

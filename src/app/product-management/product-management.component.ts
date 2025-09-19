@@ -10,6 +10,7 @@ import { ZXingScannerComponent, ZXingScannerModule } from '@zxing/ngx-scanner';
 import { BarcodeFormat } from '@zxing/browser';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { filter } from 'rxjs/operators';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-product-management',
@@ -230,7 +231,7 @@ export class ProductManagementComponent implements OnInit, OnDestroy, AfterViewI
   loadExistingEans(articleNumber: string): void {
     const token = localStorage.getItem('token');
     
-    this.http.get(`https://multi-mandant-ecommerce.onrender.com/api/product-eans/article/${articleNumber}`, {
+    this.http.get(`${environment.apiUrl}/api/product-eans/article/${articleNumber}`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }
@@ -270,7 +271,7 @@ export class ProductManagementComponent implements OnInit, OnDestroy, AfterViewI
 
     const token = localStorage.getItem('token');
     
-    this.http.delete(`https://multi-mandant-ecommerce.onrender.com/api/product-eans/${eanId}`, {
+    this.http.delete(`${environment.apiUrl}/api/product-eans/${eanId}`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }
@@ -317,7 +318,7 @@ export class ProductManagementComponent implements OnInit, OnDestroy, AfterViewI
       ean: this.eanCode
     };
 
-    this.http.post('https://multi-mandant-ecommerce.onrender.com/api/product-eans/assign', payload, {
+    this.http.post('${environment.apiUrl}/api/product-eans/assign', payload, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
@@ -365,7 +366,7 @@ export class ProductManagementComponent implements OnInit, OnDestroy, AfterViewI
 
   loadProducts(): void {
     this.isVisible = true; // Zeige Loading-Screen während des Ladens
-    this.http.get('https://multi-mandant-ecommerce.onrender.com/api/products').subscribe({
+    this.http.get('${environment.apiUrl}/api/products').subscribe({
       next: (data: any) => {
         this.products = data;
         // Initial: keine Produkte anzeigen, bis Suche erfolgt
@@ -507,7 +508,7 @@ export class ProductManagementComponent implements OnInit, OnDestroy, AfterViewI
   private searchEanInApi(eanCode: string): void {
     const token = localStorage.getItem('token');
     
-    this.http.get(`https://multi-mandant-ecommerce.onrender.com/api/product-eans/ean/${eanCode}`, {
+    this.http.get(`${environment.apiUrl}/api/product-eans/ean/${eanCode}`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }
@@ -697,7 +698,7 @@ export class ProductManagementComponent implements OnInit, OnDestroy, AfterViewI
       const formData = new FormData();
       formData.append('image', this.selectedImage);
 
-      this.http.post(`https://multi-mandant-ecommerce.onrender.com/api/product-images/${this.selectedProduct.id}/images`, formData)
+      this.http.post(`${environment.apiUrl}/api/product-images/${this.selectedProduct.id}/images`, formData)
         .subscribe({
           next: (response) => {
             console.log('Image uploaded successfully:', response);
@@ -721,7 +722,7 @@ export class ProductManagementComponent implements OnInit, OnDestroy, AfterViewI
       // Finde das Produkt in der aktuellen Liste
       const productToRemove = this.products.find(p => p.id === productId);
       
-      this.http.delete(`https://multi-mandant-ecommerce.onrender.com/api/product-images/${productId}/images/remove-main`)
+      this.http.delete(`${environment.apiUrl}/api/product-images/${productId}/images/remove-main`)
         .subscribe({
           next: () => {
             console.log('Main image removed successfully');

@@ -18,6 +18,7 @@ import { IndexedDBService } from '../indexeddb.service';
 import { OffersService, OfferWithProducts, OfferProduct } from '../offers.service';
 import { ForceActiveService } from '../force-active.service';
 import * as QRCode from 'qrcode';
+import { environment } from '../../environments/environment';
 import { firstValueFrom, Subscription } from 'rxjs';
 
 @Component({
@@ -560,7 +561,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     console.log('🚀 [BILD-UPLOAD] Starte API-Aufruf an /api/orders/analyze-images');
     console.log('🔑 [BILD-UPLOAD] Token vorhanden:', !!token);
 
-    fetch('https://multi-mandant-ecommerce.onrender.com/api/orders/analyze-images', {
+    fetch('${environment.apiUrl}/api/orders/analyze-images', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`
@@ -948,7 +949,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     // Wenn nicht in lokaler Liste, lade alle Kunden und suche dann
     console.log('🔄 [LOAD-CUSTOMER-BY-EMAIL] Kunde nicht in lokaler Liste, lade alle Kunden...');
     
-    fetch('https://multi-mandant-ecommerce.onrender.com/api/customers', {
+    fetch('${environment.apiUrl}/api/customers', {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -1027,7 +1028,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     // Wenn nicht in lokaler Liste, lade alle Kunden und suche dann
     console.log('🔄 [LOAD-CUSTOMER-BY-NUMBER] Kunde nicht in lokaler Liste, lade alle Kunden...');
     
-    fetch('https://multi-mandant-ecommerce.onrender.com/api/customers', {
+    fetch('${environment.apiUrl}/api/customers', {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -1118,7 +1119,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     // Wenn nicht in lokaler Liste, lade alle Kunden und suche dann
     console.log('🔄 [LOAD-CUSTOMER-FROM-RESPONSE] Kunde nicht in lokaler Liste, lade alle Kunden...');
     
-    fetch('https://multi-mandant-ecommerce.onrender.com/api/customers', {
+    fetch('${environment.apiUrl}/api/customers', {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -1301,7 +1302,7 @@ filteredArtikelData() {
   private searchEanInApi(eanCode: string): void {
     const token = localStorage.getItem('token');
     
-    this.http.get(`https://multi-mandant-ecommerce.onrender.com/api/product-eans/ean/${eanCode}`, {
+    this.http.get(`${environment.apiUrl}/api/product-eans/ean/${eanCode}`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }
@@ -2506,7 +2507,7 @@ filteredArtikelData() {
     console.log('🚚 [CUSTOMER-ORDERS] Lieferdatum:', completeOrder.orderData.delivery_date || 'Nicht gesetzt');
     console.log('🏢 [CUSTOMER-ORDERS] Firmenname geändert:', !!completeOrder.orderData.different_company_name);
     console.log('🔑 [CUSTOMER-ORDERS] Token vorhanden:', !!token);
-    console.log('🌐 [CUSTOMER-ORDERS] Endpoint:', 'https://multi-mandant-ecommerce.onrender.com/api/orders');
+    console.log('🌐 [CUSTOMER-ORDERS] Endpoint:', '${environment.apiUrl}/api/orders');
     console.log('📊 [CUSTOMER-ORDERS] Artikel-Details:', completeOrder.orderItems.map(item => ({
       artikel: item.article_text,
       menge: item.quantity,
@@ -2516,7 +2517,7 @@ filteredArtikelData() {
 
     console.log('💾 [SAVE-ORDER] Auftrag wird gespeichert:', completeOrder);
     
-    fetch('https://multi-mandant-ecommerce.onrender.com/api/orders', {
+    fetch('${environment.apiUrl}/api/orders', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -2700,7 +2701,7 @@ filteredArtikelData() {
     this.isLoadingCustomers = true;
     const token = localStorage.getItem('token');
     
-    fetch('https://multi-mandant-ecommerce.onrender.com/api/customers', {
+    fetch('${environment.apiUrl}/api/customers', {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -3298,11 +3299,11 @@ filteredArtikelData() {
   private async generateCustomerToken(customerNumber: string): Promise<string | null> {
     try {
       console.log('🔍 [TOKEN] Generiere Token für Kunde:', customerNumber);
-      console.log('🔍 [TOKEN] API URL:', 'https://multi-mandant-ecommerce.onrender.com/api/auth/generate-customer-token');
+      console.log('🔍 [TOKEN] API URL:', '${environment.apiUrl}/api/auth/generate-customer-token');
       console.log('🔍 [TOKEN] Request Body:', { customerNumber: customerNumber });
       console.log('🔍 [TOKEN] Aktuelle URL:', window.location.href);
       
-      const response = await firstValueFrom(this.http.post('https://multi-mandant-ecommerce.onrender.com/api/auth/generate-customer-token', {
+      const response = await firstValueFrom(this.http.post('${environment.apiUrl}/api/auth/generate-customer-token', {
         customerNumber: customerNumber
       }));
       
@@ -3760,7 +3761,7 @@ filteredArtikelData() {
     }
     
     const token = localStorage.getItem('token');
-    const apiUrl = `https://multi-mandant-ecommerce.onrender.com/api/customer-article-prices/customer/${customerNumber}`;
+    const apiUrl = `${environment.apiUrl}/api/customer-article-prices/customer/${customerNumber}`;
     
     console.log('🔗 [CUSTOMER-ARTICLE-PRICES] API URL:', apiUrl);
     console.log('�� [CUSTOMER-ARTICLE-PRICES] Token vorhanden:', !!token);
@@ -4104,7 +4105,7 @@ filteredArtikelData() {
     const token = localStorage.getItem('token');
     this.isLoadingEans = true;
     
-    this.http.get(`https://multi-mandant-ecommerce.onrender.com/api/product-eans/article/${articleNumber}`, {
+    this.http.get(`${environment.apiUrl}/api/product-eans/article/${articleNumber}`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }
@@ -4149,7 +4150,7 @@ filteredArtikelData() {
       ean: this.eanCode.trim()
     };
 
-    this.http.post('https://multi-mandant-ecommerce.onrender.com/api/product-eans/assign', payload, {
+    this.http.post('${environment.apiUrl}/api/product-eans/assign', payload, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
@@ -4188,7 +4189,7 @@ filteredArtikelData() {
     if (confirm('Möchten Sie die EAN-Zuordnung für diesen Artikel wirklich entfernen?')) {
       const token = localStorage.getItem('token');
       
-      this.http.delete(`https://multi-mandant-ecommerce.onrender.com/api/product-eans/${item.id}`, {
+      this.http.delete(`${environment.apiUrl}/api/product-eans/${item.id}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

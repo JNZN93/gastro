@@ -16,6 +16,7 @@ import 'jspdf-autotable';
 import { IndexedDBService } from '../indexeddb.service';
 import { OffersService, OfferWithProducts, OfferProduct } from '../offers.service';
 import { RecentImagesModalComponent } from '../recent-images-modal/recent-images-modal.component';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-employees',
@@ -548,7 +549,7 @@ export class EmployeesComponent implements OnInit, OnDestroy {
     // Wenn nicht in lokaler Liste, lade alle Kunden und suche dann
     console.log('🔄 [LOAD-CUSTOMER-FROM-RESPONSE] Kunde nicht in lokaler Liste, lade alle Kunden...');
     
-    fetch('https://multi-mandant-ecommerce.onrender.com/api/customers', {
+    fetch('${environment.apiUrl}/api/customers', {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -781,7 +782,7 @@ export class EmployeesComponent implements OnInit, OnDestroy {
     const token = localStorage.getItem('token');
     /** test log for commit */
     
-    this.http.get(`https://multi-mandant-ecommerce.onrender.com/api/product-eans/ean/${eanCode}`, {
+    this.http.get(`${environment.apiUrl}/api/product-eans/ean/${eanCode}`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }
@@ -1957,7 +1958,7 @@ export class EmployeesComponent implements OnInit, OnDestroy {
     console.log('🚚 [EMPLOYEES] Lieferdatum:', completeOrder.orderData.delivery_date || 'Nicht gesetzt');
     console.log('🏢 [EMPLOYEES] Firmenname geändert:', !!completeOrder.orderData.different_company_name);
     console.log('🔑 [EMPLOYEES] Token vorhanden:', !!token);
-    console.log('🌐 [EMPLOYEES] Endpoint:', 'https://multi-mandant-ecommerce.onrender.com/api/orders');
+    console.log('🌐 [EMPLOYEES] Endpoint:', '${environment.apiUrl}/api/orders');
     console.log('📊 [EMPLOYEES] Artikel-Details:', completeOrder.orderItems.map(item => ({
       artikel: item.article_text,
       menge: item.quantity,
@@ -1967,7 +1968,7 @@ export class EmployeesComponent implements OnInit, OnDestroy {
 
     console.log('💾 [SAVE-ORDER] Auftrag wird gespeichert:', completeOrder);
     
-    fetch('https://multi-mandant-ecommerce.onrender.com/api/orders', {
+    fetch('${environment.apiUrl}/api/orders', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -2166,7 +2167,7 @@ export class EmployeesComponent implements OnInit, OnDestroy {
     this.isLoadingCustomers = true;
     const token = localStorage.getItem('token');
     
-    fetch('https://multi-mandant-ecommerce.onrender.com/api/customers', {
+    fetch('${environment.apiUrl}/api/customers', {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -2784,7 +2785,7 @@ export class EmployeesComponent implements OnInit, OnDestroy {
     }
     
     const token = localStorage.getItem('token');
-    const apiUrl = `https://multi-mandant-ecommerce.onrender.com/api/customer-article-prices/customer/${customerNumber}`;
+    const apiUrl = `${environment.apiUrl}/api/customer-article-prices/customer/${customerNumber}`;
     
     console.log('🔗 [CUSTOMER-ARTICLE-PRICES] API URL:', apiUrl);
     console.log('�� [CUSTOMER-ARTICLE-PRICES] Token vorhanden:', !!token);
@@ -3136,7 +3137,7 @@ export class EmployeesComponent implements OnInit, OnDestroy {
       ean: this.eanCode.trim()
     };
 
-    this.http.post('https://multi-mandant-ecommerce.onrender.com/api/product-eans/assign', payload, {
+    this.http.post('${environment.apiUrl}/api/product-eans/assign', payload, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
@@ -3169,7 +3170,7 @@ export class EmployeesComponent implements OnInit, OnDestroy {
     if (confirm('Möchten Sie die EAN-Zuordnung für diesen Artikel wirklich entfernen?')) {
       const token = localStorage.getItem('token');
       
-      this.http.delete(`https://multi-mandant-ecommerce.onrender.com/api/product-eans/ean/${item.ean}`, {
+      this.http.delete(`${environment.apiUrl}/api/product-eans/ean/${item.ean}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

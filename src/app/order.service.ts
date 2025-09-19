@@ -1,14 +1,15 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class OrderService {
 
-  apiUrlOrder = 'https://multi-mandant-ecommerce.onrender.com/api/orders';
-  apiUrlAllOrders = 'https://multi-mandant-ecommerce.onrender.com/api/orders/all-orders-pending';
+  apiUrlOrder = `${environment.apiUrl}/api/orders`;
+  apiUrlAllOrders = `${environment.apiUrl}/api/orders/all-orders-pending`;
 
   constructor(private http: HttpClient) { }
 

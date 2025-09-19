@@ -22,6 +22,7 @@ import { OffersComponent } from './offers/offers.component';
 import { AuthGuard } from './auth.guard';
 import { AdminAuthGuard } from './admin-auth.guard';
 import { OfferFlyerComponent } from './offer-flyer/offer-flyer.component';
+import { OpenInvoicesComponent } from './open-invoices/open-invoices.component';
 
 export const routes: Routes = [
     { 
@@ -36,6 +37,7 @@ export const routes: Routes = [
     },
     { path: 'registration', component: RegistrationComponent },
     { path: 'admin', component: AdminComponent, canActivate: [AuthGuard]},
+    { path: 'open-invoices', component: OpenInvoicesComponent, canActivate: [AuthGuard]},
     { path: 'guest-link', component: GuestLinkComponent, canActivate: [AdminAuthGuard]},
     { path: 'verify', component: VerifyComponent},
     { path: 'privacy', component: PrivacyPolicyComponent},

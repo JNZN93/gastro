@@ -1,12 +1,13 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class FavoritesService {
-  private apiUrl = 'https://multi-mandant-ecommerce.onrender.com/api'; // Anpassen an deine API-URL
+  private apiUrl = `${environment.apiUrl}/api`; // Anpassen an deine API-URL
 
   constructor(private http: HttpClient) { }
 

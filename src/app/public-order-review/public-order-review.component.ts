@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { environment } from '../../environments/environment';
 import { Component, OnInit, inject, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
@@ -1187,7 +1188,7 @@ export class PublicOrderReviewComponent implements OnInit {
     console.log('📍 [REVIEW] Lieferart:', completeOrder.orderData.fulfillment_type);
     console.log('🏠 [REVIEW] Lieferadresse:', orderData.shipping_address);
     console.log('📝 [REVIEW] Anmerkungen:', orderData.customer_notes);
-    console.log('🌐 [REVIEW] Endpoint:', 'https://multi-mandant-ecommerce.onrender.com/api/orders/without-auth');
+    console.log('🌐 [REVIEW] Endpoint:', '${environment.apiUrl}/api/orders/without-auth');
     
     // Zusätzliches Logging für PFAND-Artikel
     console.log('🔍 [REVIEW] PFAND-Artikel im Payload:', pfandItemsForPayload.map((item: any) => ({
@@ -1198,7 +1199,7 @@ export class PublicOrderReviewComponent implements OnInit {
       total_price: (item.quantity * (item.sale_price || item.unit_price_net || 0))
     })));
     
-    fetch('https://multi-mandant-ecommerce.onrender.com/api/orders/without-auth', {
+    fetch('${environment.apiUrl}/api/orders/without-auth', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -1504,7 +1505,7 @@ export class PublicOrderReviewComponent implements OnInit {
       console.log('📡 [PUBLIC-PFAND-LOGIC] Lade PFAND-Artikel von api/products...');
       
       // Lade alle Produkte und filtere nach PFAND-Kategorie
-      const response = await fetch('https://multi-mandant-ecommerce.onrender.com/api/products');
+      const response = await fetch('${environment.apiUrl}/api/products');
       const allProducts = await response.json();
       
       // Filtere nur PFAND-Artikel

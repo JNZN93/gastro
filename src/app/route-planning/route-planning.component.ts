@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders, HttpClientModule } from '@angular/common/http';
 import { Router } from '@angular/router';
+import { environment } from '../../environments/environment';
 
 // Leaflet TypeScript Deklarationen
 declare var L: any;
@@ -364,7 +365,7 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
     this.isLoadingCustomers = true;
     const token = localStorage.getItem('token');
     
-    fetch('https://multi-mandant-ecommerce.onrender.com/api/customers', {
+    fetch('${environment.apiUrl}/api/customers', {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
