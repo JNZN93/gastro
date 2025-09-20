@@ -942,27 +942,19 @@ export class OpenInvoicesComponent implements OnInit {
     }
   }
 
-  // Bestimmt die Zeilen-Farbmarkierung basierend auf dem Fälligkeitstag
+  // Bestimmt die Zeilen-Farbmarkierung basierend auf dem Status
   getRowClass(invoice: Invoice): string {
-    if (!invoice.due_date) return '';
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // Setze Zeit auf 00:00:00 für korrekten Vergleich
-
-    const dueDate = new Date(invoice.due_date);
-    dueDate.setHours(0, 0, 0, 0);
-
-    // Wenn Fälligkeitstag heute ist
-    if (dueDate.getTime() === today.getTime()) {
-      return 'row-due-today';
+    switch (invoice.status) {
+      case 'paid':
+        return 'row-paid';
+      case 'overdue':
+        return 'row-overdue';
+      case 'sepa':
+        return 'row-sepa';
+      case 'open':
+      default:
+        return 'row-open';
     }
-
-    // Wenn Fälligkeitstag überschritten ist und Status nicht bereits "paid" oder "sepa" ist
-    if (dueDate < today && invoice.status !== 'paid' && invoice.status !== 'sepa') {
-      return 'row-overdue';
-    }
-
-    return '';
   }
 
   // Automatisch Status auf "overdue" setzen

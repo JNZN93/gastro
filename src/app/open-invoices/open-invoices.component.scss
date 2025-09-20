@@ -296,23 +296,36 @@
         border-left: 3px solid #667eea;
       }
 
-      // Zeilen-Farbmarkierung basierend auf Fälligkeitstag
-      &.row-due-today {
-        background: rgba(251, 191, 36, 0.1); // Gelb für heute fällig
-        border-left: 3px solid #fbbf24;
+      // Zeilen-Farbmarkierung basierend auf Status
+      &.row-paid {
+        background: rgba(34, 197, 94, 0.28); // Extrem knalliges Grün für bezahlt
+        border-left: 3px solid #15803d;
 
         &:hover {
-          background: rgba(251, 191, 36, 0.15);
+          background: rgba(34, 197, 94, 0.52); // Mega-intensiver Hover
         }
       }
 
       &.row-overdue {
-        background: rgba(239, 68, 68, 0.1); // Rot für überfällig
-        border-left: 3px solid #ef4444;
+        background: rgba(239, 68, 68, 0.28); // Extrem knalliges Rot für überfällig
+        border-left: 3px solid #b91c1c;
 
         &:hover {
-          background: rgba(239, 68, 68, 0.15);
+          background: rgba(239, 68, 68, 0.52); // Mega-intensiver Hover
         }
+      }
+
+      &.row-sepa {
+        background: rgba(29, 78, 216, 0.35); // Extrem knalliges dunkles Blau für SEPA
+        border-left: 3px solid #1d4ed8;
+
+        &:hover {
+          background: rgba(29, 78, 216, 0.6); // Mega-intensiver Hover
+        }
+      }
+
+      &.row-open {
+        // Normal weiß für offen - kein spezieller Hintergrund
       }
     }
   }
