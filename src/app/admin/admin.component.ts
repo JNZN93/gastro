@@ -67,7 +67,7 @@ export class AdminComponent implements OnInit {
     const token = localStorage.getItem('token');
     if (!token) return;
 
-    this.http.get<any[]>('${environment.apiUrl}/api/customers', {
+    this.http.get<any[]>(`${environment.apiUrl}/api/customers`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
@@ -382,7 +382,7 @@ formatDate(dateString: string): string {
 
       this.http
         .post(
-          '${environment.apiUrl}/api/customers/upload',
+          `${environment.apiUrl}/api/customers/upload`,
           formData,
           {
             headers: {
@@ -427,7 +427,7 @@ formatDate(dateString: string): string {
 
       this.http
         .post(
-          '${environment.apiUrl}/api/customer-article-prices/upload',
+          `${environment.apiUrl}/api/customer-article-prices/upload`,
           formData,
           {
             headers: {
@@ -472,7 +472,7 @@ formatDate(dateString: string): string {
 
       this.http
         .post(
-          '${environment.apiUrl}/api/products/upload',
+          `${environment.apiUrl}/api/products/upload`,
           formData,
           {
             headers: {

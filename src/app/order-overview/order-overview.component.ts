@@ -131,7 +131,7 @@ export class OrderOverviewComponent implements OnInit {
       'Authorization': `Bearer ${token}`
     });
 
-    this.http.get<OrdersResponse>('${environment.apiUrl}/api/orders/all-orders', { headers })
+    this.http.get<OrdersResponse>(`${environment.apiUrl}/api/orders/all-orders`, { headers })
       .subscribe({
         next: (response) => {
           this.orders = response.orders || [];
@@ -157,7 +157,7 @@ export class OrderOverviewComponent implements OnInit {
     });
 
     this.http.get<any[]>(
-      '${environment.apiUrl}/api/customers',
+      `${environment.apiUrl}/api/customers`,
       { headers }
     ).subscribe({
       next: (data) => {
