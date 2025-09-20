@@ -92,7 +92,7 @@ export class LabelManagementComponent implements OnInit {
 
   loadProducts(): void {
     this.isLoading = true;
-    this.http.get<Product[]>('${environment.apiUrl}/api/products').subscribe({
+    this.http.get<Product[]>(`${environment.apiUrl}/api/products`).subscribe({
       next: (data) => {
         this.products = data;
         this.filteredProducts = [...this.products];

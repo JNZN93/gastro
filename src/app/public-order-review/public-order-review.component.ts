@@ -1199,7 +1199,7 @@ export class PublicOrderReviewComponent implements OnInit {
       total_price: (item.quantity * (item.sale_price || item.unit_price_net || 0))
     })));
     
-    fetch('${environment.apiUrl}/api/orders/without-auth', {
+    fetch(`${environment.apiUrl}/api/orders/without-auth`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -1505,7 +1505,7 @@ export class PublicOrderReviewComponent implements OnInit {
       console.log('📡 [PUBLIC-PFAND-LOGIC] Lade PFAND-Artikel von api/products...');
       
       // Lade alle Produkte und filtere nach PFAND-Kategorie
-      const response = await fetch('${environment.apiUrl}/api/products');
+      const response = await fetch(`${environment.apiUrl}/api/products`);
       const allProducts = await response.json();
       
       // Filtere nur PFAND-Artikel

@@ -365,7 +365,7 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
     this.isLoadingCustomers = true;
     const token = localStorage.getItem('token');
     
-    fetch('${environment.apiUrl}/api/customers', {
+    fetch(`${environment.apiUrl}/api/customers`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,

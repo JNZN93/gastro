@@ -132,7 +132,7 @@ export class ReportsComponent implements OnInit {
 
   loadArtikels() {
     // Lade alle Artikel für die Kategorie-Erkennung
-    this.http.get<any[]>('${environment.apiUrl}/api/products')
+    this.http.get<any[]>(`${environment.apiUrl}/api/products`)
       .subscribe({
         next: (response) => {
           this.globalArtikels = response || [];
@@ -149,7 +149,7 @@ export class ReportsComponent implements OnInit {
 
   loadCustomers() {
     // Lade alle Kunden für die Zusammenfassung
-    this.http.get<any[]>('${environment.apiUrl}/api/customers')
+    this.http.get<any[]>(`${environment.apiUrl}/api/customers`)
       .subscribe({
         next: (response) => {
           this.customers = response || [];
@@ -192,7 +192,7 @@ export class ReportsComponent implements OnInit {
         'Authorization': `Bearer ${token}`
       });
 
-      this.http.get<OrdersResponse>('${environment.apiUrl}/api/orders/all-orders', { headers })
+      this.http.get<OrdersResponse>(`${environment.apiUrl}/api/orders/all-orders`, { headers })
         .subscribe({
           next: (response) => {
             this.orders = response.orders || [];

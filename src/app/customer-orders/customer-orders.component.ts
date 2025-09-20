@@ -561,7 +561,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     console.log('🚀 [BILD-UPLOAD] Starte API-Aufruf an /api/orders/analyze-images');
     console.log('🔑 [BILD-UPLOAD] Token vorhanden:', !!token);
 
-    fetch('${environment.apiUrl}/api/orders/analyze-images', {
+    fetch(`${environment.apiUrl}/api/orders/analyze-images`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`
@@ -949,7 +949,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     // Wenn nicht in lokaler Liste, lade alle Kunden und suche dann
     console.log('🔄 [LOAD-CUSTOMER-BY-EMAIL] Kunde nicht in lokaler Liste, lade alle Kunden...');
     
-    fetch('${environment.apiUrl}/api/customers', {
+    fetch(`${environment.apiUrl}/api/customers`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -1028,7 +1028,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     // Wenn nicht in lokaler Liste, lade alle Kunden und suche dann
     console.log('🔄 [LOAD-CUSTOMER-BY-NUMBER] Kunde nicht in lokaler Liste, lade alle Kunden...');
     
-    fetch('${environment.apiUrl}/api/customers', {
+    fetch(`${environment.apiUrl}/api/customers`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -1119,7 +1119,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     // Wenn nicht in lokaler Liste, lade alle Kunden und suche dann
     console.log('🔄 [LOAD-CUSTOMER-FROM-RESPONSE] Kunde nicht in lokaler Liste, lade alle Kunden...');
     
-    fetch('${environment.apiUrl}/api/customers', {
+    fetch(`${environment.apiUrl}/api/customers`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -2517,7 +2517,7 @@ filteredArtikelData() {
 
     console.log('💾 [SAVE-ORDER] Auftrag wird gespeichert:', completeOrder);
     
-    fetch('${environment.apiUrl}/api/orders', {
+    fetch(`${environment.apiUrl}/api/orders`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -2701,7 +2701,7 @@ filteredArtikelData() {
     this.isLoadingCustomers = true;
     const token = localStorage.getItem('token');
     
-    fetch('${environment.apiUrl}/api/customers', {
+    fetch(`${environment.apiUrl}/api/customers`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -3303,7 +3303,7 @@ filteredArtikelData() {
       console.log('🔍 [TOKEN] Request Body:', { customerNumber: customerNumber });
       console.log('🔍 [TOKEN] Aktuelle URL:', window.location.href);
       
-      const response = await firstValueFrom(this.http.post('${environment.apiUrl}/api/auth/generate-customer-token', {
+      const response = await firstValueFrom(this.http.post(`${environment.apiUrl}/api/auth/generate-customer-token`, {
         customerNumber: customerNumber
       }));
       
@@ -4150,7 +4150,7 @@ filteredArtikelData() {
       ean: this.eanCode.trim()
     };
 
-    this.http.post('${environment.apiUrl}/api/product-eans/assign', payload, {
+    this.http.post(`${environment.apiUrl}/api/product-eans/assign`, payload, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'

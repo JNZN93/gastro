@@ -318,7 +318,7 @@ export class ProductManagementComponent implements OnInit, OnDestroy, AfterViewI
       ean: this.eanCode
     };
 
-    this.http.post('${environment.apiUrl}/api/product-eans/assign', payload, {
+    this.http.post(`${environment.apiUrl}/api/product-eans/assign`, payload, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
@@ -366,7 +366,7 @@ export class ProductManagementComponent implements OnInit, OnDestroy, AfterViewI
 
   loadProducts(): void {
     this.isVisible = true; // Zeige Loading-Screen während des Ladens
-    this.http.get('${environment.apiUrl}/api/products').subscribe({
+    this.http.get(`${environment.apiUrl}/api/products`).subscribe({
       next: (data: any) => {
         this.products = data;
         // Initial: keine Produkte anzeigen, bis Suche erfolgt

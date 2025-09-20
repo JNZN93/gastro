@@ -549,7 +549,7 @@ export class EmployeesComponent implements OnInit, OnDestroy {
     // Wenn nicht in lokaler Liste, lade alle Kunden und suche dann
     console.log('🔄 [LOAD-CUSTOMER-FROM-RESPONSE] Kunde nicht in lokaler Liste, lade alle Kunden...');
     
-    fetch('${environment.apiUrl}/api/customers', {
+    fetch(`${environment.apiUrl}/api/customers`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -1968,7 +1968,7 @@ export class EmployeesComponent implements OnInit, OnDestroy {
 
     console.log('💾 [SAVE-ORDER] Auftrag wird gespeichert:', completeOrder);
     
-    fetch('${environment.apiUrl}/api/orders', {
+    fetch(`${environment.apiUrl}/api/orders`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -2167,7 +2167,7 @@ export class EmployeesComponent implements OnInit, OnDestroy {
     this.isLoadingCustomers = true;
     const token = localStorage.getItem('token');
     
-    fetch('${environment.apiUrl}/api/customers', {
+    fetch(`${environment.apiUrl}/api/customers`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -3137,7 +3137,7 @@ export class EmployeesComponent implements OnInit, OnDestroy {
       ean: this.eanCode.trim()
     };
 
-    this.http.post('${environment.apiUrl}/api/product-eans/assign', payload, {
+    this.http.post(`${environment.apiUrl}/api/product-eans/assign`, payload, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
