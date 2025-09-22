@@ -200,18 +200,31 @@
               </div>
             </td>
 
+            <!-- File Upload for new invoice -->
+            <td class="attachment-cell">
+              <div class="attachment-info">
+                <div class="upload-section">
+                  <input type="file" [id]="'new-invoice-file'" accept=".pdf,.jpg,.jpeg,.png" class="hidden-file-input" (change)="onNewInvoiceFileSelected($event)" />
+                  <button class="upload-row-btn" (click)="triggerNewInvoiceFileInput()" [disabled]="isCreatingInvoice" title="Datei für neue Rechnung auswählen">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="upload-icon">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                    </svg>
+                    <span>{{ newInvoiceRow.file ? 'Datei gewählt' : 'Datei wählen' }}</span>
+                  </button>
+                  <div *ngIf="newInvoiceRow?.file" class="file-preview">
+                    <span class="file-name">{{ newInvoiceRow.file?.name }}</span>
+                    <button class="remove-file-btn" (click)="removeNewInvoiceFile()" title="Datei entfernen">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="remove-icon">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </td>
+
             <!-- Actions (Save/Cancel) -->
             <td class="actions-cell">
-              <!-- HiDrive Upload Option -->
-              <div class="upload-options" style="margin-bottom: 10px;">
-                <label class="upload-option">
-                  <input type="checkbox" [(ngModel)]="uploadToHiDrive">
-                  <svg class="option-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"/>
-                  </svg>
-                  Zu HiDrive hochladen
-                </label>
-              </div>
 
               <div class="new-invoice-buttons">
                 <button class="save-btn" (click)="saveNewInvoice()" [disabled]="isCreatingInvoice">

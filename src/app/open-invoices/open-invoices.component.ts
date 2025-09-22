@@ -42,8 +42,6 @@ export class OpenInvoicesComponent implements OnInit {
   // Track which existing invoice is in edit mode
   editingInvoiceId: string | null = null;
 
-  // Upload options
-  uploadToHiDrive: boolean = false;
 
   // Tab navigation
   activeTab: 'all' | 'open' | 'paid' | 'overdue' | 'sepa' = 'all';
@@ -245,19 +243,8 @@ export class OpenInvoicesComponent implements OnInit {
       status: this.newInvoiceRow.status || 'open'
     };
 
-    // Handle file upload if present
-    if (this.newInvoiceRow.file) {
-      this.createInvoiceWithFile(invoiceData, this.newInvoiceRow.file);
-    } else {
-      this.createInvoiceBasic(invoiceData);
-    }
-  }
-
-  // Create invoice without file
-  private createInvoiceBasic(invoiceData: any) {
-    const apiUrl = this.uploadToHiDrive
-      ? `${environment.apiUrl}/api/incoming-invoices/upload-hidrive`
-      : `${environment.apiUrl}/api/incoming-invoices`;
+    // Create invoice without file first
+    const apiUrl = `${environment.apiUrl}/api/incoming-invoices`;
 
     this.http.post<{success: boolean, data: Invoice, message?: string}>(
       apiUrl,
@@ -267,6 +254,12 @@ export class OpenInvoicesComponent implements OnInit {
       next: (response) => {
         if (response.success && response.data) {
           this.handleInvoiceCreationSuccess(response.data);
+
+          // If file was selected, upload it after invoice creation
+          if (this.newInvoiceRow!.file) {
+            // Show option to choose upload location
+            this.showUploadChoiceDialog(response.data.id, this.newInvoiceRow!.file);
+          }
         } else {
           this.errorMessage = response.message || 'Failed to create invoice';
         }
@@ -280,41 +273,22 @@ export class OpenInvoicesComponent implements OnInit {
     });
   }
 
-  // Create invoice with file upload
-  private createInvoiceWithFile(invoiceData: any, file: File) {
-    const formData = new FormData();
+  // Show upload choice dialog for newly created invoice
+  private showUploadChoiceDialog(invoiceId: string, file: File) {
+    const choice = confirm(`Rechnung "${invoiceId}" wurde erfolgreich erstellt!\n\nMöchten Sie die Datei "${file.name}" jetzt hochladen?\n\n- OK = Zu lokalem Speicher\n- Abbrechen = Zu HiDrive (nur für offene Rechnungen)`);
 
-    // Add invoice data
-    Object.keys(invoiceData).forEach(key => {
-      formData.append(key, invoiceData[key]);
-    });
-
-    // Add file
-    formData.append('file', file);
-
-    const apiUrl = this.uploadToHiDrive
-      ? `${environment.apiUrl}/api/incoming-invoices/upload-hidrive`
-      : `${environment.apiUrl}/api/incoming-invoices/upload`;
-
-    this.http.post<{success: boolean, data: Invoice, message?: string}>(
-      apiUrl,
-      formData,
-      { headers: this.getAuthHeaders() }
-    ).subscribe({
-      next: (response) => {
-        if (response.success && response.data) {
-          this.handleInvoiceCreationSuccess(response.data);
-        } else {
-          this.errorMessage = response.message || 'Failed to create invoice with file';
-        }
-        this.isCreatingInvoice = false;
-      },
-      error: (error) => {
-        console.error('Error creating invoice with file:', error);
-        this.errorMessage = 'Failed to create invoice with file. Please try again.';
-        this.isCreatingInvoice = false;
+    if (choice) {
+      // Upload to local storage
+      this.uploadFileToInvoice(file, invoiceId, false);
+    } else {
+      // Upload to HiDrive (check if invoice is still open)
+      const invoice = this.invoices.find(inv => inv.id === invoiceId);
+      if (invoice && invoice.status === 'open') {
+        this.uploadFileToInvoice(file, invoiceId, true);
+      } else {
+        alert('HiDrive-Upload ist nur für offene Rechnungen verfügbar. Die Datei wurde nicht hochgeladen.');
       }
-    });
+    }
   }
 
   // Handle successful invoice creation
@@ -337,8 +311,7 @@ export class OpenInvoicesComponent implements OnInit {
     // Automatisch überfällige Status aktualisieren nach dem Speichern
     this.updateOverdueStatuses();
 
-    const storageType = this.uploadToHiDrive ? 'HiDrive' : 'lokal';
-    alert(`Rechnung "${invoiceData.invoice_number}" wurde erfolgreich erstellt${normalizedInvoice.file_name ? ` mit Datei in ${storageType}` : ''}!`);
+    alert(`Rechnung "${invoiceData.invoice_number}" wurde erfolgreich erstellt${normalizedInvoice.file_name ? ' mit Datei' : ''}!`);
   }
 
   // Cancel the new invoice row
@@ -351,6 +324,12 @@ export class OpenInvoicesComponent implements OnInit {
     this.errorMessage = '';
     // Update filtered invoices cache after cancelling new invoice
     this.updateFilteredInvoices();
+
+    // Reset file input
+    const fileInput = document.getElementById('new-invoice-file') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = '';
+    }
   }
 
   // Start editing an existing invoice
@@ -575,6 +554,34 @@ export class OpenInvoicesComponent implements OnInit {
       // Store upload type in a data attribute
       fileInput.setAttribute('data-upload-type', 'hidrive');
       fileInput.click();
+    }
+  }
+
+  // Trigger file input for new invoice
+  triggerNewInvoiceFileInput() {
+    const fileInput = document.getElementById('new-invoice-file') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.click();
+    }
+  }
+
+  // Handle file selection for new invoice
+  onNewInvoiceFileSelected(event: any) {
+    const file = event.target.files[0];
+    if (file && this.newInvoiceRow) {
+      this.newInvoiceRow.file = file;
+    }
+  }
+
+  // Remove file from new invoice
+  removeNewInvoiceFile() {
+    if (this.newInvoiceRow) {
+      this.newInvoiceRow.file = undefined;
+      // Reset file input
+      const fileInput = document.getElementById('new-invoice-file') as HTMLInputElement;
+      if (fileInput) {
+        fileInput.value = '';
+      }
     }
   }
 
