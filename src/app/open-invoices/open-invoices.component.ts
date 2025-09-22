@@ -984,7 +984,12 @@ export class OpenInvoicesComponent implements OnInit {
   formatCurrency(amount: any): string {
     // Handle null, undefined, or non-numeric values
     if (amount === null || amount === undefined || isNaN(amount)) {
-      return '0,00 €';
+      return new Intl.NumberFormat('de-DE', {
+        style: 'currency',
+        currency: 'EUR',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }).format(0);
     }
 
     // Convert to number if it's a string
@@ -992,15 +997,55 @@ export class OpenInvoicesComponent implements OnInit {
 
     // Ensure it's a valid number
     if (isNaN(numericAmount)) {
-      return '0,00 €';
+      return new Intl.NumberFormat('de-DE', {
+        style: 'currency',
+        currency: 'EUR',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }).format(0);
     }
 
-    return numericAmount.toFixed(2).replace('.', ',') + ' €';
+    // Format with thousands separators and Euro symbol in German locale
+    return new Intl.NumberFormat('de-DE', {
+      style: 'currency',
+      currency: 'EUR',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(numericAmount);
   }
 
   formatDate(dateString: string): string {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('de-DE');
+    if (!dateString) return '';
+
+    // Try to handle values that are already in YYYY-MM-DD or other parseable formats
+    let date: Date | null = null;
+
+    // If already in YYYY-MM-DD, split safely (avoids timezone shifts)
+    if (typeof dateString === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+      const [yearStr, monthStr, dayStr] = dateString.split('-');
+      const year = Number(yearStr);
+      const month = Number(monthStr);
+      const day = Number(dayStr);
+      if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
+        date = new Date(Date.UTC(year, month - 1, day));
+      }
+    }
+
+    // Fallback: attempt to parse via Date constructor
+    if (!date) {
+      const parsed = new Date(dateString);
+      if (!isNaN(parsed.getTime())) {
+        date = parsed;
+      }
+    }
+
+    if (!date) return '';
+
+    const year = date.getUTCFullYear();
+    const month = String((date.getUTCMonth() + 1)).padStart(2, '0');
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    // Strict TT.MM.JJJJ
+    return `${day}.${month}.${year}`;
   }
 
   trackByInvoiceId(index: number, invoice: Invoice): string {
