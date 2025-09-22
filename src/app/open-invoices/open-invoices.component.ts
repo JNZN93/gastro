@@ -1099,15 +1099,50 @@ export class OpenInvoicesComponent implements OnInit {
         body,
         startY: 32,
         theme: 'grid',
-        styles: { fontSize: 9, cellPadding: 3 },
-        headStyles: { fillColor: [51, 51, 51], textColor: 255 },
+        styles: {
+          fontSize: 8,
+          cellPadding: 2,
+          lineWidth: 0.1,
+          lineColor: [229, 231, 235],
+          valign: 'middle'
+        },
+        headStyles: {
+          fillColor: [248, 250, 252],
+          textColor: [55, 65, 81],
+          fontStyle: 'bold'
+        },
+        bodyStyles: {
+          textColor: [55, 65, 81]
+        },
+        alternateRowStyles: {
+          fillColor: [250, 250, 250]
+        },
+        margin: { left: 12, right: 12 },
         columnStyles: {
-          0: { cellWidth: 55 },
-          1: { cellWidth: 28 },
-          2: { cellWidth: 20 },
-          3: { cellWidth: 22 },
+          0: { cellWidth: 45 },
+          1: { cellWidth: 26 },
+          2: { cellWidth: 18 },
+          3: { cellWidth: 20 },
           4: { cellWidth: 22, halign: 'right' },
-          5: { cellWidth: 25 }
+          5: { cellWidth: 22 }
+        },
+        didParseCell: (hookData: any) => {
+          if (hookData.section === 'body') {
+            const rowIndex = hookData.row.index;
+            const inv = data[rowIndex];
+            if (inv && inv.status) {
+              // Farben an UI angelehnt
+              if (inv.status === 'paid') {
+                hookData.cell.styles.fillColor = [220, 252, 231]; // grünlich
+              } else if (inv.status === 'overdue') {
+                hookData.cell.styles.fillColor = [254, 226, 226]; // rötlich
+              } else if (inv.status === 'sepa') {
+                hookData.cell.styles.fillColor = [219, 234, 254]; // bläulich
+              } else if (inv.status === 'open') {
+                hookData.cell.styles.fillColor = [239, 246, 255]; // sehr helles blau
+              }
+            }
+          }
         }
       });
 
