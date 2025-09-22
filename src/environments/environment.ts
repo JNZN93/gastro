@@ -1,4 +1,5 @@
 export const environment = {
   production: false,
-  apiUrl: 'https://multi-mandant-ecommerce.onrender.com'
+  apiUrl: 'http://localhost:10000'
+  //apiUrl: 'https://multi-mandant-ecommerce.onrender.com'
 };
