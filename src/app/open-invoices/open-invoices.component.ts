@@ -89,7 +89,7 @@ export class OpenInvoicesComponent implements OnInit {
         const dueDate = new Date(invoice.due_date);
         dueDate.setHours(0, 0, 0, 0);
 
-        if (dueDate < today) {
+    if (dueDate <= today) {
           this.autoUpdateOverdueStatus(invoice);
         }
       }
@@ -984,7 +984,7 @@ export class OpenInvoicesComponent implements OnInit {
   formatCurrency(amount: any): string {
     // Handle null, undefined, or non-numeric values
     if (amount === null || amount === undefined || isNaN(amount)) {
-      return new Intl.NumberFormat('de-DE', {
+        return new Intl.NumberFormat('de-DE', {
         style: 'currency',
         currency: 'EUR',
         minimumFractionDigits: 2,
