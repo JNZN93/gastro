@@ -253,12 +253,12 @@ export class OpenInvoicesComponent implements OnInit {
     ).subscribe({
       next: (response) => {
         if (response.success && response.data) {
+          const selectedFile = this.newInvoiceRow?.file;
           this.handleInvoiceCreationSuccess(response.data);
 
-          // If file was selected, upload it after invoice creation
-          if (this.newInvoiceRow!.file) {
-            // Show option to choose upload location
-            this.showUploadChoiceDialog(response.data.id, this.newInvoiceRow!.file);
+          // If file was selected, automatically upload it to HiDrive after invoice creation
+          if (selectedFile) {
+            this.autoUploadToHiDrive(response.data.id, selectedFile);
           }
         } else {
           this.errorMessage = response.message || 'Failed to create invoice';
@@ -273,21 +273,14 @@ export class OpenInvoicesComponent implements OnInit {
     });
   }
 
-  // Show upload choice dialog for newly created invoice
-  private showUploadChoiceDialog(invoiceId: string, file: File) {
-    const choice = confirm(`Rechnung "${invoiceId}" wurde erfolgreich erstellt!\n\nMöchten Sie die Datei "${file.name}" jetzt hochladen?\n\n- OK = Zu lokalem Speicher\n- Abbrechen = Zu HiDrive (nur für offene Rechnungen)`);
-
-    if (choice) {
-      // Upload to local storage
-      this.uploadFileToInvoice(file, invoiceId, false);
+  // Automatically upload file to HiDrive for newly created invoice
+  private autoUploadToHiDrive(invoiceId: string, file: File) {
+    // Check if invoice is open (HiDrive upload only works for open invoices)
+    const invoice = this.invoices.find(inv => inv.id === invoiceId);
+    if (invoice && invoice.status === 'open') {
+      this.uploadFileToInvoice(file, invoiceId, true);
     } else {
-      // Upload to HiDrive (check if invoice is still open)
-      const invoice = this.invoices.find(inv => inv.id === invoiceId);
-      if (invoice && invoice.status === 'open') {
-        this.uploadFileToInvoice(file, invoiceId, true);
-      } else {
-        alert('HiDrive-Upload ist nur für offene Rechnungen verfügbar. Die Datei wurde nicht hochgeladen.');
-      }
+      alert('HiDrive-Upload ist nur für offene Rechnungen verfügbar. Die Datei wurde nicht hochgeladen.');
     }
   }
 

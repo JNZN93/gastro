@@ -205,11 +205,11 @@
               <div class="attachment-info">
                 <div class="upload-section">
                   <input type="file" [id]="'new-invoice-file'" accept=".pdf,.jpg,.jpeg,.png" class="hidden-file-input" (change)="onNewInvoiceFileSelected($event)" />
-                  <button class="upload-row-btn" (click)="triggerNewInvoiceFileInput()" [disabled]="isCreatingInvoice" title="Datei für neue Rechnung auswählen">
+                  <button class="upload-row-btn" (click)="triggerNewInvoiceFileInput()" [disabled]="isCreatingInvoice" title="Datei für neue Rechnung auswählen (wird automatisch zu HiDrive hochgeladen)">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="upload-icon">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"/>
                     </svg>
-                    <span>{{ newInvoiceRow.file ? 'Datei gewählt' : 'Datei wählen' }}</span>
+                    <span>{{ newInvoiceRow.file ? 'Datei gewählt (Auto HiDrive)' : 'Datei wählen (Auto HiDrive)' }}</span>
                   </button>
                   <div *ngIf="newInvoiceRow?.file" class="file-preview">
                     <span class="file-name">{{ newInvoiceRow.file?.name }}</span>
