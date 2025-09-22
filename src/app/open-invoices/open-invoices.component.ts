@@ -15,6 +15,7 @@ interface Invoice {
   status: 'open' | 'paid' | 'overdue' | 'sepa';
   file?: File;
   file_name?: string;
+  hidrive_path?: string;
 }
 
 @Component({
@@ -550,6 +551,15 @@ export class OpenInvoicesComponent implements OnInit {
     }
   }
 
+  // Trigger file input for specific row (HiDrive overwrite)
+  triggerFileInputForHiDriveOverwrite(rowIndex: number) {
+    const fileInput = document.getElementById(`file-${rowIndex}`) as HTMLInputElement;
+    if (fileInput) {
+      fileInput.setAttribute('data-upload-type', 'hidrive-overwrite');
+      fileInput.click();
+    }
+  }
+
   // Trigger file input for new invoice
   triggerNewInvoiceFileInput() {
     const fileInput = document.getElementById('new-invoice-file') as HTMLInputElement;
@@ -586,6 +596,8 @@ export class OpenInvoicesComponent implements OnInit {
     if (file) {
       if (uploadType === 'hidrive') {
         this.uploadFileForInvoiceToHiDrive(file, invoiceId);
+      } else if (uploadType === 'hidrive-overwrite') {
+        this.overwriteFileForInvoiceInHiDrive(file, invoiceId);
       } else {
         this.uploadFileForInvoice(file, invoiceId);
       }
@@ -603,6 +615,46 @@ export class OpenInvoicesComponent implements OnInit {
   // Upload file for specific invoice to HiDrive
   private uploadFileForInvoiceToHiDrive(file: File, invoiceId: string) {
     this.uploadFileToInvoice(file, invoiceId, true);
+  }
+
+  // Overwrite existing HiDrive file for specific invoice
+  private overwriteFileForInvoiceInHiDrive(file: File, invoiceId: string) {
+    this.isUploadingInvoice = invoiceId;
+    this.errorMessage = '';
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${localStorage.getItem('token')}`
+    });
+
+    const uploadUrl = `${environment.apiUrl}/api/incoming-invoices/${invoiceId}/upload-hidrive`;
+
+    this.http.post<{success: boolean, data: Invoice, message?: string}>(
+      uploadUrl,
+      formData,
+      { headers }
+    ).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          const index = this.invoices.findIndex(inv => inv.id === invoiceId);
+          if (index !== -1) {
+            this.invoices[index] = response.data;
+          }
+          this.updateFilteredInvoices();
+          alert(`Datei "${file.name}" wurde in HiDrive ersetzt.`);
+        } else {
+          this.errorMessage = response.message || 'Failed to overwrite file';
+        }
+        this.isUploadingInvoice = null;
+      },
+      error: (error) => {
+        console.error('Error overwriting file in HiDrive:', error);
+        this.errorMessage = 'Failed to overwrite file. Please try again.';
+        this.isUploadingInvoice = null;
+      }
+    });
   }
 
   // Generic file upload method
