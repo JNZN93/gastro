@@ -42,6 +42,38 @@
   color: #667eea;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.back-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  color: #374151;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'Poppins', sans-serif;
+
+  &:hover {
+    background: #e5e7eb;
+    border-color: #9ca3af;
+    transform: translateY(-1px);
+  }
+
+  svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
 .upload-toggle-btn {
   display: flex;
   align-items: center;
@@ -206,7 +238,7 @@
     box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
 
     .tab-count {
-      background: rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 0, 0.2);
       color: white;
     }
   }

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from '../../environments/environment';
+import { Router } from '@angular/router';
 
 interface Invoice {
   id: string;
@@ -67,7 +68,7 @@ export class OpenInvoicesComponent implements OnInit {
   private pendingUpdates = new Map<string, { invoice: Invoice, field: string, value: any }>();
 
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private router: Router) {}
 
 
   ngOnInit() {
@@ -1178,6 +1179,10 @@ export class OpenInvoicesComponent implements OnInit {
   getSortIcon(): string {
     if (this.sortColumn !== 'supplier_name') return '';
     return this.sortDirection === 'asc' ? '↑' : '↓';
+  }
+
+  goBack() {
+    this.router.navigate(['/admin']);
   }
 }
 
