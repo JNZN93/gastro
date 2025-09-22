@@ -227,10 +227,7 @@ export class OpenInvoicesComponent implements OnInit {
       return;
     }
 
-    if (this.newInvoiceRow.amount <= 0) {
-      this.errorMessage = 'Amount must be greater than 0';
-      return;
-    }
+    // Amount validation removed - negative values are now allowed
 
     this.isCreatingInvoice = true;
     this.errorMessage = '';
@@ -333,10 +330,7 @@ export class OpenInvoicesComponent implements OnInit {
       return;
     }
 
-    if (invoice.amount <= 0) {
-      this.errorMessage = 'Amount must be greater than 0';
-      return;
-    }
+    // Amount validation removed - negative values are now allowed
 
     // Validate dates
     const invoiceDate = new Date(invoice.date);
