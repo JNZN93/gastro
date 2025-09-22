@@ -202,6 +202,17 @@
 
             <!-- Actions (Save/Cancel) -->
             <td class="actions-cell">
+              <!-- HiDrive Upload Option -->
+              <div class="upload-options" style="margin-bottom: 10px;">
+                <label class="upload-option">
+                  <input type="checkbox" [(ngModel)]="uploadToHiDrive">
+                  <svg class="option-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"/>
+                  </svg>
+                  Zu HiDrive hochladen
+                </label>
+              </div>
+
               <div class="new-invoice-buttons">
                 <button class="save-btn" (click)="saveNewInvoice()" [disabled]="isCreatingInvoice">
                   <svg *ngIf="!isCreatingInvoice" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="btn-icon">
@@ -297,18 +308,38 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
                   </svg>
                   <span class="file-name">{{ invoice.file_name }}</span>
+                  <button class="download-btn" (click)="downloadInvoiceFile(invoice)" title="Datei herunterladen">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="download-icon">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                  </button>
                 </div>
                 <div *ngIf="!invoice.file_name" class="upload-section">
                   <input type="file" [id]="'file-' + i" accept=".pdf,.jpg,.jpeg,.png" class="hidden-file-input" (change)="onFileSelectedForInvoice($event, invoice.id)" />
-                  <button class="upload-row-btn" (click)="triggerFileInput(i)" [disabled]="isUploadingInvoice === invoice.id || isInvoiceEditing(invoice)">
-                    <svg *ngIf="isUploadingInvoice !== invoice.id" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="upload-icon">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
-                    </svg>
-                    <svg *ngIf="isUploadingInvoice === invoice.id" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="upload-icon spinning">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                    </svg>
-                    <span>{{ isUploadingInvoice === invoice.id ? 'Wird hochgeladen...' : 'Hochladen' }}</span>
-                  </button>
+
+                  <!-- Upload Options -->
+                  <div class="upload-options-row">
+                    <button class="upload-local-btn" (click)="triggerFileInput(i)" [disabled]="isUploadingInvoice === invoice.id || isInvoiceEditing(invoice)" title="Zu lokalem Speicher hochladen">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="upload-icon">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z"/>
+                      </svg>
+                      <span>Lokal</span>
+                    </button>
+
+                    <button class="upload-hidrive-btn" (click)="triggerFileInputForHiDrive(i)" [disabled]="isUploadingInvoice === invoice.id || isInvoiceEditing(invoice) || invoice.status !== 'open'" title="Zu HiDrive hochladen (nur offene Rechnungen)">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="upload-icon">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"/>
+                      </svg>
+                      <span>HiDrive</span>
+                    </button>
+
+                    <div *ngIf="isUploadingInvoice === invoice.id" class="upload-loading">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="upload-icon spinning">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                      </svg>
+                      <span>Wird hochgeladen...</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </td>

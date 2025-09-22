@@ -42,6 +42,9 @@ export class OpenInvoicesComponent implements OnInit {
   // Track which existing invoice is in edit mode
   editingInvoiceId: string | null = null;
 
+  // Upload options
+  uploadToHiDrive: boolean = false;
+
   // Tab navigation
   activeTab: 'all' | 'open' | 'paid' | 'overdue' | 'sepa' = 'all';
 
@@ -242,31 +245,28 @@ export class OpenInvoicesComponent implements OnInit {
       status: this.newInvoiceRow.status || 'open'
     };
 
+    // Handle file upload if present
+    if (this.newInvoiceRow.file) {
+      this.createInvoiceWithFile(invoiceData, this.newInvoiceRow.file);
+    } else {
+      this.createInvoiceBasic(invoiceData);
+    }
+  }
+
+  // Create invoice without file
+  private createInvoiceBasic(invoiceData: any) {
+    const apiUrl = this.uploadToHiDrive
+      ? `${environment.apiUrl}/api/incoming-invoices/upload-hidrive`
+      : `${environment.apiUrl}/api/incoming-invoices`;
+
     this.http.post<{success: boolean, data: Invoice, message?: string}>(
-      `${environment.apiUrl}/api/incoming-invoices`,
+      apiUrl,
       invoiceData,
       { headers: this.getAuthHeaders() }
     ).subscribe({
       next: (response) => {
         if (response.success && response.data) {
-          // Replace the temporary row with the real one, normalize amount and dates
-          const normalizedInvoice = {
-            ...response.data,
-            amount: typeof response.data.amount === 'string' ? parseFloat(response.data.amount) || 0 : response.data.amount || 0,
-            date: this.normalizeDateValue(response.data.date),
-            due_date: this.normalizeDateValue(response.data.due_date)
-          };
-          const index = this.invoices.findIndex(inv => inv.id === this.newInvoiceRow!.id);
-          if (index !== -1) {
-            this.invoices[index] = normalizedInvoice;
-          }
-          this.newInvoiceRow = null;
-          this.errorMessage = '';
-          // Update filtered invoices cache after adding new invoice
-          this.updateFilteredInvoices();
-          // Automatisch überfällige Status aktualisieren nach dem Speichern
-          this.updateOverdueStatuses();
-          // Optional: alert(`Invoice "${response.data.invoice_number}" was successfully created!`);
+          this.handleInvoiceCreationSuccess(response.data);
         } else {
           this.errorMessage = response.message || 'Failed to create invoice';
         }
@@ -278,6 +278,67 @@ export class OpenInvoicesComponent implements OnInit {
         this.isCreatingInvoice = false;
       }
     });
+  }
+
+  // Create invoice with file upload
+  private createInvoiceWithFile(invoiceData: any, file: File) {
+    const formData = new FormData();
+
+    // Add invoice data
+    Object.keys(invoiceData).forEach(key => {
+      formData.append(key, invoiceData[key]);
+    });
+
+    // Add file
+    formData.append('file', file);
+
+    const apiUrl = this.uploadToHiDrive
+      ? `${environment.apiUrl}/api/incoming-invoices/upload-hidrive`
+      : `${environment.apiUrl}/api/incoming-invoices/upload`;
+
+    this.http.post<{success: boolean, data: Invoice, message?: string}>(
+      apiUrl,
+      formData,
+      { headers: this.getAuthHeaders() }
+    ).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          this.handleInvoiceCreationSuccess(response.data);
+        } else {
+          this.errorMessage = response.message || 'Failed to create invoice with file';
+        }
+        this.isCreatingInvoice = false;
+      },
+      error: (error) => {
+        console.error('Error creating invoice with file:', error);
+        this.errorMessage = 'Failed to create invoice with file. Please try again.';
+        this.isCreatingInvoice = false;
+      }
+    });
+  }
+
+  // Handle successful invoice creation
+  private handleInvoiceCreationSuccess(invoiceData: Invoice) {
+    // Replace the temporary row with the real one, normalize amount and dates
+    const normalizedInvoice = {
+      ...invoiceData,
+      amount: typeof invoiceData.amount === 'string' ? parseFloat(invoiceData.amount) || 0 : invoiceData.amount || 0,
+      date: this.normalizeDateValue(invoiceData.date),
+      due_date: this.normalizeDateValue(invoiceData.due_date)
+    };
+    const index = this.invoices.findIndex(inv => inv.id === this.newInvoiceRow!.id);
+    if (index !== -1) {
+      this.invoices[index] = normalizedInvoice;
+    }
+    this.newInvoiceRow = null;
+    this.errorMessage = '';
+    // Update filtered invoices cache after adding new invoice
+    this.updateFilteredInvoices();
+    // Automatisch überfällige Status aktualisieren nach dem Speichern
+    this.updateOverdueStatuses();
+
+    const storageType = this.uploadToHiDrive ? 'HiDrive' : 'lokal';
+    alert(`Rechnung "${invoiceData.invoice_number}" wurde erfolgreich erstellt${normalizedInvoice.file_name ? ` mit Datei in ${storageType}` : ''}!`);
   }
 
   // Cancel the new invoice row
@@ -497,10 +558,22 @@ export class OpenInvoicesComponent implements OnInit {
     }
   }
 
-  // Trigger file input for specific row
+  // Trigger file input for specific row (local upload)
   triggerFileInput(rowIndex: number) {
     const fileInput = document.getElementById(`file-${rowIndex}`) as HTMLInputElement;
     if (fileInput) {
+      // Store upload type in a data attribute
+      fileInput.setAttribute('data-upload-type', 'local');
+      fileInput.click();
+    }
+  }
+
+  // Trigger file input for specific row (HiDrive upload)
+  triggerFileInputForHiDrive(rowIndex: number) {
+    const fileInput = document.getElementById(`file-${rowIndex}`) as HTMLInputElement;
+    if (fileInput) {
+      // Store upload type in a data attribute
+      fileInput.setAttribute('data-upload-type', 'hidrive');
       fileInput.click();
     }
   }
@@ -508,13 +581,32 @@ export class OpenInvoicesComponent implements OnInit {
   // Handle file selection for specific invoice
   onFileSelectedForInvoice(event: any, invoiceId: string) {
     const file = event.target.files[0];
+    const uploadType = event.target.getAttribute('data-upload-type') || 'local';
+
     if (file) {
-      this.uploadFileForInvoice(file, invoiceId);
+      if (uploadType === 'hidrive') {
+        this.uploadFileForInvoiceToHiDrive(file, invoiceId);
+      } else {
+        this.uploadFileForInvoice(file, invoiceId);
+      }
     }
+
+    // Reset the upload type
+    event.target.removeAttribute('data-upload-type');
   }
 
-  // Upload file for specific invoice
+  // Upload file for specific invoice (LOCAL)
   private uploadFileForInvoice(file: File, invoiceId: string) {
+    this.uploadFileToInvoice(file, invoiceId, false);
+  }
+
+  // Upload file for specific invoice to HiDrive
+  private uploadFileForInvoiceToHiDrive(file: File, invoiceId: string) {
+    this.uploadFileToInvoice(file, invoiceId, true);
+  }
+
+  // Generic file upload method
+  private uploadFileToInvoice(file: File, invoiceId: string, useHiDrive: boolean = false) {
     this.isUploadingInvoice = invoiceId;
     this.errorMessage = '';
 
@@ -525,8 +617,12 @@ export class OpenInvoicesComponent implements OnInit {
       'Authorization': `Bearer ${localStorage.getItem('token')}`
     });
 
+    const uploadUrl = useHiDrive
+      ? `${environment.apiUrl}/api/incoming-invoices/${invoiceId}/upload-hidrive`
+      : `${environment.apiUrl}/api/incoming-invoices/${invoiceId}/upload`;
+
     this.http.post<{success: boolean, data: Invoice, message?: string}>(
-      `${environment.apiUrl}/api/incoming-invoices/${invoiceId}/upload`,
+      uploadUrl,
       formData,
       { headers }
     ).subscribe({
@@ -539,7 +635,8 @@ export class OpenInvoicesComponent implements OnInit {
           }
           // Update filtered invoices cache after file upload
           this.updateFilteredInvoices();
-          alert(`File "${file.name}" was successfully uploaded to invoice!`);
+          const storageType = useHiDrive ? 'HiDrive' : 'lokal';
+          alert(`File "${file.name}" wurde erfolgreich zu ${storageType} hochgeladen!`);
         } else {
           this.errorMessage = response.message || 'Failed to upload file';
         }
@@ -549,6 +646,38 @@ export class OpenInvoicesComponent implements OnInit {
         console.error('Error uploading file:', error);
         this.errorMessage = 'Failed to upload file. Please try again.';
         this.isUploadingInvoice = null;
+      }
+    });
+  }
+
+  // Download invoice file
+  downloadInvoiceFile(invoice: Invoice) {
+    const downloadUrl = `${environment.apiUrl}/api/incoming-invoices/${invoice.id}/download`;
+
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${localStorage.getItem('token')}`
+    });
+
+    // For HiDrive files, use the download endpoint
+    this.http.get(downloadUrl, {
+      headers,
+      responseType: 'blob' as 'json'
+    }).subscribe({
+      next: (response: any) => {
+        // Create blob and download
+        const blob = new Blob([response], { type: response.type || 'application/octet-stream' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = invoice.file_name || 'invoice-file';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      },
+      error: (error) => {
+        console.error('Error downloading file:', error);
+        this.errorMessage = 'Failed to download file. Please try again.';
       }
     });
   }
