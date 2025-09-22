@@ -1048,6 +1048,93 @@ export class OpenInvoicesComponent implements OnInit {
     return `${day}.${month}.${year}`;
   }
 
+  exportToPDF(all: boolean) {
+    const data = all
+      ? this.invoices.filter(inv => !this.newInvoiceRow || inv.id !== this.newInvoiceRow.id)
+      : this.filteredInvoices;
+
+    if (!data || !data.length) {
+      alert('Keine Rechnungen zum Exportieren gefunden.');
+      return;
+    }
+
+    Promise.all([
+      import('jspdf'),
+      import('jspdf-autotable')
+    ]).then(([{ default: jsPDF }, { default: autoTable }]) => {
+      const doc: any = new (jsPDF as any)();
+
+      const head = [[
+        'Lieferant',
+        'Rechnungsnr.',
+        'Datum',
+        'Fällig',
+        'Betrag',
+        'Status'
+      ]];
+
+      const statusText = (s: string) =>
+        s === 'open' ? 'Offen' :
+        s === 'paid' ? 'Bezahlt' :
+        s === 'overdue' ? 'Überfällig' :
+        s === 'sepa' ? 'SEPA' : (s || '-');
+
+      const body = data.map((inv: any) => [
+        inv.supplier_name || '-',
+        inv.invoice_number || '-',
+        this.formatDate(inv.date || '') || '-',
+        this.formatDate(inv.due_date || '') || '-',
+        this.formatCurrency(inv.amount ?? 0),
+        statusText(inv.status as any)
+      ]);
+
+      doc.setFontSize(14);
+      doc.text('Eingehende Rechnungen', 14, 18);
+      doc.setFontSize(10);
+      const sub = all ? 'Alle Rechnungen' : 'Aktuelle Ansicht';
+      try { doc.text(`${sub} • Export: ${new Date().toLocaleDateString('de-DE')}`, 14, 26); } catch {}
+
+      (autoTable as any)(doc, {
+        head,
+        body,
+        startY: 32,
+        theme: 'grid',
+        styles: { fontSize: 9, cellPadding: 3 },
+        headStyles: { fillColor: [51, 51, 51], textColor: 255 },
+        columnStyles: {
+          0: { cellWidth: 55 },
+          1: { cellWidth: 28 },
+          2: { cellWidth: 20 },
+          3: { cellWidth: 22 },
+          4: { cellWidth: 22, halign: 'right' },
+          5: { cellWidth: 25 }
+        }
+      });
+
+      const total = data.reduce((sum: number, inv: any) => {
+        const n = typeof inv.amount === 'string' ? parseFloat(inv.amount) : inv.amount;
+        return sum + (isNaN(n) ? 0 : (n || 0));
+      }, 0);
+
+      const finalY = (doc as any).lastAutoTable?.finalY || 32;
+      doc.setFontSize(11);
+      doc.text('Summe:', 150, finalY + 10, { align: 'right' });
+      doc.text(this.formatCurrency(total), 196, finalY + 10, { align: 'right' });
+
+      const fnameBase = all ? 'eingehende_rechnungen_alle' : 'eingehende_rechnungen_ansicht';
+      const fileName = `${fnameBase}_${new Date().toISOString().slice(0,10)}.pdf`;
+      try {
+        const blobUrl = doc.output('bloburl');
+        const win = window.open(blobUrl, '_blank');
+        if (!win) (doc as any).save(fileName);
+      } catch {
+        try { (doc as any).save(fileName); } catch {}
+      }
+    }).catch(() => {
+      alert('PDF-Export fehlgeschlagen. Bitte erneut versuchen.');
+    });
+  }
+
   trackByInvoiceId(index: number, invoice: Invoice): string {
     return invoice.id;
   }
@@ -1058,3 +1145,5 @@ export class OpenInvoicesComponent implements OnInit {
     return this.sortDirection === 'asc' ? '↑' : '↓';
   }
 }
+
+// Add exportToPDF method inside the class above (before the closing bracket)

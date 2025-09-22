@@ -61,6 +61,14 @@
             </svg>
             <input type="text" placeholder="Rechnungen suchen..." [(ngModel)]="searchTerm" class="search-input">
           </div>
+          <div class="export-buttons">
+            <button class="export-btn" (click)="exportToPDF(false)">
+              Als PDF exportieren (Ansicht)
+            </button>
+            <button class="export-btn" (click)="exportToPDF(true)">
+              Als PDF exportieren (Alle)
+            </button>
+          </div>
         </div>
       </div>
 
