@@ -22,7 +22,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  max-width: 1400px;
+  max-width: 1600px;
   margin: 0 auto;
 }
 
@@ -109,7 +109,7 @@
 // Navigation Info
 .nav-info {
   padding: 1rem 2rem;
-  max-width: 1400px;
+  max-width: 1600px;
   margin: 0 auto;
 }
 
@@ -140,7 +140,7 @@
 // Invoices Section
 .invoices-section {
   padding: 2rem;
-  max-width: 1400px;
+  max-width: 1600px;
   margin: 0 auto;
 }
 
@@ -305,6 +305,12 @@
 .invoices-table {
   width: 100%;
   border-collapse: collapse;
+
+  // Verhindere Zeilenumbrüche in allen Kopf- und Datenzellen
+  th,
+  td {
+    white-space: nowrap;
+  }
 
   thead {
     background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
@@ -1177,9 +1183,11 @@
   font-weight: 500;
   color: #374151;
   display: block;
-  min-height: 2rem;
-  line-height: 1.3;
-  word-break: break-word;
+  min-height: 1.5rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 // Status display styling
