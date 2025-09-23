@@ -316,6 +316,9 @@
             <!-- Attachment -->
             <td class="attachment-cell">
               <div class="attachment-info">
+                <!-- Hidden file input (always available for upload/replace operations) -->
+                <input type="file" [id]="'file-' + i" accept=".pdf,.jpg,.jpeg,.png" class="hidden-file-input" (change)="onFileSelectedForInvoice($event, invoice.id)" />
+
                 <div *ngIf="invoice.file_name" class="file-attached">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="attachment-icon">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
@@ -328,7 +331,6 @@
                   </button>
                 </div>
                 <div *ngIf="!invoice.file_name" class="upload-section">
-                  <input type="file" [id]="'file-' + i" accept=".pdf,.jpg,.jpeg,.png" class="hidden-file-input" (change)="onFileSelectedForInvoice($event, invoice.id)" />
 
                   <!-- Upload Options -->
                   <div class="upload-options-row">
@@ -383,7 +385,7 @@
                 <!-- Save/Cancel Buttons (shown when editing) -->
                 <div *ngIf="isInvoiceEditing(invoice)" class="edit-buttons">
                   <!-- Overwrite existing HiDrive file (visible only when a HiDrive path exists) -->
-                  <button *ngIf="invoice.hidrive_path" class="upload-hidrive-btn" (click)="triggerFileInputForHiDriveOverwrite(i)" [disabled]="isCreatingInvoice" title="Bestehende HiDrive-Datei ersetzen">
+                  <button *ngIf="invoice.hidrive_path" class="upload-hidrive-btn" (click)="triggerFileInputForHiDriveOverwrite(i)" [disabled]="isUploadingInvoice === invoice.id" title="Bestehende HiDrive-Datei ersetzen">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="upload-icon">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M12 10v6m0 0l-3-3m3 3l3-3"/>
                     </svg>

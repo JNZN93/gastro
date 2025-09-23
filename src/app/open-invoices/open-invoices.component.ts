@@ -640,10 +640,12 @@ export class OpenInvoicesComponent implements OnInit {
         if (response.success && response.data) {
           const index = this.invoices.findIndex(inv => inv.id === invoiceId);
           if (index !== -1) {
-            this.invoices[index] = response.data;
+            // Replace the entire invoice object to ensure Angular detects the change
+            this.invoices[index] = { ...response.data };
           }
+          // Force update of filtered invoices
           this.updateFilteredInvoices();
-          alert(`Datei "${file.name}" wurde in HiDrive ersetzt.`);
+          alert(`Datei "${response.data.file_name}" wurde in HiDrive ersetzt.`);
         } else {
           this.errorMessage = response.message || 'Failed to overwrite file';
         }
