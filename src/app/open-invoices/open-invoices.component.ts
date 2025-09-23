@@ -802,7 +802,12 @@ export class OpenInvoicesComponent implements OnInit {
 
     // Apply tab filter first
     if (this.activeTab !== 'all') {
-      filtered = filtered.filter(invoice => invoice.status === this.activeTab);
+      if (this.activeTab === 'open') {
+        // Show both 'open' and 'overdue' in the 'Offen' tab
+        filtered = filtered.filter(invoice => invoice.status === 'open' || invoice.status === 'overdue');
+      } else {
+        filtered = filtered.filter(invoice => invoice.status === this.activeTab);
+      }
     }
 
     // Apply search filter
@@ -866,7 +871,12 @@ export class OpenInvoicesComponent implements OnInit {
     let invoices = this.invoices.filter(inv => !this.newInvoiceRow || inv.id !== this.newInvoiceRow.id);
 
     if (tab !== 'all') {
-      invoices = invoices.filter(inv => inv.status === tab);
+      if (tab === 'open') {
+        // 'Offen' tab includes both 'open' and 'overdue'
+        invoices = invoices.filter(inv => inv.status === 'open' || inv.status === 'overdue');
+      } else {
+        invoices = invoices.filter(inv => inv.status === tab);
+      }
     }
 
     return {
