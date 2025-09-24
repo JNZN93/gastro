@@ -859,6 +859,100 @@
   </div>
 </div>
 
+<!-- Order Confirmation Modal -->
+<div class="order-confirmation-modal" *ngIf="isOrderConfirmationModalOpen">
+  <div class="order-confirmation-modal-content">
+    <div class="order-confirmation-modal-header">
+      <h2>📋 Auftrag bestätigen</h2>
+      <button class="close-order-confirmation-modal" (click)="closeOrderConfirmationModal()">
+        <span class="material-icons">close</span>
+      </button>
+    </div>
+    
+    <div class="order-confirmation-modal-body">
+      @if (orderConfirmationData) {
+        <div class="confirmation-content">
+          <!-- Kunde -->
+          <div class="confirmation-section">
+            <h3>👤 Kunde</h3>
+            <p class="customer-name">{{ orderConfirmationData.customerName }}</p>
+          </div>
+
+          <!-- Artikel -->
+          <div class="confirmation-section">
+            <h3>📦 Artikel</h3>
+            <div class="order-items-list">
+              @for (item of orderItems; track $index) {
+                <div class="order-item-row">
+                  <span class="item-quantity">{{ item.quantity }}x</span>
+                  <span class="item-name">{{ item.article_text }}</span>
+                  <span class="item-total">€{{ ((item.different_price !== undefined ? item.different_price : item.sale_price) * item.quantity).toFixed(2) }}</span>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- Datumsfelder -->
+          @if (orderConfirmationData.orderDate || orderConfirmationData.deliveryDate) {
+            <div class="confirmation-section">
+              <h3>📅 Termine</h3>
+              @if (orderConfirmationData.orderDate) {
+                <div class="date-row">
+                  <span class="date-label">Bestelldatum:</span>
+                  <span class="date-value">{{ orderConfirmationData.orderDate }}</span>
+                </div>
+              }
+              @if (orderConfirmationData.deliveryDate) {
+                <div class="date-row">
+                  <span class="date-label">Lieferdatum:</span>
+                  <span class="date-value">{{ orderConfirmationData.deliveryDate }}</span>
+                </div>
+              }
+            </div>
+          }
+
+          <!-- Warnung bei Verkauf unter EK-Preis -->
+          @if (orderConfirmationData.itemsBelowCost && orderConfirmationData.itemsBelowCost.length > 0) {
+            <div class="confirmation-section warning-section">
+              <h3>⚠️ Warnung</h3>
+              <div class="warning-content">
+                <p>Folgende Artikel werden unter dem Einkaufspreis verkauft:</p>
+                @for (item of orderConfirmationData.itemsBelowCost; track $index) {
+                  <div class="warning-item">
+                    <span class="warning-item-name">{{ item.article_text }}</span>
+                    <span class="warning-item-prices">
+                      (VK: €{{ (item.different_price !== undefined ? item.different_price : item.sale_price).toFixed(2) }} < EK: €{{ item.cost_price.toFixed(2) }})
+                    </span>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Gesamtpreis -->
+          <div class="confirmation-section total-section">
+            <div class="total-row">
+              <span class="total-label">Gesamtpreis:</span>
+              <span class="total-amount">€{{ orderConfirmationData.totalPrice.toFixed(2) }}</span>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+    
+    <div class="order-confirmation-modal-footer">
+      <button class="cancel-order-btn" (click)="closeOrderConfirmationModal()">
+        <span class="material-icons">close</span>
+        Abbrechen
+      </button>
+      <button class="confirm-order-btn" (click)="confirmOrderSave()">
+        <span class="material-icons">save</span>
+        Auftrag speichern
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- EAN Assignment Modal -->
 <div class="ean-assignment-modal" *ngIf="isEanAssignmentModalOpen">
   <div class="ean-assignment-modal-content">

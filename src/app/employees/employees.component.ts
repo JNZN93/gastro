@@ -69,6 +69,10 @@ export class EmployeesComponent implements OnInit, OnDestroy {
   
   // EAN Assignment modal properties
   isEanAssignmentModalOpen: boolean = false;
+  
+  // Order confirmation modal properties
+  isOrderConfirmationModalOpen: boolean = false;
+  orderConfirmationData: any = null;
   eanAssignmentItem: any = null;
   eanCode: string = '';
   isEanScanning: boolean = false;
@@ -1851,145 +1855,7 @@ export class EmployeesComponent implements OnInit, OnDestroy {
   }
 
   saveOrder(): void {
-    if (!this.globalService.selectedCustomerForOrders) {
-      alert('Bitte wählen Sie zuerst einen Kunden aus.');
-      return;
-    }
-
-    if (this.orderItems.length === 0) {
-      alert('Bitte fügen Sie Artikel zum Auftrag hinzu.');
-      return;
-    }
-
-    // Prüfe auf Verkaufspreise unter EK-Preis
-    const itemsBelowCost = this.orderItems.filter(item => {
-      const sellingPrice = item.different_price !== undefined ? item.different_price : item.sale_price;
-      return item.cost_price && sellingPrice < item.cost_price;
-    });
-
-    // Bestellübersicht erstellen
-    const orderSummary = this.orderItems.map(item => 
-      `${item.quantity}x ${item.article_text} - €${((item.different_price !== undefined ? item.different_price : item.sale_price) * item.quantity).toFixed(2)}`
-    ).join('\n');
-    
-    const totalPrice = this.getOrderTotal();
-    const customerName = this.globalService.selectedCustomerForOrders.last_name_company;
-    
-    // Erweiterte Bestellübersicht mit Datumsfeldern
-    let confirmMessage = `📋 Auftrag bestätigen\n\nKunde: ${customerName}\n\nArtikel:\n${orderSummary}\n\nGesamtpreis: €${totalPrice.toFixed(2)}`;
-    
-    // Füge Datumsfelder zur Übersicht hinzu, falls ausgefüllt
-    if (this.orderDate) {
-      confirmMessage += `\nBestelldatum: ${this.orderDate}`;
-    }
-    if (this.deliveryDate) {
-      confirmMessage += `\nLieferdatum: ${this.deliveryDate}`;
-    }
-    
-    if (itemsBelowCost.length > 0) {
-      const itemNames = itemsBelowCost.map(item => 
-        `${item.article_text} (VK: €${(item.different_price !== undefined ? item.different_price : item.sale_price).toFixed(2)} < EK: €${item.cost_price.toFixed(2)})`
-      ).join('\n');
-      
-      confirmMessage += `\n\n⚠️ WARNUNG: Folgende Artikel werden unter dem Einkaufspreis verkauft:\n\n${itemNames}`;
-    }
-    
-    confirmMessage += `\n\nMöchten Sie diesen Auftrag speichern?`;
-    
-    if (!confirm(confirmMessage)) {
-      console.log('❌ [SAVE-ORDER] Auftrag vom Benutzer abgebrochen');
-      return;
-    }
-
-    // Ensure description is set for all items
-    this.orderItems.forEach(item => {
-      if (!item.description && item.article_text) {
-        item.description = item.article_text;
-      }
-    });
-
-    // Kundendaten für den Request
-    const customerData: any = {
-      customer_id: this.globalService.selectedCustomerForOrders.id,
-      customer_number: this.globalService.selectedCustomerForOrders.customer_number,
-      customer_name: this.globalService.selectedCustomerForOrders.last_name_company,
-      customer_addition: this.globalService.selectedCustomerForOrders.name_addition,
-      customer_email: this.globalService.selectedCustomerForOrders.email,
-      status: 'completed'
-    };
-
-    // Nur Kundendaten mitsenden, wenn der Name geändert wurde
-    if (this.differentCompanyName) {
-      customerData.customer_city = this.globalService.selectedCustomerForOrders.city;
-      customerData.customer_street = this.globalService.selectedCustomerForOrders.street;
-      customerData.customer_postal_code = this.globalService.selectedCustomerForOrders.postal_code;
-      customerData.customer_country_code = this.globalService.selectedCustomerForOrders._country_code;
-      customerData.different_company_name = this.differentCompanyName;
-    }
-
-    // Datumsfelder nur mitsenden, wenn ausgefüllt
-    if (this.orderDate) {
-      customerData.order_date = this.orderDate;
-    }
-    if (this.deliveryDate) {
-      customerData.delivery_date = this.deliveryDate;
-    }
-
-    const completeOrder = {
-      orderData: {
-        ...customerData,
-        total_price: this.getOrderTotal(),
-        created_at: new Date().toISOString()
-      },
-      orderItems: this.orderItems
-    };
-
-
-    const token = localStorage.getItem('token');
-
-    // 🔍 PAYLOAD LOGGING - Bestellung wird abgesendet
-    console.log('🚀 [EMPLOYEES] Bestellung wird abgesendet:');
-    console.log('📋 [EMPLOYEES] Vollständiges Order-Payload:', JSON.stringify(completeOrder, null, 2));
-    console.log('💰 [EMPLOYEES] Gesamtpreis:', completeOrder.orderData.total_price);
-    console.log('📦 [EMPLOYEES] Anzahl Artikel:', completeOrder.orderItems.length);
-    console.log('👤 [EMPLOYEES] Kunde:', completeOrder.orderData.customer_name);
-    console.log('🆔 [EMPLOYEES] Kunden-ID:', completeOrder.orderData.customer_id);
-    console.log('📅 [EMPLOYEES] Bestelldatum:', completeOrder.orderData.order_date || 'Nicht gesetzt');
-    console.log('🚚 [EMPLOYEES] Lieferdatum:', completeOrder.orderData.delivery_date || 'Nicht gesetzt');
-    console.log('🏢 [EMPLOYEES] Firmenname geändert:', !!completeOrder.orderData.different_company_name);
-    console.log('🔑 [EMPLOYEES] Token vorhanden:', !!token);
-    console.log('🌐 [EMPLOYEES] Endpoint:', '${environment.apiUrl}/api/orders');
-    console.log('📊 [EMPLOYEES] Artikel-Details:', completeOrder.orderItems.map(item => ({
-      artikel: item.article_text,
-      menge: item.quantity,
-      preis: item.different_price !== undefined ? item.different_price : item.sale_price,
-      beschreibung: item.description
-    })));
-
-    console.log('💾 [SAVE-ORDER] Auftrag wird gespeichert:', completeOrder);
-    
-    fetch(`${environment.apiUrl}/api/orders`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(completeOrder)
-    })
-    .then(response => {
-      if (!response.ok) {
-        throw new Error('Fehler beim Speichern des Auftrags');
-      }
-      return response.json();
-    })
-    .then(data => {
-      alert('Auftrag erfolgreich gespeichert!');
-      this.clearAllOrderData();
-    })
-    .catch(error => {
-      console.error('Fehler beim Speichern des Auftrags:', error);
-      alert('Fehler beim Speichern des Auftrags: ' + error.message);
-    });
+    this.openOrderConfirmationModal();
   }
 
   // Neue Methode zum vollständigen Leeren aller auftragsrelevanten Daten
@@ -2040,6 +1906,7 @@ export class EmployeesComponent implements OnInit, OnDestroy {
     // 9. Leere die Modals
     this.isCustomerModalOpen = false;
     this.isArticlePricesModalOpen = false;
+    this.isOrderConfirmationModalOpen = false;
     this.customerSearchTerm = '';
     this.articlePricesSearchTerm = '';
     this.filteredCustomers = [];
@@ -3098,6 +2965,168 @@ export class EmployeesComponent implements OnInit, OnDestroy {
     this.eanSuccessMessage = '';
     this.isEanScanning = false;
     this.isAssigningEan = false;
+  }
+
+  // Order confirmation modal methods
+  openOrderConfirmationModal(): void {
+    if (!this.globalService.selectedCustomerForOrders) {
+      alert('Bitte wählen Sie zuerst einen Kunden aus.');
+      return;
+    }
+
+    if (this.orderItems.length === 0) {
+      alert('Bitte fügen Sie Artikel zum Auftrag hinzu.');
+      return;
+    }
+
+    // Prüfe auf Verkaufspreise unter EK-Preis
+    const itemsBelowCost = this.orderItems.filter(item => {
+      const sellingPrice = item.different_price !== undefined ? item.different_price : item.sale_price;
+      return item.cost_price && sellingPrice < item.cost_price;
+    });
+
+    // Bestellübersicht erstellen
+    const orderSummary = this.orderItems.map(item => 
+      `${item.quantity}x ${item.article_text} - €${((item.different_price !== undefined ? item.different_price : item.sale_price) * item.quantity).toFixed(2)}`
+    ).join('\n');
+    
+    const totalPrice = this.getOrderTotal();
+    const customerName = this.globalService.selectedCustomerForOrders.last_name_company;
+    
+    // Erweiterte Bestellübersicht mit Datumsfeldern
+    let confirmMessage = `📋 Auftrag bestätigen\n\nKunde: ${customerName}\n\nArtikel:\n${orderSummary}\n\nGesamtpreis: €${totalPrice.toFixed(2)}`;
+    
+    // Füge Datumsfelder zur Übersicht hinzu, falls ausgefüllt
+    if (this.orderDate) {
+      confirmMessage += `\nBestelldatum: ${this.orderDate}`;
+    }
+    if (this.deliveryDate) {
+      confirmMessage += `\nLieferdatum: ${this.deliveryDate}`;
+    }
+    
+    if (itemsBelowCost.length > 0) {
+      const itemNames = itemsBelowCost.map(item => 
+        `${item.article_text} (VK: €${(item.different_price !== undefined ? item.different_price : item.sale_price).toFixed(2)} < EK: €${item.cost_price.toFixed(2)})`
+      ).join('\n');
+      
+      confirmMessage += `\n\n⚠️ WARNUNG: Folgende Artikel werden unter dem Einkaufspreis verkauft:\n\n${itemNames}`;
+    }
+    
+    confirmMessage += `\n\nMöchten Sie diesen Auftrag speichern?`;
+    
+    // Bereite die Modal-Daten vor
+    this.orderConfirmationData = {
+      customerName: customerName,
+      orderSummary: orderSummary,
+      totalPrice: totalPrice,
+      orderDate: this.orderDate,
+      deliveryDate: this.deliveryDate,
+      itemsBelowCost: itemsBelowCost,
+      confirmMessage: confirmMessage
+    };
+
+    this.isOrderConfirmationModalOpen = true;
+  }
+
+  closeOrderConfirmationModal(): void {
+    this.isOrderConfirmationModalOpen = false;
+    this.orderConfirmationData = null;
+  }
+
+  confirmOrderSave(): void {
+    if (!this.orderConfirmationData) {
+      return;
+    }
+
+    // Ensure description is set for all items
+    this.orderItems.forEach(item => {
+      if (!item.description && item.article_text) {
+        item.description = item.article_text;
+      }
+    });
+
+    // Kundendaten für den Request
+    const customerData: any = {
+      customer_id: this.globalService.selectedCustomerForOrders.id,
+      customer_number: this.globalService.selectedCustomerForOrders.customer_number,
+      customer_name: this.globalService.selectedCustomerForOrders.last_name_company,
+      customer_addition: this.globalService.selectedCustomerForOrders.name_addition,
+      customer_email: this.globalService.selectedCustomerForOrders.email,
+      status: 'completed'
+    };
+
+    // Nur Kundendaten mitsenden, wenn der Name geändert wurde
+    if (this.differentCompanyName) {
+      customerData.customer_city = this.globalService.selectedCustomerForOrders.city;
+      customerData.customer_street = this.globalService.selectedCustomerForOrders.street;
+      customerData.customer_postal_code = this.globalService.selectedCustomerForOrders.postal_code;
+      customerData.customer_country_code = this.globalService.selectedCustomerForOrders._country_code;
+      customerData.different_company_name = this.differentCompanyName;
+    }
+
+    // Datumsfelder nur mitsenden, wenn ausgefüllt
+    if (this.orderDate) {
+      customerData.order_date = this.orderDate;
+    }
+    if (this.deliveryDate) {
+      customerData.delivery_date = this.deliveryDate;
+    }
+
+    const completeOrder = {
+      orderData: {
+        ...customerData,
+        total_price: this.getOrderTotal(),
+        created_at: new Date().toISOString()
+      },
+      orderItems: this.orderItems
+    };
+
+    const token = localStorage.getItem('token');
+
+    // 🔍 PAYLOAD LOGGING - Bestellung wird abgesendet
+    console.log('🚀 [EMPLOYEES] Bestellung wird abgesendet:');
+    console.log('📋 [EMPLOYEES] Vollständiges Order-Payload:', JSON.stringify(completeOrder, null, 2));
+    console.log('💰 [EMPLOYEES] Gesamtpreis:', completeOrder.orderData.total_price);
+    console.log('📦 [EMPLOYEES] Anzahl Artikel:', completeOrder.orderItems.length);
+    console.log('👤 [EMPLOYEES] Kunde:', completeOrder.orderData.customer_name);
+    console.log('🆔 [EMPLOYEES] Kunden-ID:', completeOrder.orderData.customer_id);
+    console.log('📅 [EMPLOYEES] Bestelldatum:', completeOrder.orderData.order_date || 'Nicht gesetzt');
+    console.log('🚚 [EMPLOYEES] Lieferdatum:', completeOrder.orderData.delivery_date || 'Nicht gesetzt');
+    console.log('🏢 [EMPLOYEES] Firmenname geändert:', !!completeOrder.orderData.different_company_name);
+    console.log('🔑 [EMPLOYEES] Token vorhanden:', !!token);
+    console.log('🌐 [EMPLOYEES] Endpoint:', '${environment.apiUrl}/api/orders');
+    console.log('📊 [EMPLOYEES] Artikel-Details:', completeOrder.orderItems.map(item => ({
+      artikel: item.article_text,
+      menge: item.quantity,
+      preis: item.different_price !== undefined ? item.different_price : item.sale_price,
+      beschreibung: item.description
+    })));
+
+    console.log('💾 [SAVE-ORDER] Auftrag wird gespeichert:', completeOrder);
+    
+    fetch(`${environment.apiUrl}/api/orders`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(completeOrder)
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Fehler beim Speichern des Auftrags');
+      }
+      return response.json();
+    })
+    .then(data => {
+      alert('Auftrag erfolgreich gespeichert!');
+      this.closeOrderConfirmationModal();
+      this.clearAllOrderData();
+    })
+    .catch(error => {
+      console.error('Fehler beim Speichern des Auftrags:', error);
+      alert('Fehler beim Speichern des Auftrags: ' + error.message);
+    });
   }
 
   startEanScanner(): void {
