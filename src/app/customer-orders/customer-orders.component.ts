@@ -498,13 +498,53 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       }
     }
 
-    // WICHTIG: Setze different_price immer auf den günstigsten ermittelten Preis
-    // Dadurch wird in der UI der richtige Preis angezeigt
-    item.different_price = bestPrice;
-    console.log(`💾 [PRICE-LOGIC] Günstigster Preis €${bestPrice} als different_price gespeichert (Quelle: ${priceSource})`);
-
-    console.log(`✅ [PRICE-LOGIC] Finaler Preis für ${item?.article_text}: €${bestPrice} (Quelle: ${priceSource})`);
+    // Wichtig: different_price NICHT automatisch überschreiben.
+    // different_price soll NUR dann gesetzt sein, wenn es sich um einen echten Kundenpreis handelt.
+    // Dadurch bleibt die UI-Markierung (custom-price) korrekt.
+    console.log(`✅ [PRICE-LOGIC] Finaler Preis für ${item?.article_text}: €${bestPrice} (Quelle: ${priceSource}) - different_price unverändert gelassen`);
     return bestPrice;
+  }
+
+  // Hilfsfunktion: Erkennen, ob ein echter Kundenpreis gesetzt ist
+  public isCustomPrice(item: any): boolean {
+    if (!item) {
+      return false;
+    }
+    if (item.different_price === undefined || item.different_price === null || item.different_price === '') {
+      return false;
+    }
+
+    const parseNumber = (val: any): number => {
+      if (typeof val === 'number') {
+        return val;
+      }
+      if (typeof val === 'string') {
+        const cleaned = val.replace(/\s/g, '').replace(',', '.');
+        const parsed = parseFloat(cleaned);
+        return isNaN(parsed) ? NaN : parsed;
+      }
+      return NaN;
+    };
+
+    const differentPrice = parseNumber(item.different_price);
+    if (isNaN(differentPrice)) {
+      return false;
+    }
+
+    const salePrice = parseNumber(item.sale_price);
+    if (!isNaN(salePrice) && differentPrice === salePrice) {
+      return false;
+    }
+
+    const hasOffer = item && item.use_offer_price && item.offer_price !== undefined && item.offer_price !== null && item.offer_price !== '';
+    if (hasOffer) {
+      const offerPrice = parseNumber(item.offer_price);
+      if (!isNaN(offerPrice) && differentPrice === offerPrice) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   ngOnDestroy(): void {
