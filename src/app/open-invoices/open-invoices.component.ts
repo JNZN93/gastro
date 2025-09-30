@@ -551,6 +551,16 @@ export class OpenInvoicesComponent implements OnInit {
     }
   }
 
+  // Trigger file input for specific row (HiDrive upload - mobile)
+  triggerFileInputForHiDriveMobile(rowIndex: number) {
+    const fileInput = document.getElementById(`file-mobile-${rowIndex}`) as HTMLInputElement;
+    if (fileInput) {
+      // Store upload type in a data attribute
+      fileInput.setAttribute('data-upload-type', 'hidrive');
+      fileInput.click();
+    }
+  }
+
   // Trigger file input for specific row (HiDrive overwrite)
   triggerFileInputForHiDriveOverwrite(rowIndex: number) {
     const fileInput = document.getElementById(`file-${rowIndex}`) as HTMLInputElement;
@@ -560,9 +570,26 @@ export class OpenInvoicesComponent implements OnInit {
     }
   }
 
+  // Trigger file input for specific row (HiDrive overwrite - mobile)
+  triggerFileInputForHiDriveOverwriteMobile(rowIndex: number) {
+    const fileInput = document.getElementById(`file-mobile-${rowIndex}`) as HTMLInputElement;
+    if (fileInput) {
+      fileInput.setAttribute('data-upload-type', 'hidrive-overwrite');
+      fileInput.click();
+    }
+  }
+
   // Trigger file input for new invoice
   triggerNewInvoiceFileInput() {
     const fileInput = document.getElementById('new-invoice-file') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.click();
+    }
+  }
+
+  // Trigger file input for new invoice (mobile)
+  triggerNewInvoiceFileInputMobile() {
+    const fileInput = document.getElementById('new-invoice-file-mobile') as HTMLInputElement;
     if (fileInput) {
       fileInput.click();
     }

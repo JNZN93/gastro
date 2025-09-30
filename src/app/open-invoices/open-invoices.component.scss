@@ -193,6 +193,21 @@
     opacity: 0.6;
     cursor: not-allowed;
   }
+
+  .export-icon {
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+  }
+
+  // Desktop: Zeige langen Text
+  .btn-text-full {
+    display: inline;
+  }
+
+  .btn-text-short {
+    display: none;
+  }
 }
 
 // Tab Navigation
@@ -208,6 +223,28 @@
   padding: 0.5rem;
   border: 1px solid rgba(255, 255, 255, 0.3);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  
+  // Scrollbar styling
+  &::-webkit-scrollbar {
+    height: 4px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 2px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: rgba(102, 126, 234, 0.3);
+    border-radius: 2px;
+    
+    &:hover {
+      background: rgba(102, 126, 234, 0.5);
+    }
+  }
 }
 
 .tab-button {
@@ -224,8 +261,9 @@
   cursor: pointer;
   transition: all 0.3s ease;
   position: relative;
-  flex: 1;
+  flex: 1 0 auto;
   justify-content: center;
+  white-space: nowrap;
 
   &:hover {
     background: rgba(102, 126, 234, 0.1);
@@ -1099,8 +1137,262 @@
   }
 }
 
+// Mobile/Tablet Card View Styles
+.cards-container {
+  display: none;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.invoice-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  transition: all 0.2s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  // Status-based card styling
+  &.row-paid {
+    border-left: 3px solid #15803d;
+    background: rgba(34, 197, 94, 0.03);
+  }
+
+  &.row-overdue {
+    border-left: 3px solid #b91c1c;
+    background: rgba(239, 68, 68, 0.03);
+  }
+
+  &.row-sepa {
+    border-left: 3px solid #1d4ed8;
+    background: rgba(29, 78, 216, 0.03);
+  }
+
+  &.row-open {
+    border-left: 3px solid #3b82f6;
+    background: rgba(59, 130, 246, 0.02);
+  }
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.625rem 0.875rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.card-title {
+  flex: 1;
+  margin-right: 0.625rem;
+
+  .supplier-input {
+    width: 100%;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: #1f2937;
+    border: none;
+    background: transparent;
+    padding: 0.125rem 0;
+
+    &:focus {
+      outline: none;
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 4px;
+      padding: 0.125rem 0.375rem;
+    }
+  }
+
+  .display-text {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: #1f2937;
+    padding: 0;
+    margin: 0;
+    line-height: 1.3;
+  }
+}
+
+.card-status {
+  flex-shrink: 0;
+
+  .status-select {
+    padding: 0.25rem 0.5rem;
+    border-radius: 5px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border: 1px solid transparent;
+    background: rgba(255, 255, 255, 0.8);
+    min-width: 80px;
+
+    &:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+    }
+
+    &.status-open {
+      background: rgba(59, 130, 246, 0.1);
+      color: #1e40af;
+    }
+
+    &.status-paid {
+      background: rgba(34, 197, 94, 0.1);
+      color: #166534;
+    }
+
+    &.status-sepa {
+      background: rgba(168, 85, 247, 0.1);
+      color: #7c3aed;
+    }
+
+    &.status-overdue {
+      background: rgba(239, 68, 68, 0.1);
+      color: #dc2626;
+    }
+  }
+}
+
+.card-content {
+  padding: 0.625rem 0.875rem;
+}
+
+.card-row-group {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 0.375rem;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.card-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.375rem;
+  padding-bottom: 0.375rem;
+  border-bottom: 1px solid #f3f4f6;
+
+  &:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+
+  &.half-width {
+    flex: 1;
+    min-width: 0; // Wichtig für flexbox overflow
+    flex-direction: column;
+    align-items: stretch;
+    margin-bottom: 0;
+    padding-bottom: 0.375rem;
+    border-bottom: 1px solid #f3f4f6;
+
+    .card-label {
+      min-width: auto;
+      margin-bottom: 0.25rem;
+    }
+
+    .card-value {
+      text-align: left;
+    }
+  }
+}
+
+.card-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6b7280;
+  min-width: 100px;
+  flex-shrink: 0;
+  line-height: 1.3;
+}
+
+.card-value {
+  flex: 1;
+  text-align: right;
+
+  .display-text {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #374151;
+    padding: 0;
+    margin: 0;
+    line-height: 1.3;
+  }
+
+  .editable-input {
+    width: 100%;
+    padding: 0.25rem 0.375rem;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    background: rgba(255, 255, 255, 0.9);
+    text-align: right;
+
+    &:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+    }
+  }
+}
+
+.card-actions {
+  padding: 0.5rem 0.875rem;
+  background: rgba(248, 250, 252, 0.5);
+  border-top: 1px solid #e5e7eb;
+
+  .actions-buttons {
+    display: flex;
+    gap: 0.375rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .new-invoice-buttons {
+    display: flex;
+    gap: 0.375rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  // Kompakte Buttons für Kartenansicht
+  .edit-btn,
+  .delete-btn,
+  .save-btn,
+  .cancel-btn,
+  .upload-hidrive-btn {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8125rem;
+    
+    .btn-icon {
+      width: 0.875rem;
+      height: 0.875rem;
+    }
+  }
+}
+
 // Responsive Design
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
+  // Show cards on tablet and mobile
+  .desktop-view {
+    display: none;
+  }
+
+  .mobile-view {
+    display: block;
+  }
+
   .open-invoices-dashboard {
     margin-top: 60px;
   }
@@ -1124,12 +1416,68 @@
     align-items: stretch;
   }
 
-  .table-container {
-    overflow-x: auto;
+  // Mobile Table Controls
+  .table-controls {
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: stretch;
   }
 
-  .invoices-table {
-    min-width: 800px;
+  .search-box {
+    width: 100%;
+    
+    .search-input {
+      width: 100%;
+    }
+  }
+
+  .export-buttons {
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+
+    .export-btn {
+      width: 100%;
+      justify-content: center;
+      padding: 0.625rem 0.75rem;
+      font-size: 0.8125rem;
+
+      .export-icon {
+        width: 0.875rem;
+        height: 0.875rem;
+      }
+
+      // Tablet: Zeige kurzen Text
+      .btn-text-full {
+        display: none;
+      }
+
+      .btn-text-short {
+        display: inline;
+      }
+    }
+  }
+
+  // Mobile Tab Navigation
+  .tabs-container {
+    padding: 0.375rem;
+    gap: 0.375rem;
+  }
+
+  .tab-button {
+    padding: 0.625rem 0.875rem;
+    font-size: 0.8125rem;
+    min-width: auto;
+    
+    .tab-label {
+      font-size: 0.8125rem;
+    }
+    
+    .tab-count {
+      font-size: 0.6875rem;
+      padding: 0.125rem 0.375rem;
+      min-width: 1.25rem;
+    }
   }
 
   .summary-stats {
@@ -1151,21 +1499,6 @@
     }
   }
 
-  .new-invoice-buttons {
-    flex-direction: column;
-    width: 100%;
-
-    .save-btn,
-    .cancel-btn {
-      width: 100%;
-      justify-content: center;
-    }
-  }
-
-  .new-invoice-actions {
-    padding: 0.5rem;
-  }
-
   .loading-container,
   .error-container {
     min-height: 200px;
@@ -1174,6 +1507,194 @@
   .loading-spinner,
   .error-message {
     padding: 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  // Sehr kompakte Export-Buttons auf Smartphone
+  .export-buttons {
+    .export-btn {
+      padding: 0.5rem 0.625rem;
+      font-size: 0.75rem;
+      gap: 0.25rem;
+
+      .export-icon {
+        width: 0.75rem;
+        height: 0.75rem;
+      }
+    }
+  }
+
+  .search-box {
+    .search-input {
+      padding: 0.5rem 0.75rem 0.5rem 2.25rem;
+      font-size: 0.8125rem;
+    }
+
+    .search-icon {
+      width: 0.875rem;
+      height: 0.875rem;
+      left: 0.625rem;
+    }
+  }
+
+  .cards-container {
+    gap: 0.75rem;
+  }
+
+  .invoice-card {
+    border-radius: 8px;
+  }
+
+  .card-header {
+    flex-direction: column;
+    gap: 0.375rem;
+    align-items: stretch;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .card-title {
+    margin-right: 0;
+
+    .supplier-input {
+      font-size: 0.875rem;
+    }
+
+    .display-text {
+      font-size: 0.875rem;
+    }
+  }
+
+  .card-status {
+    .status-select {
+      font-size: 0.6875rem;
+      padding: 0.25rem 0.375rem;
+      min-width: 70px;
+    }
+  }
+
+  .card-content {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .card-row-group {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.375rem;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  .card-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.25rem;
+    margin-bottom: 0.375rem;
+    padding-bottom: 0.25rem;
+
+    &.half-width {
+      flex: 1;
+      min-width: 0;
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0.375rem;
+
+      .card-label {
+        font-size: 0.625rem;
+        margin-bottom: 0.125rem;
+      }
+
+      .card-value {
+        .display-text {
+          font-size: 0.625rem;
+        }
+
+        .editable-input {
+          font-size: 0.625rem;
+          padding: 0.25rem 0.375rem;
+        }
+      }
+    }
+  }
+
+  .card-label {
+    min-width: auto;
+    text-align: left;
+    font-size: 0.6875rem;
+  }
+
+  .card-value {
+    text-align: left;
+
+    .display-text {
+      font-size: 0.6875rem;
+    }
+
+    .editable-input {
+      text-align: left;
+      padding: 0.25rem 0.375rem;
+      font-size: 0.6875rem;
+    }
+
+    // Kompakte Upload-Buttons auf Mobile
+    .upload-row-btn,
+    .upload-hidrive-btn {
+      padding: 0.25rem 0.5rem;
+      font-size: 0.6875rem;
+      
+      .upload-icon {
+        width: 0.75rem;
+        height: 0.75rem;
+      }
+      
+      span {
+        font-size: 0.6875rem;
+      }
+    }
+
+    .download-btn {
+      width: 1.5rem;
+      height: 1.5rem;
+      
+      .download-icon {
+        width: 0.875rem;
+        height: 0.875rem;
+      }
+    }
+  }
+
+  .card-actions {
+    padding: 0.5rem 0.75rem;
+
+    .actions-buttons,
+    .new-invoice-buttons {
+      flex-direction: column;
+      gap: 0.25rem;
+
+      .edit-btn,
+      .delete-btn,
+      .save-btn,
+      .cancel-btn,
+      .upload-hidrive-btn {
+        width: 100%;
+        justify-content: center;
+        padding: 0.5rem 0.625rem;
+        font-size: 0.8125rem;
+      }
+    }
+  }
+}
+
+@media (min-width: 1025px) {
+  // Show table on desktop
+  .desktop-view {
+    display: block;
+  }
+
+  .mobile-view {
+    display: none;
   }
 }
 
