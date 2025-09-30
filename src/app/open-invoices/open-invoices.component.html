@@ -1,8 +1,8 @@
-<div class="open-invoices-dashboard">
+<div class="open-invoices-dashboard" (scroll)="onScroll($event)">
   <!-- Header Section -->
-  <div class="dashboard-header">
+  <div class="dashboard-header" [class.scrolled]="isScrolled">
     <div class="header-content">
-      <h1 class="dashboard-title">
+      <h1 class="dashboard-title" [class.hidden]="isScrolled">
         <svg class="dashboard-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
         </svg>
@@ -70,14 +70,14 @@
             <input type="text" placeholder="Suchen..." [(ngModel)]="searchTerm" class="search-input">
           </div>
           <div class="export-buttons">
-            <button class="export-btn" (click)="exportToPDF(false)">
+            <button class="export-btn export-btn-view" (click)="exportToPDF(false)">
               <svg class="export-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
               </svg>
               <span class="btn-text-full">Als PDF exportieren (Ansicht)</span>
               <span class="btn-text-short">PDF (Ansicht)</span>
             </button>
-            <button class="export-btn" (click)="exportToPDF(true)">
+            <button class="export-btn export-btn-all" (click)="exportToPDF(true)">
               <svg class="export-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
               </svg>

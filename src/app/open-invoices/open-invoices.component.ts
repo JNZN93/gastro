@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild, OnInit } from '@angular/core';
+import { Component, ElementRef, ViewChild, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
@@ -69,12 +69,28 @@ export class OpenInvoicesComponent implements OnInit {
   // Store pending updates for date fields
   private pendingUpdates = new Map<string, { invoice: Invoice, field: string, value: any }>();
 
+  // Scroll state for hiding dashboard title
+  isScrolled: boolean = false;
 
   constructor(private http: HttpClient, private router: Router) {}
 
 
   ngOnInit() {
     this.loadInvoices();
+  }
+
+  // Listen to scroll events on the dashboard container
+  onScroll(event: any) {
+    const scrollPosition = event.target.scrollTop;
+    // Hide title when scrolled more than 50px
+    this.isScrolled = scrollPosition > 50;
+  }
+
+  // Also listen to window scroll as fallback
+  @HostListener('window:scroll', ['$event'])
+  onWindowScroll() {
+    // Hide title when scrolled more than 100px
+    this.isScrolled = window.pageYOffset > 100;
   }
 
   // Automatisch überfällige Rechnungen aktualisieren (nur beim ersten Laden)
