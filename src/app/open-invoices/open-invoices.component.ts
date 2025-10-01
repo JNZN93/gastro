@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { Router } from '@angular/router';
+import { Observable } from 'rxjs';
 
 interface Invoice {
   id: string;
@@ -44,6 +45,10 @@ export class OpenInvoicesComponent implements OnInit {
   // Track which existing invoice is in edit mode
   editingInvoiceId: string | null = null;
 
+  // Duplicate invoice detection
+  showDuplicateModal: boolean = false;
+  duplicateInvoices: Invoice[] = [];
+  pendingInvoiceData: any = null;
 
   // Tab navigation
   activeTab: 'all' | 'open' | 'paid' | 'overdue' | 'sepa' = 'all';
@@ -263,7 +268,55 @@ export class OpenInvoicesComponent implements OnInit {
       company: this.newInvoiceRow.company || 'gastro' // Add company field
     };
 
-    // Create invoice without file first
+    // Check for duplicate invoice numbers first
+    this.checkForDuplicates(invoiceData.invoice_number).subscribe({
+      next: (hasDuplicates) => {
+        if (hasDuplicates) {
+          // Show modal and wait for user confirmation
+          this.pendingInvoiceData = invoiceData;
+          this.isCreatingInvoice = false;
+        } else {
+          // No duplicates, proceed with creation
+          this.createInvoiceAfterCheck(invoiceData);
+        }
+      },
+      error: (error) => {
+        console.error('Error checking for duplicates:', error);
+        // Continue with creation even if check fails
+        this.createInvoiceAfterCheck(invoiceData);
+      }
+    });
+  }
+
+  // Check for duplicate invoice numbers
+  private checkForDuplicates(invoiceNumber: string) {
+    return new Observable<boolean>(observer => {
+      this.http.get<{success: boolean, data: Invoice[], hasDuplicates: boolean}>(
+        `${environment.apiUrl}/api/incoming-invoices/check-duplicate?invoice_number=${encodeURIComponent(invoiceNumber)}`,
+        { headers: this.getAuthHeaders() }
+      ).subscribe({
+        next: (response) => {
+          if (response.success && response.hasDuplicates) {
+            this.duplicateInvoices = response.data;
+            this.showDuplicateModal = true;
+            observer.next(true);
+          } else {
+            observer.next(false);
+          }
+          observer.complete();
+        },
+        error: (error) => {
+          console.error('Error checking duplicates:', error);
+          observer.error(error);
+          observer.complete();
+        }
+      });
+    });
+  }
+
+  // Create invoice after duplicate check or user confirmation
+  private createInvoiceAfterCheck(invoiceData: any) {
+    this.isCreatingInvoice = true;
     const apiUrl = `${environment.apiUrl}/api/incoming-invoices`;
 
     this.http.post<{success: boolean, data: Invoice, message?: string}>(
@@ -291,6 +344,23 @@ export class OpenInvoicesComponent implements OnInit {
         this.isCreatingInvoice = false;
       }
     });
+  }
+
+  // User confirms they want to create despite duplicates
+  confirmCreateDespiteDuplicates() {
+    this.showDuplicateModal = false;
+    if (this.pendingInvoiceData) {
+      this.createInvoiceAfterCheck(this.pendingInvoiceData);
+      this.pendingInvoiceData = null;
+    }
+  }
+
+  // User cancels the creation
+  cancelDuplicateCreation() {
+    this.showDuplicateModal = false;
+    this.pendingInvoiceData = null;
+    this.duplicateInvoices = [];
+    this.isCreatingInvoice = false;
   }
 
   // Automatically upload file to HiDrive for newly created invoice

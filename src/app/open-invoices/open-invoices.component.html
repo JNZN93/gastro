@@ -722,4 +722,73 @@
     </div>
   </div>
 
+  <!-- Duplicate Invoice Warning Modal -->
+  <div class="modal-overlay" [class.active]="showDuplicateModal" (click)="cancelDuplicateCreation()"></div>
+  <div class="duplicate-modal" [class.active]="showDuplicateModal">
+    <div class="modal-header">
+      <h2>⚠️ Rechnungsnummer existiert bereits</h2>
+      <button class="close-btn" (click)="cancelDuplicateCreation()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-content">
+      <p class="warning-text">
+        Die Rechnungsnummer <strong>{{ pendingInvoiceData?.invoice_number }}</strong> existiert bereits.
+        Sind Sie sicher, dass Sie diese Rechnung trotzdem erstellen möchten?
+      </p>
+      
+      <div class="existing-invoices">
+        <h3>Bestehende Rechnungen mit dieser Nummer:</h3>
+        <div class="invoice-list">
+          <div *ngFor="let invoice of duplicateInvoices" class="duplicate-invoice-item">
+            <div class="invoice-info">
+              <div class="info-row">
+                <span class="label">Lieferant:</span>
+                <span class="value">{{ invoice.supplier_name }}</span>
+              </div>
+              <div class="info-row">
+                <span class="label">Rechnungsnr.:</span>
+                <span class="value">{{ invoice.invoice_number }}</span>
+              </div>
+              <div class="info-row">
+                <span class="label">Datum:</span>
+                <span class="value">{{ formatDate(invoice.date) }}</span>
+              </div>
+              <div class="info-row">
+                <span class="label">Betrag:</span>
+                <span class="value">{{ formatCurrency(invoice.amount) }}</span>
+              </div>
+              <div class="info-row">
+                <span class="label">Status:</span>
+                <span class="value" [class]="'status-badge ' + getStatusClass(invoice.status)">
+                  {{ invoice.status === 'open' ? 'Offen' : 
+                     invoice.status === 'paid' ? 'Bezahlt' : 
+                     invoice.status === 'sepa' ? 'SEPA' : 
+                     invoice.status === 'overdue' ? 'Überfällig' : invoice.status }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-actions">
+        <button class="cancel-btn" (click)="cancelDuplicateCreation()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="btn-icon">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+          Abbrechen
+        </button>
+        <button class="confirm-btn" (click)="confirmCreateDespiteDuplicates()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="btn-icon">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+          </svg>
+          Trotzdem erstellen
+        </button>
+      </div>
+    </div>
+  </div>
+
 </div>
