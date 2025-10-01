@@ -64,6 +64,7 @@ export class AdminComponent implements OnInit {
 
   // Neue Methode zum Laden der Kundendaten
   loadCustomers(): void {
+    console.log('✅ [ADMIN] Laden der Kundendaten...');
     const token = localStorage.getItem('token');
     if (!token) return;
 
