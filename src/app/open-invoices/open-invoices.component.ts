@@ -18,6 +18,7 @@ interface Invoice {
   file_name?: string;
   hidrive_path?: string;
   company?: string;
+  paid_date?: string;
 }
 
 @Component({
@@ -49,6 +50,12 @@ export class OpenInvoicesComponent implements OnInit {
   showDuplicateModal: boolean = false;
   duplicateInvoices: Invoice[] = [];
   pendingInvoiceData: any = null;
+
+  // Paid status modal
+  showPaidStatusModal: boolean = false;
+  pendingPaidInvoice: Invoice | null = null;
+  paidDate: string = '';
+  isConfirmingPaid: boolean = false;
 
   // Tab navigation
   activeTab: 'all' | 'open' | 'paid' | 'overdue' | 'sepa' = 'all';
@@ -1183,7 +1190,17 @@ export class OpenInvoicesComponent implements OnInit {
                       newStatus === 'sepa' ? 'SEPA' :
                       newStatus === 'overdue' ? 'Überfällig' : 'Unbekannt';
 
-    // Ask for confirmation with simplified message
+    // Special handling for paid status - show modal with date picker
+    if (newStatus === 'paid') {
+      this.pendingPaidInvoice = invoice;
+      this.paidDate = new Date().toISOString().split('T')[0]; // Today's date as default
+      this.showPaidStatusModal = true;
+      // Revert the status change in the dropdown
+      invoice.status = oldStatus;
+      return;
+    }
+
+    // For other statuses, use simple confirmation
     const confirmed = confirm(`Möchten Sie den Status der Rechnung "${invoice.invoice_number}" wirklich zu "${statusText}" ändern?\n\nDiese Aktion kann nicht rückgängig gemacht werden.`);
 
     if (confirmed) {
@@ -1233,6 +1250,70 @@ export class OpenInvoicesComponent implements OnInit {
       updateData,
       { headers: this.getAuthHeaders() }
     );
+  }
+
+  // Paid status modal methods
+  confirmPaidStatus() {
+    if (!this.pendingPaidInvoice || !this.paidDate || this.isConfirmingPaid) {
+      return;
+    }
+
+    this.isConfirmingPaid = true;
+
+    // Update locally first for immediate UI feedback
+    this.pendingPaidInvoice.status = 'paid';
+
+    // Send update to API with paid_date
+    this.updateInvoice(this.pendingPaidInvoice.id, { 
+      status: 'paid', 
+      paid_date: this.paidDate 
+    }).subscribe({
+      next: (response) => {
+        this.isConfirmingPaid = false;
+        if (response.success && response.data) {
+          // Update local data with server response, normalize amount and dates
+          const normalizedInvoice = {
+            ...response.data,
+            amount: typeof response.data.amount === 'string' ? parseFloat(response.data.amount) || 0 : response.data.amount || 0,
+            date: this.normalizeDateValue(response.data.date),
+            due_date: this.normalizeDateValue(response.data.due_date)
+          };
+          const index = this.invoices.findIndex(inv => inv.id === this.pendingPaidInvoice!.id);
+          if (index !== -1) {
+            this.invoices[index] = normalizedInvoice;
+            // Update filtered invoices cache after status change
+            this.updateFilteredInvoices();
+          }
+          // Close modal
+          this.closePaidStatusModal();
+        } else {
+          this.errorMessage = response.message || 'Failed to update invoice';
+          // Reload data to revert local changes
+          this.loadInvoices();
+          this.closePaidStatusModal();
+        }
+      },
+      error: (error: any) => {
+        this.isConfirmingPaid = false;
+        console.error('Error updating invoice:', error);
+        this.errorMessage = 'Failed to update invoice. Please try again.';
+        // Reload data to revert local changes
+        this.loadInvoices();
+        this.closePaidStatusModal();
+      }
+    });
+  }
+
+  closePaidStatusModal() {
+    this.showPaidStatusModal = false;
+    this.pendingPaidInvoice = null;
+    this.paidDate = '';
+    this.isConfirmingPaid = false;
+  }
+
+  // Get today's date in YYYY-MM-DD format for date input max attribute
+  getTodayDate(): string {
+    return new Date().toISOString().split('T')[0];
   }
 
 

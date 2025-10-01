@@ -791,4 +791,93 @@
     </div>
   </div>
 
+  <!-- Paid Status Confirmation Modal -->
+  <div *ngIf="showPaidStatusModal" class="modal-overlay" (click)="closePaidStatusModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3 class="modal-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="modal-icon">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          Rechnung als bezahlt markieren
+        </h3>
+        <button class="modal-close-btn" (click)="closePaidStatusModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="invoice-info">
+          <div class="info-card">
+            <div class="info-header">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="info-icon">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+              </svg>
+              <h4>Rechnungsdetails</h4>
+            </div>
+            <div class="info-content">
+              <div class="info-row">
+                <span class="label">Lieferant:</span>
+                <span class="value">{{ pendingPaidInvoice?.supplier_name }}</span>
+              </div>
+              <div class="info-row">
+                <span class="label">Rechnungsnr.:</span>
+                <span class="value">{{ pendingPaidInvoice?.invoice_number }}</span>
+              </div>
+              <div class="info-row">
+                <span class="label">Betrag:</span>
+                <span class="value">{{ formatCurrency(pendingPaidInvoice?.amount || 0) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="date-selection">
+          <label class="date-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="label-icon">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+            Bezahldatum auswählen:
+          </label>
+          <input type="date" 
+                 [(ngModel)]="paidDate" 
+                 class="date-input"
+                 [max]="getTodayDate()">
+          <p class="date-hint">Das gewählte Datum wird für die HiDrive-Ordnerstruktur verwendet.</p>
+        </div>
+
+        <div class="confirmation-warning">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="warning-icon">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+          </svg>
+          <p><strong>Wichtiger Hinweis:</strong> Diese Aktion kann nicht rückgängig gemacht werden. Die Rechnung wird als bezahlt markiert und die Datei wird automatisch in den entsprechenden HiDrive-Ordner verschoben.</p>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="cancel-btn" 
+                (click)="closePaidStatusModal()" 
+                [disabled]="isConfirmingPaid">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="btn-icon">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+          Abbrechen
+        </button>
+        <button class="confirm-btn paid-confirm" 
+                (click)="confirmPaidStatus()" 
+                [disabled]="!paidDate || isConfirmingPaid">
+          <svg *ngIf="!isConfirmingPaid" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="btn-icon">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <svg *ngIf="isConfirmingPaid" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="btn-icon spinning">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+          </svg>
+          {{ isConfirmingPaid ? 'Wird gespeichert...' : 'Als bezahlt bestätigen' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
 </div>
