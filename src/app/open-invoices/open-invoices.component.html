@@ -302,10 +302,10 @@
 
             <!-- Status -->
             <td class="status-cell">
-              <select [(ngModel)]="invoice.status"
+              <select [ngModel]="invoice.status"
                       class="status-select"
                       [class]="getStatusClass(invoice.status)"
-                      (change)="confirmStatusChange(invoice, $any($event.target).value)">
+                      (ngModelChange)="onStatusSelectChange(invoice, $event)">
                 <option value="open">Offen</option>
                 <option value="paid">Bezahlt</option>
                 <option value="sepa">SEPA</option>
@@ -538,10 +538,10 @@
                    (input)="updateInvoiceFieldLocally(invoice, 'supplier_name', $any($event.target).value)">
           </div>
           <div class="card-status">
-            <select [(ngModel)]="invoice.status"
+            <select [ngModel]="invoice.status"
                     class="status-select"
                     [class]="getStatusClass(invoice.status)"
-                    (change)="confirmStatusChange(invoice, $any($event.target).value)">
+                    (ngModelChange)="onStatusSelectChange(invoice, $event)">
               <option value="open">Offen</option>
               <option value="paid">Bezahlt</option>
               <option value="sepa">SEPA</option>
@@ -792,8 +792,8 @@
   </div>
 
   <!-- Paid Status Confirmation Modal -->
-  <div *ngIf="showPaidStatusModal" class="modal-overlay" (click)="closePaidStatusModal()">
-    <div class="modal-content" (click)="$event.stopPropagation()">
+  <div *ngIf="showPaidStatusModal" class="modal-overlay active" [ngStyle]="{opacity: '1', visibility: 'visible', display: 'flex'}">
+    <div class="modal-content" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h3 class="modal-title">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="modal-icon">

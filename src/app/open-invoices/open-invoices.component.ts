@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild, OnInit, HostListener } from '@angular/core';
+import { Component, ElementRef, ViewChild, OnInit, HostListener, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
@@ -85,7 +85,7 @@ export class OpenInvoicesComponent implements OnInit {
   // Scroll state for hiding dashboard title
   isScrolled: boolean = false;
 
-  constructor(private http: HttpClient, private router: Router) {}
+  constructor(private http: HttpClient, private router: Router, private cdr: ChangeDetectorRef) {}
 
 
   ngOnInit() {
@@ -1192,9 +1192,11 @@ export class OpenInvoicesComponent implements OnInit {
 
     // Special handling for paid status - show modal with date picker
     if (newStatus === 'paid') {
+      console.log('Opening paid status modal for invoice:', invoice.invoice_number);
       this.pendingPaidInvoice = invoice;
       this.paidDate = new Date().toISOString().split('T')[0]; // Today's date as default
       this.showPaidStatusModal = true;
+      console.log('Modal state:', this.showPaidStatusModal);
       // Revert the status change in the dropdown
       invoice.status = oldStatus;
       return;
@@ -1241,6 +1243,29 @@ export class OpenInvoicesComponent implements OnInit {
       // Revert to old status
       invoice.status = oldStatus;
     }
+  }
+
+  // Handle status select changes without mutating model first
+  onStatusSelectChange(invoice: Invoice, newStatus: 'open' | 'paid' | 'overdue' | 'sepa') {
+    // Open modal immediately for 'paid'
+    if (newStatus === 'paid') {
+      console.log('[StatusSelect] paid chosen for', invoice.invoice_number);
+      const oldStatus = invoice.status;
+      // Defer modal open to next tick to avoid closing by same click event
+      setTimeout(() => {
+        console.log('[StatusSelect] opening paid modal now for', invoice.invoice_number);
+        this.pendingPaidInvoice = invoice;
+        this.paidDate = this.getTodayDate();
+        this.showPaidStatusModal = true;
+        this.cdr.detectChanges();
+      }, 0);
+      // Ensure UI shows original status in the select
+      invoice.status = oldStatus;
+      return;
+    }
+
+    // Other statuses go through the existing confirmation flow
+    this.confirmStatusChange(invoice, newStatus);
   }
 
   // Update invoice via API
@@ -1305,6 +1330,7 @@ export class OpenInvoicesComponent implements OnInit {
   }
 
   closePaidStatusModal() {
+    console.log('[PaidModal] closing modal');
     this.showPaidStatusModal = false;
     this.pendingPaidInvoice = null;
     this.paidDate = '';
@@ -1315,6 +1341,7 @@ export class OpenInvoicesComponent implements OnInit {
   getTodayDate(): string {
     return new Date().toISOString().split('T')[0];
   }
+
 
 
   getStatusClass(status: string): string {
