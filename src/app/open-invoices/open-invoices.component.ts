@@ -16,6 +16,7 @@ interface Invoice {
   file?: File;
   file_name?: string;
   hidrive_path?: string;
+  company?: string;
 }
 
 @Component({
@@ -221,7 +222,8 @@ export class OpenInvoicesComponent implements OnInit {
       due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days from now
       amount: 0,
       status: 'open',
-      file_name: undefined
+      file_name: undefined,
+      company: 'gastro' // Set default company
     };
 
     // Add to the beginning of the invoices array
@@ -257,7 +259,8 @@ export class OpenInvoicesComponent implements OnInit {
       date: this.newInvoiceRow.date,
       due_date: this.newInvoiceRow.due_date,
       amount: this.newInvoiceRow.amount,
-      status: this.newInvoiceRow.status || 'open'
+      status: this.newInvoiceRow.status || 'open',
+      company: this.newInvoiceRow.company || 'gastro' // Add company field
     };
 
     // Create invoice without file first
