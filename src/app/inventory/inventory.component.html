@@ -1,0 +1,278 @@
+<div class="inventory-container">
+  <!-- Header -->
+  <div class="inventory-header">
+    <h1 class="page-title">
+      <svg class="title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+      </svg>
+      Lagerbestand / Inventur
+    </h1>
+    <div class="header-stats">
+      <div class="stat-item">
+        <span class="stat-label">Artikel gefunden:</span>
+        <span class="stat-value">{{ filteredArticles.length }}</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Inventur-Einträge:</span>
+        <span class="stat-value">{{ inventoryEntries.length }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Success Message -->
+  <div class="success-message" *ngIf="showSuccessMessage" [@fadeInOut]>
+    <svg class="success-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+    </svg>
+    {{ successMessage }}
+  </div>
+
+  <div class="inventory-content">
+    <!-- Left Column: Input and Article List -->
+    <div class="left-column">
+
+      <!-- Article Search -->
+      <div class="search-section">
+        <h2 class="section-title">Artikel durchsuchen</h2>
+        <div class="search-container">
+          <input
+            type="text"
+            class="search-input"
+            [(ngModel)]="searchTerm"
+            (input)="onSearchChange()"
+            placeholder="Artikelnummer oder Name suchen..."
+          >
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="m21 21-4.35-4.35"/>
+          </svg>
+          <button class="scanner-btn" (click)="openBarcodeScanner()" title="Barcode scannen">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Article List -->
+      <div class="article-list-section">
+        <h2 class="section-title">Verfügbare Artikel</h2>
+        <div class="article-list" *ngIf="!isLoading">
+          <div 
+            class="article-item" 
+            *ngFor="let article of filteredArticles; trackBy: trackByArticleNumber"
+            [class.selected]="isArticleInInventory(article.article_number)"
+            (click)="openQuantityModal(article)">
+            <div class="article-info">
+              <span class="article-number">{{ article.article_number }}</span>
+              <span class="article-name">{{ article.article_text }}</span>
+              <span class="article-category">{{ article.category }}</span>
+            </div>
+            <div class="article-actions">
+              <span 
+                class="inventory-badge" 
+                *ngIf="getInventoryQuantity(article.article_number) > 0">
+                {{ getInventoryQuantity(article.article_number) }}
+              </span>
+              <span 
+                class="saved-badge" 
+                *ngIf="getSavedInventoryQuantity(article.article_number) > 0">
+                DB: {{ getSavedInventoryQuantity(article.article_number) }}
+              </span>
+              <button class="add-btn" (click)="openQuantityModal(article); $event.stopPropagation()" title="Menge hinzufügen">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="loading-state" *ngIf="isLoading">
+          <div class="spinner"></div>
+          <p>Artikel werden geladen...</p>
+        </div>
+      </div>
+
+      <!-- Saved Inventory Data Section -->
+      <div class="saved-inventory-section">
+        <h2 class="section-title">Bereits gezählte Artikel (aus DB)</h2>
+        <div class="saved-inventory-list" *ngIf="!isLoadingSavedData">
+          <div 
+            class="saved-inventory-entry" 
+            *ngFor="let entry of savedInventoryEntries; trackBy: trackByEntry">
+            <div class="entry-info">
+              <span class="entry-number">{{ entry.article_number }}</span>
+              <span class="entry-name">{{ entry.article_text }}</span>
+            </div>
+            <div class="entry-quantity">
+              <span class="quantity-value">{{ entry.quantity }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="loading-state" *ngIf="isLoadingSavedData">
+          <div class="spinner"></div>
+          <p>Gespeicherte Daten werden geladen...</p>
+        </div>
+        <div class="empty-state" *ngIf="!isLoadingSavedData && savedInventoryEntries.length === 0">
+          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+          </svg>
+          <h3>Keine gespeicherten Inventur-Daten</h3>
+          <p>Es wurden noch keine Artikel in der Datenbank gespeichert.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Inventory Entries -->
+    <div class="right-column">
+      <div class="inventory-section">
+        <div class="section-header">
+          <h2 class="section-title">Inventur-Einträge</h2>
+          <div class="section-actions">
+            <button 
+              class="action-btn export-btn" 
+              (click)="exportInventory()"
+              [disabled]="isLoading">
+              <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" *ngIf="!isLoading">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+              </svg>
+              <div class="spinner" *ngIf="isLoading"></div>
+              {{ isLoading ? 'Wird exportiert...' : 'Export' }}
+            </button>
+            <button 
+              class="action-btn clear-btn" 
+              (click)="clearAllEntries()"
+              [disabled]="inventoryEntries.length === 0">
+              <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+              </svg>
+              Alle löschen
+            </button>
+          </div>
+        </div>
+
+        <div class="inventory-summary" *ngIf="inventoryEntries.length > 0">
+          <div class="summary-item">
+            <span class="summary-label">Gesamtmenge:</span>
+            <span class="summary-value">{{ getTotalQuantity() }}</span>
+          </div>
+        </div>
+
+        <div class="inventory-entries" *ngIf="inventoryEntries.length > 0">
+          <div 
+            class="inventory-entry" 
+            *ngFor="let entry of inventoryEntries; trackBy: trackByEntry">
+            <div class="entry-info">
+              <span class="entry-number">{{ entry.article_number }}</span>
+              <span class="entry-name">{{ entry.article_text }}</span>
+            </div>
+            <div class="entry-quantity">
+              <span class="quantity-value">{{ entry.quantity }}</span>
+            </div>
+            <div class="entry-actions">
+              <button 
+                class="remove-btn" 
+                (click)="removeEntry(entry.article_number)"
+                title="Eintrag entfernen">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="empty-state" *ngIf="inventoryEntries.length === 0">
+          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+          </svg>
+          <h3>Keine Inventur-Einträge</h3>
+          <p>Geben Sie Artikelnummern und Mengen ein, um mit der Inventur zu beginnen.</p>
+        </div>
+
+        <div class="save-section" *ngIf="inventoryEntries.length > 0">
+          <button 
+            class="save-btn" 
+            (click)="saveInventory()"
+            [disabled]="isLoading">
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" *ngIf="!isLoading">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
+            </svg>
+            <div class="spinner" *ngIf="isLoading"></div>
+            {{ isLoading ? 'Wird gespeichert...' : 'Inventur speichern' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quantity Modal -->
+  <div class="modal-overlay" *ngIf="showQuantityModal" (click)="closeQuantityModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Menge hinzufügen</h3>
+        <button class="close-btn" (click)="closeQuantityModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body" *ngIf="selectedArticle">
+        <div class="article-info">
+          <h4>{{ selectedArticle.article_number }}</h4>
+          <p>{{ selectedArticle.article_text }}</p>
+          <span class="category">{{ selectedArticle.category }}</span>
+        </div>
+        <div class="quantity-input-section">
+          <label for="quantityInput">Menge:</label>
+          <input
+            id="quantityInput"
+            type="number"
+            [(ngModel)]="quantityInput"
+            min="1"
+            max="9999"
+            class="quantity-input"
+            #quantityInputRef
+            (keyup.enter)="addToInventoryFromModal()"
+            placeholder="Menge eingeben..."
+          >
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="closeQuantityModal()">Abbrechen</button>
+        <button class="btn-confirm" (click)="addToInventoryFromModal()" [disabled]="quantityInput <= 0">
+          Hinzufügen
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Barcode Scanner Modal -->
+  <div class="scanner-modal" *ngIf="isScanning">
+    <div class="scanner-overlay" (click)="stopScanner()"></div>
+    <div class="scanner-container">
+      <div class="scanner-header">
+        <h3>Barcode Scanner</h3>
+        <button class="close-scanner-btn" (click)="stopScanner()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <div class="scanner-content">
+        <zxing-scanner 
+          #scanner
+          [device]="selectedDevice"
+          [videoConstraints]="videoConstraints"
+          [tryHarder]="true"
+          [formats]="formatsEnabled"
+          [torch]="true"
+          (scanSuccess)="onCodeResult($event)">
+        </zxing-scanner>
+      </div>
+      <div class="scanner-instructions">
+        <p>Richten Sie die Kamera auf den Barcode</p>
+      </div>
+    </div>
+  </div>
+</div>
