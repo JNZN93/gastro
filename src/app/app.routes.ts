@@ -23,6 +23,7 @@ import { AuthGuard } from './auth.guard';
 import { AdminAuthGuard } from './admin-auth.guard';
 import { OfferFlyerComponent } from './offer-flyer/offer-flyer.component';
 import { OpenInvoicesComponent } from './open-invoices/open-invoices.component';
+import { InventoryComponent } from './inventory/inventory.component';
 
 export const routes: Routes = [
     { 
@@ -39,6 +40,7 @@ export const routes: Routes = [
     { path: 'admin', component: AdminComponent, canActivate: [AuthGuard]},
     { path: 'open-invoices', component: OpenInvoicesComponent, canActivate: [AdminAuthGuard]},
     { path: 'guest-link', component: GuestLinkComponent, canActivate: [AdminAuthGuard]},
+    { path: 'inventory', component: InventoryComponent, canActivate: [AdminAuthGuard]},
     { path: 'verify', component: VerifyComponent},
     { path: 'privacy', component: PrivacyPolicyComponent},
     { path: 'impress', component: ImpressComponent},
