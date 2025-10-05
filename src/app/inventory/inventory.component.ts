@@ -158,6 +158,11 @@ export class InventoryComponent implements OnInit {
     }
   }
 
+  clearSearch(): void {
+    this.searchTerm = '';
+    this.onSearchChange();
+  }
+
   parseInventoryInput(): void {
     if (!this.inputText.trim()) {
       return;
@@ -327,6 +332,37 @@ export class InventoryComponent implements OnInit {
     return entry ? entry.quantity : 0;
   }
 
+  deleteSavedInventoryEntry(articleNumber: string): void {
+    if (confirm(`Möchten Sie den gespeicherten Inventur-Eintrag für Artikel ${articleNumber} wirklich löschen?`)) {
+      this.isLoadingSavedData = true;
+      
+      this.http.delete(`${environment.apiUrl}/api/inventory/${articleNumber}`, { headers: this.getAuthHeaders() }).subscribe({
+        next: (response) => {
+          console.log('Gespeicherter Inventur-Eintrag gelöscht:', response);
+          
+          // Entferne den Eintrag aus der lokalen Liste
+          this.savedInventoryEntries = this.savedInventoryEntries.filter(entry => entry.article_number !== articleNumber);
+          
+          this.isLoadingSavedData = false;
+          
+          // Zeige Erfolgsmeldung
+          this.showSuccessMessage = true;
+          this.successMessage = `Inventur-Eintrag für Artikel ${articleNumber} wurde gelöscht.`;
+          
+          // Nach 3 Sekunden Nachricht ausblenden
+          setTimeout(() => {
+            this.showSuccessMessage = false;
+          }, 3000);
+        },
+        error: (error) => {
+          console.error('Fehler beim Löschen des gespeicherten Inventur-Eintrags:', error);
+          alert('Fehler beim Löschen des Inventur-Eintrags.');
+          this.isLoadingSavedData = false;
+        }
+      });
+    }
+  }
+
   trackByArticleNumber(index: number, article: Article): string {
     return article.article_number;
   }
@@ -399,19 +435,11 @@ export class InventoryComponent implements OnInit {
     this.playBeep();
     this.stopScanner();
     
-    // Suche Artikel nach EAN oder Artikelnummer
-    const foundArticle = this.articles.find(article => 
-      article.article_number === result || 
-      article.ean === result
-    );
+    // Schreibe den gescannten Code in das Suchfeld
+    this.searchTerm = result;
+    this.onSearchChange();
     
-    if (foundArticle) {
-      this.openQuantityModal(foundArticle);
-    } else {
-      // Zeige Fehlermeldung wenn Artikel nicht gefunden
-      console.warn('Artikel nicht gefunden:', result);
-      // Hier könnte eine Toast-Nachricht angezeigt werden
-    }
+    console.log('Barcode gescannt und in Suchfeld eingetragen:', result);
   }
 
   stopScanner(): void {
