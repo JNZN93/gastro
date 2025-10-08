@@ -1158,13 +1158,18 @@
     </div>
     
     <div class="order-confirmation-modal-footer">
-      <button class="cancel-order-btn" (click)="closeOrderConfirmationModal()">
+      <button class="cancel-order-btn" (click)="closeOrderConfirmationModal()" [disabled]="isSavingOrder">
         <span class="material-icons">close</span>
         Abbrechen
       </button>
-      <button class="confirm-order-btn" (click)="confirmOrderSave()">
-        <span class="material-icons">save</span>
-        Auftrag speichern
+      <button class="confirm-order-btn" (click)="confirmOrderSave()" [disabled]="isSavingOrder">
+        @if (isSavingOrder) {
+          <span class="material-icons spinner">hourglass_empty</span>
+          Wird gespeichert...
+        } @else {
+          <span class="material-icons">save</span>
+          Auftrag speichern
+        }
       </button>
     </div>
   </div>

@@ -3073,9 +3073,17 @@
   align-items: center;
   gap: 8px;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: #e2e8f0;
     color: #475569;
+  }
+
+  &:disabled {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+    color: #cbd5e1;
+    cursor: not-allowed;
+    opacity: 0.6;
   }
 
   .material-icons {
@@ -3096,14 +3104,24 @@
   align-items: center;
   gap: 8px;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: linear-gradient(135deg, #2563eb, #1d4ed8);
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
   }
 
+  &:disabled {
+    background: linear-gradient(135deg, #94a3b8, #64748b);
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+
   .material-icons {
     font-size: 18px;
+
+    &.spinner {
+      animation: spin 1s linear infinite;
+    }
   }
 }
 
