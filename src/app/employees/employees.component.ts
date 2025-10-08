@@ -73,6 +73,7 @@ export class EmployeesComponent implements OnInit, OnDestroy {
   // Order confirmation modal properties
   isOrderConfirmationModalOpen: boolean = false;
   orderConfirmationData: any = null;
+  isSavingOrder: boolean = false;
   eanAssignmentItem: any = null;
   eanCode: string = '';
   isEanScanning: boolean = false;
@@ -3031,12 +3032,21 @@ export class EmployeesComponent implements OnInit, OnDestroy {
   closeOrderConfirmationModal(): void {
     this.isOrderConfirmationModalOpen = false;
     this.orderConfirmationData = null;
+    this.isSavingOrder = false;
   }
 
   confirmOrderSave(): void {
     if (!this.orderConfirmationData) {
       return;
     }
+
+    // Verhindere Doppelklicks
+    if (this.isSavingOrder) {
+      console.log('⚠️ [SAVE-ORDER] Auftrag wird bereits gespeichert. Doppelklick verhindert.');
+      return;
+    }
+
+    this.isSavingOrder = true;
 
     // Ensure description is set for all items
     this.orderItems.forEach(item => {
@@ -3119,11 +3129,13 @@ export class EmployeesComponent implements OnInit, OnDestroy {
       return response.json();
     })
     .then(data => {
+      this.isSavingOrder = false;
       alert('Auftrag erfolgreich gespeichert!');
       this.closeOrderConfirmationModal();
       this.clearAllOrderData();
     })
     .catch(error => {
+      this.isSavingOrder = false;
       console.error('Fehler beim Speichern des Auftrags:', error);
       alert('Fehler beim Speichern des Auftrags: ' + error.message);
     });
