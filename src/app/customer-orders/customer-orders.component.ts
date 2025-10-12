@@ -904,6 +904,12 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       console.log('📅 [LOAD-ORDER-DATA] Lieferdatum gesetzt:', this.deliveryDate);
     }
     
+    // Setze die Kundenanmerkungen, falls vorhanden
+    if (orderData.customerNotes) {
+      this.customerNotes1 = orderData.customerNotes;
+      console.log('📝 [LOAD-ORDER-DATA] Kundenanmerkungen gesetzt:', this.customerNotes1);
+    }
+    
     // Setze den Kunden basierend auf der Kundennummer oder E-Mail
     if (orderData.customer) {
       if (orderData.customer.customer_number) {
@@ -2835,6 +2841,9 @@ filteredArtikelData() {
     if (this.deliveryDate) {
       customerData.delivery_date = this.deliveryDate;
     }
+    
+    // Kundenanmerkungen hinzufügen
+    customerData.customer_notes = this.customerNotes1 || '';
 
     // Filter: Artikel mit Menge 0 herausfiltern (negative Mengen erlaubt)
     const filteredOrderItems = this.orderItems.filter(item => item.quantity !== 0);
@@ -2854,33 +2863,53 @@ filteredArtikelData() {
 
     const token = localStorage.getItem('token');
 
+    // Prüfe, ob wir im Bearbeitungsmodus sind
+    const isEditMode = this.isEditMode && this.editingOrderId;
+    const method = isEditMode ? 'PUT' : 'POST';
+    const endpoint = isEditMode 
+      ? `${environment.apiUrl}/api/orders/${this.editingOrderId}`
+      : `${environment.apiUrl}/api/orders`;
+
     console.log('🚀 [CUSTOMER-ORDERS] Zwischenspeichern - Bestellung wird abgesendet:');
+    console.log('✏️ [CUSTOMER-ORDERS] Bearbeitungsmodus:', isEditMode);
+    if (isEditMode) {
+      console.log('🆔 [CUSTOMER-ORDERS] Bestellungs-ID:', this.editingOrderId);
+    }
     console.log('📋 [CUSTOMER-ORDERS] Vollständiges Order-Payload:', JSON.stringify(completeOrder, null, 2));
     console.log('📳 [CUSTOMER-ORDERS] Status: open (Zwischengespeichert)');
+    console.log('🌐 [CUSTOMER-ORDERS] Endpoint:', endpoint);
+    console.log('🔨 [CUSTOMER-ORDERS] HTTP-Methode:', method);
 
-    fetch(`${environment.apiUrl}/api/orders`, {
-      method: 'POST',
+    fetch(endpoint, {
+      method: method,
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(completeOrder)
     })
-    .then(response => {
+    .then(async response => {
+      const data = await response.json();
       if (!response.ok) {
-        throw new Error('Fehler beim Zwischenspeichern des Auftrags');
+        console.error('❌ [SAVE-AS-OPEN] Backend-Fehler:', data);
+        throw new Error(data.error || data.message || `Fehler beim ${isEditMode ? 'Aktualisieren' : 'Zwischenspeichern'} des Auftrags`);
       }
-      return response.json();
+      return data;
     })
     .then(data => {
       this.isSavingOrder = false;
-      alert('Auftrag erfolgreich zwischengespeichert (Status: Offen)!');
+      const successMessage = isEditMode 
+        ? 'Bestellung erfolgreich aktualisiert (Status: Offen)!' 
+        : 'Auftrag erfolgreich zwischengespeichert (Status: Offen)!';
+      alert(successMessage);
       this.clearAllOrderData();
+      
+      // Bearbeitungsmodus wird in clearAllOrderData() zurückgesetzt
     })
     .catch(error => {
       this.isSavingOrder = false;
-      console.error('Fehler beim Zwischenspeichern des Auftrags:', error);
-      alert('Fehler beim Zwischenspeichern des Auftrags: ' + error.message);
+      console.error(`Fehler beim ${isEditMode ? 'Aktualisieren' : 'Zwischenspeichern'} des Auftrags:`, error);
+      alert(`Fehler beim ${isEditMode ? 'Aktualisieren' : 'Zwischenspeichern'} des Auftrags: ` + error.message);
     });
   }
 
@@ -4565,6 +4594,9 @@ filteredArtikelData() {
     if (this.deliveryDate) {
       customerData.delivery_date = this.deliveryDate;
     }
+    
+    // Kundenanmerkungen hinzufügen
+    customerData.customer_notes = this.customerNotes1 || '';
 
     // Filter: Artikel mit Menge 0 herausfiltern (negative Mengen erlaubt)
     const filteredOrderItems = this.orderItems.filter(item => item.quantity !== 0);

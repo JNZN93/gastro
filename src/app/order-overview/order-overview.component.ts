@@ -36,6 +36,7 @@ interface Order {
   delivery_date: string;
   status: string;
   role?: string; // Neues role-Attribut
+  customer_notes?: string; // Kundenanmerkungen
   items: OrderItem[];
 }
 
@@ -489,6 +490,11 @@ export class OrderOverviewComponent implements OnInit {
     // Transformiere die Bestelldaten in das erwartete Format für Customer Orders
     // Verwende nur die Kundennummer - die Kundendaten werden später aus der Datenbank geladen
     const orderData = {
+      editMode: true, // ✅ Aktiviere Bearbeitungsmodus
+      editingOrderId: order.order_id, // ✅ Speichere die Order-ID für Update (PUT)
+      orderDate: order.order_date || null, // Übernehme das Bestelldatum
+      deliveryDate: order.delivery_date || null, // Übernehme das Lieferdatum
+      customerNotes: order.customer_notes || '', // Übernehme die Kundenanmerkungen
       customer: {
         id: 0, // Wird später aus der Kundendatenbank gesetzt
         customer_number: order.customer_number || order.order_id.toString(),
