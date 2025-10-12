@@ -2453,6 +2453,11 @@ filteredArtikelData() {
     // Nur die Gesamtsumme aktualisieren, ohne Validierung
     // Das verhindert, dass unvollständige Eingaben gelöscht werden
     console.log('📝 [QUANTITY-INPUT] Menge-Eingabe:', item.quantity);
+    
+    // Im Split-Modus: Synchronisiere die Mengen zwischen den beiden Tabellen
+    if (this.isSplitMode) {
+      this.syncQuantitiesInSplitMode(item);
+    }
   }
 
   // Neue Methode für Blur-Event - vollständige Validierung
@@ -2507,7 +2512,7 @@ filteredArtikelData() {
   }
 
   // Neue Methode für Quantity Blur-Event - vollständige Validierung
-  validateAndUpdateQuantity(item: any): void {
+  validateAndUpdateQuantity(item: any, skipSyncInSplitMode: boolean = false): void {
     console.log('📦 [VALIDATE-QUANTITY] Validiere Menge für Artikel:', item.article_text);
     console.log('📦 [VALIDATE-QUANTITY] Eingabe:', item.quantity);
     
@@ -2548,6 +2553,11 @@ filteredArtikelData() {
         item.quantity = Math.round(newQuantity * 1000) / 1000;
         console.log('✅ [VALIDATE-QUANTITY] quantity aktualisiert auf:', item.quantity);
       }
+    }
+    
+    // Im Split-Modus: Synchronisiere die Mengen zwischen den beiden Tabellen (nur wenn nicht überspringen)
+    if (this.isSplitMode && !skipSyncInSplitMode) {
+      this.syncQuantitiesInSplitMode(item);
     }
     
     // Rufe updateItemTotal auf für die finale Berechnung
@@ -4856,10 +4866,17 @@ filteredArtikelData() {
         return;
       }
       
-      // Erstelle Kopie aller Artikel mit Menge 0
+      // Speichere die Ausgangsmenge für jeden Artikel (für konstante Gesamtmenge)
+      this.orderItems.forEach(item => {
+        item.initial_quantity = Number(item.quantity);
+        console.log(`💾 [SPLIT-INIT] Artikel ${item.article_text}: Ausgangsmenge = ${item.initial_quantity}`);
+      });
+      
+      // Erstelle Kopie aller Artikel mit Menge 0 und gleicher initial_quantity
       this.orderItems2 = this.orderItems.map(item => ({
         ...item,
-        quantity: 0
+        quantity: 0,
+        initial_quantity: item.initial_quantity
       }));
       
       this.isSplitMode = true;
@@ -4875,6 +4892,11 @@ filteredArtikelData() {
         }
       }
       
+      // Entferne initial_quantity von den Artikeln
+      this.orderItems.forEach(item => {
+        delete item.initial_quantity;
+      });
+      
       this.orderItems2 = [];
       this.isSplitMode = false;
       this.activeTable = 1;
@@ -4887,6 +4909,46 @@ filteredArtikelData() {
     console.log(`🎯 [ACTIVE-TABLE] Tabelle ${tableNumber} ist jetzt aktiv`);
   }
 
+  // Synchronisiere die Mengen zwischen beiden Tabellen im Split-Modus
+  // Logik: Gesamtmenge bleibt konstant (initial_quantity = quantity_table1 + quantity_table2)
+  syncQuantitiesInSplitMode(item: any): void {
+    // Finde den Index des Artikels in beiden Tabellen
+    const index1 = this.orderItems.findIndex(i => 
+      i.article_number === item.article_number || 
+      (i.id && item.id && i.id === item.id)
+    );
+    const index2 = this.orderItems2.findIndex(i => 
+      i.article_number === item.article_number || 
+      (i.id && item.id && i.id === item.id)
+    );
+    
+    // Wenn der Artikel in beiden Tabellen existiert
+    if (index1 !== -1 && index2 !== -1) {
+      const item1 = this.orderItems[index1];
+      const item2 = this.orderItems2[index2];
+      
+      // Hole die Ausgangsmenge (initial_quantity)
+      const initialQuantity = item1.initial_quantity || item2.initial_quantity || 0;
+      
+      // Konvertiere die aktuelle Menge zu einer Zahl (auch während der Eingabe)
+      const currentQuantity = parseFloat(item.quantity) || 0;
+      
+      // Berechne die verbleibende Menge für die andere Tabelle
+      const remainingQuantity = initialQuantity - currentQuantity;
+      
+      // Setze die Menge in der anderen Tabelle
+      if (this.orderItems[index1] === item) {
+        // Änderung kam aus Tabelle 1 → Berechne Auftrag 2
+        this.orderItems2[index2].quantity = remainingQuantity;
+        console.log(`🔄 [SYNC-SPLIT] Auftrag 1: ${currentQuantity}, Auftrag 2: ${remainingQuantity}, Gesamt: ${initialQuantity}`);
+      } else if (this.orderItems2[index2] === item) {
+        // Änderung kam aus Tabelle 2 → Berechne Auftrag 1
+        this.orderItems[index1].quantity = remainingQuantity;
+        console.log(`🔄 [SYNC-SPLIT] Auftrag 2: ${currentQuantity}, Auftrag 1: ${remainingQuantity}, Gesamt: ${initialQuantity}`);
+      }
+    }
+  }
+
   transferQuantityToTable2(index: number, amount: number): void {
     const item = this.orderItems[index];
     const item2 = this.orderItems2[index];
@@ -4895,9 +4957,9 @@ filteredArtikelData() {
       item.quantity -= amount;
       item2.quantity += amount;
       
-      // Validiere und formatiere die Mengen
-      this.validateAndUpdateQuantity(item);
-      this.validateAndUpdateQuantity(item2);
+      // Validiere und formatiere die Mengen (ohne weitere Synchronisation)
+      this.validateAndUpdateQuantity(item, true);
+      this.validateAndUpdateQuantity(item2, true);
       
       console.log(`➡️ [TRANSFER] ${amount} von "${item.article_text}" zu Auftrag 2 verschoben`);
     } else {
@@ -4913,9 +4975,9 @@ filteredArtikelData() {
       item2.quantity -= amount;
       item.quantity += amount;
       
-      // Validiere und formatiere die Mengen
-      this.validateAndUpdateQuantity(item);
-      this.validateAndUpdateQuantity(item2);
+      // Validiere und formatiere die Mengen (ohne weitere Synchronisation)
+      this.validateAndUpdateQuantity(item, true);
+      this.validateAndUpdateQuantity(item2, true);
       
       console.log(`⬅️ [TRANSFER] ${amount} von "${item.article_text}" zu Auftrag 1 verschoben`);
     } else {

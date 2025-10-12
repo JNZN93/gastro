@@ -314,6 +314,7 @@
                                [(ngModel)]="item.quantity" 
                                step="0.001" 
                                class="quantity-edit" 
+                               (input)="onQuantityInput(item)"
                                (change)="updateItemTotal(item)"
                                (blur)="validateAndUpdateQuantity(item)">
                       </td>
@@ -383,6 +384,7 @@
                                [(ngModel)]="item.quantity" 
                                step="0.001" 
                                class="quantity-edit" 
+                               (input)="onQuantityInput(item)"
                                (change)="updateItemTotal(item)"
                                (blur)="validateAndUpdateQuantity(item)">
                       </td>
