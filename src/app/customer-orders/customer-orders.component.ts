@@ -2587,7 +2587,7 @@ filteredArtikelData() {
   }
 
   saveOrder(): void {
-    // Im Split-Modus: Zeige Auswahl-Dialog
+    // Im Split-Modus: Speichere immer beide Aufträge
     if (this.isSplitMode) {
       this.showSplitSaveDialog();
     } else {
@@ -2596,83 +2596,84 @@ filteredArtikelData() {
   }
 
   showSplitSaveDialog(): void {
-    const hasItemsInTable1 = this.orderItems.some(item => item.quantity > 0);
-    const hasItemsInTable2 = this.orderItems2.some(item => item.quantity > 0);
+    // Filter: Artikel mit Menge !== 0 (negative Mengen sind erlaubt, aber nicht 0)
+    const itemsTable1 = this.orderItems.filter(item => item.quantity !== 0);
+    const itemsTable2 = this.orderItems2.filter(item => item.quantity !== 0);
 
-    if (!hasItemsInTable1 && !hasItemsInTable2) {
+    // Prüfe, ob mindestens ein Auftrag Artikel hat
+    if (itemsTable1.length === 0 && itemsTable2.length === 0) {
       alert('Beide Aufträge sind leer. Bitte fügen Sie Artikel hinzu.');
       return;
     }
 
-    let message = 'Welchen Auftrag möchten Sie speichern?\n\n';
+    // Erstelle Bestätigungsnachricht
+    let message = '📋 Beide Aufträge speichern?\n\n';
     
-    if (hasItemsInTable1) {
-      message += `Auftrag 1: ${this.orderItems.filter(i => i.quantity > 0).length} Artikel, Gesamt: €${this.getOrderTotal().toFixed(2)}\n`;
+    if (itemsTable1.length > 0) {
+      message += `✅ Auftrag 1: ${itemsTable1.length} Artikel, Gesamt: €${this.getOrderTotal().toFixed(2)}\n`;
     } else {
-      message += 'Auftrag 1: Leer\n';
+      message += `⚠️ Auftrag 1: Leer (wird nicht gespeichert)\n`;
     }
     
-    if (hasItemsInTable2) {
-      message += `Auftrag 2: ${this.orderItems2.filter(i => i.quantity > 0).length} Artikel, Gesamt: €${this.getOrderTotal2().toFixed(2)}\n`;
+    if (itemsTable2.length > 0) {
+      message += `✅ Auftrag 2: ${itemsTable2.length} Artikel, Gesamt: €${this.getOrderTotal2().toFixed(2)}\n`;
     } else {
-      message += 'Auftrag 2: Leer\n';
+      message += `⚠️ Auftrag 2: Leer (wird nicht gespeichert)\n`;
     }
 
-    message += '\nWählen Sie eine Option:';
-
-    const options = [];
-    if (hasItemsInTable1) options.push('1');
-    if (hasItemsInTable2) options.push('2');
-    if (hasItemsInTable1 && hasItemsInTable2) options.push('beide');
-
-    const choice = prompt(message + '\n\nGeben Sie ein: ' + options.join(', '));
-
-    if (choice === '1' && hasItemsInTable1) {
-      this.saveSingleOrder(this.orderItems, 'Auftrag 1');
-    } else if (choice === '2' && hasItemsInTable2) {
-      this.saveSingleOrder(this.orderItems2, 'Auftrag 2');
-    } else if (choice === 'beide' && hasItemsInTable1 && hasItemsInTable2) {
-      this.saveBothOrders();
-    } else if (choice !== null) {
-      alert('Ungültige Auswahl');
+    message += '\n';
+    
+    if (itemsTable1.length === 0 || itemsTable2.length === 0) {
+      message += '⚠️ Hinweis: Nur Aufträge mit Artikeln werden gespeichert.\n\n';
     }
-  }
+    
+    message += 'Möchten Sie fortfahren?';
 
-  saveSingleOrder(items: any[], orderName: string): void {
-    // Filter nur Artikel mit Menge > 0
-    const filteredItems = items.filter(item => item.quantity > 0);
-    
-    if (filteredItems.length === 0) {
-      alert(`${orderName} enthält keine Artikel mit Menge > 0.`);
-      return;
-    }
+    // Zeige Bestätigungs-Dialog
+    const dialogRef = this.dialog.open(MyDialogComponent, {
+      data: {
+        title: 'Beide Aufträge speichern',
+        message: message,
+        isConfirmation: true,
+        confirmLabel: 'Beide speichern',
+        cancelLabel: 'Abbrechen'
+      },
+      maxWidth: '500px',
+      minWidth: '400px',
+    });
 
-    // Temporär orderItems durch gefilterte Items ersetzen für Speicherung
-    const originalItems = this.orderItems;
-    this.orderItems = filteredItems;
-    
-    this.openOrderConfirmationModal();
-    
-    // Nach Modal-Schließen Original wiederherstellen
-    setTimeout(() => {
-      if (!this.isOrderConfirmationModalOpen) {
-        this.orderItems = originalItems;
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.saveBothOrders();
       }
-    }, 100);
+    });
   }
+
 
   async saveBothOrders(): Promise<void> {
-    const itemsTable1 = this.orderItems.filter(item => item.quantity > 0);
-    const itemsTable2 = this.orderItems2.filter(item => item.quantity > 0);
+    // Filter: Nur Artikel mit Menge !== 0 (negative Mengen erlaubt)
+    const itemsTable1 = this.orderItems.filter(item => item.quantity !== 0);
+    const itemsTable2 = this.orderItems2.filter(item => item.quantity !== 0);
 
-    if (itemsTable1.length === 0 || itemsTable2.length === 0) {
-      alert('Beide Aufträge müssen mindestens einen Artikel mit Menge > 0 enthalten.');
-      return;
+    // Sammle die zu speichernden Aufträge
+    const ordersToSave: Promise<any>[] = [];
+    
+    if (itemsTable1.length > 0) {
+      ordersToSave.push(this.saveOrderDirectly(itemsTable1, 'completed'));
+      console.log(`📦 [SPLIT-SAVE] Auftrag 1 wird gespeichert: ${itemsTable1.length} Artikel`);
+    } else {
+      console.log(`⚠️ [SPLIT-SAVE] Auftrag 1 übersprungen (keine Artikel mit Menge !== 0)`);
+    }
+    
+    if (itemsTable2.length > 0) {
+      ordersToSave.push(this.saveOrderDirectly(itemsTable2, 'completed'));
+      console.log(`📦 [SPLIT-SAVE] Auftrag 2 wird gespeichert: ${itemsTable2.length} Artikel`);
+    } else {
+      console.log(`⚠️ [SPLIT-SAVE] Auftrag 2 übersprungen (keine Artikel mit Menge !== 0)`);
     }
 
-    const confirm = window.confirm(`Beide Aufträge speichern?\n\nAuftrag 1: ${itemsTable1.length} Artikel, €${this.getOrderTotal().toFixed(2)}\nAuftrag 2: ${itemsTable2.length} Artikel, €${this.getOrderTotal2().toFixed(2)}`);
-
-    if (!confirm) {
+    if (ordersToSave.length === 0) {
+      alert('Keine Aufträge zu speichern. Beide Aufträge sind leer.');
       return;
     }
 
@@ -2680,12 +2681,14 @@ filteredArtikelData() {
 
     try {
       // Beide Aufträge parallel als separate Fetches speichern
-      await Promise.all([
-        this.saveOrderDirectly(itemsTable1, 'completed'),
-        this.saveOrderDirectly(itemsTable2, 'completed')
-      ]);
+      await Promise.all(ordersToSave);
       
-      alert('Beide Aufträge wurden erfolgreich gespeichert!');
+      const savedCount = ordersToSave.length;
+      const message = savedCount === 2 
+        ? 'Beide Aufträge wurden erfolgreich gespeichert!' 
+        : `${savedCount} Auftrag wurde erfolgreich gespeichert!`;
+      
+      alert(message);
       this.clearAllOrderData();
       this.isSplitMode = false;
       this.orderItems2 = [];
@@ -2810,13 +2813,20 @@ filteredArtikelData() {
       customerData.delivery_date = this.deliveryDate;
     }
 
+    // Filter: Artikel mit Menge 0 herausfiltern (negative Mengen erlaubt)
+    const filteredOrderItems = this.orderItems.filter(item => item.quantity !== 0);
+    
+    if (filteredOrderItems.length < this.orderItems.length) {
+      console.log(`📦 [SAVE-AS-OPEN] Gefilterte Artikel: ${filteredOrderItems.length} von ${this.orderItems.length} (${this.orderItems.length - filteredOrderItems.length} mit Menge 0 entfernt)`);
+    }
+
     const completeOrder = {
       orderData: {
         ...customerData,
         total_price: this.getOrderTotal(),
         created_at: new Date().toISOString()
       },
-      orderItems: this.orderItems
+      orderItems: filteredOrderItems
     };
 
     const token = localStorage.getItem('token');
@@ -4529,13 +4539,20 @@ filteredArtikelData() {
       customerData.delivery_date = this.deliveryDate;
     }
 
+    // Filter: Artikel mit Menge 0 herausfiltern (negative Mengen erlaubt)
+    const filteredOrderItems = this.orderItems.filter(item => item.quantity !== 0);
+    
+    if (filteredOrderItems.length < this.orderItems.length) {
+      console.log(`📦 [SAVE-ORDER] Gefilterte Artikel: ${filteredOrderItems.length} von ${this.orderItems.length} (${this.orderItems.length - filteredOrderItems.length} mit Menge 0 entfernt)`);
+    }
+
     const completeOrder = {
       orderData: {
         ...customerData,
         total_price: this.getOrderTotal(),
         created_at: new Date().toISOString()
       },
-      orderItems: this.orderItems
+      orderItems: filteredOrderItems
     };
 
     const token = localStorage.getItem('token');
