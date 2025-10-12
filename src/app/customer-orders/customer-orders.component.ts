@@ -2710,9 +2710,23 @@ filteredArtikelData() {
       await Promise.all(ordersToSave);
       
       const savedCount = ordersToSave.length;
-      const message = savedCount === 2 
+      let message = savedCount === 2 
         ? 'Beide Aufträge wurden erfolgreich gespeichert!' 
         : `${savedCount} Auftrag wurde erfolgreich gespeichert!`;
+      
+      // Im Bearbeitungsmodus: Lösche die ursprüngliche Bestellung
+      if (this.isEditMode && this.editingOrderId) {
+        console.log(`🗑️ [SPLIT-EDIT] Lösche ursprüngliche Bestellung #${this.editingOrderId} (wurde in ${savedCount} Aufträge aufgeteilt)`);
+        
+        try {
+          await this.deleteOriginalOrder(this.editingOrderId);
+          message += `\n\nUrsprüngliche Bestellung #${this.editingOrderId} wurde gelöscht.`;
+          console.log(`✅ [SPLIT-EDIT] Ursprüngliche Bestellung #${this.editingOrderId} erfolgreich gelöscht`);
+        } catch (deleteError) {
+          console.error('❌ [SPLIT-EDIT] Fehler beim Löschen der ursprünglichen Bestellung:', deleteError);
+          message += `\n\n⚠️ Warnung: Ursprüngliche Bestellung konnte nicht gelöscht werden.`;
+        }
+      }
       
       alert(message);
       this.clearAllOrderData();
@@ -2720,12 +2734,37 @@ filteredArtikelData() {
       this.orderItems2 = [];
       this.customerNotes1 = '';
       this.customerNotes2 = '';
+      
+      // Im Bearbeitungsmodus: Navigiere zur Order-Overview
+      if (this.isEditMode) {
+        console.log('🔄 [SPLIT-EDIT] Navigiere zur Order-Overview...');
+        this.router.navigate(['/order-overview']);
+      }
     } catch (error) {
       console.error('Fehler beim Speichern der Aufträge:', error);
       alert('Fehler beim Speichern: ' + error);
     } finally {
       this.isSavingOrder = false;
     }
+  }
+
+  // Lösche eine Bestellung (für Split-Mode im Bearbeitungsmodus)
+  private async deleteOriginalOrder(orderId: number): Promise<void> {
+    const token = localStorage.getItem('token');
+    
+    const response = await fetch(`${environment.apiUrl}/api/orders/${orderId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Fehler beim Löschen der Bestellung: ${response.statusText}`);
+    }
+    
+    return response.json();
   }
 
   async saveOrderDirectly(items: any[], status: string, customerNotes: string = ''): Promise<void> {
