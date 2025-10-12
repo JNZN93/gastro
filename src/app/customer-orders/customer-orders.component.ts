@@ -4912,40 +4912,56 @@ filteredArtikelData() {
   // Synchronisiere die Mengen zwischen beiden Tabellen im Split-Modus
   // Logik: Gesamtmenge bleibt konstant (initial_quantity = quantity_table1 + quantity_table2)
   syncQuantitiesInSplitMode(item: any): void {
-    // Finde den Index des Artikels in beiden Tabellen
-    const index1 = this.orderItems.findIndex(i => 
-      i.article_number === item.article_number || 
-      (i.id && item.id && i.id === item.id)
-    );
-    const index2 = this.orderItems2.findIndex(i => 
-      i.article_number === item.article_number || 
-      (i.id && item.id && i.id === item.id)
-    );
+    // WICHTIG: Finde das EXAKTE Objekt in den Arrays (nicht nach article_number suchen!)
+    // Das ist wichtig für mehrere Artikel mit der gleichen article_number (z.B. mehrere PFAND-Artikel)
+    const index1 = this.orderItems.indexOf(item);
+    const index2 = this.orderItems2.indexOf(item);
     
-    // Wenn der Artikel in beiden Tabellen existiert
-    if (index1 !== -1 && index2 !== -1) {
-      const item1 = this.orderItems[index1];
-      const item2 = this.orderItems2[index2];
-      
-      // Hole die Ausgangsmenge (initial_quantity)
-      const initialQuantity = item1.initial_quantity || item2.initial_quantity || 0;
-      
-      // Konvertiere die aktuelle Menge zu einer Zahl (auch während der Eingabe)
-      const currentQuantity = parseFloat(item.quantity) || 0;
-      
-      // Berechne die verbleibende Menge für die andere Tabelle
-      const remainingQuantity = initialQuantity - currentQuantity;
-      
-      // Setze die Menge in der anderen Tabelle
-      if (this.orderItems[index1] === item) {
-        // Änderung kam aus Tabelle 1 → Berechne Auftrag 2
-        this.orderItems2[index2].quantity = remainingQuantity;
-        console.log(`🔄 [SYNC-SPLIT] Auftrag 1: ${currentQuantity}, Auftrag 2: ${remainingQuantity}, Gesamt: ${initialQuantity}`);
-      } else if (this.orderItems2[index2] === item) {
-        // Änderung kam aus Tabelle 2 → Berechne Auftrag 1
-        this.orderItems[index1].quantity = remainingQuantity;
-        console.log(`🔄 [SYNC-SPLIT] Auftrag 2: ${currentQuantity}, Auftrag 1: ${remainingQuantity}, Gesamt: ${initialQuantity}`);
-      }
+    // Bestimme, aus welcher Tabelle die Änderung kam
+    let sourceIndex: number;
+    let isFromTable1: boolean;
+    
+    if (index1 !== -1) {
+      // Item ist in Tabelle 1
+      sourceIndex = index1;
+      isFromTable1 = true;
+    } else if (index2 !== -1) {
+      // Item ist in Tabelle 2
+      sourceIndex = index2;
+      isFromTable1 = false;
+    } else {
+      // Item wurde nicht gefunden - sollte nicht passieren
+      console.warn('⚠️ [SYNC-SPLIT] Artikel nicht in den Tabellen gefunden');
+      return;
+    }
+    
+    // Hole die entsprechenden Artikel aus beiden Tabellen (gleicher Index in beiden Arrays)
+    const item1 = this.orderItems[sourceIndex];
+    const item2 = this.orderItems2[sourceIndex];
+    
+    if (!item1 || !item2) {
+      console.warn('⚠️ [SYNC-SPLIT] Korrespondierender Artikel nicht gefunden');
+      return;
+    }
+    
+    // Hole die Ausgangsmenge (initial_quantity)
+    const initialQuantity = item1.initial_quantity || item2.initial_quantity || 0;
+    
+    // Konvertiere die aktuelle Menge zu einer Zahl (auch während der Eingabe)
+    const currentQuantity = parseFloat(item.quantity) || 0;
+    
+    // Berechne die verbleibende Menge für die andere Tabelle
+    const remainingQuantity = initialQuantity - currentQuantity;
+    
+    // Setze die Menge in der anderen Tabelle
+    if (isFromTable1) {
+      // Änderung kam aus Tabelle 1 → Berechne Auftrag 2
+      this.orderItems2[sourceIndex].quantity = remainingQuantity;
+      console.log(`🔄 [SYNC-SPLIT] Index ${sourceIndex}: Auftrag 1 (${currentQuantity}) → Auftrag 2 (${remainingQuantity}), Gesamt: ${initialQuantity}`);
+    } else {
+      // Änderung kam aus Tabelle 2 → Berechne Auftrag 1
+      this.orderItems[sourceIndex].quantity = remainingQuantity;
+      console.log(`🔄 [SYNC-SPLIT] Index ${sourceIndex}: Auftrag 2 (${currentQuantity}) → Auftrag 1 (${remainingQuantity}), Gesamt: ${initialQuantity}`);
     }
   }
 
