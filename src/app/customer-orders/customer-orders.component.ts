@@ -3497,6 +3497,18 @@ filteredArtikelData() {
       console.log('🔍 [QR-CODE] Base URL:', baseUrl);
       console.log('🔍 [QR-CODE] Vollständige URL:', orderUrl);
       
+      // ⭐ AUFFÄLLIGER LOG FÜR DIREKTES KOPIEREN DER URL ⭐
+      console.log('%c═══════════════════════════════════════════════════════════════', 'color: #10b981; font-weight: bold; font-size: 14px;');
+      console.log('%c🔗 DIREKT-LINK FÜR KUNDENBESTELLUNG', 'color: #10b981; font-weight: bold; font-size: 16px;');
+      console.log('%c═══════════════════════════════════════════════════════════════', 'color: #10b981; font-weight: bold; font-size: 14px;');
+      console.log('%cKunde: %c' + customer.last_name_company, 'color: #3b82f6; font-weight: bold;', 'color: #1e40af; font-weight: bold;');
+      console.log('%cKundennummer: %c' + customer.customer_number, 'color: #3b82f6; font-weight: bold;', 'color: #1e40af; font-weight: bold;');
+      console.log('%c═══════════════════════════════════════════════════════════════', 'color: #10b981; font-weight: bold; font-size: 14px;');
+      console.log('%c📋 URL zum Kopieren:', 'color: #f59e0b; font-weight: bold; font-size: 14px;');
+      console.log('%c' + orderUrl, 'color: #dc2626; font-weight: bold; font-size: 14px; background: #fef3c7; padding: 8px; border-radius: 4px;');
+      console.log('%c═══════════════════════════════════════════════════════════════', 'color: #10b981; font-weight: bold; font-size: 14px;');
+      console.log('%c💡 Tipp: Rechtsklick auf die URL → "Copy object" oder einfach markieren und kopieren', 'color: #6b7280; font-style: italic;');
+      
       // QR-Code als Data URL generieren (höhere Auflösung für bessere Qualität)
       const qrCodeDataUrl = await QRCode.toDataURL(orderUrl, {
         width: 300, // Höhere Auflösung für bessere Qualität

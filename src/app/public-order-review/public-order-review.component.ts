@@ -1071,8 +1071,8 @@ export class PublicOrderReviewComponent implements OnInit {
     console.log('📋 [PUBLIC-REVIEW] Artikel bleiben unverändert (keine visuelle PFAND-Anzeige)');
     console.log('💰 [PUBLIC-REVIEW] Gesamtpreis bleibt unverändert');
     
-    // PFAND-Artikel nur für den Payload vorbereiten (nicht in this.items)
-    const pfandItemsForPayload: any[] = [];
+    // PFAND-Artikel für den Payload vorbereiten - als Map mit Referenz zum Hauptartikel
+    const pfandItemsMap = new Map<string, any>();
     this.items.forEach((artikel) => {
       if (artikel.product_custom_field_1) {
         const realPfandArticle = pfandArticles.find(pfand => 
@@ -1098,24 +1098,28 @@ export class PublicOrderReviewComponent implements OnInit {
             pfandFinalPrice = parseFloat(realPfandArticle.sale_price) || 0;
           }
           
-          pfandItemsForPayload.push({
+          // Speichere PFAND mit Referenz zum Hauptartikel (article_number oder product_id)
+          const parentKey = artikel.article_number || artikel.product_id;
+          pfandItemsMap.set(parentKey, {
             article_number: realPfandArticle.article_number || realPfandArticle.product_id,
             quantity: artikel.quantity,
             sale_price: pfandFinalPrice,
+            description: realPfandArticle.article_text, // ✅ PFAND: description Feld hinzugefügt
             article_text: realPfandArticle.article_text,
             unit_price_net: realPfandArticle.unit_price_net || 0,
             different_price: realPfandArticle.different_price || 0,
             id: realPfandArticle.id || realPfandArticle.product_id,
             total_price: (artikel.quantity * pfandFinalPrice),
-            product_custom_field_1: realPfandArticle.product_custom_field_1
+            product_custom_field_1: realPfandArticle.product_custom_field_1,
+            parent_article_number: parentKey // Referenz zum Hauptartikel
           });
         }
       }
     });
     
-    console.log(`🔍 [REVIEW] PFAND-Artikel für Payload vorbereitet: ${pfandItemsForPayload.length}`);
+    console.log(`🔍 [REVIEW] PFAND-Artikel für Payload vorbereitet: ${pfandItemsMap.size}`);
     console.log(`🔍 [REVIEW] Normale Artikel: ${this.items.length}`);
-    console.log(`🔍 [REVIEW] Gesamtartikel im Payload: ${this.items.length + pfandItemsForPayload.length}`);
+    console.log(`🔍 [REVIEW] Gesamtartikel im Payload: ${this.items.length + pfandItemsMap.size}`);
     
     // Bestellung direkt von der Review-Seite abschicken
     this.isSubmitting = true;
@@ -1134,48 +1138,61 @@ export class PublicOrderReviewComponent implements OnInit {
       delivery_date: new Date().toISOString().split('T')[0]
     };
 
+    // Baue orderItems mit korrekter PFAND-Positionierung: PFAND direkt nach Hauptartikel
+    const orderItemsWithCorrectPfandPositioning: any[] = [];
+    
+    this.items.forEach(item => {
+      console.log(`🔍 [PAYLOAD] Normaler Artikel ${item.article_text}: product_database_id=${item.product_database_id}`);
+      
+      // Für normale Artikel: Verwende different_price falls vorhanden und gültig, sonst sale_price
+      let finalPrice: number;
+      
+      if (item.different_price !== undefined && item.different_price !== null && item.different_price !== '') {
+        const parsedDifferentPrice = parseFloat(item.different_price);
+        if (!isNaN(parsedDifferentPrice) && parsedDifferentPrice >= 0) {
+          finalPrice = parsedDifferentPrice;
+        } else {
+          // Ungültiger different_price - verwende sale_price
+          console.warn('⚠️ [PAYLOAD] Ungültiger different_price:', item.different_price, 'für Artikel:', item.article_text, '- verwende sale_price');
+          finalPrice = parseFloat(item.sale_price) || 0;
+        }
+      } else {
+        // Kein different_price - verwende sale_price
+        finalPrice = parseFloat(item.sale_price) || 0;
+      }
+      
+      console.log(`💰 [PAYLOAD] Normaler Artikel ${item.article_text}: different_price=${item.different_price}€, sale_price=${item.sale_price}€, final=${finalPrice}€`);
+      
+      // 1. Füge den Hauptartikel hinzu
+      const mainArticle = {
+        article_number: item.article_number || item.product_id,
+        quantity: item.quantity,
+        description: item.article_text,
+        sale_price: finalPrice,
+        article_text: item.article_text,
+        unit_price_net: item.unit_price_net || 0,
+        different_price: item.different_price || 0,
+        id: item.product_database_id,
+        total_price: (item.quantity * finalPrice),
+        product_custom_field_1: item.product_custom_field_1
+      };
+      orderItemsWithCorrectPfandPositioning.push(mainArticle);
+      
+      // 2. Füge PFAND-Artikel direkt NACH dem Hauptartikel hinzu (falls vorhanden)
+      const parentKey = item.article_number || item.product_id;
+      const pfandForThisItem = pfandItemsMap.get(parentKey);
+      
+      if (pfandForThisItem) {
+        console.log(`➕ [PAYLOAD] PFAND direkt nach ${item.article_text} hinzugefügt: ${pfandForThisItem.article_text}`);
+        orderItemsWithCorrectPfandPositioning.push(pfandForThisItem);
+      }
+    });
+    
+    console.log(`📋 [PAYLOAD] Finale orderItems mit korrekter Positionierung: ${orderItemsWithCorrectPfandPositioning.length} Artikel`);
+
     const completeOrder = {
       orderData: orderData,
-      orderItems: [
-        // Normale Artikel
-        ...this.items.map(item => {
-          console.log(`🔍 [PAYLOAD] Normaler Artikel ${item.article_text}: product_database_id=${item.product_database_id}`);
-          
-          // Für normale Artikel: Verwende different_price falls vorhanden und gültig, sonst sale_price
-          let finalPrice: number;
-          
-          if (item.different_price !== undefined && item.different_price !== null && item.different_price !== '') {
-            const parsedDifferentPrice = parseFloat(item.different_price);
-            if (!isNaN(parsedDifferentPrice) && parsedDifferentPrice >= 0) {
-              finalPrice = parsedDifferentPrice;
-            } else {
-              // Ungültiger different_price - verwende sale_price
-              console.warn('⚠️ [PAYLOAD] Ungültiger different_price:', item.different_price, 'für Artikel:', item.article_text, '- verwende sale_price');
-              finalPrice = parseFloat(item.sale_price) || 0;
-            }
-          } else {
-            // Kein different_price - verwende sale_price
-            finalPrice = parseFloat(item.sale_price) || 0;
-          }
-          
-          console.log(`💰 [PAYLOAD] Normaler Artikel ${item.article_text}: different_price=${item.different_price}€, sale_price=${item.sale_price}€, final=${finalPrice}€`);
-          
-          return {
-            article_number: item.article_number || item.product_id,
-            quantity: item.quantity,
-            description: item.article_text,
-            sale_price: finalPrice,
-            article_text: item.article_text,
-            unit_price_net: item.unit_price_net || 0,
-            different_price: item.different_price || 0,
-            id: item.product_database_id,
-            total_price: (item.quantity * finalPrice),
-            product_custom_field_1: item.product_custom_field_1
-          };
-        }),
-        // PFAND-Artikel (nur im Payload, nicht visuell)
-        ...pfandItemsForPayload
-      ]
+      orderItems: orderItemsWithCorrectPfandPositioning
     };
 
     // 🔍 PAYLOAD LOGGING - Bestellung wird abgesendet
@@ -1191,13 +1208,22 @@ export class PublicOrderReviewComponent implements OnInit {
     console.log('🌐 [REVIEW] Endpoint:', '${environment.apiUrl}/api/orders/without-auth');
     
     // Zusätzliches Logging für PFAND-Artikel
-    console.log('🔍 [REVIEW] PFAND-Artikel im Payload:', pfandItemsForPayload.map((item: any) => ({
+    const pfandItemsInPayload = orderItemsWithCorrectPfandPositioning.filter((item: any) => item.parent_article_number);
+    console.log('🔍 [REVIEW] PFAND-Artikel im Payload:', pfandItemsInPayload.map((item: any) => ({
       name: item.article_text,
       quantity: item.quantity,
       unit_price_net: item.unit_price_net || 0,
       sale_price: item.sale_price || 'Nicht gesetzt',
-      total_price: (item.quantity * (item.sale_price || item.unit_price_net || 0))
+      total_price: (item.quantity * (item.sale_price || item.unit_price_net || 0)),
+      parent_article: item.parent_article_number
     })));
+    
+    // Logging für die korrekte Positionierung
+    console.log('📋 [REVIEW] Artikel-Reihenfolge im Payload:');
+    orderItemsWithCorrectPfandPositioning.forEach((item: any, index: number) => {
+      const isPfand = !!item.parent_article_number;
+      console.log(`  ${index + 1}. ${isPfand ? '→ PFAND: ' : ''}${item.article_text} (Menge: ${item.quantity})`);
+    });
     
     fetch(`${environment.apiUrl}/api/orders/without-auth`, {
       method: 'POST',
