@@ -2446,6 +2446,96 @@ filteredArtikelData() {
     this.openOrderConfirmationModal();
   }
 
+  saveOrderAsOpen(): void {
+    // Validierung
+    if (this.orderItems.length === 0) {
+      alert('Bitte fügen Sie mindestens einen Artikel hinzu.');
+      return;
+    }
+
+    if (!this.globalService.selectedCustomerForOrders) {
+      alert('Bitte wählen Sie einen Kunden aus.');
+      return;
+    }
+
+    // Direkt als "offen" speichern ohne Modal
+    this.isSavingOrder = true;
+
+    // Ensure description is set for all items
+    this.orderItems.forEach(item => {
+      if (!item.description && item.article_text) {
+        item.description = item.article_text;
+      }
+    });
+
+    // Kundendaten für den Request
+    const customerData: any = {
+      customer_id: this.globalService.selectedCustomerForOrders.id,
+      customer_number: this.globalService.selectedCustomerForOrders.customer_number,
+      customer_name: this.globalService.selectedCustomerForOrders.last_name_company,
+      customer_addition: this.globalService.selectedCustomerForOrders.name_addition,
+      customer_email: this.globalService.selectedCustomerForOrders.email,
+      status: 'open'
+    };
+
+    // Nur Kundendaten mitsenden, wenn der Name geändert wurde
+    if (this.differentCompanyName) {
+      customerData.customer_city = this.globalService.selectedCustomerForOrders.city;
+      customerData.customer_street = this.globalService.selectedCustomerForOrders.street;
+      customerData.customer_postal_code = this.globalService.selectedCustomerForOrders.postal_code;
+      customerData.customer_country_code = this.globalService.selectedCustomerForOrders._country_code;
+      customerData.different_company_name = this.differentCompanyName;
+    }
+
+    // Datumsfelder nur mitsenden, wenn ausgefüllt
+    if (this.orderDate) {
+      customerData.order_date = this.orderDate;
+    }
+    if (this.deliveryDate) {
+      customerData.delivery_date = this.deliveryDate;
+    }
+
+    const completeOrder = {
+      orderData: {
+        ...customerData,
+        total_price: this.getOrderTotal(),
+        created_at: new Date().toISOString()
+      },
+      orderItems: this.orderItems
+    };
+
+    const token = localStorage.getItem('token');
+
+    console.log('🚀 [CUSTOMER-ORDERS] Zwischenspeichern - Bestellung wird abgesendet:');
+    console.log('📋 [CUSTOMER-ORDERS] Vollständiges Order-Payload:', JSON.stringify(completeOrder, null, 2));
+    console.log('📳 [CUSTOMER-ORDERS] Status: open (Zwischengespeichert)');
+
+    fetch(`${environment.apiUrl}/api/orders`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(completeOrder)
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Fehler beim Zwischenspeichern des Auftrags');
+      }
+      return response.json();
+    })
+    .then(data => {
+      this.isSavingOrder = false;
+      alert('Auftrag erfolgreich zwischengespeichert (Status: Offen)!');
+      this.clearAllOrderData();
+    })
+    .catch(error => {
+      this.isSavingOrder = false;
+      console.error('Fehler beim Zwischenspeichern des Auftrags:', error);
+      alert('Fehler beim Zwischenspeichern des Auftrags: ' + error.message);
+    });
+  }
+
   // Neue Methode zum vollständigen Leeren aller auftragsrelevanten Daten
   clearAllOrderData(): void {
     console.log('🗑️ [CLEAR-ALL-ORDER] Starte vollständiges Leeren aller auftragsrelevanten Daten...');

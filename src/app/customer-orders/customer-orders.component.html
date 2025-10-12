@@ -260,6 +260,10 @@
           </div>
           
           <div class="order-actions">
+            <button (click)="saveOrderAsOpen()" class="save-order-open-btn">
+              <span class="material-icons">schedule</span>
+              Zwischenspeichern
+            </button>
             <button (click)="saveOrder()" class="save-order-btn">
               <span class="material-icons">save</span>
               Auftrag speichern
@@ -666,6 +670,10 @@
               </div>
               
               <div class="mobile-order-actions">
+                <button (click)="saveOrderAsOpen()" class="save-order-open-btn">
+                  <span class="material-icons">schedule</span>
+                  Zwischenspeichern
+                </button>
                 <button (click)="saveOrder()" class="save-order-btn">
                   <span class="material-icons">save</span>
                   Auftrag speichern

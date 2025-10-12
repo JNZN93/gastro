@@ -1339,6 +1339,17 @@
     }
   }
   
+  .save-order-open-btn {
+    background: #f59e0b;
+    color: white;
+    
+    &:hover {
+      background: #d97706;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+    }
+  }
+
   .save-order-btn {
     background: #10b981;
     color: white;
@@ -1599,7 +1610,9 @@
     min-width: 160px;
   }
   
-  .save-order-btn, .clear-order-btn {
+  .save-order-open-btn,
+  .save-order-btn,
+  .clear-order-btn {
     width: 100%;
     justify-content: center;
     padding: 10px 16px;
@@ -1912,7 +1925,9 @@
     gap: 6px;
     justify-content: space-between;
     
-    .save-order-btn, .clear-order-btn {
+    .save-order-open-btn,
+    .save-order-btn,
+    .clear-order-btn {
       flex: 1;
       justify-content: center;
       padding: 8px 6px;
@@ -3832,7 +3847,9 @@
     padding: 6px;
     gap: 4px;
     
-    .save-order-btn, .clear-order-btn {
+    .save-order-open-btn,
+    .save-order-btn,
+    .clear-order-btn {
       padding: 6px 4px;
       font-size: 10px;
       height: 28px;
@@ -5525,6 +5542,7 @@
   gap: 12px;
   margin-top: 16px;
 
+  .save-order-open-btn,
   .save-order-btn,
   .clear-order-btn {
     flex: 1;
@@ -5542,6 +5560,15 @@
 
     .material-icons {
       font-size: 16px;
+    }
+  }
+
+  .save-order-open-btn {
+    background: #f59e0b;
+    color: white;
+
+    &:hover {
+      background: #d97706;
     }
   }
 
