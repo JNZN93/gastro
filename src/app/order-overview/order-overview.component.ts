@@ -509,7 +509,8 @@ export class OrderOverviewComponent implements OnInit {
         different_price: item.different_price ? parseFloat(item.different_price) : null,
         description: item.product_name,
         cost_price: 0,
-        original_price: parseFloat(item.price)
+        original_price: parseFloat(item.price),
+        tax_code: item.tax_code || 1 // MwSt-Code für Bruttopreis-Berechnung
       })),
       differentCompanyName: '' // Kein differentCompanyName beim Import, da die Kundendaten aus der Datenbank geladen werden
     };
@@ -728,7 +729,8 @@ export class OrderOverviewComponent implements OnInit {
         different_price: item.different_price ? parseFloat(item.different_price) : null,
         description: item.product_name,
         cost_price: 0,
-        original_price: parseFloat(item.price)
+        original_price: parseFloat(item.price),
+        tax_code: item.tax_code || 1 // MwSt-Code für Bruttopreis-Berechnung
       })),
       differentCompanyName: '',
       editMode: true, // Flag für Bearbeitungsmodus
