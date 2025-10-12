@@ -1437,6 +1437,17 @@
   grid-template-columns: 1fr 1fr;
   gap: 16px;
   margin-top: 8px;
+
+  // Responsive: Stack vertically on smaller screens
+  @media (max-width: 1200px) {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  @media (max-width: 768px) {
+    gap: 8px;
+    margin-top: 4px;
+  }
 }
 
 .split-table-wrapper {
@@ -1504,13 +1515,54 @@
 .split-order-table-container {
   max-height: 400px;
   overflow-y: auto;
+  overflow-x: auto; // Enable horizontal scrolling
   border: 1px solid #e2e8f0;
   border-radius: 6px;
+  position: relative;
+
+  // Scroll indicator
+  &::after {
+    content: "← Scroll horizontal →";
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 9px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  &:hover::after {
+    opacity: 1;
+  }
+
+  // Responsive heights
+  @media (max-width: 1200px) {
+    max-height: 350px;
+  }
+
+  @media (max-width: 768px) {
+    max-height: 300px;
+  }
+
+  @media (max-width: 480px) {
+    max-height: 250px;
+  }
+
+  @media (max-width: 360px) {
+    max-height: 200px;
+  }
 }
 
 .split-table {
   margin: 0;
   font-size: 13px;
+  min-width: 600px; // Ensure minimum width for proper display
 
   th {
     position: sticky;
@@ -1519,16 +1571,79 @@
     z-index: 1;
     padding: 8px;
     font-size: 12px;
+    white-space: nowrap; // Prevent header text wrapping
   }
 
   td {
     padding: 6px;
+    white-space: nowrap; // Prevent content wrapping
   }
 
   .quantity-edit {
     width: 70px;
     padding: 4px;
     font-size: 12px;
+  }
+
+  // Responsive font sizes
+  @media (max-width: 768px) {
+    font-size: 11px;
+    min-width: 500px;
+
+    th {
+      padding: 6px;
+      font-size: 10px;
+    }
+
+    td {
+      padding: 4px;
+    }
+
+    .quantity-edit {
+      width: 60px;
+      padding: 3px;
+      font-size: 11px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    font-size: 10px;
+    min-width: 450px;
+
+    th {
+      padding: 4px;
+      font-size: 9px;
+    }
+
+    td {
+      padding: 3px;
+    }
+
+    .quantity-edit {
+      width: 50px;
+      padding: 2px;
+      font-size: 10px;
+    }
+  }
+
+  @media (max-width: 360px) {
+    font-size: 9px;
+    min-width: 400px;
+
+    th {
+      padding: 3px;
+      font-size: 8px;
+    }
+
+    td {
+      padding: 2px;
+    }
+
+    .quantity-edit {
+      width: 45px;
+      padding: 1px;
+      font-size: 9px;
+    }
   }
 }
 
@@ -1566,6 +1681,31 @@
 
     .material-icons {
       font-size: 16px;
+    }
+
+    // Responsive adjustments
+    @media (max-width: 768px) {
+      padding: 3px 6px;
+      
+      .material-icons {
+        font-size: 14px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      padding: 2px 4px;
+      
+      .material-icons {
+        font-size: 12px;
+      }
+    }
+
+    @media (max-width: 360px) {
+      padding: 1px 3px;
+      
+      .material-icons {
+        font-size: 10px;
+      }
     }
   }
 }
@@ -1609,6 +1749,46 @@
       color: #059669;
     }
   }
+
+  // Responsive adjustments
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px 12px;
+
+    .material-icons {
+      font-size: 20px;
+    }
+
+    span {
+      font-size: 12px;
+    }
+
+    .active-table-label {
+      font-size: 13px;
+      padding: 3px 10px;
+      align-self: flex-end;
+    }
+  }
+
+  @media (max-width: 480px) {
+    padding: 8px 10px;
+    gap: 6px;
+
+    .material-icons {
+      font-size: 18px;
+    }
+
+    span {
+      font-size: 11px;
+    }
+
+    .active-table-label {
+      font-size: 12px;
+      padding: 2px 8px;
+    }
+  }
 }
 
 // Datumsfelder
@@ -1621,6 +1801,73 @@
   border-radius: 8px;
   border: 1px solid #e2e8f0;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+
+  // Responsive adjustments
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 6px;
+    padding: 6px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 4px;
+    gap: 4px;
+  }
+}
+
+// Split-View spezifische responsive Anpassungen
+@media (max-width: 1200px) {
+  .split-view-container {
+    .order-actions {
+      position: relative !important;
+      bottom: auto !important;
+      right: auto !important;
+      left: auto !important;
+      margin-top: 12px;
+      box-shadow: none;
+      border: 1px solid #e2e8f0;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .split-view-container {
+    .order-actions {
+      flex-direction: column;
+      gap: 8px;
+      
+      button {
+        width: 100%;
+        padding: 10px 16px;
+        font-size: 13px;
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .split-view-container {
+    .order-actions {
+      gap: 6px;
+      position: sticky;
+      bottom: 0;
+      background: white;
+      border-top: 2px solid #e2e8f0;
+      margin-top: 16px;
+      padding: 12px;
+      box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+      
+      button {
+        padding: 10px 12px;
+        font-size: 13px;
+        font-weight: 600;
+        
+        .material-icons {
+          font-size: 18px;
+        }
+      }
+    }
+  }
   
   .date-field {
     display: flex;
