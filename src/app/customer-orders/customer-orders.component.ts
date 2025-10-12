@@ -2393,6 +2393,54 @@ filteredArtikelData() {
     return this.resolveEffectivePrice(item);
   }
 
+  // Hilfsmethode um MwSt-Rate basierend auf tax_code zu bekommen
+  getTaxRate(taxCode: number): number {
+    switch (taxCode) {
+      case 1: return 0.19; // 19% MwSt
+      case 2: return 0.07; // 7% MwSt
+      case 3: return 0.00; // 0% MwSt
+      default: return 0.19; // Standard: 19% MwSt
+    }
+  }
+
+  // Hilfsmethode um den MwSt-Prozentsatz als String zu bekommen
+  getTaxRatePercent(taxCode: number): string {
+    const rate = this.getTaxRate(taxCode);
+    return (rate * 100).toFixed(0) + '%';
+  }
+
+  // Hilfsmethode um Bruttopreis zu berechnen (Netto + MwSt)
+  getGrossPrice(netPrice: number, taxCode: number): number {
+    const taxRate = this.getTaxRate(taxCode);
+    return netPrice * (1 + taxRate);
+  }
+
+  // Hilfsmethode um den Bruttopreis für ein orderItem zu bekommen
+  getItemGrossPrice(item: any): number {
+    const netPrice = this.getItemPrice(item);
+    return this.getGrossPrice(netPrice, item.tax_code || 1);
+  }
+
+  // Hilfsmethode um den Gesamt-Bruttopreis aller Items zu berechnen
+  getOrderTotalGross(): number {
+    return this.orderItems.reduce((sum, item) => {
+      const itemNetPrice = this.getItemPrice(item);
+      const itemGrossPrice = this.getGrossPrice(itemNetPrice, item.tax_code || 1);
+      const quantity = Number(item.quantity) || 0;
+      return sum + (itemGrossPrice * quantity);
+    }, 0);
+  }
+
+  // Hilfsmethode um den Gesamt-Bruttopreis für Tabelle 2 zu berechnen
+  getOrderTotal2Gross(): number {
+    return this.orderItems2.reduce((sum, item) => {
+      const itemNetPrice = this.getItemPrice(item);
+      const itemGrossPrice = this.getGrossPrice(itemNetPrice, item.tax_code || 1);
+      const quantity = Number(item.quantity) || 0;
+      return sum + (itemGrossPrice * quantity);
+    }, 0);
+  }
+
   // Neue Methode für Input-Event - nur Gesamtsumme aktualisieren, keine Validierung
   onPriceInput(item: any): void {
     // Nur die Gesamtsumme aktualisieren, ohne Validierung

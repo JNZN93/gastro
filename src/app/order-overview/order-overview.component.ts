@@ -17,6 +17,7 @@ interface OrderItem {
   different_price: string | null;
   product_name: string;
   product_article_number: string;
+  tax_code?: number;
 }
 
 interface Order {
@@ -754,5 +755,43 @@ export class OrderOverviewComponent implements OnInit {
 
   goBack(): void {
     this.router.navigate(['/admin']);
+  }
+
+  // Hilfsmethode um MwSt-Rate basierend auf tax_code zu bekommen
+  getTaxRate(taxCode?: number): number {
+    switch (taxCode) {
+      case 1: return 0.19; // 19% MwSt
+      case 2: return 0.07; // 7% MwSt
+      case 3: return 0.00; // 0% MwSt
+      default: return 0.19; // Standard: 19% MwSt
+    }
+  }
+
+  // Hilfsmethode um den MwSt-Prozentsatz als String zu bekommen
+  getTaxRatePercent(taxCode?: number): string {
+    const rate = this.getTaxRate(taxCode);
+    return (rate * 100).toFixed(0) + '%';
+  }
+
+  // Hilfsmethode um Bruttopreis zu berechnen (Netto + MwSt)
+  getGrossPrice(netPrice: number, taxCode?: number): number {
+    const taxRate = this.getTaxRate(taxCode);
+    return netPrice * (1 + taxRate);
+  }
+
+  // Hilfsmethode um den Bruttopreis für ein OrderItem zu bekommen
+  getItemGrossPrice(item: OrderItem): number {
+    const netPrice = parseFloat(item.different_price || item.price);
+    return this.getGrossPrice(netPrice, item.tax_code);
+  }
+
+  // Hilfsmethode um den Gesamt-Bruttopreis einer Bestellung zu berechnen
+  getOrderTotalGross(order: Order): number {
+    return order.items.reduce((sum, item) => {
+      const netPrice = parseFloat(item.different_price || item.price);
+      const grossPrice = this.getGrossPrice(netPrice, item.tax_code);
+      const quantity = Number(item.quantity) || 0;
+      return sum + (grossPrice * quantity);
+    }, 0);
   }
 } 

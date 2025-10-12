@@ -121,8 +121,9 @@
                   <th>Art.-Nr.</th>
                   <th>Menge</th>
                   <th>EK-Preis (€)</th>
-                  <th>Kundenpreis (€)</th>
-                  <th>Gesamtpreis (€)</th>
+                  <th>Kundenpreis Netto (€)</th>
+                  <th>Kundenpreis Brutto (€)</th>
+                  <th>Gesamtpreis Netto (€)</th>
                   <th colspan="2" style="text-align: center;">Aktionen</th>
                 </tr>
               </thead>
@@ -223,6 +224,10 @@
                              [title]="'Standard-Preis: €' + item.sale_price">
                     }
                   </td>
+                  <td class="customer-price-gross" [title]="'Inkl. ' + getTaxRatePercent(item.tax_code || 1) + ' MwSt.'">
+                    €{{ getItemGrossPrice(item).toFixed(2) }}
+                    <span class="tax-label">(inkl. {{ getTaxRatePercent(item.tax_code || 1) }} MwSt.)</span>
+                  </td>
                   <td class="total-price">€{{ (getItemPrice(item) * item.quantity).toFixed(2) }}</td>
                   <td class="remove-column">
                     @if (editingItemIndex === i) {
@@ -249,8 +254,13 @@
               </tbody>
               <tfoot>
                 <tr class="order-total-row">
-                  <td colspan="7" class="total-label"><strong>Gesamt:</strong></td>
+                  <td colspan="8" class="total-label"><strong>Gesamt (Netto):</strong></td>
                   <td class="total-amount"><strong>€{{ getOrderTotal().toFixed(2) }}</strong></td>
+                  <td colspan="2"></td>
+                </tr>
+                <tr class="order-total-row order-total-gross-row">
+                  <td colspan="8" class="total-label"><strong>Gesamt (Brutto):</strong></td>
+                  <td class="total-amount total-amount-gross"><strong>€{{ getOrderTotalGross().toFixed(2) }}</strong></td>
                   <td colspan="2"></td>
                 </tr>
               </tfoot>
@@ -270,7 +280,10 @@
                     <span class="active-indicator">✓ Aktiv</span>
                   }
                 </h4>
-                <div class="split-table-total">Gesamt: €{{ getOrderTotal().toFixed(2) }}</div>
+                <div class="split-table-totals">
+                  <div class="split-table-total">Netto: €{{ getOrderTotal().toFixed(2) }}</div>
+                  <div class="split-table-total-gross">Brutto: €{{ getOrderTotalGross().toFixed(2) }}</div>
+                </div>
               </div>
               <div class="split-order-table-container">
                 <table class="order-table split-table">
@@ -325,7 +338,10 @@
                     <span class="active-indicator">✓ Aktiv</span>
                   }
                 </h4>
-                <div class="split-table-total">Gesamt: €{{ getOrderTotal2().toFixed(2) }}</div>
+                <div class="split-table-totals">
+                  <div class="split-table-total">Netto: €{{ getOrderTotal2().toFixed(2) }}</div>
+                  <div class="split-table-total-gross">Brutto: €{{ getOrderTotal2Gross().toFixed(2) }}</div>
+                </div>
               </div>
               <div class="split-order-table-container">
                 <table class="order-table split-table">
@@ -785,7 +801,7 @@
                         </div>
                       }
                       <div class="price-row" [class.active]="item.different_price !== undefined && item.different_price !== null && item.different_price !== ''">
-                        <span class="price-label">Kundenpreis:</span>
+                        <span class="price-label">Kundenpreis (Netto):</span>
                         <input type="number" 
                                [(ngModel)]="item.different_price" 
                                step="0.01" 
@@ -796,6 +812,13 @@
                                (blur)="validateAndUpdatePrice(item)"
                                [placeholder]="item.sale_price"
                                [title]="'Standard-Preis: €' + item.sale_price">
+                      </div>
+                      <div class="price-row brutto-price-row">
+                        <span class="price-label">Kundenpreis (Brutto):</span>
+                        <span class="price-value brutto-price">
+                          €{{ getItemGrossPrice(item).toFixed(2) }}
+                          <span class="tax-badge">(inkl. {{ getTaxRatePercent(item.tax_code || 1) }} MwSt.)</span>
+                        </span>
                       </div>
                     </div>
                     
@@ -812,7 +835,7 @@
                                (blur)="validateAndUpdateQuantity(item)">
                       </div>
                       <div class="total-section">
-                        <span class="total-label">Gesamt:</span>
+                        <span class="total-label">Gesamt (Netto):</span>
                         <span class="total-amount">€{{ (getItemPrice(item) * item.quantity).toFixed(2) }}</span>
                       </div>
                     </div>
@@ -821,8 +844,12 @@
                 }
                 <div class="order-total-card">
                   <div class="total-row">
-                    <span class="total-label">Auftrag Gesamt:</span>
+                    <span class="total-label">Auftrag Gesamt (Netto):</span>
                     <span class="total-amount">€{{ getOrderTotal().toFixed(2) }}</span>
+                  </div>
+                  <div class="total-row total-row-gross">
+                    <span class="total-label">Auftrag Gesamt (Brutto):</span>
+                    <span class="total-amount total-amount-gross">€{{ getOrderTotalGross().toFixed(2) }}</span>
                   </div>
                 </div>
               </div>

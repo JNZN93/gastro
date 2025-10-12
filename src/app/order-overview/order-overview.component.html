@@ -428,8 +428,9 @@
                     <th>Menge</th>
                     <th>Artikelname</th>
                     <th>Artikelnr.</th>
-                    <th>Preis</th>
-                    <th>Gesamt</th>
+                    <th>Preis Netto</th>
+                    <th>Preis Brutto</th>
+                    <th>Gesamt Netto</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -446,7 +447,11 @@
                           {{ item.price | currency:'EUR':'symbol':'1.2-2' }}
                         }
                       </td>
-                                             <td class="total">
+                      <td class="price-gross">
+                        {{ getItemGrossPrice(item) | currency:'EUR':'symbol':'1.2-2' }}
+                        <span class="tax-label">(inkl. {{ getTaxRatePercent(item.tax_code) }} MwSt.)</span>
+                      </td>
+                      <td class="total">
                          @if (item.different_price) {
                            {{ (getItemTotal(item.different_price, item.quantity)) | currency:'EUR':'symbol':'1.2-2' }}
                          } @else {
@@ -458,9 +463,15 @@
                 </tbody>
               </table>
             </div>
-            <div class="order-total">
-              <span class="total-label">Gesamtpreis:</span>
-              <span class="total-amount">{{ selectedOrder.total_price | currency:'EUR':'symbol':'1.2-2' }}</span>
+            <div class="order-totals-container">
+              <div class="order-total">
+                <span class="total-label">Gesamtpreis (Netto):</span>
+                <span class="total-amount">{{ selectedOrder.total_price | currency:'EUR':'symbol':'1.2-2' }}</span>
+              </div>
+              <div class="order-total order-total-gross">
+                <span class="total-label">Gesamtpreis (Brutto):</span>
+                <span class="total-amount total-amount-gross">{{ getOrderTotalGross(selectedOrder) | currency:'EUR':'symbol':'1.2-2' }}</span>
+              </div>
             </div>
           </div>
         </div>
