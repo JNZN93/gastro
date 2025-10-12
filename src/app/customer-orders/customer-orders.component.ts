@@ -189,8 +189,8 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     // Lade gespeicherte Daten aus localStorage
     this.loadStoredData();
     
-    // Prüfe auf pending order data aus dem Admin-Bereich
-    this.checkForPendingOrderData();
+    // WICHTIG: checkForPendingOrderData() wird NACH dem Laden der globalArtikels aufgerufen
+    // (siehe unten im artikelService.getData() Subscribe)
     
     const token = localStorage.getItem('token');
     
@@ -249,6 +249,11 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
               this.loadCustomerArticlePrices(this.pendingCustomerForPriceUpdate.customer_number);
               this.pendingCustomerForPriceUpdate = null; // Reset nach dem Laden
             }
+
+            // WICHTIG: Prüfe auf pending order data NACH dem Laden der globalArtikels
+            // Damit die EK-Preise korrekt aus globalArtikels geladen werden können
+            console.log('🔍 [INIT] Prüfe auf pendingOrderData nach Laden der Artikel...');
+            this.checkForPendingOrderData();
           });
         },
         error: (error) => {
@@ -970,17 +975,35 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
         alert(warningMessage);
       }
       
-      // Transformiere die Artikel in das erwartete Format
-      this.orderItems = orderData.items.map((item: any) => ({
-        ...item,
-        quantity: item.quantity || 1,
-        article_text: item.product_name || item.article_text || 'Unbekannter Artikel',
-        article_number: item.product_article_number || item.article_number || '',
-        sale_price: item.price || item.sale_price || 0,
-        cost_price: item.cost_price || 0,
-        different_price: item.different_price,
-        original_price: item.original_price || item.sale_price || item.price || 0
-      }));
+      // Transformiere die Artikel in das erwartete Format und hole cost_price aus globalArtikels
+      this.orderItems = orderData.items.map((item: any) => {
+        const articleNumber = item.product_article_number || item.article_number || '';
+        
+        // Suche den Artikel in globalArtikels, um den cost_price zu bekommen
+        let cost_price = 0;
+        if (articleNumber && this.globalArtikels && this.globalArtikels.length > 0) {
+          const globalArtikel = this.globalArtikels.find(artikel => 
+            artikel.article_number === articleNumber
+          );
+          if (globalArtikel) {
+            cost_price = globalArtikel.cost_price || 0;
+            console.log(`💰 [LOAD-ORDER-DATA] EK-Preis für ${articleNumber} gefunden: €${cost_price}`);
+          } else {
+            console.warn(`⚠️ [LOAD-ORDER-DATA] Kein EK-Preis für ${articleNumber} gefunden`);
+          }
+        }
+        
+        return {
+          ...item,
+          quantity: item.quantity || 1,
+          article_text: item.product_name || item.article_text || 'Unbekannter Artikel',
+          article_number: articleNumber,
+          sale_price: item.price || item.sale_price || 0,
+          cost_price: cost_price, // Aus globalArtikels geladen
+          different_price: item.different_price,
+          original_price: item.original_price || item.sale_price || item.price || 0
+        };
+      });
       
       // Speichere die Aufträge
       this.globalService.saveCustomerOrders(this.orderItems);
@@ -4487,11 +4510,13 @@ filteredArtikelData() {
       },
       body: JSON.stringify(completeOrder)
     })
-    .then(response => {
+    .then(async response => {
+      const data = await response.json();
       if (!response.ok) {
-        throw new Error(`Fehler beim ${isEditMode ? 'Aktualisieren' : 'Speichern'} des Auftrags`);
+        console.error('❌ [SAVE-ORDER] Backend-Fehler:', data);
+        throw new Error(data.error || data.message || `Fehler beim ${isEditMode ? 'Aktualisieren' : 'Speichern'} des Auftrags`);
       }
-      return response.json();
+      return data;
     })
     .then(data => {
       this.isSavingOrder = false;
