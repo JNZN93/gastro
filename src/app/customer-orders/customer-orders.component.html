@@ -1,18 +1,5 @@
 <div class="article-container">
 
-  <!-- Edit Mode Banner -->
-  @if (isEditMode) {
-    <div class="edit-mode-banner">
-      <div class="edit-mode-content">
-        <span class="material-icons edit-icon">edit</span>
-        <div class="edit-mode-text">
-          <strong>Bearbeitungsmodus aktiv</strong>
-          <span class="edit-mode-subtext">Sie bearbeiten Bestellung #{{ editingOrderId }}</span>
-        </div>
-      </div>
-    </div>
-  }
-
   <!-- Back Button Header -->
   <div class="back-header">
     <button class="back-button" (click)="goBack()">
@@ -21,6 +8,17 @@
       </svg>
       Zurück
     </button>
+    
+    <!-- Edit Mode Indicator -->
+    @if (isEditMode) {
+      <div class="edit-mode-indicator-inline">
+        <span class="material-icons edit-icon">edit</span>
+        <div class="edit-mode-text">
+          <strong>Bearbeitungsmodus aktiv</strong>
+          <span class="edit-mode-subtext">Sie bearbeiten Bestellung #{{ editingOrderId }}</span>
+        </div>
+      </div>
+    }
   </div>
 
   <div class="content">
@@ -291,6 +289,18 @@
                   <div class="split-table-total-gross">Brutto: €{{ getOrderTotalGross().toFixed(2) }}</div>
                 </div>
               </div>
+              
+              <!-- Anmerkungen für Auftrag 1 -->
+              <div class="split-notes-wrapper">
+                <textarea 
+                  [(ngModel)]="customerNotes1"
+                  placeholder="Anmerkungen für Auftrag 1 (optional)..."
+                  rows="1"
+                  class="notes-textarea-compact"
+                  maxlength="500"
+                  (click)="$event.stopPropagation()">
+                </textarea>
+              </div>
               <div class="split-order-table-container">
                 <table class="order-table split-table">
                   <thead>
@@ -350,6 +360,18 @@
                   <div class="split-table-total-gross">Brutto: €{{ getOrderTotal2Gross().toFixed(2) }}</div>
                 </div>
               </div>
+              
+              <!-- Anmerkungen für Auftrag 2 -->
+              <div class="split-notes-wrapper">
+                <textarea 
+                  [(ngModel)]="customerNotes2"
+                  placeholder="Anmerkungen für Auftrag 2 (optional)..."
+                  rows="1"
+                  class="notes-textarea-compact"
+                  maxlength="500"
+                  (click)="$event.stopPropagation()">
+                </textarea>
+              </div>
               <div class="split-order-table-container">
                 <table class="order-table split-table">
                   <thead>
@@ -401,20 +423,6 @@
               </div>
             </div>
           </div>
-          
-          <!-- Hinweis für Split-Modus -->
-          @if (isSplitMode) {
-            <div class="split-mode-hint">
-              <span class="material-icons">info</span>
-              <span>Klicken Sie auf eine Tabelle, um sie zu aktivieren. Neue Artikel werden zur aktiven Tabelle hinzugefügt.</span>
-              @if (activeTable === 1) {
-                <span class="active-table-label">Aktiv: <strong>Auftrag 1</strong></span>
-              }
-              @if (activeTable === 2) {
-                <span class="active-table-label">Aktiv: <strong>Auftrag 2</strong></span>
-              }
-            </div>
-          }
           }
           
           <!-- Datumsfelder -->

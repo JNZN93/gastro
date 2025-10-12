@@ -9,59 +9,67 @@
   max-height: calc(100vh - 100px); // Zusätzliche Sicherheit
 }
 
-// Edit Mode Banner
-.edit-mode-banner {
+// Edit Mode Indicator (inline im back-header)
+.edit-mode-indicator-inline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
   background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
   color: #78350f;
-  padding: 12px 16px;
-  margin: 0 16px 12px 16px;
   border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(245, 158, 11, 0.2);
-  animation: slideDown 0.3s ease-out;
+  box-shadow: 0 2px 4px rgba(245, 158, 11, 0.2);
+  animation: slideIn 0.3s ease-out;
 
   @media (max-width: 1023px) {
-    margin: 0 8px 8px 8px;
-    padding: 10px 12px;
+    padding: 6px 10px;
+    gap: 8px;
   }
 
-  .edit-mode-content {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+  .edit-icon {
+    font-size: 22px;
+    color: #78350f;
+    
+    @media (max-width: 1023px) {
+      font-size: 20px;
+    }
+  }
 
-    .edit-icon {
-      font-size: 28px;
-      color: #78350f;
+  .edit-mode-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    strong {
+      font-size: 14px;
+      font-weight: 600;
+      font-family: 'Poppins', sans-serif;
+      
+      @media (max-width: 1023px) {
+        font-size: 13px;
+      }
     }
 
-    .edit-mode-text {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-
-      strong {
-        font-size: 16px;
-        font-weight: 600;
-        font-family: 'Poppins', sans-serif;
-      }
-
-      .edit-mode-subtext {
-        font-size: 14px;
-        opacity: 0.9;
-        font-family: 'Poppins', sans-serif;
+    .edit-mode-subtext {
+      font-size: 12px;
+      opacity: 0.9;
+      font-family: 'Poppins', sans-serif;
+      
+      @media (max-width: 1023px) {
+        font-size: 11px;
       }
     }
   }
 }
 
-@keyframes slideDown {
+@keyframes slideIn {
   from {
     opacity: 0;
-    transform: translateY(-20px);
+    transform: translateX(10px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateX(0);
   }
 }
 
@@ -69,7 +77,8 @@
 .back-header {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: space-between;
+  gap: 16px;
   margin-bottom: 0;
   padding: 0 16px;
 
@@ -77,6 +86,7 @@
   @media (max-width: 1023px) {
     padding: 0 8px;
     margin-bottom: -4px;
+    gap: 12px;
   }
 
   .back-button {
@@ -1494,16 +1504,22 @@
   gap: 12px; // Reduced gap for more compact view
   margin-top: 8px;
   align-items: start; // Align tables to top
+  max-height: calc(100vh - 300px); // Maximale Höhe, damit Buttons sichtbar bleiben
+  overflow-y: auto; // Container selbst scrollbar
+  overflow-x: hidden; // Horizontales Scrollen vermeiden
+  padding-bottom: 16px; // Etwas Padding am Ende
 
   // Responsive: Stack vertically on smaller screens
   @media (max-width: 1200px) {
     grid-template-columns: 1fr;
     gap: 10px;
+    max-height: calc(100vh - 320px);
   }
 
   @media (max-width: 768px) {
     gap: 8px;
     margin-top: 4px;
+    max-height: calc(100vh - 350px);
   }
 }
 
@@ -1520,6 +1536,7 @@
   border: 3px solid transparent;
   flex: 1; // Ensure equal width distribution
   min-width: 0; // Allow flex shrinking
+  height: fit-content; // Passt sich dem Inhalt an
 
   &:hover {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -1572,9 +1589,8 @@
 }
 
 .split-order-table-container {
-  max-height: 350px; // Reduced height for more compact view
-  overflow-y: auto;
-  overflow-x: auto; // Enable horizontal scrolling
+  overflow-x: auto; // Nur horizontales Scrollen falls nötig
+  overflow-y: visible; // Kein vertikales Scrollen mehr
   border: 1px solid #e2e8f0;
   border-radius: 4px;
   position: relative;
@@ -1888,6 +1904,48 @@
 .zero-quantity {
   opacity: 0.5;
   background: #f9fafb;
+}
+
+// Anmerkungsfelder im Header für Split-Modus
+.split-notes-wrapper {
+  padding: 8px 12px;
+  background: #ffffff;
+  border-top: 1px solid #e5e7eb;
+}
+
+.notes-textarea-compact {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 32px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  
+  &:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+  }
+  
+  &::placeholder {
+    color: #9ca3af;
+    font-size: 12px;
+  }
+}
+
+// Responsive für mobile/tablet
+@media (max-width: 1024px) {
+  .split-notes-wrapper {
+    padding: 6px 10px;
+  }
+  
+  .notes-textarea-compact {
+    font-size: 12px;
+    padding: 6px 8px;
+  }
 }
 
 .split-mode-hint {

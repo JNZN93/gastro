@@ -47,6 +47,8 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   isSplitMode: boolean = false;
   activeTable: 1 | 2 = 1; // Welche Tabelle ist gerade aktiv für Artikelhinzufügung
   searchTerm: string = '';
+  customerNotes1: string = ''; // Anmerkungen für Auftrag 1 im Split-Modus
+  customerNotes2: string = ''; // Anmerkungen für Auftrag 2 im Split-Modus
   globalArtikels: any[] = [];
   filteredArtikels: any[] = [];
   customerArticlePrices: any[] = []; // Neue Property für Kunden-Artikel-Preise
@@ -2627,6 +2629,18 @@ filteredArtikelData() {
       message += '⚠️ Hinweis: Nur Aufträge mit Artikeln werden gespeichert.\n\n';
     }
     
+    // Zeige Anmerkungen falls vorhanden
+    if (this.customerNotes1 || this.customerNotes2) {
+      message += '\n📝 Anmerkungen:\n';
+      if (this.customerNotes1) {
+        message += `Auftrag 1: ${this.customerNotes1}\n`;
+      }
+      if (this.customerNotes2) {
+        message += `Auftrag 2: ${this.customerNotes2}\n`;
+      }
+      message += '\n';
+    }
+    
     message += 'Möchten Sie fortfahren?';
 
     // Zeige Bestätigungs-Dialog
@@ -2659,15 +2673,21 @@ filteredArtikelData() {
     const ordersToSave: Promise<any>[] = [];
     
     if (itemsTable1.length > 0) {
-      ordersToSave.push(this.saveOrderDirectly(itemsTable1, 'completed'));
+      ordersToSave.push(this.saveOrderDirectly(itemsTable1, 'completed', this.customerNotes1));
       console.log(`📦 [SPLIT-SAVE] Auftrag 1 wird gespeichert: ${itemsTable1.length} Artikel`);
+      if (this.customerNotes1) {
+        console.log(`📝 [SPLIT-SAVE] Auftrag 1 Anmerkungen: ${this.customerNotes1}`);
+      }
     } else {
       console.log(`⚠️ [SPLIT-SAVE] Auftrag 1 übersprungen (keine Artikel mit Menge !== 0)`);
     }
     
     if (itemsTable2.length > 0) {
-      ordersToSave.push(this.saveOrderDirectly(itemsTable2, 'completed'));
+      ordersToSave.push(this.saveOrderDirectly(itemsTable2, 'completed', this.customerNotes2));
       console.log(`📦 [SPLIT-SAVE] Auftrag 2 wird gespeichert: ${itemsTable2.length} Artikel`);
+      if (this.customerNotes2) {
+        console.log(`📝 [SPLIT-SAVE] Auftrag 2 Anmerkungen: ${this.customerNotes2}`);
+      }
     } else {
       console.log(`⚠️ [SPLIT-SAVE] Auftrag 2 übersprungen (keine Artikel mit Menge !== 0)`);
     }
@@ -2692,6 +2712,8 @@ filteredArtikelData() {
       this.clearAllOrderData();
       this.isSplitMode = false;
       this.orderItems2 = [];
+      this.customerNotes1 = '';
+      this.customerNotes2 = '';
     } catch (error) {
       console.error('Fehler beim Speichern der Aufträge:', error);
       alert('Fehler beim Speichern: ' + error);
@@ -2700,7 +2722,7 @@ filteredArtikelData() {
     }
   }
 
-  async saveOrderDirectly(items: any[], status: string): Promise<void> {
+  async saveOrderDirectly(items: any[], status: string, customerNotes: string = ''): Promise<void> {
     // Ensure description is set for all items
     items.forEach(item => {
       if (!item.description && item.article_text) {
@@ -2714,7 +2736,8 @@ filteredArtikelData() {
       customer_name: this.globalService.selectedCustomerForOrders.last_name_company,
       customer_addition: this.globalService.selectedCustomerForOrders.name_addition,
       customer_email: this.globalService.selectedCustomerForOrders.email,
-      status: status
+      status: status,
+      customer_notes: customerNotes || ''
     };
 
     if (this.differentCompanyName) {
@@ -2876,7 +2899,11 @@ filteredArtikelData() {
     // 3. Leere die kundenspezifischen Preise
     this.customerArticlePrices = [];
     
-    // 4. Leere den geänderten Firmennamen
+    // 4. Leere Anmerkungen für Split-Modus
+    this.customerNotes1 = '';
+    this.customerNotes2 = '';
+    
+    // 5. Leere den geänderten Firmennamen
     this.differentCompanyName = '';
     this.isEditingCompanyName = false;
     this.editingCompanyName = '';
