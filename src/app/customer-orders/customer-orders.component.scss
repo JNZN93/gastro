@@ -7129,4 +7129,24 @@
   }
 }
 
+// Gesamtpreis Brutto Spalte in der Tabelle
+.total-price-gross {
+  font-weight: 600;
+  color: #2563eb;
+  background-color: #f0f9ff;
+  text-align: center;
+}
+
+// Mobile: Gesamt Brutto Sektion
+.total-gross-section {
+  border-top: 1px solid #e3f2fd;
+  padding-top: 4px;
+  margin-top: 4px;
+  
+  .total-amount-gross {
+    color: #2563eb;
+    font-weight: 700;
+  }
+}
+
 

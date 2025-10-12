@@ -121,9 +121,10 @@
                   <th>Art.-Nr.</th>
                   <th>Menge</th>
                   <th>EK-Preis (€)</th>
-                  <th>Kundenpreis Netto (€)</th>
-                  <th>Kundenpreis Brutto (€)</th>
-                  <th>Gesamtpreis Netto (€)</th>
+                  <th>Preis Netto (€)</th>
+                  <th>Preis Brutto (€)</th>
+                  <th>Gesamt Netto (€)</th>
+                  <th>Gesamt Brutto (€)</th>
                   <th colspan="2" style="text-align: center;">Aktionen</th>
                 </tr>
               </thead>
@@ -229,6 +230,7 @@
                     <span class="tax-label">(inkl. {{ getTaxRatePercent(item.tax_code || 1) }} MwSt.)</span>
                   </td>
                   <td class="total-price">€{{ (getItemPrice(item) * item.quantity).toFixed(2) }}</td>
+                  <td class="total-price-gross">€{{ (getItemGrossPrice(item) * item.quantity).toFixed(2) }}</td>
                   <td class="remove-column">
                     @if (editingItemIndex === i) {
                       <button (click)="cancelEditItem()" class="cancel-edit-btn" title="Bearbeitung abbrechen">
@@ -254,7 +256,7 @@
               </tbody>
               <tfoot>
                 <tr class="order-total-row">
-                  <td colspan="11" class="totals-container-cell">
+                  <td colspan="12" class="totals-container-cell">
                     <div class="order-totals-wrapper">
                       <div class="order-total-box order-total-net">
                         <span class="total-label"><strong>Gesamt (Netto):</strong></span>
@@ -805,7 +807,7 @@
                         </div>
                       }
                       <div class="price-row" [class.active]="item.different_price !== undefined && item.different_price !== null && item.different_price !== ''">
-                        <span class="price-label">Kundenpreis (Netto):</span>
+                        <span class="price-label">Preis (Netto):</span>
                         <input type="number" 
                                [(ngModel)]="item.different_price" 
                                step="0.01" 
@@ -818,7 +820,7 @@
                                [title]="'Standard-Preis: €' + item.sale_price">
                       </div>
                       <div class="price-row brutto-price-row">
-                        <span class="price-label">Kundenpreis (Brutto):</span>
+                        <span class="price-label">Preis (Brutto):</span>
                         <span class="price-value brutto-price">
                           €{{ getItemGrossPrice(item).toFixed(2) }}
                           <span class="tax-badge">(inkl. {{ getTaxRatePercent(item.tax_code || 1) }} MwSt.)</span>
@@ -839,8 +841,12 @@
                                (blur)="validateAndUpdateQuantity(item)">
                       </div>
                       <div class="total-section">
-                        <span class="total-label">Gesamt (Netto):</span>
+                        <span class="total-label">Gesamt Netto:</span>
                         <span class="total-amount">€{{ (getItemPrice(item) * item.quantity).toFixed(2) }}</span>
+                      </div>
+                      <div class="total-section total-gross-section">
+                        <span class="total-label">Gesamt Brutto:</span>
+                        <span class="total-amount total-amount-gross">€{{ (getItemGrossPrice(item) * item.quantity).toFixed(2) }}</span>
                       </div>
                     </div>
                   </div>

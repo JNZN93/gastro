@@ -431,6 +431,7 @@
                     <th>Preis Netto</th>
                     <th>Preis Brutto</th>
                     <th>Gesamt Netto</th>
+                    <th>Gesamt Brutto</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -457,6 +458,9 @@
                          } @else {
                            {{ (getItemTotal(item.price, item.quantity)) | currency:'EUR':'symbol':'1.2-2' }}
                          }
+                       </td>
+                       <td class="total-gross">
+                         {{ (getItemGrossPrice(item) * item.quantity) | currency:'EUR':'symbol':'1.2-2' }}
                        </td>
                     </tr>
                   }
