@@ -701,6 +701,57 @@ export class OrderOverviewComponent implements OnInit {
     return finalItems;
   }
 
+  // Methode zum Bearbeiten einer offenen Bestellung
+  editOrder(order: Order): void {
+    console.log('✏️ [EDIT-ORDER] Bearbeite offene Bestellung:', order);
+    
+    // Transformiere die Bestelldaten in das erwartete Format für Customer Orders
+    const orderData = {
+      customer: {
+        id: 0,
+        customer_number: order.customer_number || order.order_id.toString(),
+        last_name_company: '',
+        name_addition: '',
+        email: '',
+        street: '',
+        city: '',
+        postal_code: '',
+        _country_code: ''
+      },
+      items: order.items.map((item: OrderItem) => ({
+        id: item.product_id,
+        article_number: item.product_article_number,
+        article_text: item.product_name,
+        sale_price: parseFloat(item.price),
+        quantity: item.quantity,
+        different_price: item.different_price ? parseFloat(item.different_price) : null,
+        description: item.product_name,
+        cost_price: 0,
+        original_price: parseFloat(item.price)
+      })),
+      differentCompanyName: '',
+      editMode: true, // Flag für Bearbeitungsmodus
+      editingOrderId: order.order_id, // Speichere die Order ID
+      orderDate: order.order_date,
+      deliveryDate: order.delivery_date
+    };
+
+    // Kategorie-Sortierung beibehalten
+    if (!this.isEmployee(order) && this.allArtikels && this.allArtikels.length > 0) {
+      console.log('📂 [EDIT-ORDER] Sortiere Artikel nach Kategorien...');
+      orderData.items = this.sortItemsByCategory(orderData.items);
+      console.log('✅ [EDIT-ORDER] Artikel nach Kategorien sortiert');
+    }
+
+    // Speichere die Bestelldaten im localStorage für die Customer Orders Komponente
+    localStorage.setItem('pendingOrderData', JSON.stringify(orderData));
+    
+    console.log('💾 [EDIT-ORDER] Bestelldaten im localStorage gespeichert (Bearbeitungsmodus)');
+    
+    // Navigiere zur Customer Orders Seite
+    this.router.navigate(['/customer-orders']);
+  }
+
   goBack(): void {
     this.router.navigate(['/admin']);
   }

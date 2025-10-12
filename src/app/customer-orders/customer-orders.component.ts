@@ -111,6 +111,10 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   editingCompanyName: string = '';
   differentCompanyName: string = '';
   
+  // Edit mode properties for existing orders
+  isEditMode: boolean = false;
+  editingOrderId: number | null = null;
+  
   // Drag & Drop properties
   draggedIndex: number = -1;
   dragOverIndex: number = -1;
@@ -875,6 +879,23 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   // Lade die Bestelldaten in die Customer Orders Komponente
   private loadOrderData(orderData: any): void {
     console.log('🔄 [LOAD-ORDER-DATA] Lade Bestelldaten:', orderData);
+    
+    // Prüfe, ob wir im Bearbeitungsmodus sind
+    if (orderData.editMode === true) {
+      this.isEditMode = true;
+      this.editingOrderId = orderData.editingOrderId || null;
+      console.log('✏️ [LOAD-ORDER-DATA] Bearbeitungsmodus aktiviert für Bestellung:', this.editingOrderId);
+    }
+    
+    // Setze die Datumsfelder, falls vorhanden
+    if (orderData.orderDate) {
+      this.orderDate = this.formatDateForInput(orderData.orderDate);
+      console.log('📅 [LOAD-ORDER-DATA] Bestelldatum gesetzt:', this.orderDate);
+    }
+    if (orderData.deliveryDate) {
+      this.deliveryDate = this.formatDateForInput(orderData.deliveryDate);
+      console.log('📅 [LOAD-ORDER-DATA] Lieferdatum gesetzt:', this.deliveryDate);
+    }
     
     // Setze den Kunden basierend auf der Kundennummer oder E-Mail
     if (orderData.customer) {
@@ -2577,11 +2598,11 @@ filteredArtikelData() {
     this.isSavingOrder = true;
 
     try {
-      // Speichere Auftrag 1
-      await this.saveOrderDirectly(itemsTable1, 'completed');
-      
-      // Speichere Auftrag 2
-      await this.saveOrderDirectly(itemsTable2, 'completed');
+      // Beide Aufträge parallel als separate Fetches speichern
+      await Promise.all([
+        this.saveOrderDirectly(itemsTable1, 'completed'),
+        this.saveOrderDirectly(itemsTable2, 'completed')
+      ]);
       
       alert('Beide Aufträge wurden erfolgreich gespeichert!');
       this.clearAllOrderData();
@@ -2781,6 +2802,13 @@ filteredArtikelData() {
       different_price: undefined,
       original_price: undefined
     }));
+    
+    // 7. Bearbeitungsmodus zurücksetzen
+    if (this.isEditMode) {
+      this.isEditMode = false;
+      this.editingOrderId = null;
+      console.log('✅ [CLEAR-ALL-ORDER] Bearbeitungsmodus zurückgesetzt');
+    }
     console.log('✅ [CLEAR-ALL-ORDER] Alle Artikel auf Standard-Preise zurückgesetzt');
     
     // 7. Aktualisiere die artikelData
@@ -4419,7 +4447,18 @@ filteredArtikelData() {
 
     const token = localStorage.getItem('token');
 
+    // Prüfe, ob wir im Bearbeitungsmodus sind
+    const isEditMode = this.isEditMode && this.editingOrderId;
+    const method = isEditMode ? 'PUT' : 'POST';
+    const endpoint = isEditMode 
+      ? `${environment.apiUrl}/api/orders/${this.editingOrderId}`
+      : `${environment.apiUrl}/api/orders`;
+
     console.log('🚀 [CUSTOMER-ORDERS] Bestellung wird abgesendet:');
+    console.log('✏️ [CUSTOMER-ORDERS] Bearbeitungsmodus:', isEditMode);
+    if (isEditMode) {
+      console.log('🆔 [CUSTOMER-ORDERS] Bestellungs-ID:', this.editingOrderId);
+    }
     console.log('📋 [CUSTOMER-ORDERS] Vollständiges Order-Payload:', JSON.stringify(completeOrder, null, 2));
     console.log('💰 [CUSTOMER-ORDERS] Gesamtpreis:', completeOrder.orderData.total_price);
     console.log('📦 [CUSTOMER-ORDERS] Anzahl Artikel:', completeOrder.orderItems.length);
@@ -4429,7 +4468,8 @@ filteredArtikelData() {
     console.log('🚚 [CUSTOMER-ORDERS] Lieferdatum:', completeOrder.orderData.delivery_date || 'Nicht gesetzt');
     console.log('🏢 [CUSTOMER-ORDERS] Firmenname geändert:', !!completeOrder.orderData.different_company_name);
     console.log('🔑 [CUSTOMER-ORDERS] Token vorhanden:', !!token);
-    console.log('🌐 [CUSTOMER-ORDERS] Endpoint:', '${environment.apiUrl}/api/orders');
+    console.log('🌐 [CUSTOMER-ORDERS] Endpoint:', endpoint);
+    console.log('🔨 [CUSTOMER-ORDERS] HTTP-Methode:', method);
     console.log('📊 [CUSTOMER-ORDERS] Artikel-Details:', completeOrder.orderItems.map(item => ({
       artikel: item.article_text,
       menge: item.quantity,
@@ -4439,8 +4479,8 @@ filteredArtikelData() {
 
     console.log('💾 [SAVE-ORDER] Auftrag wird gespeichert:', completeOrder);
     
-    fetch(`${environment.apiUrl}/api/orders`, {
-      method: 'POST',
+    fetch(endpoint, {
+      method: method,
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
@@ -4449,20 +4489,30 @@ filteredArtikelData() {
     })
     .then(response => {
       if (!response.ok) {
-        throw new Error('Fehler beim Speichern des Auftrags');
+        throw new Error(`Fehler beim ${isEditMode ? 'Aktualisieren' : 'Speichern'} des Auftrags`);
       }
       return response.json();
     })
     .then(data => {
       this.isSavingOrder = false;
-      alert('Auftrag erfolgreich gespeichert!');
+      const successMessage = isEditMode 
+        ? 'Bestellung erfolgreich aktualisiert!' 
+        : 'Auftrag erfolgreich gespeichert!';
+      alert(successMessage);
       this.closeOrderConfirmationModal();
       this.clearAllOrderData();
+      
+      // Bearbeitungsmodus zurücksetzen
+      if (isEditMode) {
+        this.isEditMode = false;
+        this.editingOrderId = null;
+        console.log('✅ [CUSTOMER-ORDERS] Bearbeitungsmodus beendet');
+      }
     })
     .catch(error => {
       this.isSavingOrder = false;
-      console.error('Fehler beim Speichern des Auftrags:', error);
-      alert('Fehler beim Speichern des Auftrags: ' + error.message);
+      console.error(`Fehler beim ${isEditMode ? 'Aktualisieren' : 'Speichern'} des Auftrags:`, error);
+      alert(`Fehler beim ${isEditMode ? 'Aktualisieren' : 'Speichern'} des Auftrags: ` + error.message);
     });
   }
 
@@ -4802,5 +4852,22 @@ filteredArtikelData() {
         : item.sale_price;
       return total + (price * item.quantity);
     }, 0);
+  }
+
+  // Hilfsmethode zum Formatieren eines Datums für Input-Felder (YYYY-MM-DD)
+  private formatDateForInput(dateString: string): string {
+    if (!dateString) return '';
+    
+    try {
+      const date = new Date(dateString);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      
+      return `${year}-${month}-${day}`;
+    } catch (error) {
+      console.error('Fehler beim Formatieren des Datums:', error);
+      return '';
+    }
   }
 }

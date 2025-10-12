@@ -1,5 +1,18 @@
 <div class="article-container">
 
+  <!-- Edit Mode Banner -->
+  @if (isEditMode) {
+    <div class="edit-mode-banner">
+      <div class="edit-mode-content">
+        <span class="material-icons edit-icon">edit</span>
+        <div class="edit-mode-text">
+          <strong>Bearbeitungsmodus aktiv</strong>
+          <span class="edit-mode-subtext">Sie bearbeiten Bestellung #{{ editingOrderId }}</span>
+        </div>
+      </div>
+    </div>
+  }
+
   <!-- Back Button Header -->
   <div class="back-header">
     <button class="back-button" (click)="goBack()">
