@@ -7032,13 +7032,68 @@
   }
 }
 
-// Styling für Brutto-Gesamtpreis in der Tabelle
-.order-total-gross-row {
-  background-color: #e3f2fd;
+// Container für Gesamt (Netto) und Gesamt (Brutto) in der Tabelle
+.totals-container-cell {
+  padding: 4px 8px !important;
+  background: #f8f9fa;
+}
+
+.order-totals-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
   
-  .total-amount-gross {
-    color: #2563eb;
-    font-weight: 700;
+  // Desktop: Nebeneinander
+  @media (min-width: 1024px) {
+    flex-direction: row;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+  
+  .order-total-box {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 8px;
+    border-radius: 3px;
+    background: white;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+    flex: 1;
+    min-width: 160px;
+    
+    // Desktop: Feste Breite statt flex
+    @media (min-width: 1024px) {
+      flex: 0 0 auto;
+      width: 170px;
+    }
+    
+    .total-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: #374151;
+    }
+    
+    .total-amount {
+      font-size: 12px;
+      font-weight: 700;
+      color: #1f2937;
+    }
+  }
+  
+  .order-total-net {
+    background: white;
+    border: 1px solid #e5e7eb;
+  }
+  
+  .order-total-gross {
+    background: #e3f2fd;
+    border: 1px solid #90caf9;
+    
+    .total-amount-gross {
+      color: #2563eb;
+      font-weight: 700;
+    }
   }
 }
 

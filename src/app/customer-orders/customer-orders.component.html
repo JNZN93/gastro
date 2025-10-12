@@ -254,14 +254,18 @@
               </tbody>
               <tfoot>
                 <tr class="order-total-row">
-                  <td colspan="8" class="total-label"><strong>Gesamt (Netto):</strong></td>
-                  <td class="total-amount"><strong>€{{ getOrderTotal().toFixed(2) }}</strong></td>
-                  <td colspan="2"></td>
-                </tr>
-                <tr class="order-total-row order-total-gross-row">
-                  <td colspan="8" class="total-label"><strong>Gesamt (Brutto):</strong></td>
-                  <td class="total-amount total-amount-gross"><strong>€{{ getOrderTotalGross().toFixed(2) }}</strong></td>
-                  <td colspan="2"></td>
+                  <td colspan="11" class="totals-container-cell">
+                    <div class="order-totals-wrapper">
+                      <div class="order-total-box order-total-net">
+                        <span class="total-label"><strong>Gesamt (Netto):</strong></span>
+                        <span class="total-amount"><strong>€{{ getOrderTotal().toFixed(2) }}</strong></span>
+                      </div>
+                      <div class="order-total-box order-total-gross">
+                        <span class="total-label"><strong>Gesamt (Brutto):</strong></span>
+                        <span class="total-amount total-amount-gross"><strong>€{{ getOrderTotalGross().toFixed(2) }}</strong></span>
+                      </div>
+                    </div>
+                  </td>
                 </tr>
               </tfoot>
             </table>
