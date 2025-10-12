@@ -94,6 +94,9 @@
           </div>
           
           @if (orderItems.length > 0) {
+          
+          @if (!isSplitMode) {
+          <!-- NORMALE ANSICHT: Einzelne Tabelle -->
           <div class="order-table-container" #orderTableContainer>
             <!-- Desktop Tabelle -->
             <table class="order-table">
@@ -240,6 +243,142 @@
               </tfoot>
             </table>
           </div>
+          }
+          
+          @if (isSplitMode) {
+          <!-- SPLIT ANSICHT: Zwei Tabellen nebeneinander -->
+          <div class="split-view-container">
+            <!-- Linke Tabelle: Auftrag 1 -->
+            <div class="split-table-wrapper" [class.active-table]="activeTable === 1" (click)="setActiveTable(1)">
+              <div class="split-table-header">
+                <h4>
+                  Auftrag 1
+                  @if (activeTable === 1) {
+                    <span class="active-indicator">✓ Aktiv</span>
+                  }
+                </h4>
+                <div class="split-table-total">Gesamt: €{{ getOrderTotal().toFixed(2) }}</div>
+              </div>
+              <div class="split-order-table-container">
+                <table class="order-table split-table">
+                  <thead>
+                    <tr>
+                      <th>Pos.</th>
+                      <th>Artikel</th>
+                      <th>Art.-Nr.</th>
+                      <th>Menge</th>
+                      <th>Preis (€)</th>
+                      <th>Transfer</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (item of orderItems; track $index; let i = $index) {
+                    <tr class="order-row">
+                      <td class="position">{{ i + 1 }}</td>
+                      <td class="article-name">{{ item.article_text }}</td>
+                      <td class="article-number">{{ item.article_number }}</td>
+                      <td class="quantity">
+                        <input type="number" 
+                               [(ngModel)]="item.quantity" 
+                               step="0.001" 
+                               class="quantity-edit" 
+                               (change)="updateItemTotal(item)"
+                               (blur)="validateAndUpdateQuantity(item)">
+                      </td>
+                      <td class="customer-price">€{{ (getItemPrice(item) * item.quantity).toFixed(2) }}</td>
+                      <td class="transfer-actions">
+                        <div class="transfer-buttons">
+                          <button (click)="transferQuantityToTable2(i, 1)" 
+                                  class="transfer-btn"
+                                  [disabled]="item.quantity < 1"
+                                  title="1 Stück zu Auftrag 2">
+                            <span class="material-icons">arrow_forward</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            
+            <!-- Rechte Tabelle: Auftrag 2 -->
+            <div class="split-table-wrapper" [class.active-table]="activeTable === 2" (click)="setActiveTable(2)">
+              <div class="split-table-header">
+                <h4>
+                  Auftrag 2
+                  @if (activeTable === 2) {
+                    <span class="active-indicator">✓ Aktiv</span>
+                  }
+                </h4>
+                <div class="split-table-total">Gesamt: €{{ getOrderTotal2().toFixed(2) }}</div>
+              </div>
+              <div class="split-order-table-container">
+                <table class="order-table split-table">
+                  <thead>
+                    <tr>
+                      <th>Transfer</th>
+                      <th>Pos.</th>
+                      <th>Artikel</th>
+                      <th>Art.-Nr.</th>
+                      <th>Menge</th>
+                      <th>Preis (€)</th>
+                      <th>Aktion</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (item of orderItems2; track $index; let i = $index) {
+                    <tr class="order-row" [class.zero-quantity]="item.quantity === 0">
+                      <td class="transfer-actions">
+                        <div class="transfer-buttons">
+                          <button (click)="transferQuantityToTable1(i, 1)" 
+                                  class="transfer-btn"
+                                  [disabled]="item.quantity < 1"
+                                  title="1 Stück zu Auftrag 1">
+                            <span class="material-icons">arrow_back</span>
+                          </button>
+                        </div>
+                      </td>
+                      <td class="position">{{ i + 1 }}</td>
+                      <td class="article-name">{{ item.article_text }}</td>
+                      <td class="article-number">{{ item.article_number }}</td>
+                      <td class="quantity">
+                        <input type="number" 
+                               [(ngModel)]="item.quantity" 
+                               step="0.001" 
+                               class="quantity-edit" 
+                               (change)="updateItemTotal(item)"
+                               (blur)="validateAndUpdateQuantity(item)">
+                      </td>
+                      <td class="customer-price">€{{ (getItemPrice(item) * item.quantity).toFixed(2) }}</td>
+                      <td class="remove-column">
+                        <button (click)="removeFromOrder2(i)" class="remove-btn" title="Entfernen">
+                          <span class="material-icons">delete</span>
+                        </button>
+                      </td>
+                    </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Hinweis für Split-Modus -->
+          @if (isSplitMode) {
+            <div class="split-mode-hint">
+              <span class="material-icons">info</span>
+              <span>Klicken Sie auf eine Tabelle, um sie zu aktivieren. Neue Artikel werden zur aktiven Tabelle hinzugefügt.</span>
+              @if (activeTable === 1) {
+                <span class="active-table-label">Aktiv: <strong>Auftrag 1</strong></span>
+              }
+              @if (activeTable === 2) {
+                <span class="active-table-label">Aktiv: <strong>Auftrag 2</strong></span>
+              }
+            </div>
+          }
+          }
           
           <!-- Datumsfelder -->
           <div class="date-fields">
@@ -260,6 +399,18 @@
           </div>
           
           <div class="order-actions">
+            @if (orderItems.length > 0 && !isSplitMode) {
+              <button (click)="toggleSplitMode()" class="split-order-btn">
+                <span class="material-icons">call_split</span>
+                Auftrag splitten
+              </button>
+            }
+            @if (isSplitMode) {
+              <button (click)="toggleSplitMode()" class="unsplit-order-btn">
+                <span class="material-icons">close</span>
+                Split beenden
+              </button>
+            }
             <button (click)="saveOrderAsOpen()" class="save-order-open-btn">
               <span class="material-icons">schedule</span>
               Zwischenspeichern
@@ -295,6 +446,18 @@
       <div class="articles-column">
         <div class="articles-section">
           <h3>Artikelauswahl</h3>
+          
+          @if (isSplitMode) {
+            <div class="active-table-indicator">
+              @if (activeTable === 1) {
+                <span class="indicator-badge table1">➕ Auftrag 1</span>
+              }
+              @if (activeTable === 2) {
+                <span class="indicator-badge table2">➕ Auftrag 2</span>
+              }
+              <span class="indicator-text">Klicken Sie auf eine Tabelle links, um sie zu wechseln</span>
+            </div>
+          }
           
           <div class="search-container">
             @if (editingItemIndex !== -1) {

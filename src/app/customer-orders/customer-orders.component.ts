@@ -43,6 +43,9 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   private forceActiveSubscription: Subscription | null = null;
   artikelData: any[] = [];
   orderItems: any[] = [];
+  orderItems2: any[] = []; // Zweite Tabelle für Split-Modus
+  isSplitMode: boolean = false;
+  activeTable: 1 | 2 = 1; // Welche Tabelle ist gerade aktiv für Artikelhinzufügung
   searchTerm: string = '';
   globalArtikels: any[] = [];
   filteredArtikels: any[] = [];
@@ -2123,35 +2126,62 @@ filteredArtikelData() {
       artikel.quantity = 1;
     }
 
+    // Im Split-Modus: Entscheide basierend auf activeTable, zu welcher Tabelle hinzugefügt wird
+    const targetItems = (this.isSplitMode && this.activeTable === 2) ? this.orderItems2 : this.orderItems;
+
     // Spezielle Behandlung für PFAND und SCHNELLVERKAUF-Kategorien: Immer als neue Position hinzufügen
     if (artikel.category === 'PFAND' || artikel.category === 'SCHNELLVERKAUF') {
-              this.orderItems = [
-          ...this.orderItems,
+      if (this.isSplitMode && this.activeTable === 2) {
+        this.orderItems2 = [
+          ...this.orderItems2,
           { 
             ...artikel, 
             quantity: Number(artikel.quantity)
-            // sale_price bleibt unverändert (Standard-Preis)
-            // different_price bleibt als separates Attribut (falls vorhanden)
           },
         ];
-    } else {
-      // Normale Behandlung für alle anderen Kategorien: Summieren wenn gleiche Artikelnummer
-      const existingItem = this.orderItems.find(
-        (item) => item.article_number == artikel.article_number
-      );
-
-      if (existingItem) {
-        existingItem.quantity += Number(artikel.quantity);
       } else {
         this.orderItems = [
           ...this.orderItems,
           { 
             ...artikel, 
             quantity: Number(artikel.quantity)
-            // sale_price bleibt unverändert (Standard-Preis)
-            // different_price bleibt als separates Attribut (falls vorhanden)
           },
         ];
+      }
+    } else {
+      // Normale Behandlung für alle anderen Kategorien: Summieren wenn gleiche Artikelnummer
+      if (this.isSplitMode && this.activeTable === 2) {
+        const existingItem = this.orderItems2.find(
+          (item) => item.article_number == artikel.article_number
+        );
+
+        if (existingItem) {
+          existingItem.quantity += Number(artikel.quantity);
+        } else {
+          this.orderItems2 = [
+            ...this.orderItems2,
+            { 
+              ...artikel, 
+              quantity: Number(artikel.quantity)
+            },
+          ];
+        }
+      } else {
+        const existingItem = this.orderItems.find(
+          (item) => item.article_number == artikel.article_number
+        );
+
+        if (existingItem) {
+          existingItem.quantity += Number(artikel.quantity);
+        } else {
+          this.orderItems = [
+            ...this.orderItems,
+            { 
+              ...artikel, 
+              quantity: Number(artikel.quantity)
+            },
+          ];
+        }
       }
     }
 
@@ -2166,19 +2196,31 @@ filteredArtikelData() {
       
       if (matchingPfand) {
         // PFAND-Artikel automatisch zum Auftrag hinzufügen (gleiche Menge wie das Produkt) - keine Abfrage mehr
-        this.orderItems = [
-          ...this.orderItems,
-          { 
-            ...matchingPfand, 
-            quantity: originalQuantity
-          },
-        ];
-        console.log('✅ [PFAND-ADD] PFAND-Artikel automatisch hinzugefügt:', matchingPfand.article_text, 'Menge:', originalQuantity);
+        if (this.isSplitMode && this.activeTable === 2) {
+          this.orderItems2 = [
+            ...this.orderItems2,
+            { 
+              ...matchingPfand, 
+              quantity: originalQuantity
+            },
+          ];
+        } else {
+          this.orderItems = [
+            ...this.orderItems,
+            { 
+              ...matchingPfand, 
+              quantity: originalQuantity
+            },
+          ];
+        }
+        console.log(`✅ [PFAND-ADD] PFAND-Artikel automatisch hinzugefügt zu Tabelle ${this.activeTable}:`, matchingPfand.article_text, 'Menge:', originalQuantity);
       }
     }
 
-    // Speichere Aufträge im localStorage
-    this.globalService.saveCustomerOrders(this.orderItems);
+    // Speichere Aufträge im localStorage (nur Tabelle 1)
+    if (!this.isSplitMode || this.activeTable === 1) {
+      this.globalService.saveCustomerOrders(this.orderItems);
+    }
 
     // Zeige Toast für mobile/tablet Ansicht
     this.showMobileToast(artikel.article_text || artikel.article_name || 'Artikel', Number(artikel.quantity));
@@ -2443,7 +2485,178 @@ filteredArtikelData() {
   }
 
   saveOrder(): void {
+    // Im Split-Modus: Zeige Auswahl-Dialog
+    if (this.isSplitMode) {
+      this.showSplitSaveDialog();
+    } else {
+      this.openOrderConfirmationModal();
+    }
+  }
+
+  showSplitSaveDialog(): void {
+    const hasItemsInTable1 = this.orderItems.some(item => item.quantity > 0);
+    const hasItemsInTable2 = this.orderItems2.some(item => item.quantity > 0);
+
+    if (!hasItemsInTable1 && !hasItemsInTable2) {
+      alert('Beide Aufträge sind leer. Bitte fügen Sie Artikel hinzu.');
+      return;
+    }
+
+    let message = 'Welchen Auftrag möchten Sie speichern?\n\n';
+    
+    if (hasItemsInTable1) {
+      message += `Auftrag 1: ${this.orderItems.filter(i => i.quantity > 0).length} Artikel, Gesamt: €${this.getOrderTotal().toFixed(2)}\n`;
+    } else {
+      message += 'Auftrag 1: Leer\n';
+    }
+    
+    if (hasItemsInTable2) {
+      message += `Auftrag 2: ${this.orderItems2.filter(i => i.quantity > 0).length} Artikel, Gesamt: €${this.getOrderTotal2().toFixed(2)}\n`;
+    } else {
+      message += 'Auftrag 2: Leer\n';
+    }
+
+    message += '\nWählen Sie eine Option:';
+
+    const options = [];
+    if (hasItemsInTable1) options.push('1');
+    if (hasItemsInTable2) options.push('2');
+    if (hasItemsInTable1 && hasItemsInTable2) options.push('beide');
+
+    const choice = prompt(message + '\n\nGeben Sie ein: ' + options.join(', '));
+
+    if (choice === '1' && hasItemsInTable1) {
+      this.saveSingleOrder(this.orderItems, 'Auftrag 1');
+    } else if (choice === '2' && hasItemsInTable2) {
+      this.saveSingleOrder(this.orderItems2, 'Auftrag 2');
+    } else if (choice === 'beide' && hasItemsInTable1 && hasItemsInTable2) {
+      this.saveBothOrders();
+    } else if (choice !== null) {
+      alert('Ungültige Auswahl');
+    }
+  }
+
+  saveSingleOrder(items: any[], orderName: string): void {
+    // Filter nur Artikel mit Menge > 0
+    const filteredItems = items.filter(item => item.quantity > 0);
+    
+    if (filteredItems.length === 0) {
+      alert(`${orderName} enthält keine Artikel mit Menge > 0.`);
+      return;
+    }
+
+    // Temporär orderItems durch gefilterte Items ersetzen für Speicherung
+    const originalItems = this.orderItems;
+    this.orderItems = filteredItems;
+    
     this.openOrderConfirmationModal();
+    
+    // Nach Modal-Schließen Original wiederherstellen
+    setTimeout(() => {
+      if (!this.isOrderConfirmationModalOpen) {
+        this.orderItems = originalItems;
+      }
+    }, 100);
+  }
+
+  async saveBothOrders(): Promise<void> {
+    const itemsTable1 = this.orderItems.filter(item => item.quantity > 0);
+    const itemsTable2 = this.orderItems2.filter(item => item.quantity > 0);
+
+    if (itemsTable1.length === 0 || itemsTable2.length === 0) {
+      alert('Beide Aufträge müssen mindestens einen Artikel mit Menge > 0 enthalten.');
+      return;
+    }
+
+    const confirm = window.confirm(`Beide Aufträge speichern?\n\nAuftrag 1: ${itemsTable1.length} Artikel, €${this.getOrderTotal().toFixed(2)}\nAuftrag 2: ${itemsTable2.length} Artikel, €${this.getOrderTotal2().toFixed(2)}`);
+
+    if (!confirm) {
+      return;
+    }
+
+    this.isSavingOrder = true;
+
+    try {
+      // Speichere Auftrag 1
+      await this.saveOrderDirectly(itemsTable1, 'completed');
+      
+      // Speichere Auftrag 2
+      await this.saveOrderDirectly(itemsTable2, 'completed');
+      
+      alert('Beide Aufträge wurden erfolgreich gespeichert!');
+      this.clearAllOrderData();
+      this.isSplitMode = false;
+      this.orderItems2 = [];
+    } catch (error) {
+      console.error('Fehler beim Speichern der Aufträge:', error);
+      alert('Fehler beim Speichern: ' + error);
+    } finally {
+      this.isSavingOrder = false;
+    }
+  }
+
+  async saveOrderDirectly(items: any[], status: string): Promise<void> {
+    // Ensure description is set for all items
+    items.forEach(item => {
+      if (!item.description && item.article_text) {
+        item.description = item.article_text;
+      }
+    });
+
+    const customerData: any = {
+      customer_id: this.globalService.selectedCustomerForOrders.id,
+      customer_number: this.globalService.selectedCustomerForOrders.customer_number,
+      customer_name: this.globalService.selectedCustomerForOrders.last_name_company,
+      customer_addition: this.globalService.selectedCustomerForOrders.name_addition,
+      customer_email: this.globalService.selectedCustomerForOrders.email,
+      status: status
+    };
+
+    if (this.differentCompanyName) {
+      customerData.customer_city = this.globalService.selectedCustomerForOrders.city;
+      customerData.customer_street = this.globalService.selectedCustomerForOrders.street;
+      customerData.customer_postal_code = this.globalService.selectedCustomerForOrders.postal_code;
+      customerData.customer_country_code = this.globalService.selectedCustomerForOrders._country_code;
+      customerData.different_company_name = this.differentCompanyName;
+    }
+
+    if (this.orderDate) {
+      customerData.order_date = this.orderDate;
+    }
+    if (this.deliveryDate) {
+      customerData.delivery_date = this.deliveryDate;
+    }
+
+    const completeOrder = {
+      orderData: {
+        ...customerData,
+        total_price: items.reduce((total, item) => {
+          const price = item.different_price !== undefined && item.different_price !== null && item.different_price !== '' 
+            ? item.different_price 
+            : item.sale_price;
+          return total + (price * item.quantity);
+        }, 0),
+        created_at: new Date().toISOString()
+      },
+      orderItems: items
+    };
+
+    const token = localStorage.getItem('token');
+
+    const response = await fetch(`${environment.apiUrl}/api/orders`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(completeOrder)
+    });
+
+    if (!response.ok) {
+      throw new Error('Fehler beim Speichern des Auftrags');
+    }
+
+    return response.json();
   }
 
   saveOrderAsOpen(): void {
@@ -4496,5 +4709,98 @@ filteredArtikelData() {
     }
     
     return lines;
+  }
+
+  // ==================== SPLIT MODE METHODS ====================
+
+  toggleSplitMode(): void {
+    if (!this.isSplitMode) {
+      // Aktiviere Split-Modus
+      if (this.orderItems.length === 0) {
+        alert('Bitte fügen Sie zunächst Artikel zum Auftrag hinzu.');
+        return;
+      }
+      
+      // Erstelle Kopie aller Artikel mit Menge 0
+      this.orderItems2 = this.orderItems.map(item => ({
+        ...item,
+        quantity: 0
+      }));
+      
+      this.isSplitMode = true;
+      console.log('✅ [SPLIT-MODE] Split-Modus aktiviert');
+    } else {
+      // Deaktiviere Split-Modus
+      const hasItemsInTable2 = this.orderItems2.some(item => item.quantity > 0);
+      
+      if (hasItemsInTable2) {
+        const confirm = window.confirm('Auftrag 2 enthält Artikel. Möchten Sie den Split-Modus wirklich beenden? Alle Artikel in Auftrag 2 gehen verloren.');
+        if (!confirm) {
+          return;
+        }
+      }
+      
+      this.orderItems2 = [];
+      this.isSplitMode = false;
+      this.activeTable = 1;
+      console.log('❌ [SPLIT-MODE] Split-Modus deaktiviert');
+    }
+  }
+
+  setActiveTable(tableNumber: 1 | 2): void {
+    this.activeTable = tableNumber;
+    console.log(`🎯 [ACTIVE-TABLE] Tabelle ${tableNumber} ist jetzt aktiv`);
+  }
+
+  transferQuantityToTable2(index: number, amount: number): void {
+    const item = this.orderItems[index];
+    const item2 = this.orderItems2[index];
+    
+    if (item.quantity >= amount) {
+      item.quantity -= amount;
+      item2.quantity += amount;
+      
+      // Validiere und formatiere die Mengen
+      this.validateAndUpdateQuantity(item);
+      this.validateAndUpdateQuantity(item2);
+      
+      console.log(`➡️ [TRANSFER] ${amount} von "${item.article_text}" zu Auftrag 2 verschoben`);
+    } else {
+      alert(`Nicht genug Menge verfügbar. Verfügbar: ${item.quantity}`);
+    }
+  }
+
+  transferQuantityToTable1(index: number, amount: number): void {
+    const item = this.orderItems[index];
+    const item2 = this.orderItems2[index];
+    
+    if (item2.quantity >= amount) {
+      item2.quantity -= amount;
+      item.quantity += amount;
+      
+      // Validiere und formatiere die Mengen
+      this.validateAndUpdateQuantity(item);
+      this.validateAndUpdateQuantity(item2);
+      
+      console.log(`⬅️ [TRANSFER] ${amount} von "${item.article_text}" zu Auftrag 1 verschoben`);
+    } else {
+      alert(`Nicht genug Menge verfügbar. Verfügbar: ${item2.quantity}`);
+    }
+  }
+
+
+  removeFromOrder2(index: number): void {
+    const item = this.orderItems2[index];
+    this.orderItems2.splice(index, 1);
+    console.log('🗑️ [REMOVE-FROM-ORDER-2] Artikel aus Auftrag 2 entfernt:', item.article_text);
+  }
+
+  getOrderTotal2(): number {
+    return this.orderItems2.reduce((total, item) => {
+      const price = item.different_price !== undefined && item.different_price !== null && item.different_price !== '' 
+        ? item.different_price 
+        : item.sale_price;
+      return total + (price * item.quantity);
+    }, 0);
   }
 }
