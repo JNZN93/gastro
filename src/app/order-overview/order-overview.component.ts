@@ -749,7 +749,7 @@ export class OrderOverviewComponent implements OnInit {
 
   // Hilfsmethode um zu prüfen, ob eine Bestellung bearbeitbar ist
   isOrderEditable(order: Order): boolean {
-    return order.status === 'open' || order.status === 'in_progress';
+    return order.status === 'open' || order.status === 'in_progress' || order.status === 'completed';
   }
 
   // Methode zum Bearbeiten einer offenen Bestellung
