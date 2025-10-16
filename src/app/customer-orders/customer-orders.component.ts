@@ -185,9 +185,74 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     }
   }
 
+  // Browser-Navigation Handler
+  @HostListener('window:beforeunload', ['$event'])
+  beforeUnload(event: BeforeUnloadEvent) {
+    // Prüfe, ob ungespeicherte Änderungen vorhanden sind
+    if (this.hasUnsavedChanges()) {
+      const message = this.isEditMode 
+        ? `Sie bearbeiten Bestellung #${this.editingOrderId} mit ungespeicherten Änderungen. Möchten Sie die Seite wirklich verlassen?`
+        : `Sie haben einen Auftrag mit ${this.orderItems.length} Artikel(n) ohne Speicherung. Möchten Sie die Seite wirklich verlassen?`;
+      
+      // Browser-Warnung anzeigen
+      event.preventDefault();
+      event.returnValue = message;
+      return message;
+    }
+    return undefined;
+  }
+
+  @HostListener('window:popstate', ['$event'])
+  onPopState(event: PopStateEvent) {
+    console.log('🔙 [BROWSER-BACK] Browser-Zurück-Button erkannt');
+    
+    // Prüfe, ob ungespeicherte Änderungen vorhanden sind
+    if (this.hasUnsavedChanges()) {
+      console.log('⚠️ [BROWSER-BACK] Ungespeicherte Änderungen erkannt, zeige Bestätigungsdialog');
+      
+      // Verhindere die Navigation temporär
+      history.pushState(null, '', window.location.href);
+      
+      // Zeige Bestätigungsdialog
+      const dialogRef = this.dialog.open(MyDialogComponent, {
+        width: '400px',
+        data: {
+          title: 'Bearbeitung verlassen',
+          message: this.isEditMode 
+            ? `Sie bearbeiten Bestellung #${this.editingOrderId} mit ungespeicherten Änderungen. Möchten Sie wirklich zurück gehen?`
+            : `Sie haben einen Auftrag mit ${this.orderItems.length} Artikel(n) ohne Speicherung. Möchten Sie wirklich zurück gehen?`,
+          isConfirmation: true,
+          confirmLabel: 'Zurück gehen',
+          cancelLabel: 'Abbrechen'
+        }
+      });
+
+      dialogRef.afterClosed().subscribe(result => {
+        if (result === true) {
+          console.log('✅ [BROWSER-BACK] Benutzer bestätigt Zurück-Navigation');
+          // Stelle den ursprünglichen Status wieder her
+          this.restoreOriginalStatus();
+          // Bereinige alle Daten
+          this.clearAllOrderData();
+          // Führe die Navigation aus
+          history.back();
+        } else {
+          console.log('❌ [BROWSER-BACK] Benutzer bricht Zurück-Navigation ab');
+          // Navigation abbrechen - Seite bleibt unverändert
+        }
+      });
+    } else {
+      console.log('✅ [BROWSER-BACK] Keine ungespeicherten Änderungen, normale Navigation');
+      // Keine ungespeicherten Änderungen - normale Navigation erlauben
+    }
+  }
+
   ngOnInit(): void {
     // Footer verstecken
     this.hideFooter();
+    
+    // History-State für Browser-Navigation initialisieren
+    history.pushState(null, '', window.location.href);
     
     this.loadCustomers();
     
@@ -928,14 +993,23 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
         return;
       }
 
-      this.orderService.updateOrderStatusOnly(this.editingOrderId, this.originalStatus, token).subscribe({
-        next: (response: any) => {
-          console.log('✅ [RESTORE-STATUS] Ursprünglicher Status erfolgreich wiederhergestellt:', response);
-        },
-        error: (error: any) => {
-          console.error('❌ [RESTORE-STATUS] Fehler beim Wiederherstellen des ursprünglichen Status:', error);
+      // Synchroner Aufruf für Browser-Navigation (wichtig für beforeunload)
+      try {
+        // Verwende fetch für synchronen Aufruf bei beforeunload
+        const request = new XMLHttpRequest();
+        request.open('PUT', `${environment.apiUrl}/api/orders/${this.editingOrderId}/status`, false);
+        request.setRequestHeader('Authorization', `Bearer ${token}`);
+        request.setRequestHeader('Content-Type', 'application/json');
+        request.send(JSON.stringify({ status: this.originalStatus }));
+        
+        if (request.status === 200) {
+          console.log('✅ [RESTORE-STATUS] Ursprünglicher Status synchron wiederhergestellt');
+        } else {
+          console.error('❌ [RESTORE-STATUS] Fehler beim synchronen Wiederherstellen:', request.status);
         }
-      });
+      } catch (error) {
+        console.error('❌ [RESTORE-STATUS] Fehler beim synchronen API-Aufruf:', error);
+      }
     }
   }
 
@@ -5061,10 +5135,15 @@ filteredArtikelData() {
     });
   }
 
+  // Hilfsmethode zum Prüfen auf ungespeicherte Änderungen
+  private hasUnsavedChanges(): boolean {
+    return this.isEditMode || this.orderItems.length > 0;
+  }
+
   // Navigation method
   goBack(): void {
     // Prüfe, ob wir im Bearbeitungsmodus sind oder ungespeicherte Änderungen haben
-    if (this.isEditMode || this.orderItems.length > 0) {
+    if (this.hasUnsavedChanges()) {
       // Zeige Bestätigungsdialog für ungespeicherte Änderungen
       const dialogRef = this.dialog.open(MyDialogComponent, {
         width: '400px',
