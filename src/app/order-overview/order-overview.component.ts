@@ -747,9 +747,20 @@ export class OrderOverviewComponent implements OnInit {
     return finalItems;
   }
 
+  // Hilfsmethode um zu prüfen, ob eine Bestellung bearbeitbar ist
+  isOrderEditable(order: Order): boolean {
+    return order.status === 'open' || order.status === 'in_progress';
+  }
+
   // Methode zum Bearbeiten einer offenen Bestellung
   editOrder(order: Order): void {
     console.log('✏️ [EDIT-ORDER] Bearbeite offene Bestellung:', order);
+    
+    // Prüfe, ob die Bestellung bearbeitbar ist
+    if (!this.isOrderEditable(order)) {
+      console.warn('⚠️ [EDIT-ORDER] Bestellung ist nicht bearbeitbar. Status:', order.status);
+      return;
+    }
     
     // Setze den Status auf "in_progress" wenn die Bestellung bearbeitet wird
     if (order.status !== 'in_progress') {
