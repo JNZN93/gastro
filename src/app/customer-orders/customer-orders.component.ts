@@ -3121,6 +3121,26 @@ filteredArtikelData() {
     console.log('🎉 [CLEAR-ALL-ORDER] Alle auftragsrelevanten Daten erfolgreich geleert!');
   }
 
+  // Neue Methode für Bestätigungs-Modal beim Zwischenspeichern
+  confirmSaveOrderAsOpen(): void {
+    const dialogRef = this.dialog.open(MyDialogComponent, {
+      width: '400px',
+      data: {
+        title: 'Auftrag zwischenspeichern',
+        message: 'Möchten Sie den Auftrag wirklich zwischenspeichern? Der Auftrag wird mit dem Status "Offen" gespeichert und kann später bearbeitet werden.',
+        isConfirmation: true,
+        confirmLabel: 'Zwischenspeichern',
+        cancelLabel: 'Abbrechen'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result === true) {
+        this.saveOrderAsOpen();
+      }
+    });
+  }
+
   // Neue Methode für Bestätigungs-Modal beim Löschen des gesamten Auftrags
   confirmClearOrder(): void {
     const dialogRef = this.dialog.open(MyDialogComponent, {
