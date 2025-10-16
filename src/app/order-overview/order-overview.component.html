@@ -493,4 +493,36 @@
       </div>
     </div>
   }
+
+  <!-- Processing Warning Modal -->
+  @if (showProcessingWarning) {
+    <div class="modal-overlay" (click)="closeProcessingWarning()">
+      <div class="warning-modal-content" (click)="$event.stopPropagation()">
+        <div class="warning-modal-header">
+          <h2>Bestellung wird bearbeitet</h2>
+          <button class="close-btn" (click)="closeProcessingWarning()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+        
+        <div class="warning-modal-body">
+          <div class="warning-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+            </svg>
+          </div>
+          
+          <h3>Bestellung #{{ processingOrderId }} wird bereits bearbeitet</h3>
+          <p class="warning-text">{{ processingWarningMessage }}</p>
+          <p>Bitte warten Sie, bis die Bearbeitung abgeschlossen ist, oder kontaktieren Sie den anderen Benutzer.</p>
+        </div>
+
+        <div class="warning-modal-footer">
+          <button class="btn-primary" (click)="closeProcessingWarning()">Verstanden</button>
+        </div>
+      </div>
+    </div>
+  }
 </div> 

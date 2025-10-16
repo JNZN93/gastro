@@ -67,6 +67,11 @@ export class OrderOverviewComponent implements OnInit {
   showDeleteAllConfirmationError = false;
   userRole: string = '';
   
+  // Warnung für bereits bearbeitete Bestellungen
+  showProcessingWarning = false;
+  processingWarningMessage = '';
+  processingOrderId: number | null = null;
+  
   // Mapping Kundennummer -> Kundenname
   private customerNameByNumber: Record<string, string> = {};
   
@@ -766,7 +771,43 @@ export class OrderOverviewComponent implements OnInit {
       console.warn('⚠️ [EDIT-ORDER] Bestellung ist nicht bearbeitbar. Status:', order.status);
       return;
     }
+
+    // Prüfe, ob die Bestellung bereits von jemandem bearbeitet wird
+    this.checkOrderProcessingStatusBeforeEdit(order);
+  }
+
+  // Neue Methode zum Prüfen des Bearbeitungsstatus vor dem Editieren
+  private checkOrderProcessingStatusBeforeEdit(order: Order): void {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.error('❌ [EDIT-ORDER] Kein Token gefunden');
+      return;
+    }
+
+    console.log('🔍 [EDIT-ORDER] Prüfe Bearbeitungsstatus für Bestellung:', order.order_id);
     
+    this.orderService.checkOrderProcessingStatus(order.order_id, token).subscribe({
+      next: (response) => {
+        console.log('✅ [EDIT-ORDER] Bearbeitungsstatus erhalten:', response);
+        
+        if (response.isBeingProcessed) {
+          // Zeige Warnung an, dass die Bestellung bereits bearbeitet wird
+          this.showOrderBeingProcessedWarning(order, response.message);
+        } else {
+          // Bestellung kann bearbeitet werden
+          this.proceedWithOrderEdit(order);
+        }
+      },
+      error: (error) => {
+        console.error('❌ [EDIT-ORDER] Fehler beim Prüfen des Bearbeitungsstatus:', error);
+        // Bei Fehler trotzdem fortfahren (Fallback-Verhalten)
+        this.proceedWithOrderEdit(order);
+      }
+    });
+  }
+
+  // Methode zum Fortfahren mit der Bearbeitung (nach Statusprüfung)
+  private proceedWithOrderEdit(order: Order): void {
     // Speichere den ursprünglichen Status vor der Bearbeitung
     const originalStatus = order.status;
     console.log('💾 [EDIT-ORDER] Ursprünglicher Status gespeichert:', originalStatus);
@@ -829,6 +870,21 @@ export class OrderOverviewComponent implements OnInit {
 
   goBack(): void {
     this.router.navigate(['/admin']);
+  }
+
+  // Methode zum Anzeigen der Warnung bei bereits bearbeiteten Bestellungen
+  private showOrderBeingProcessedWarning(order: Order, message: string): void {
+    this.processingOrderId = order.order_id;
+    this.processingWarningMessage = message;
+    this.showProcessingWarning = true;
+    console.warn('⚠️ [EDIT-ORDER] Bestellung wird bereits bearbeitet:', order.order_id);
+  }
+
+  // Methode zum Schließen der Bearbeitungswarnung
+  closeProcessingWarning(): void {
+    this.showProcessingWarning = false;
+    this.processingWarningMessage = '';
+    this.processingOrderId = null;
   }
 
   // Hilfsmethode um MwSt-Rate basierend auf tax_code zu bekommen
