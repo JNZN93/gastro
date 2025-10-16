@@ -885,6 +885,10 @@ export class OrderOverviewComponent implements OnInit {
     this.showProcessingWarning = false;
     this.processingWarningMessage = '';
     this.processingOrderId = null;
+    
+    // Lade die Bestellungen neu, um den aktuellen Status zu aktualisieren
+    console.log('🔄 [CLOSE-WARNING] Lade Bestellungen neu nach Warnung...');
+    this.loadOrders();
   }
 
   // Hilfsmethode um MwSt-Rate basierend auf tax_code zu bekommen
