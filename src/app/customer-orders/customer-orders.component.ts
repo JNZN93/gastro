@@ -17,6 +17,7 @@ import 'jspdf-autotable';
 import { IndexedDBService } from '../indexeddb.service';
 import { OffersService, OfferWithProducts, OfferProduct } from '../offers.service';
 import { ForceActiveService } from '../force-active.service';
+import { OrderService } from '../order.service';
 import * as QRCode from 'qrcode';
 import { environment } from '../../environments/environment';
 import { firstValueFrom, Subscription } from 'rxjs';
@@ -40,6 +41,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   private indexedDBService = inject(IndexedDBService);
   private offersService = inject(OffersService);
   private forceActiveService = inject(ForceActiveService);
+  private orderService = inject(OrderService);
   private forceActiveSubscription: Subscription | null = null;
   artikelData: any[] = [];
   orderItems: any[] = [];
@@ -116,6 +118,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   // Edit mode properties for existing orders
   isEditMode: boolean = false;
   editingOrderId: number | null = null;
+  originalStatus: string = 'open'; // Ursprünglicher Status vor der Bearbeitung
   
   // Drag & Drop properties
   draggedIndex: number = -1;
@@ -256,6 +259,9 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
             // Damit die EK-Preise korrekt aus globalArtikels geladen werden können
             console.log('🔍 [INIT] Prüfe auf pendingOrderData nach Laden der Artikel...');
             this.checkForPendingOrderData();
+            
+            // Prüfe auch auf Bearbeitungsmodus-Daten für Refresh-Persistenz
+            this.checkForEditModeData();
           });
         },
         error: (error) => {
@@ -863,6 +869,76 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     }
   }
 
+  // Prüfe auf Bearbeitungsmodus-Daten für Refresh-Persistenz
+  private checkForEditModeData(): void {
+    const editModeData = localStorage.getItem('editModeData');
+    if (editModeData) {
+      console.log('📥 [EDIT-MODE-DATA] Bearbeitungsmodus-Daten gefunden');
+      
+      try {
+        const data = JSON.parse(editModeData);
+        console.log('✏️ [EDIT-MODE-DATA] Bearbeitungsmodus-Daten:', data);
+        
+        // Stelle den Bearbeitungsmodus wieder her
+        this.isEditMode = data.isEditMode || false;
+        this.editingOrderId = data.editingOrderId || null;
+        
+        // Speichere den ursprünglichen Status für spätere Wiederherstellung
+        this.originalStatus = data.originalStatus || 'open';
+        
+        // Stelle die Datumsfelder wieder her
+        if (data.orderDate) {
+          this.orderDate = this.formatDateForInput(data.orderDate);
+          console.log('📅 [EDIT-MODE-DATA] Bestelldatum wiederhergestellt:', this.orderDate);
+        }
+        if (data.deliveryDate) {
+          this.deliveryDate = this.formatDateForInput(data.deliveryDate);
+          console.log('📅 [EDIT-MODE-DATA] Lieferdatum wiederhergestellt:', this.deliveryDate);
+        }
+        
+        // Stelle die Kundenanmerkungen wieder her
+        if (data.customerNotes) {
+          this.customerNotes1 = data.customerNotes;
+          console.log('📝 [EDIT-MODE-DATA] Kundenanmerkungen wiederhergestellt:', this.customerNotes1);
+        }
+        
+        console.log('✅ [EDIT-MODE-DATA] Bearbeitungsmodus wiederhergestellt:', {
+          isEditMode: this.isEditMode,
+          editingOrderId: this.editingOrderId
+        });
+        
+      } catch (error) {
+        console.error('❌ [EDIT-MODE-DATA] Fehler beim Parsen der Bearbeitungsmodus-Daten:', error);
+        localStorage.removeItem('editModeData');
+      }
+    }
+  }
+
+  // Stelle den ursprünglichen Status einer Bestellung wieder her
+  private restoreOriginalStatus(): void {
+    if (this.isEditMode && this.editingOrderId && this.originalStatus !== 'in_progress') {
+      console.log('🔄 [RESTORE-STATUS] Stelle ursprünglichen Status wieder her:', {
+        orderId: this.editingOrderId,
+        originalStatus: this.originalStatus
+      });
+      
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error('❌ [RESTORE-STATUS] Kein Token gefunden');
+        return;
+      }
+
+      this.orderService.updateOrderStatusOnly(this.editingOrderId, this.originalStatus, token).subscribe({
+        next: (response: any) => {
+          console.log('✅ [RESTORE-STATUS] Ursprünglicher Status erfolgreich wiederhergestellt:', response);
+        },
+        error: (error: any) => {
+          console.error('❌ [RESTORE-STATUS] Fehler beim Wiederherstellen des ursprünglichen Status:', error);
+        }
+      });
+    }
+  }
+
   // Zeige Bestätigungsdialog zum Ersetzen des aktuellen Auftrags
   private showReplaceOrderConfirmation(orderData: any): void {
     const dialogRef = this.dialog.open(MyDialogComponent, {
@@ -891,7 +967,20 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     if (orderData.editMode === true) {
       this.isEditMode = true;
       this.editingOrderId = orderData.editingOrderId || null;
+      this.originalStatus = orderData.originalStatus || 'open'; // ✅ Speichere den ursprünglichen Status
       console.log('✏️ [LOAD-ORDER-DATA] Bearbeitungsmodus aktiviert für Bestellung:', this.editingOrderId);
+      
+      // Speichere Bearbeitungsmodus-Informationen im localStorage für Refresh-Persistenz
+      const editModeData = {
+        isEditMode: true,
+        editingOrderId: this.editingOrderId,
+        originalStatus: orderData.originalStatus, // ✅ Speichere den ursprünglichen Status
+        orderDate: orderData.orderDate,
+        deliveryDate: orderData.deliveryDate,
+        customerNotes: orderData.customerNotes
+      };
+      localStorage.setItem('editModeData', JSON.stringify(editModeData));
+      console.log('💾 [LOAD-ORDER-DATA] Bearbeitungsmodus-Daten im localStorage gespeichert');
     }
     
     // Setze die Datumsfelder, falls vorhanden
@@ -2993,7 +3082,10 @@ filteredArtikelData() {
     if (this.isEditMode) {
       this.isEditMode = false;
       this.editingOrderId = null;
-      console.log('✅ [CLEAR-ALL-ORDER] Bearbeitungsmodus zurückgesetzt');
+      this.originalStatus = 'open'; // Reset original status
+      // Lösche auch die Bearbeitungsmodus-Daten aus localStorage
+      localStorage.removeItem('editModeData');
+      console.log('✅ [CLEAR-ALL-ORDER] Bearbeitungsmodus zurückgesetzt und localStorage bereinigt');
     }
     console.log('✅ [CLEAR-ALL-ORDER] Alle Artikel auf Standard-Preise zurückgesetzt');
     
@@ -4716,7 +4808,10 @@ filteredArtikelData() {
       if (isEditMode) {
         this.isEditMode = false;
         this.editingOrderId = null;
-        console.log('✅ [CUSTOMER-ORDERS] Bearbeitungsmodus beendet');
+        this.originalStatus = 'open'; // Reset original status
+        // Lösche auch die Bearbeitungsmodus-Daten aus localStorage
+        localStorage.removeItem('editModeData');
+        console.log('✅ [CUSTOMER-ORDERS] Bearbeitungsmodus beendet und localStorage bereinigt');
       }
     })
     .catch(error => {
@@ -4948,7 +5043,36 @@ filteredArtikelData() {
 
   // Navigation method
   goBack(): void {
-    this.router.navigate(['/admin']);
+    // Prüfe, ob wir im Bearbeitungsmodus sind oder ungespeicherte Änderungen haben
+    if (this.isEditMode || this.orderItems.length > 0) {
+      // Zeige Bestätigungsdialog für ungespeicherte Änderungen
+      const dialogRef = this.dialog.open(MyDialogComponent, {
+        width: '400px',
+        data: {
+          title: 'Bearbeitung verlassen',
+          message: this.isEditMode 
+            ? `Sie bearbeiten Bestellung #${this.editingOrderId} mit ungespeicherten Änderungen. Möchten Sie wirklich zurück gehen?`
+            : `Sie haben einen Auftrag mit ${this.orderItems.length} Artikel(n) ohne Speicherung. Möchten Sie wirklich zurück gehen?`,
+          isConfirmation: true,
+          confirmLabel: 'Zurück gehen',
+          cancelLabel: 'Abbrechen'
+        }
+      });
+
+      dialogRef.afterClosed().subscribe(result => {
+        if (result === true) {
+          // Stelle den ursprünglichen Status wieder her, bevor wir gehen
+          this.restoreOriginalStatus();
+          
+          // Bereinige alle Daten und navigiere zurück
+          this.clearAllOrderData();
+          this.router.navigate(['/admin']);
+        }
+      });
+    } else {
+      // Keine ungespeicherten Änderungen, direkt zurück navigieren
+      this.router.navigate(['/admin']);
+    }
   }
 
   // Hilfsfunktion um lange URLs in mehrere Zeilen aufzuteilen

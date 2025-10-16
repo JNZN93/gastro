@@ -487,6 +487,10 @@ export class OrderOverviewComponent implements OnInit {
   loadOrderToCustomerOrders(order: Order): void {
     console.log('🔄 [LOAD-ORDER] Lade Bestellung in Customer Orders:', order);
     
+    // Speichere den ursprünglichen Status vor der Bearbeitung
+    const originalStatus = order.status;
+    console.log('💾 [LOAD-ORDER] Ursprünglicher Status gespeichert:', originalStatus);
+    
     // Setze den Status auf "in_progress" wenn die Bestellung bearbeitet wird
     if (order.status !== 'in_progress') {
       console.log('📝 [LOAD-ORDER] Setze Status auf "in_progress" für Bestellung:', order.order_id);
@@ -498,6 +502,7 @@ export class OrderOverviewComponent implements OnInit {
     const orderData = {
       editMode: true, // ✅ Aktiviere Bearbeitungsmodus
       editingOrderId: order.order_id, // ✅ Speichere die Order-ID für Update (PUT)
+      originalStatus: originalStatus, // ✅ Speichere den ursprünglichen Status
       orderDate: order.order_date || null, // Übernehme das Bestelldatum
       deliveryDate: order.delivery_date || null, // Übernehme das Lieferdatum
       customerNotes: order.customer_notes || '', // Übernehme die Kundenanmerkungen
@@ -762,6 +767,10 @@ export class OrderOverviewComponent implements OnInit {
       return;
     }
     
+    // Speichere den ursprünglichen Status vor der Bearbeitung
+    const originalStatus = order.status;
+    console.log('💾 [EDIT-ORDER] Ursprünglicher Status gespeichert:', originalStatus);
+    
     // Setze den Status auf "in_progress" wenn die Bestellung bearbeitet wird
     if (order.status !== 'in_progress') {
       console.log('📝 [EDIT-ORDER] Setze Status auf "in_progress" für Bestellung:', order.order_id);
@@ -796,6 +805,7 @@ export class OrderOverviewComponent implements OnInit {
       differentCompanyName: '',
       editMode: true, // Flag für Bearbeitungsmodus
       editingOrderId: order.order_id, // Speichere die Order ID
+      originalStatus: originalStatus, // ✅ Speichere den ursprünglichen Status
       orderDate: order.order_date,
       deliveryDate: order.delivery_date,
       customerNotes: order.customer_notes || '' // Übernehme die Kundenanmerkungen
