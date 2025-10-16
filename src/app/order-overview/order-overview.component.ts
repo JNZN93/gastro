@@ -487,6 +487,12 @@ export class OrderOverviewComponent implements OnInit {
   loadOrderToCustomerOrders(order: Order): void {
     console.log('🔄 [LOAD-ORDER] Lade Bestellung in Customer Orders:', order);
     
+    // Setze den Status auf "in_progress" wenn die Bestellung bearbeitet wird
+    if (order.status !== 'in_progress') {
+      console.log('📝 [LOAD-ORDER] Setze Status auf "in_progress" für Bestellung:', order.order_id);
+      this.updateOrderStatusToInProgress(order);
+    }
+    
     // Transformiere die Bestelldaten in das erwartete Format für Customer Orders
     // Verwende nur die Kundennummer - die Kundendaten werden später aus der Datenbank geladen
     const orderData = {
@@ -549,6 +555,38 @@ export class OrderOverviewComponent implements OnInit {
     
     // Navigiere zur Customer Orders Seite
     this.router.navigate(['/customer-orders']);
+  }
+
+  /**
+   * Aktualisiert den Status einer Bestellung auf "in_progress"
+   * @param order Die zu aktualisierende Bestellung
+   */
+  private updateOrderStatusToInProgress(order: Order): void {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.error('❌ [UPDATE-STATUS] Kein Token gefunden');
+      return;
+    }
+
+    console.log('🔄 [UPDATE-STATUS] Aktualisiere Status für Bestellung:', order.order_id);
+    
+    // Verwende den neuen Status-Only Endpoint
+    this.orderService.updateOrderStatusOnly(order.order_id, 'in_progress', token).subscribe({
+      next: (response) => {
+        console.log('✅ [UPDATE-STATUS] Status erfolgreich aktualisiert:', response);
+        // Aktualisiere den lokalen Status
+        order.status = 'in_progress';
+        // Aktualisiere die Bestellung in der Liste
+        const orderIndex = this.orders.findIndex(o => o.order_id === order.order_id);
+        if (orderIndex !== -1) {
+          this.orders[orderIndex].status = 'in_progress';
+        }
+      },
+      error: (error) => {
+        console.error('❌ [UPDATE-STATUS] Fehler beim Aktualisieren des Status:', error);
+        // Auch bei Fehler weiterleiten, da die Bearbeitung trotzdem möglich ist
+      }
+    });
   }
 
   /**

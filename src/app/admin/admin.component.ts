@@ -523,16 +523,20 @@ formatDate(dateString: string): string {
   updateOrderStatus(order: any, status: string) {
     order.status = status;
 
-    // Hier wird die API zur Statusaktualisierung aufgerufen
+    console.log(`🔄 [ADMIN-UPDATE] Aktualisiere Status für Bestellung ${order.order_id} auf: ${status}`);
+
+    // Verwende den neuen Status-Only Endpoint
     this.orderService
-      .updateStatus(order.order_id, status, localStorage.getItem('token'))
+      .updateOrderStatusOnly(order.order_id, status, localStorage.getItem('token'))
       .subscribe({
         next: (response) => {
-          console.log(response);
+          console.log('✅ [ADMIN-UPDATE] Status erfolgreich aktualisiert:', response);
+          // Aktualisiere den lokalen Status
+          order.status = status;
           this.loadOrders();
         },
         error: (error) => {
-          console.error('Fehler beim Aktualisieren des Status:', error);
+          console.error('❌ [ADMIN-UPDATE] Fehler beim Aktualisieren des Status:', error);
           alert(
             'Fehler beim Aktualisieren des Status. Bitte versuche es später erneut.'
           );
