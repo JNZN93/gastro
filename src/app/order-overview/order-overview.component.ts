@@ -751,6 +751,12 @@ export class OrderOverviewComponent implements OnInit {
   editOrder(order: Order): void {
     console.log('✏️ [EDIT-ORDER] Bearbeite offene Bestellung:', order);
     
+    // Setze den Status auf "in_progress" wenn die Bestellung bearbeitet wird
+    if (order.status !== 'in_progress') {
+      console.log('📝 [EDIT-ORDER] Setze Status auf "in_progress" für Bestellung:', order.order_id);
+      this.updateOrderStatusToInProgress(order);
+    }
+    
     // Transformiere die Bestelldaten in das erwartete Format für Customer Orders
     const orderData = {
       customer: {
@@ -780,7 +786,8 @@ export class OrderOverviewComponent implements OnInit {
       editMode: true, // Flag für Bearbeitungsmodus
       editingOrderId: order.order_id, // Speichere die Order ID
       orderDate: order.order_date,
-      deliveryDate: order.delivery_date
+      deliveryDate: order.delivery_date,
+      customerNotes: order.customer_notes || '' // Übernehme die Kundenanmerkungen
     };
 
     // Kategorie-Sortierung beibehalten
