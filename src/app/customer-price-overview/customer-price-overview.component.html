@@ -1,0 +1,131 @@
+<div class="customer-price-overview-container">
+  <div class="header">
+    <h1>Kundenpreise Übersicht</h1>
+    <p>Preise gruppiert nach Artikel</p>
+  </div>
+
+  <!-- Filter und Suche -->
+  <div class="filters">
+    <div class="search-container">
+      <input 
+        type="text" 
+        [(ngModel)]="searchTerm" 
+        placeholder="Artikel-ID, Beschreibung, Kunde oder Preis suchen..." 
+        class="search-input"
+      />
+      <button *ngIf="searchTerm" (click)="searchTerm = ''" class="clear-search-btn" title="Suche löschen">
+        <i class="bi bi-x"></i>
+      </button>
+    </div>
+    
+    <div class="product-filter">
+      <select [(ngModel)]="selectedProductId" class="product-select">
+        <option value="">Alle Artikel</option>
+        <option *ngFor="let productId of uniqueProductIds" [value]="productId">
+          {{ productId }}
+        </option>
+      </select>
+    </div>
+
+    <button (click)="refreshData()" class="refresh-btn" [disabled]="loading">
+      <i class="bi bi-arrow-clockwise"></i>
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-container">
+    <div class="loading-spinner"></div>
+    <p>Lade Kundenpreise...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error" class="error-container">
+    <p class="error-message">{{ error }}</p>
+    <button (click)="refreshData()" class="retry-btn">Erneut versuchen</button>
+  </div>
+
+  <!-- Suchstatus -->
+  <div *ngIf="isSearching && !loading && !error" class="search-status">
+    <span class="search-info">
+      <i class="bi bi-search"></i>
+      {{ filteredProductOverviews.length }} von {{ productOverviews.length }} Artikeln gefunden
+      <span *ngIf="searchTerm">für "{{ searchTerm }}"</span>
+    </span>
+    <button (click)="clearSearch()" class="clear-all-btn">
+      <i class="bi bi-x-circle"></i>
+      Alle Filter löschen
+    </button>
+  </div>
+
+  <!-- Daten Tabelle -->
+  <div *ngIf="!loading && !error && filteredProductOverviews.length > 0" class="data-container">
+    <div class="summary-stats">
+      <div class="stat-item">
+        <div class="stat-icon">
+          <i class="bi bi-box"></i>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">Artikel</span>
+          <span class="stat-value">{{ filteredProductOverviews.length }}</span>
+        </div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon">
+          <i class="bi bi-currency-euro"></i>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">Kundenpreise</span>
+          <span class="stat-value">{{ customerPrices.length }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="products-list">
+      <div *ngFor="let overview of filteredProductOverviews" class="product-card">
+        <div class="product-header">
+          <div class="product-title-row">
+            <div class="product-icon">
+              <i class="bi bi-tag"></i>
+            </div>
+            <h3 class="product-title">{{ overview.article_text }}</h3>
+          </div>
+          <div class="product-info">
+            <span class="product-id">{{ overview.product_id }}</span>
+            <span class="total-customers">{{ overview.total_customers }} Kunden</span>
+            <span *ngIf="hasMultiplePrices(overview)" class="price-variation">
+              ±{{ formatPrice(getPriceDifference(overview)) }}
+            </span>
+          </div>
+        </div>
+
+        <div class="price-groups">
+          <div *ngFor="let group of overview.price_groups" class="price-group">
+            <div class="price-info">
+              <span class="price-value">{{ formatPrice(group.price) }}</span>
+              <span class="price-count">{{ group.count }}x</span>
+            </div>
+            <div class="customers-list">
+              <span *ngFor="let customer of group.customers; let i = index" class="customer-id">
+                {{ customer }}<span *ngIf="i < group.customers.length - 1">, </span>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && !error && filteredProductOverviews.length === 0" class="empty-state">
+    <div class="empty-icon">
+      <i class="bi bi-bar-chart"></i>
+    </div>
+    <h3>Keine Kundenpreise gefunden</h3>
+    <p *ngIf="searchTerm || selectedProductId">
+      Keine Artikel entsprechen Ihren Suchkriterien.
+    </p>
+    <p *ngIf="!searchTerm && !selectedProductId">
+      Es wurden noch keine Kundenpreise hochgeladen.
+    </p>
+  </div>
+</div>

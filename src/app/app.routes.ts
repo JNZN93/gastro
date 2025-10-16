@@ -23,6 +23,7 @@ import { AuthGuard } from './auth.guard';
 import { AdminAuthGuard } from './admin-auth.guard';
 import { OfferFlyerComponent } from './offer-flyer/offer-flyer.component';
 import { OpenInvoicesComponent } from './open-invoices/open-invoices.component';
+import { CustomerPriceOverviewComponent } from './customer-price-overview/customer-price-overview.component';
 
 export const routes: Routes = [
     { 
@@ -52,6 +53,7 @@ export const routes: Routes = [
     { path: 'reports', component: ReportsComponent, canActivate: [AuthGuard] },
     { path: 'offers', component: OffersComponent, canActivate: [AuthGuard] },
     { path: 'offers/:id/flyer', component: OfferFlyerComponent, canActivate: [AuthGuard] },
+    { path: 'customer-price-overview', component: CustomerPriceOverviewComponent, canActivate: [AdminAuthGuard] },
     { path: 'category/:categoryName', component: CategoryDetailComponent },
     // Neue Route für kundenspezifische Bestellungen (öffentlich zugänglich)
     { 
