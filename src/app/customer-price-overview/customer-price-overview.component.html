@@ -18,14 +18,6 @@
       </button>
     </div>
     
-    <div class="product-filter">
-      <select [(ngModel)]="selectedProductId" class="product-select">
-        <option value="">Alle Artikel</option>
-        <option *ngFor="let productId of uniqueProductIds" [value]="productId">
-          {{ productId }}
-        </option>
-      </select>
-    </div>
 
     <button (click)="refreshData()" class="refresh-btn" [disabled]="loading">
       <i class="bi bi-arrow-clockwise"></i>
@@ -113,7 +105,10 @@
               <span class="price-count">{{ group.count }}x</span>
             </div>
             <div class="customers-list">
-              <span *ngFor="let customer of group.customers; let i = index" class="customer-id">
+              <span *ngFor="let customer of group.customers; let i = index" 
+                    class="customer-id clickable-customer" 
+                    (click)="navigateToCustomer(customer)"
+                    [title]="'Klicken um zu Kunde ' + customer + ' zu navigieren'">
                 {{ customer }}<span *ngIf="i < group.customers.length - 1">, </span>
               </span>
             </div>
@@ -129,12 +124,92 @@
       <i class="bi bi-search"></i>
     </div>
     <h3>Keine Kundenpreise angezeigt</h3>
-    <p *ngIf="searchTerm || selectedProductId">
+    <p *ngIf="searchTerm">
       Keine Artikel entsprechen Ihren Suchkriterien.
     </p>
-    <p *ngIf="!searchTerm && !selectedProductId">
+    <p *ngIf="!searchTerm">
       Geben Sie einen Suchbegriff ein, um Kundenpreise zu finden.<br>
       Sie können nach Artikel-ID, Beschreibung, Kundennummer oder Preis suchen.
     </p>
   </div>
 </div>
+
+<!-- Customer Details Modal -->
+@if (showCustomerModal) {
+<div class="customer-modal-overlay" (click)="closeCustomerModal()">
+  <div class="customer-modal-content" (click)="$event.stopPropagation()">
+    <div class="customer-modal-header">
+      <h2>Kundendetails</h2>
+      <button class="close-customer-modal" (click)="closeCustomerModal()">
+        <i class="bi bi-x"></i>
+      </button>
+    </div>
+    
+    <div class="customer-modal-body">
+      @if (isLoadingCustomer) {
+        <div class="loading-container">
+          <div class="loading-spinner"></div>
+          <p>Lade Kundendetails...</p>
+        </div>
+      } @else if (customerError) {
+        <div class="error-container">
+          <p class="error-message">{{ customerError }}</p>
+          <button (click)="closeCustomerModal()" class="retry-btn">Schließen</button>
+        </div>
+      } @else if (selectedCustomer) {
+        <div class="customer-details">
+          <div class="customer-info-section">
+            <h3>Kundeninformationen</h3>
+            <div class="detail-grid">
+              <div class="detail-item">
+                <span class="detail-label">Kundennummer:</span>
+                <span class="detail-value">{{ selectedCustomer.customer_number || '-' }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Firmenname:</span>
+                <span class="detail-value">{{ selectedCustomer.last_name_company || '-' }}</span>
+              </div>
+              @if (selectedCustomer.name_addition) {
+                <div class="detail-item">
+                  <span class="detail-label">Namenszusatz:</span>
+                  <span class="detail-value">{{ selectedCustomer.name_addition }}</span>
+                </div>
+              }
+              @if (selectedCustomer.email) {
+                <div class="detail-item">
+                  <span class="detail-label">E-Mail:</span>
+                  <span class="detail-value">{{ selectedCustomer.email }}</span>
+                </div>
+              }
+            </div>
+          </div>
+          
+          <div class="customer-address-section">
+            <h3>Adressinformationen</h3>
+            <div class="detail-grid">
+              @if (selectedCustomer.street || selectedCustomer.house_number) {
+                <div class="detail-item">
+                  <span class="detail-label">Straße:</span>
+                  <span class="detail-value">{{ selectedCustomer.street }} {{ selectedCustomer.house_number || '' }}</span>
+                </div>
+              }
+              @if (selectedCustomer.postal_code || selectedCustomer.city) {
+                <div class="detail-item">
+                  <span class="detail-label">Ort:</span>
+                  <span class="detail-value">{{ selectedCustomer.postal_code }} {{ selectedCustomer.city }}</span>
+                </div>
+              }
+              @if (selectedCustomer._country_code) {
+                <div class="detail-item">
+                  <span class="detail-label">Land:</span>
+                  <span class="detail-value">{{ selectedCustomer._country_code }}</span>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</div>
+}

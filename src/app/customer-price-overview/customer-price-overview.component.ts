@@ -2,9 +2,10 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { Router } from '@angular/router';
 import { environment } from '../../environments/environment';
 import { AuthService } from '../authentication.service';
-import { Router } from '@angular/router';
+import { GlobalService } from '../global.service';
 
 interface CustomerArticlePrice {
   id: number;
@@ -43,12 +44,18 @@ export class CustomerPriceOverviewComponent implements OnInit {
   loading = false;
   error: string | null = null;
   searchTerm = '';
-  selectedProductId = '';
+  
+  // Customer Details Modal Properties
+  showCustomerModal = false;
+  selectedCustomer: any = null;
+  isLoadingCustomer = false;
+  customerError: string | null = null;
 
   constructor(
     private http: HttpClient,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private globalService: GlobalService
   ) {}
 
   ngOnInit(): void {
@@ -222,17 +229,7 @@ export class CustomerPriceOverviewComponent implements OnInit {
       filtered = [];
     }
 
-    if (this.selectedProductId) {
-      filtered = filtered.filter(overview => 
-        overview.product_id === this.selectedProductId
-      );
-    }
-
     return filtered;
-  }
-
-  get uniqueProductIds(): string[] {
-    return [...new Set(this.customerPrices.map(p => p.product_id))].sort();
   }
 
   formatPrice(price: number | string): string {
@@ -247,12 +244,11 @@ export class CustomerPriceOverviewComponent implements OnInit {
 
   clearSearch(): void {
     this.searchTerm = '';
-    this.selectedProductId = '';
   }
 
   // Hilfsmethode um zu prüfen, ob gerade gesucht wird
   get isSearching(): boolean {
-    return this.searchTerm.trim().length > 0 || this.selectedProductId.length > 0;
+    return this.searchTerm.trim().length > 0;
   }
 
   // Hilfsmethode um zu prüfen, ob ein Artikel mehrere unterschiedliche Preise hat
@@ -272,5 +268,60 @@ export class CustomerPriceOverviewComponent implements OnInit {
     const highest = Math.max(...prices);
     const lowest = Math.min(...prices);
     return highest - lowest;
+  }
+
+  // Methode zum Laden der Kundendetails
+  loadCustomerDetails(customerId: string): void {
+    console.log('👤 [LOAD-CUSTOMER-DETAILS] Lade Details für Kunde:', customerId);
+    
+    this.isLoadingCustomer = true;
+    this.customerError = null;
+    this.showCustomerModal = true;
+    
+    const token = localStorage.getItem('token');
+    if (!token) {
+      this.customerError = 'Kein gültiger Token gefunden';
+      this.isLoadingCustomer = false;
+      return;
+    }
+
+    this.http.get<any[]>(`${environment.apiUrl}/api/customers`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    }).subscribe({
+      next: (customers) => {
+        // Finde den spezifischen Kunden
+        const customer = customers.find(c => c.customer_number === customerId);
+        if (customer) {
+          this.selectedCustomer = customer;
+          console.log('✅ [LOAD-CUSTOMER-DETAILS] Kundendetails geladen:', customer);
+        } else {
+          this.customerError = `Kunde ${customerId} nicht gefunden`;
+          console.warn('⚠️ [LOAD-CUSTOMER-DETAILS] Kunde nicht gefunden:', customerId);
+        }
+        this.isLoadingCustomer = false;
+      },
+      error: (error) => {
+        console.error('❌ [LOAD-CUSTOMER-DETAILS] Fehler beim Laden der Kundendetails:', error);
+        this.customerError = 'Fehler beim Laden der Kundendetails';
+        this.isLoadingCustomer = false;
+      }
+    });
+  }
+
+  // Methode zum Schließen des Customer Modals
+  closeCustomerModal(): void {
+    this.showCustomerModal = false;
+    this.selectedCustomer = null;
+    this.customerError = null;
+    this.isLoadingCustomer = false;
+  }
+
+  // Methode zum Navigieren zu einem Kunden in der Customer Orders Komponente
+  navigateToCustomer(customerId: string): void {
+    console.log('👤 [NAVIGATE-CUSTOMER] Zeige Kundendetails für:', customerId);
+    this.loadCustomerDetails(customerId);
   }
 }
