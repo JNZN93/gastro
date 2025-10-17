@@ -2,6 +2,7 @@
   padding: 15px;
   max-width: 1200px;
   margin: 0 auto;
+  margin-top: 70px; // Abstand für den festen Header
   font-family: 'Poppins', sans-serif;
 }
 
@@ -448,6 +449,7 @@
 @media (max-width: 768px) {
   .customer-price-overview-container {
     padding: 10px;
+    margin-top: 70px; // Sicherstellen, dass der Abstand auch auf Mobile erhalten bleibt
   }
   
   .header {
@@ -612,6 +614,7 @@
 @media (max-width: 480px) {
   .customer-price-overview-container {
     padding: 8px;
+    margin-top: 70px; // Sicherstellen, dass der Abstand auch auf sehr kleinen Bildschirmen erhalten bleibt
   }
   
   .header h1 {

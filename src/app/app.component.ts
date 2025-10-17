@@ -27,6 +27,19 @@ export class AppComponent implements OnInit, OnDestroy {
   ngOnInit() {
     // Initial state on load
     this.isEmployeesRoute = this.router.url.includes('/employees');
+    this.shouldHideFooter = this.router.url.includes('/category/') || 
+                           this.router.url.includes('/guest-link') || 
+                           this.router.url.includes('/admin') ||
+                           this.router.url.includes('/product-management') ||
+                           this.router.url.includes('/employees') ||
+                           this.router.url.includes('/label-management') ||
+                           this.router.url.includes('/order-overview') ||
+                           this.router.url.includes('/user-management') ||
+                           this.router.url.includes('/route-planning') ||
+                           this.router.url.includes('/reports') ||
+                           this.router.url.includes('/offers') ||
+                           this.router.url.includes('/customer-order/') ||
+                           this.router.url.includes('/customer-price-overview');
     this.updateHeaderVisibility();
 
     this.routerSubscription = this.router.events
@@ -45,7 +58,8 @@ export class AppComponent implements OnInit, OnDestroy {
                                 event.url.includes('/route-planning') ||
                                 event.url.includes('/reports') ||
                                 event.url.includes('/offers') ||
-                                event.url.includes('/customer-order/');
+                                event.url.includes('/customer-order/') ||
+                                event.url.includes('/customer-price-overview');
 
         // Header auf Employees-Route nur auf Mobile/Tablet ausblenden
         this.isEmployeesRoute = event.url.includes('/employees');
