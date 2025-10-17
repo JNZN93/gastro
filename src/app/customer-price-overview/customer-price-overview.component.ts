@@ -217,6 +217,9 @@ export class CustomerPriceOverviewComponent implements OnInit {
         // Alphabetische Sortierung
         return a.article_text.localeCompare(b.article_text);
       });
+    } else {
+      // Wenn kein Suchbegriff eingegeben wurde, zeige keine Artikel an
+      filtered = [];
     }
 
     if (this.selectedProductId) {

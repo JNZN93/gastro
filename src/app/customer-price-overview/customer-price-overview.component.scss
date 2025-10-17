@@ -220,6 +220,30 @@
   }
 }
 
+.search-hint {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 12px 15px;
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  
+  .hint-info {
+    color: #856404;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    
+    i {
+      color: #f39c12;
+      font-size: 14px;
+    }
+  }
+}
+
 .data-container {
   .summary-stats {
     display: flex;
@@ -470,6 +494,16 @@
       align-self: center;
       font-size: 0.8rem;
       padding: 5px 10px;
+    }
+  }
+  
+  .search-hint {
+    padding: 10px;
+    margin-bottom: 15px;
+    
+    .hint-info {
+      font-size: 0.85rem;
+      text-align: center;
     }
   }
   
