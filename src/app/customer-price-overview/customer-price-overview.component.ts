@@ -305,17 +305,9 @@ export class CustomerPriceOverviewComponent implements OnInit {
     this.isLoadingCustomer = true;
     this.customerError = null;
     this.showCustomerModal = true;
-    
-    const token = localStorage.getItem('token');
-    if (!token) {
-      this.customerError = 'Kein gültiger Token gefunden';
-      this.isLoadingCustomer = false;
-      return;
-    }
 
     this.http.get<any[]>(`${environment.apiUrl}/api/customers`, {
       headers: {
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       }
     }).subscribe({
