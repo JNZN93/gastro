@@ -562,6 +562,111 @@
   }
 }
 
+// Customer Invoices Section Styles
+.customer-invoices-section {
+  margin-top: 24px;
+  
+  h3 {
+    color: #2c3e50;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0 0 16px 0;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #27ae60;
+  }
+  
+  .article-context {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 12px;
+    background: #f8f9fa;
+    border: 1px solid #e1e8ed;
+    border-radius: 6px;
+    
+    .article-id {
+      color: #7f8c8d;
+      font-size: 0.85rem;
+      font-family: monospace;
+      background: #ecf0f1;
+      padding: 4px 8px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+    
+    .article-text {
+      color: #2c3e50;
+      font-size: 0.9rem;
+      font-weight: 500;
+      flex: 1;
+    }
+  }
+  
+  .invoices-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .invoice-item {
+    background: #f8f9fa;
+    border: 1px solid #e1e8ed;
+    border-radius: 8px;
+    padding: 12px;
+    transition: box-shadow 0.2s ease;
+    
+    &:hover {
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .invoice-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #e1e8ed;
+      
+      .invoice-number {
+        color: #2c3e50;
+        font-weight: 600;
+        font-size: 0.9rem;
+        font-family: monospace;
+      }
+      
+      .invoice-date {
+        color: #7f8c8d;
+        font-size: 0.85rem;
+        background: #ecf0f1;
+        padding: 2px 6px;
+        border-radius: 3px;
+      }
+    }
+    
+    .invoice-details {
+      .invoice-article {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 8px;
+        background: white;
+        border-radius: 4px;
+        border: 1px solid #f1f3f4;
+        
+        .article-price {
+          color: #27ae60;
+          font-weight: 600;
+          font-size: 1rem;
+          background: #d5f4e6;
+          padding: 6px 12px;
+          border-radius: 4px;
+        }
+      }
+    }
+  }
+}
+
 // Responsive Design
 @media (max-width: 768px) {
   .customer-price-overview-container {
@@ -672,6 +777,70 @@
         text-align: left;
         margin-left: 0;
         font-size: 0.9rem;
+      }
+    }
+  }
+  
+  // Mobile Styles für Rechnungsinformationen
+  .customer-invoices-section {
+    margin-top: 20px;
+    
+    h3 {
+      font-size: 1rem;
+      margin-bottom: 12px;
+    }
+    
+    .article-context {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 10px;
+      margin-bottom: 12px;
+      
+      .article-id {
+        font-size: 0.8rem;
+        padding: 3px 6px;
+      }
+      
+      .article-text {
+        font-size: 0.85rem;
+        line-height: 1.3;
+      }
+    }
+    
+    .invoices-list {
+      gap: 10px;
+    }
+    
+    .invoice-item {
+      padding: 10px;
+      
+      .invoice-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+        margin-bottom: 6px;
+        padding-bottom: 6px;
+        
+        .invoice-number {
+          font-size: 0.85rem;
+        }
+        
+        .invoice-date {
+          font-size: 0.8rem;
+          align-self: flex-end;
+        }
+      }
+      
+      .invoice-details {
+        .invoice-article {
+          padding: 6px;
+          
+          .article-price {
+            font-size: 0.9rem;
+            padding: 4px 8px;
+          }
+        }
       }
     }
   }

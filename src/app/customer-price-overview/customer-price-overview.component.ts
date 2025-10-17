@@ -11,9 +11,11 @@ interface CustomerArticlePrice {
   id: number;
   customer_id: string;
   product_id: string;
+  invoice_id: number;
   unit_price_net: number | string;
   unit_price_gross: number | string;
   article_text: string;
+  invoice_date: string;
   created_at: string;
   updated_at: string;
 }
@@ -22,6 +24,11 @@ interface PriceGroup {
   price: number;
   count: number;
   customers: string[];
+  invoice_info: {
+    customer_id: string;
+    invoice_id: number;
+    invoice_date: string;
+  }[];
 }
 
 interface ProductPriceOverview {
@@ -48,6 +55,8 @@ export class CustomerPriceOverviewComponent implements OnInit {
   // Customer Details Modal Properties
   showCustomerModal = false;
   selectedCustomer: any = null;
+  selectedCustomerInvoices: any[] = [];
+  selectedProductContext: { product_id: string, article_text: string } | null = null;
   isLoadingCustomer = false;
   customerError: string | null = null;
 
@@ -142,7 +151,12 @@ export class CustomerPriceOverviewComponent implements OnInit {
       const priceGroupArray: PriceGroup[] = Array.from(priceGroups.entries()).map(([price, priceList]) => ({
         price: price,
         count: priceList.length,
-        customers: priceList.map(p => p.customer_id).sort()
+        customers: priceList.map(p => p.customer_id).sort(),
+        invoice_info: priceList.map(p => ({
+          customer_id: p.customer_id,
+          invoice_id: p.invoice_id,
+          invoice_date: p.invoice_date
+        }))
       })).sort((a, b) => b.count - a.count); // Sortiere nach Anzahl absteigend
 
       return {
@@ -238,6 +252,20 @@ export class CustomerPriceOverviewComponent implements OnInit {
     return `€${numPrice.toFixed(2)}`;
   }
 
+  formatInvoiceDate(dateString: string): string {
+    if (!dateString) return '-';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('de-DE');
+    } catch {
+      return dateString;
+    }
+  }
+
+  getInvoiceArticles(invoiceId: number): any[] {
+    return this.selectedCustomerInvoices.filter(invoice => invoice.invoice_id === invoiceId);
+  }
+
   refreshData(): void {
     this.loadCustomerPrices();
   }
@@ -315,13 +343,51 @@ export class CustomerPriceOverviewComponent implements OnInit {
   closeCustomerModal(): void {
     this.showCustomerModal = false;
     this.selectedCustomer = null;
+    this.selectedCustomerInvoices = [];
+    this.selectedProductContext = null;
     this.customerError = null;
     this.isLoadingCustomer = false;
   }
 
   // Methode zum Navigieren zu einem Kunden in der Customer Orders Komponente
-  navigateToCustomer(customerId: string): void {
-    console.log('👤 [NAVIGATE-CUSTOMER] Zeige Kundendetails für:', customerId);
+  navigateToCustomer(customerId: string, productContext?: { product_id: string, article_text: string }): void {
+    console.log('👤 [NAVIGATE-CUSTOMER] Zeige Kundendetails für:', customerId, 'mit Artikel:', productContext);
+    
+    this.selectedProductContext = productContext || null;
+    
+    // Sammle Rechnungsinformationen nur für den spezifischen Artikel, falls Kontext vorhanden
+    this.selectedCustomerInvoices = [];
+    
+    if (productContext) {
+      // Finde den spezifischen Artikel
+      const productOverview = this.productOverviews.find(overview => overview.product_id === productContext.product_id);
+      if (productOverview) {
+        productOverview.price_groups.forEach(group => {
+          group.invoice_info.forEach(invoice => {
+            if (invoice.customer_id === customerId) {
+              this.selectedCustomerInvoices.push({
+                invoice_id: invoice.invoice_id,
+                invoice_date: invoice.invoice_date,
+                product_id: productOverview.product_id,
+                article_text: productOverview.article_text,
+                price: group.price
+              });
+            }
+          });
+        });
+        
+        // Entferne Duplikate basierend auf invoice_id
+        this.selectedCustomerInvoices = this.selectedCustomerInvoices.filter((invoice, index, self) => 
+          index === self.findIndex(i => i.invoice_id === invoice.invoice_id)
+        );
+        
+        // Sortiere nach Rechnungsdatum absteigend
+        this.selectedCustomerInvoices.sort((a, b) => 
+          new Date(b.invoice_date).getTime() - new Date(a.invoice_date).getTime()
+        );
+      }
+    }
+    
     this.loadCustomerDetails(customerId);
   }
 }

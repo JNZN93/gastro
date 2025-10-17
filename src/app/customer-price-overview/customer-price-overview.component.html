@@ -107,7 +107,7 @@
             <div class="customers-list">
               <span *ngFor="let customer of group.customers; let i = index" 
                     class="customer-id clickable-customer" 
-                    (click)="navigateToCustomer(customer)"
+                    (click)="navigateToCustomer(customer, { product_id: overview.product_id, article_text: overview.article_text })"
                     [title]="'Klicken um zu Kunde ' + customer + ' zu navigieren'">
                 {{ customer }}<span *ngIf="i < group.customers.length - 1">, </span>
               </span>
@@ -207,6 +207,31 @@
               }
             </div>
           </div>
+          
+          @if (selectedCustomerInvoices.length > 0 && selectedProductContext) {
+            <div class="customer-invoices-section">
+              <h3>Rechnungsinformationen für Artikel</h3>
+              <div class="article-context">
+                <span class="article-id">{{ selectedProductContext.product_id }}</span>
+                <span class="article-text">{{ selectedProductContext.article_text }}</span>
+              </div>
+              <div class="invoices-list">
+                @for (invoice of selectedCustomerInvoices; track invoice.invoice_id) {
+                  <div class="invoice-item">
+                    <div class="invoice-header">
+                      <span class="invoice-number">Rechnung #{{ invoice.invoice_id }}</span>
+                      <span class="invoice-date">{{ formatInvoiceDate(invoice.invoice_date) }}</span>
+                    </div>
+                    <div class="invoice-details">
+                      <div class="invoice-article">
+                        <span class="article-price">{{ formatPrice(invoice.price) }}</span>
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
         </div>
       }
     </div>
