@@ -491,7 +491,7 @@ export class OrderOverviewComponent implements OnInit {
 
       // Artikeldaten
       doc.text((index + 1).toString(), col1, currentY + 6); // Positionsnummer
-      doc.text(String(product.quantity), col2, currentY + 6);
+      doc.text(String(product.quantity), col2 + 3, currentY + 6); // Menge näher zu Artikel
       doc.text(splitName, col3, currentY + 6);
       
       doc.text(product.product_article_number, col4, currentY + 6);

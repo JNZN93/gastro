@@ -503,6 +503,32 @@
           }
         }
 
+        .print-btn {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          padding: 6px 8px;
+          background: #38a169;
+          color: white;
+          border: none;
+          border-radius: 6px;
+          font-size: 10px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          white-space: nowrap;
+
+          svg {
+            width: 12px;
+            height: 12px;
+          }
+
+          &:hover {
+            background: #2f855a;
+            transform: translateY(-1px);
+          }
+        }
+
         .delete-btn {
           display: flex;
           align-items: center;
@@ -1177,6 +1203,7 @@
 }
 
 .card-actions .view-btn,
+.card-actions .print-btn,
 .card-actions .import-btn,
 .card-actions .delete-btn {
   width: 100%;
@@ -1213,6 +1240,15 @@
 
   &:hover {
     background: #2563eb;
+  }
+}
+
+.card-actions .print-btn {
+  background: #38a169;
+  color: white;
+
+  &:hover {
+    background: #2f855a;
   }
 }
 
