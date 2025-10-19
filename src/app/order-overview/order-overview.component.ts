@@ -214,95 +214,182 @@ export class OrderOverviewComponent implements OnInit {
   generatePdf(order: Order) {
     const doc = new jsPDF();
 
-    // Titel
-    doc.setFontSize(20);
+    // Titel mit Rahmen
+    doc.setFillColor(240, 240, 240);
+    doc.rect(14, 10, 182, 15, 'F');
+    doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
-    doc.text('Kommissionierungsschein', 14, 20);
+    doc.text('Kommissionierungsschein', 20, 20);
 
-    // Bestellinformationen
-    doc.setFontSize(12);
+    // Bestellinformationen in zwei Spalten
+    doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
 
-    // Bestellnummer und weitere Infos
-    doc.text('Bestellnummer: ' + order.order_id, 14, 40);
+    // Linke Spalte
+    const leftX = 14;
+    const rightX = 100;
+    let yPos = 35;
 
     // Datum und Uhrzeit konvertieren
     const orderDateFormatted = new Date(order.order_date).toLocaleDateString();
     const createdAtFormatted = new Date(order.created_at).toLocaleTimeString();
 
-    doc.text('Datum: ' + orderDateFormatted, 14, 50);
-    doc.text('Erstellt um: ' + createdAtFormatted, 14, 60);
-    doc.text('Kunde: ' + this.getCustomerDisplayName(order), 14, 70);
-    doc.text('E-Mail: ' + order.email, 14, 80);
-    doc.text('Lieferart: ' + (order.fulfillment_type === 'delivery' ? 'Lieferung' : 'Abholung'), 14, 100);
-
-    // Zusätzliche Bestellinformationen
-    // Firma wird nicht mehr ausgegeben; stattdessen nur Kunde (oben) und die Adresse
-    doc.text('Lieferadresse: ' + (order.shipping_address ? order.shipping_address : 'Keine Angabe'), 14, 110);
-    doc.text('Liefer-/ Abholdatum: ' + this.formatDate(order.delivery_date), 14, 120);
-
-    // Trennlinie
-    doc.line(14, 135, 200, 135);
-
-    // Artikelüberschrift
-    doc.setFontSize(14);
+    // Linke Spalte
     doc.setFont('helvetica', 'bold');
-    doc.text('Menge', 14, 145);
-    doc.text('Artikel', 40, 145);
-    doc.text('Artikelnr.', 120, 145);
-    doc.text('Preis', 160, 145);
-
-    // Artikel und Mengen
-    doc.setFontSize(12);
+    doc.text('Bestellnummer: ' + order.order_id.toString(), leftX, yPos);
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text('Datum: ' + orderDateFormatted, leftX, yPos + 8);
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text('Erstellt um: ' + createdAtFormatted, leftX, yPos + 16);
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text('Kunde: ', leftX, yPos + 24);
     doc.setFont('helvetica', 'normal');
+    doc.text(this.getCustomerDisplayName(order), leftX + 18, yPos + 24);
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text('E-Mail: ', leftX, yPos + 32);
+    doc.setFont('helvetica', 'normal');
+    doc.text(order.email, leftX + 18, yPos + 32);
 
-    let yPosition = 155;
-    const lineHeight = 10;
-    const pageHeight = 297; // A4 in mm
-    const bottomMargin = 20;
+    // Rechte Spalte
+    doc.setFont('helvetica', 'bold');
+    doc.text('Lieferart: ', rightX, yPos);
+    doc.setFont('helvetica', 'normal');
+    doc.text(order.fulfillment_type === 'delivery' ? 'Lieferung' : 'Abholung', rightX + 20, yPos);
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text('Liefer-/Abholdatum: ' + this.formatDate(order.delivery_date), rightX, yPos + 8);
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text('Lieferadresse: ', rightX, yPos + 16);
+    doc.setFont('helvetica', 'normal');
+    const addressText = order.shipping_address || 'Keine Angabe';
+    // Adresse umbrechen falls zu lang
+    const splitAddress = doc.splitTextToSize(addressText, 70);
+    doc.text(splitAddress, rightX + 25, yPos + 16);
+
+    // Trennlinie nach Bestellinformationen
+    doc.line(14, yPos + 45, 196, yPos + 45);
+
+    // Artikeltabelle mit Rahmen
+    const tableStartY = yPos + 55;
+    const tableWidth = 182;
+    const headerHeight = 8;
+    const rowHeight = 7;
+    
+    // Tabellenüberschrift mit Hintergrund
+    doc.setFillColor(220, 220, 220);
+    doc.rect(14, tableStartY, tableWidth, headerHeight, 'F');
+    
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    
+    // Spaltenbreiten
+    const col1 = 14;   // Menge
+    const col2 = 25;   // Artikel (beginnt bei x=25)
+    const col3 = 125;  // Artikelnr. (beginnt bei x=125)
+    const col4 = 155;  // Preis (beginnt bei x=155)
+    const col5 = 175;  // Gesamt (beginnt bei x=175)
+    
+    // Überschriften
+    doc.text('Menge', col1, tableStartY + 5);
+    doc.text('Artikel', col2, tableStartY + 5);
+    doc.text('Artikelnr.', col3, tableStartY + 5);
+    doc.text('Preis', col4, tableStartY + 5);
+    doc.text('Gesamt', col5, tableStartY + 5);
+
+    // Trennlinien für Überschrift
+    doc.line(col2, tableStartY, col2, tableStartY + headerHeight);
+    doc.line(col3, tableStartY, col3, tableStartY + headerHeight);
+    doc.line(col4, tableStartY, col4, tableStartY + headerHeight);
+    doc.line(col5, tableStartY, col5, tableStartY + headerHeight);
+
+    // Artikelzeilen
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    
+    let currentY = tableStartY + headerHeight;
+    const pageHeight = 297;
+    const bottomMargin = 30;
 
     order.items.forEach((product, index) => {
-      // Wenn yPosition zu weit unten ist, neue Seite
-      if (yPosition + lineHeight > pageHeight - bottomMargin) {
+      // Seitenumbruch prüfen
+      if (currentY + rowHeight > pageHeight - bottomMargin) {
         doc.addPage();
-        doc.text('Bestellnummer: ' + order.order_id, 14, 40);
-        doc.text('Kunde: ' + this.getCustomerDisplayName(order), 14, 50);
-        yPosition = 60;
-
-        // Tabellenüberschrift auf neuer Seite wiederholen
-        doc.setFontSize(14);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Menge', 14, yPosition);
-        doc.text('Artikel', 40, yPosition);
-        doc.text('Artikelnr.', 120, yPosition);
-        doc.text('Preis', 160, yPosition);
-        yPosition += 10;
+        currentY = 20;
         
-        doc.setFontSize(12);
+        // Tabellenüberschrift auf neuer Seite wiederholen
+        doc.setFillColor(220, 220, 220);
+        doc.rect(14, currentY, tableWidth, headerHeight, 'F');
+        
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Menge', col1, currentY + 5);
+        doc.text('Artikel', col2, currentY + 5);
+        doc.text('Artikelnr.', col3, currentY + 5);
+        doc.text('Preis', col4, currentY + 5);
+        doc.text('Gesamt', col5, currentY + 5);
+        
+        // Trennlinien
+        doc.line(col2, currentY, col2, currentY + headerHeight);
+        doc.line(col3, currentY, col3, currentY + headerHeight);
+        doc.line(col4, currentY, col4, currentY + headerHeight);
+        doc.line(col5, currentY, col5, currentY + headerHeight);
+        
+        currentY += headerHeight;
+        
+        doc.setFontSize(7);
         doc.setFont('helvetica', 'normal');
       }
 
+      // Zeilenrahmen
+      doc.rect(14, currentY, tableWidth, rowHeight);
+      
+      // Trennlinien zwischen Spalten
+      doc.line(col2, currentY, col2, currentY + rowHeight);
+      doc.line(col3, currentY, col3, currentY + rowHeight);
+      doc.line(col4, currentY, col4, currentY + rowHeight);
+      doc.line(col5, currentY, col5, currentY + rowHeight);
+
       // Artikeldaten
-      doc.text(String(product.quantity), 14, yPosition);
-      doc.text(product.product_name, 40, yPosition);
-      doc.text(product.product_article_number, 120, yPosition);
+      doc.text(String(product.quantity), col1 + 2, currentY + 5);
+      
+      // Artikelname - kürzen falls zu lang, aber ohne Zeilenumbruch
+      let productName = product.product_name;
+      if (productName.length > 65) {
+        productName = productName.substring(0, 62) + '...';
+      }
+      doc.text(productName, col2 + 2, currentY + 5);
+      
+      doc.text(product.product_article_number, col3 + 2, currentY + 5);
       
       // Preis anzeigen (kundenspezifisch oder normal)
       const displayPrice = product.different_price || product.price;
       const priceText = parseFloat(displayPrice).toFixed(2) + ' €';
-      doc.text(priceText, 160, yPosition);
+      doc.text(priceText, col4 + 2, currentY + 5);
+      
+      // Gesamtpreis für diesen Artikel
+      const itemTotal = parseFloat(displayPrice) * product.quantity;
+      doc.text(itemTotal.toFixed(2) + ' €', col5 + 2, currentY + 5);
 
-      yPosition += lineHeight;
+      currentY += rowHeight;
     });
 
-    //test
-
-    // Gesamtbetrag
+    // Gesamtbetrag am Ende
     if (order.total_price) {
-      doc.setFontSize(14);
+      currentY += 5;
+      
+      // Rahmen für Gesamtbetrag
+      doc.setFillColor(245, 245, 245);
+      doc.rect(14, currentY, tableWidth, 10, 'F');
+      
+      doc.setFontSize(10);
       doc.setFont('helvetica', 'bold');
       const totalPrice = parseFloat(order.total_price);
-      doc.text('Gesamtpreis: ' + totalPrice.toFixed(2) + ' €', 14, yPosition + 10);
+      doc.text('Gesamtpreis: ' + totalPrice.toFixed(2) + ' €', col5 + 2, currentY + 6);
     }
 
     // PDF-Dokument öffnen
