@@ -3099,8 +3099,22 @@ filteredArtikelData() {
         }, 0),
         created_at: new Date().toISOString()
       },
-      orderItems: items
+      orderItems: items.map(item => ({
+        ...item,
+        different_price: item.different_price, // Stelle sicher, dass different_price explizit gesetzt wird
+        sale_price: item.sale_price,
+        quantity: item.quantity,
+        description: item.description || item.article_text
+      }))
     };
+
+    console.log('🔍 [SAVE-ORDER] Sende Bestellung mit different_price:', completeOrder.orderItems.map(item => ({
+      article_number: item.article_number,
+      different_price: item.different_price,
+      sale_price: item.sale_price
+    })));
+
+    console.log('🔍 [SAVE-ORDER] Vollständige Bestellung:', JSON.stringify(completeOrder, null, 2));
 
     const token = localStorage.getItem('token');
 
