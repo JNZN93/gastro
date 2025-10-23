@@ -2631,6 +2631,115 @@ filteredArtikelData() {
     }
   }
 
+  // Arrow key navigation for quantity input fields
+  onQuantityKeyDown(event: KeyboardEvent, item: any, itemIndex: number): void {
+    // Prevent default arrow key behavior (increment/decrement)
+    if (event.key === 'ArrowUp' || event.key === 'ArrowDown' || event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+      event.preventDefault();
+      
+      if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+        // Vertical navigation: switch between quantity inputs in different rows
+        this.navigateVertically(event.key === 'ArrowUp' ? -1 : 1, itemIndex, 'quantity');
+      } else if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+        // Horizontal navigation: switch between quantity and price fields in same row
+        this.navigateHorizontally(event.key === 'ArrowLeft' ? -1 : 1, itemIndex, 'quantity');
+      }
+    }
+  }
+
+  // Arrow key navigation for price input fields
+  onPriceKeyDown(event: KeyboardEvent, item: any, itemIndex: number): void {
+    // Prevent default arrow key behavior (increment/decrement)
+    if (event.key === 'ArrowUp' || event.key === 'ArrowDown' || event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+      event.preventDefault();
+      
+      if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+        // Vertical navigation: switch between price inputs in different rows
+        this.navigateVertically(event.key === 'ArrowUp' ? -1 : 1, itemIndex, 'price');
+      } else if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+        // Horizontal navigation: switch between quantity and price fields in same row
+        this.navigateHorizontally(event.key === 'ArrowLeft' ? -1 : 1, itemIndex, 'price');
+      }
+    }
+  }
+
+  // Navigate vertically between input fields of the same type
+  private navigateVertically(direction: number, currentIndex: number, fieldType: 'quantity' | 'price'): void {
+    const totalItems = this.orderItems.length;
+    let nextIndex = currentIndex + direction;
+    
+    // Wrap around if we go beyond bounds
+    if (nextIndex < 0) {
+      nextIndex = totalItems - 1;
+    } else if (nextIndex >= totalItems) {
+      nextIndex = 0;
+    }
+    
+    // Find the target input field
+    const targetInput = fieldType === 'quantity' 
+      ? this.findQuantityInputForItem(nextIndex)
+      : this.findPriceInputForItem(nextIndex);
+    
+    if (targetInput) {
+      targetInput.focus();
+      targetInput.select();
+    }
+  }
+
+  // Navigate horizontally between quantity and price fields in the same row
+  private navigateHorizontally(direction: number, currentIndex: number, currentFieldType: 'quantity' | 'price'): void {
+    let targetInput: HTMLInputElement | null = null;
+    
+    if (currentFieldType === 'quantity') {
+      // From quantity to price (right direction) or stay in quantity (left direction)
+      if (direction > 0) {
+        targetInput = this.findPriceInputForItem(currentIndex);
+      } else {
+        // Left from quantity - stay in quantity field (could be extended to go to previous row's price)
+        targetInput = this.findQuantityInputForItem(currentIndex);
+      }
+    } else if (currentFieldType === 'price') {
+      // From price to quantity (left direction) or stay in price (right direction)
+      if (direction < 0) {
+        targetInput = this.findQuantityInputForItem(currentIndex);
+      } else {
+        // Right from price - stay in price field (could be extended to go to next row's quantity)
+        targetInput = this.findPriceInputForItem(currentIndex);
+      }
+    }
+    
+    if (targetInput) {
+      targetInput.focus();
+      targetInput.select();
+    }
+  }
+
+  // Helper method to find quantity input for a specific item
+  private findQuantityInputForItem(itemIndex: number): HTMLInputElement | null {
+    // Try desktop view first
+    let quantityInput = document.querySelector(`tr.order-row:nth-child(${itemIndex + 1}) .quantity-edit`) as HTMLInputElement;
+    
+    // If not found in desktop view, try mobile view
+    if (!quantityInput) {
+      quantityInput = document.querySelector(`.order-card:nth-child(${itemIndex + 1}) .quantity-edit`) as HTMLInputElement;
+    }
+    
+    return quantityInput;
+  }
+
+  // Helper method to find price input for a specific item
+  private findPriceInputForItem(itemIndex: number): HTMLInputElement | null {
+    // Try desktop view first
+    let priceInput = document.querySelector(`tr.order-row:nth-child(${itemIndex + 1}) .price-edit`) as HTMLInputElement;
+    
+    // If not found in desktop view, try mobile view
+    if (!priceInput) {
+      priceInput = document.querySelector(`.order-card:nth-child(${itemIndex + 1}) .price-edit`) as HTMLInputElement;
+    }
+    
+    return priceInput;
+  }
+
   // Neue Methode für Blur-Event - vollständige Validierung
   validateAndUpdatePrice(item: any): void {
     console.log('💰 [VALIDATE-PRICE] Validiere Preis für Artikel:', item.article_text);

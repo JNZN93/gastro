@@ -195,7 +195,8 @@
                            class="quantity-edit" 
                            (input)="onQuantityInput(item)"
                            (change)="updateItemTotal(item)"
-                           (blur)="validateAndUpdateQuantity(item)">
+                           (blur)="validateAndUpdateQuantity(item)"
+                           (keydown)="onQuantityKeyDown($event, item, i)">
                   </td>
                   <td class="cost-price" [title]="'EK-Preis: €' + (item.cost_price || 0).toFixed(2)">€{{ (item.cost_price || 0).toFixed(2) }}</td>
                   <td class="customer-price">
@@ -208,6 +209,7 @@
                              (input)="onPriceInput(item)"
                              (change)="updateItemTotal(item)"
                              (blur)="validateAndUpdatePrice(item)"
+                             (keydown)="onPriceKeyDown($event, item, i)"
                              [placeholder]="item.offer_price"
                              [title]="'Angebotspreis: €' + item.offer_price + ' | Standard-Preis: €' + item.sale_price">
                     } @else {
@@ -219,6 +221,7 @@
                              (input)="onPriceInput(item)"
                              (change)="updateItemTotal(item)"
                              (blur)="validateAndUpdatePrice(item)"
+                             (keydown)="onPriceKeyDown($event, item, i)"
                              [placeholder]="item.sale_price"
                              [title]="'Standard-Preis: €' + item.sale_price">
                     }
@@ -326,7 +329,8 @@
                                class="quantity-edit" 
                                (input)="onQuantityInput(item)"
                                (change)="updateItemTotal(item)"
-                               (blur)="validateAndUpdateQuantity(item)">
+                               (blur)="validateAndUpdateQuantity(item)"
+                               (keydown)="onQuantityKeyDown($event, item, i)">
                       </td>
                       <td class="customer-price">€{{ (getItemPrice(item) * item.quantity).toFixed(2) }}</td>
                       <td class="transfer-actions">
@@ -408,7 +412,8 @@
                                class="quantity-edit" 
                                (input)="onQuantityInput(item)"
                                (change)="updateItemTotal(item)"
-                               (blur)="validateAndUpdateQuantity(item)">
+                               (blur)="validateAndUpdateQuantity(item)"
+                               (keydown)="onQuantityKeyDown($event, item, i)">
                       </td>
                       <td class="customer-price">€{{ (getItemPrice(item) * item.quantity).toFixed(2) }}</td>
                       <td class="remove-column">
@@ -826,6 +831,7 @@
                                (input)="onPriceInput(item)"
                                (change)="updateItemTotal(item)"
                                (blur)="validateAndUpdatePrice(item)"
+                               (keydown)="onPriceKeyDown($event, item, i)"
                                [placeholder]="item.sale_price"
                                [title]="'Standard-Preis: €' + item.sale_price">
                       </div>
@@ -848,7 +854,8 @@
                                class="quantity-edit" 
                                (input)="onQuantityInput(item)"
                                (change)="updateItemTotal(item)"
-                               (blur)="validateAndUpdateQuantity(item)">
+                               (blur)="validateAndUpdateQuantity(item)"
+                               (keydown)="onQuantityKeyDown($event, item, i)">
                       </div>
                       <div class="total-section">
                         <span class="total-label">Gesamt Netto:</span>
