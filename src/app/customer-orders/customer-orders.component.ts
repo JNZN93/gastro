@@ -13,7 +13,6 @@ import { MyDialogComponent } from '../my-dialog/my-dialog.component';
 import { RecentImagesModalComponent } from '../recent-images-modal/recent-images-modal.component';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
 import { IndexedDBService } from '../indexeddb.service';
 import { OffersService, OfferWithProducts, OfferProduct } from '../offers.service';
 import { ForceActiveService } from '../force-active.service';
@@ -5478,6 +5477,189 @@ filteredArtikelData() {
     } catch (error) {
       console.error('Fehler beim Formatieren des Datums:', error);
       return '';
+    }
+  }
+
+  // PDF-Generierung für Aufträge
+  generateOrderPDF(): void {
+    if (!this.globalService.selectedCustomerForOrders) {
+      alert('Bitte wählen Sie zuerst einen Kunden aus.');
+      return;
+    }
+
+    if (this.orderItems.length === 0) {
+      alert('Der Auftrag ist leer. Bitte fügen Sie Artikel hinzu.');
+      return;
+    }
+
+    try {
+      const doc = new jsPDF();
+      
+      // Header
+      doc.setFontSize(20);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Auftrag', 20, 30);
+      
+      // Kundeninformationen
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+      const customer = this.globalService.selectedCustomerForOrders;
+      const customerName = this.differentCompanyName || customer.last_name_company || customer.customer_number;
+      
+      doc.text('Kunde:', 20, 50);
+      doc.setFont('helvetica', 'bold');
+      doc.text(customerName, 50, 50);
+      
+      doc.setFont('helvetica', 'normal');
+      if (customer.name_addition) {
+        doc.text(customer.name_addition, 50, 58);
+      }
+      
+      // Adresse
+      let yPos = 66;
+      if (customer.street) {
+        doc.text(customer.street, 20, yPos);
+        yPos += 8;
+      }
+      if (customer.postal_code || customer.city) {
+        const addressLine = `${customer.postal_code || ''} ${customer.city || ''}`.trim();
+        doc.text(addressLine, 20, yPos);
+        yPos += 8;
+      }
+      
+      // Datumsfelder
+      yPos += 10;
+      if (this.orderDate) {
+        doc.text(`Bestelldatum: ${this.orderDate}`, 20, yPos);
+        yPos += 8;
+      }
+      if (this.deliveryDate) {
+        doc.text(`Lieferdatum: ${this.deliveryDate}`, 20, yPos);
+        yPos += 8;
+      }
+      
+      // Auftragspositionen
+      yPos += 15;
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Auftragspositionen:', 20, yPos);
+      
+      // Tabellenkopf
+      yPos += 15;
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      
+      // Spaltenbreiten
+      const colWidths = [15, 60, 25, 20, 25, 25, 25, 30, 30];
+      const colPositions = [20, 35, 95, 120, 140, 165, 190, 215, 245];
+      
+      // Header-Zeile
+      const headers = ['Pos.', 'Artikel', 'Art.-Nr.', 'Menge', 'EK-Preis', 'Preis Netto', 'Preis Brutto', 'Gesamt Netto', 'Gesamt Brutto'];
+      headers.forEach((header, index) => {
+        doc.text(header, colPositions[index], yPos);
+      });
+      
+      // Linie unter Header
+      doc.setLineWidth(0.5);
+      doc.line(20, yPos + 3, 275, yPos + 3);
+      
+      // Tabellendaten
+      yPos += 8;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      
+      this.orderItems.forEach((item, index) => {
+        // Prüfe ob neue Seite benötigt wird
+        if (yPos > 250) {
+          doc.addPage();
+          yPos = 30;
+        }
+        
+        const rowData = [
+          (index + 1).toString(),
+          item.article_text || 'Unbekannter Artikel',
+          item.article_number || '',
+          item.quantity?.toString() || '0',
+          `€${(item.cost_price || 0).toFixed(2)}`,
+          `€${this.getItemPrice(item).toFixed(2)}`,
+          `€${this.getItemGrossPrice(item).toFixed(2)}`,
+          `€${(this.getItemPrice(item) * item.quantity).toFixed(2)}`,
+          `€${(this.getItemGrossPrice(item) * item.quantity).toFixed(2)}`
+        ];
+        
+        rowData.forEach((data, colIndex) => {
+          // Text kürzen falls zu lang
+          let displayText = data;
+          if (colIndex === 1 && data.length > 25) { // Artikel-Name
+            displayText = data.substring(0, 22) + '...';
+          }
+          
+          doc.text(displayText, colPositions[colIndex], yPos);
+        });
+        
+        yPos += 6;
+      });
+      
+      // Gesamtsummen
+      yPos += 10;
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      
+      doc.text(`Gesamtpreis (Netto): €${this.getOrderTotal().toFixed(2)}`, 20, yPos);
+      doc.text(`Gesamtpreis (Brutto): €${this.getOrderTotalGross().toFixed(2)}`, 20, yPos + 10);
+      
+      // Footer
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Erstellt am: ${new Date().toLocaleDateString('de-DE')} um ${new Date().toLocaleTimeString('de-DE')}`, 20, doc.internal.pageSize.height - 20);
+      
+      // PDF im neuen Tab öffnen statt herunterladen
+      const pdfDataUri = doc.output('datauristring');
+      const newWindow = window.open();
+      if (newWindow) {
+        newWindow.document.write(`
+          <html>
+            <head>
+              <title>Auftrag - ${customerName}</title>
+              <style>
+                body { margin: 0; padding: 0; }
+                iframe { width: 100%; height: 100vh; border: none; }
+                .print-button {
+                  position: fixed;
+                  top: 10px;
+                  right: 10px;
+                  background: #007bff;
+                  color: white;
+                  border: none;
+                  padding: 10px 20px;
+                  border-radius: 5px;
+                  cursor: pointer;
+                  font-size: 14px;
+                  z-index: 1000;
+                }
+                .print-button:hover {
+                  background: #0056b3;
+                }
+              </style>
+            </head>
+            <body>
+              <button class="print-button" onclick="window.print()">🖨️ Drucken</button>
+              <iframe src="${pdfDataUri}" type="application/pdf"></iframe>
+            </body>
+          </html>
+        `);
+        newWindow.document.close();
+      } else {
+        // Fallback: Download falls Popup blockiert wird
+        const fileName = `Auftrag_${customerName.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+        doc.save(fileName);
+      }
+      
+      console.log('✅ PDF erfolgreich im neuen Tab geöffnet');
+      
+    } catch (error) {
+      console.error('❌ Fehler bei der PDF-Generierung:', error);
+      alert('Fehler bei der PDF-Generierung. Bitte versuchen Sie es erneut.');
     }
   }
 }

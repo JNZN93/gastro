@@ -1474,6 +1474,17 @@
     }
   }
 
+  .pdf-order-btn {
+    background: #dc2626;
+    color: white;
+    
+    &:hover {
+      background: #b91c1c;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+    }
+  }
+
   .save-order-btn {
     background: #10b981;
     color: white;
@@ -2328,6 +2339,7 @@
     min-width: 160px;
   }
   
+  .pdf-order-btn,
   .save-order-open-btn,
   .save-order-btn,
   .clear-order-btn {
@@ -6287,6 +6299,15 @@
 
     &:hover {
       background: #d97706;
+    }
+  }
+
+  .pdf-order-btn {
+    background: #dc2626;
+    color: white;
+
+    &:hover {
+      background: #b91c1c;
     }
   }
 
