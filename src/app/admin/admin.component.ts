@@ -523,7 +523,7 @@ formatDate(dateString: string): string {
   updateOrderStatus(order: any, status: string) {
     order.status = status;
 
-    console.log(`🔄 [ADMIN-UPDATE] Aktualisiere Status für Bestellung ${order.order_id} auf: ${status}`);
+    console.log(`🔄 [ADMIN-UPDATE] Aktualisiere Status für Bestellung ${order.order_id} auf: ${status} `);
 
     // Verwende den neuen Status-Only Endpoint
     this.orderService
