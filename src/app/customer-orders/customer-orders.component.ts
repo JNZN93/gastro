@@ -2633,38 +2633,45 @@ filteredArtikelData() {
   // Arrow key navigation for quantity input fields
   onQuantityKeyDown(event: KeyboardEvent, item: any, itemIndex: number): void {
     // Prevent default arrow key behavior (increment/decrement)
-    if (event.key === 'ArrowUp' || event.key === 'ArrowDown' || event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+    if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
       event.preventDefault();
       
-      if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
-        // Vertical navigation: switch between quantity inputs in different rows
-        this.navigateVertically(event.key === 'ArrowUp' ? -1 : 1, itemIndex, 'quantity');
-      } else if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
-        // Horizontal navigation: switch between quantity and price fields in same row
-        this.navigateHorizontally(event.key === 'ArrowLeft' ? -1 : 1, itemIndex, 'quantity');
-      }
+      // Vertical navigation: switch between quantity inputs in different rows
+      this.navigateVertically(event.key === 'ArrowUp' ? -1 : 1, itemIndex, 'quantity');
     }
   }
 
   // Arrow key navigation for price input fields
   onPriceKeyDown(event: KeyboardEvent, item: any, itemIndex: number): void {
     // Prevent default arrow key behavior (increment/decrement)
-    if (event.key === 'ArrowUp' || event.key === 'ArrowDown' || event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+    if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
       event.preventDefault();
       
-      if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
-        // Vertical navigation: switch between price inputs in different rows
-        this.navigateVertically(event.key === 'ArrowUp' ? -1 : 1, itemIndex, 'price');
-      } else if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
-        // Horizontal navigation: switch between quantity and price fields in same row
-        this.navigateHorizontally(event.key === 'ArrowLeft' ? -1 : 1, itemIndex, 'price');
-      }
+      // Vertical navigation: switch between price inputs in different rows
+      this.navigateVertically(event.key === 'ArrowUp' ? -1 : 1, itemIndex, 'price');
     }
   }
 
   // Navigate vertically between input fields of the same type
   private navigateVertically(direction: number, currentIndex: number, fieldType: 'quantity' | 'price'): void {
-    const totalItems = this.orderItems.length;
+    // Determine which table to use based on split mode and active table
+    let targetItems: any[];
+    let tableSelector: string;
+    
+    if (this.isSplitMode) {
+      if (this.activeTable === 2) {
+        targetItems = this.orderItems2;
+        tableSelector = '.split-table-wrapper:nth-child(2)'; // Second table (right side)
+      } else {
+        targetItems = this.orderItems;
+        tableSelector = '.split-table-wrapper:nth-child(1)'; // First table (left side)
+      }
+    } else {
+      targetItems = this.orderItems;
+      tableSelector = '.order-table-container'; // Normal mode
+    }
+    
+    const totalItems = targetItems.length;
     let nextIndex = currentIndex + direction;
     
     // Wrap around if we go beyond bounds
@@ -2674,10 +2681,10 @@ filteredArtikelData() {
       nextIndex = 0;
     }
     
-    // Find the target input field
+    // Find the target input field within the correct table
     const targetInput = fieldType === 'quantity' 
-      ? this.findQuantityInputForItem(nextIndex)
-      : this.findPriceInputForItem(nextIndex);
+      ? this.findQuantityInputForItemInTable(nextIndex, tableSelector)
+      : this.findPriceInputForItemInTable(nextIndex, tableSelector);
     
     if (targetInput) {
       targetInput.focus();
@@ -2685,35 +2692,26 @@ filteredArtikelData() {
     }
   }
 
-  // Navigate horizontally between quantity and price fields in the same row
-  private navigateHorizontally(direction: number, currentIndex: number, currentFieldType: 'quantity' | 'price'): void {
-    let targetInput: HTMLInputElement | null = null;
-    
-    if (currentFieldType === 'quantity') {
-      // From quantity to price (right direction) or stay in quantity (left direction)
-      if (direction > 0) {
-        targetInput = this.findPriceInputForItem(currentIndex);
-      } else {
-        // Left from quantity - stay in quantity field (could be extended to go to previous row's price)
-        targetInput = this.findQuantityInputForItem(currentIndex);
-      }
-    } else if (currentFieldType === 'price') {
-      // From price to quantity (left direction) or stay in price (right direction)
-      if (direction < 0) {
-        targetInput = this.findQuantityInputForItem(currentIndex);
-      } else {
-        // Right from price - stay in price field (could be extended to go to next row's quantity)
-        targetInput = this.findPriceInputForItem(currentIndex);
-      }
+  // Helper method to find quantity input for a specific item within a specific table
+  private findQuantityInputForItemInTable(itemIndex: number, tableSelector: string): HTMLInputElement | null {
+    // Search within the specified table
+    const tableElement = document.querySelector(tableSelector);
+    if (!tableElement) {
+      return null;
     }
     
-    if (targetInput) {
-      targetInput.focus();
-      targetInput.select();
+    // Try desktop view first
+    let quantityInput = tableElement.querySelector(`tr.order-row:nth-child(${itemIndex + 1}) .quantity-edit`) as HTMLInputElement;
+    
+    // If not found in desktop view, try mobile view
+    if (!quantityInput) {
+      quantityInput = tableElement.querySelector(`.order-card:nth-child(${itemIndex + 1}) .quantity-edit`) as HTMLInputElement;
     }
+    
+    return quantityInput;
   }
 
-  // Helper method to find quantity input for a specific item
+  // Helper method to find quantity input for a specific item (legacy method for backward compatibility)
   private findQuantityInputForItem(itemIndex: number): HTMLInputElement | null {
     // Try desktop view first
     let quantityInput = document.querySelector(`tr.order-row:nth-child(${itemIndex + 1}) .quantity-edit`) as HTMLInputElement;
@@ -2726,7 +2724,26 @@ filteredArtikelData() {
     return quantityInput;
   }
 
-  // Helper method to find price input for a specific item
+  // Helper method to find price input for a specific item within a specific table
+  private findPriceInputForItemInTable(itemIndex: number, tableSelector: string): HTMLInputElement | null {
+    // Search within the specified table
+    const tableElement = document.querySelector(tableSelector);
+    if (!tableElement) {
+      return null;
+    }
+    
+    // Try desktop view first
+    let priceInput = tableElement.querySelector(`tr.order-row:nth-child(${itemIndex + 1}) .price-edit`) as HTMLInputElement;
+    
+    // If not found in desktop view, try mobile view
+    if (!priceInput) {
+      priceInput = tableElement.querySelector(`.order-card:nth-child(${itemIndex + 1}) .price-edit`) as HTMLInputElement;
+    }
+    
+    return priceInput;
+  }
+
+  // Helper method to find price input for a specific item (legacy method for backward compatibility)
   private findPriceInputForItem(itemIndex: number): HTMLInputElement | null {
     // Try desktop view first
     let priceInput = document.querySelector(`tr.order-row:nth-child(${itemIndex + 1}) .price-edit`) as HTMLInputElement;
