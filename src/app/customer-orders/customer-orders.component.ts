@@ -57,6 +57,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   isVisible: boolean = true;
   isScanning = false;
   isAnalyzingImages = false;
+  isCostPriceBlurred: boolean = true; // EK-Preis Blur-Effekt aktiviert (Standard)
   activeOfferFirst: OfferWithProducts | null = null;
   
   // Neue Properties für Dropdown-Navigation
@@ -5692,5 +5693,11 @@ filteredArtikelData() {
       console.error('❌ Fehler bei der PDF-Generierung:', error);
       alert('Fehler bei der PDF-Generierung. Bitte versuchen Sie es erneut.');
     }
+  }
+
+  // Toggle für EK-Preis Blur-Effekt
+  toggleCostPriceBlur(): void {
+    this.isCostPriceBlurred = !this.isCostPriceBlurred;
+    console.log(`🔍 [EK-PREIS] Blur-Effekt ${this.isCostPriceBlurred ? 'aktiviert' : 'deaktiviert'}`);
   }
 }

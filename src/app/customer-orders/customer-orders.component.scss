@@ -546,11 +546,22 @@
       font-weight: 600;
       margin-right: 8px;
       filter: blur(3px);
-      transition: filter 0.3s ease;
+      transition: filter 0.3s ease, color 0.3s ease;
       cursor: help;
       
       &:hover {
         filter: blur(0);
+      }
+
+      // Klasse für deaktivierten Blur-Effekt
+      &.no-blur {
+        filter: blur(0);
+        color: #6c757d; // Hellgrau
+        cursor: default;
+        
+        &:hover {
+          filter: blur(0); // Bleibt klar auch beim Hover
+        }
       }
     }
 
@@ -1324,11 +1335,46 @@
     font-weight: 500;
     font-size: 11px;
     filter: blur(3px);
-    transition: filter 0.3s ease;
+    transition: filter 0.3s ease, color 0.3s ease;
     cursor: help;
     
     &:hover {
       filter: blur(0);
+    }
+
+    // Klasse für deaktivierten Blur-Effekt
+    &.no-blur {
+      filter: blur(0);
+      color: #6c757d; // Hellgrau
+      cursor: default;
+      
+      &:hover {
+        filter: blur(0); // Bleibt klar auch beim Hover
+      }
+    }
+  }
+
+  // Toggle-Button für EK-Preis Blur-Effekt
+  .cost-price-toggle {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 11px;
+    color: #495057;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-left: 8px;
+    
+    &:hover {
+      background: #e9ecef;
+      border-color: #adb5bd;
+    }
+    
+    &.active {
+      background: #dc3545;
+      color: white;
+      border-color: #dc3545;
     }
   }
 
