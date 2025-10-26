@@ -1160,6 +1160,7 @@
               }
               <th>Artikel</th>
               <th>Art.-Nr.</th>
+              <th>EK-Preis (€)</th>
               <th>Kundenpreis (€)</th>
               <th>Rechnungs-ID</th>
               <th>Rechnungsdatum</th>
@@ -1182,6 +1183,7 @@
               }
               <td class="article-name">{{ sanitizeText(customerPrice.article_text || customerPrice.product_name) || 'Unbekannter Artikel' }}</td>
               <td class="article-number">{{ customerPrice.article_number || customerPrice.product_id }}</td>
+              <td class="cost-price" [class.no-blur]="true" [title]="'EK-Preis: €' + (customerPrice.cost_price || 0).toFixed(2)" style="color: #6b7280; font-size: 0.9rem;">€{{ (customerPrice.cost_price || 0).toFixed(2) }}</td>
               <td class="customer-price">
                 @if (isEditingArticlePrices) {
                   <div style="display: flex; align-items: center; gap: 8px;">
