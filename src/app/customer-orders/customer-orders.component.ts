@@ -3647,9 +3647,20 @@ filteredArtikelData() {
     this.isEditingArticlePrices = !this.isEditingArticlePrices;
     console.log('🔧 [ARTICLE-PRICES-MODAL] Bearbeitungsmodus:', this.isEditingArticlePrices ? 'aktiviert' : 'deaktiviert');
     
-    // Wenn Bearbeitung beendet wird, reset vorübergehende bearbeitete Preise
-    if (!this.isEditingArticlePrices) {
+    if (this.isEditingArticlePrices) {
+      // Initialisiere editedPrice für alle Artikel beim Aktivieren des Bearbeitungsmodus
+      this.filteredArticlePrices.forEach(articlePrice => {
+        if (articlePrice.editedPrice === undefined) {
+          articlePrice.editedPrice = articlePrice.unit_price_net;
+        }
+      });
+    } else {
+      // Wenn Bearbeitung beendet wird, reset vorübergehende bearbeitete Preise
       this.filterArticlePrices();
+      // Setze editedPrice zurück
+      this.filteredArticlePrices.forEach(articlePrice => {
+        articlePrice.editedPrice = undefined;
+      });
     }
   }
 

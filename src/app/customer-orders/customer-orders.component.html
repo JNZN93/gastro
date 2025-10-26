@@ -1187,7 +1187,6 @@
                   <div style="display: flex; align-items: center; gap: 8px;">
                     <input type="number" 
                            [(ngModel)]="customerPrice.editedPrice" 
-                           [ngModel]="customerPrice.editedPrice || customerPrice.unit_price_net"
                            step="0.01" 
                            class="price-edit-input" 
                            style="width: 80px; padding: 4px; border: 1px solid #ddd; border-radius: 4px;"
@@ -1257,7 +1256,6 @@
                 <div style="display: flex; gap: 8px; width: 100%;">
                   <input type="number" 
                          [(ngModel)]="customerPrice.editedPrice" 
-                         [ngModel]="customerPrice.editedPrice || customerPrice.unit_price_net"
                          step="0.01" 
                          style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;"
                          placeholder="{{ customerPrice.unit_price_net }}">
