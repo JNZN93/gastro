@@ -100,17 +100,25 @@
 
         <div class="price-groups">
           <div *ngFor="let group of overview.price_groups" class="price-group">
-            <div class="price-info">
-              <span class="price-value">{{ formatPrice(group.price) }}</span>
-              <span class="price-count">{{ group.count }}x</span>
+            <div class="price-info-header" (click)="toggleArticleExpansion(overview.article_text + '-' + group.price)">
+              <div class="price-info">
+                <span class="price-value">{{ formatPrice(group.price) }}</span>
+                <span class="price-count">{{ group.count }} Kunde(n)</span>
+              </div>
+              <i class="bi" [class.bi-chevron-down]="!isArticleExpanded(overview.article_text + '-' + group.price)" 
+                           [class.bi-chevron-up]="isArticleExpanded(overview.article_text + '-' + group.price)"></i>
             </div>
-            <div class="customers-list">
-              <span *ngFor="let customer of group.customers; let i = index" 
-                    class="customer-id clickable-customer" 
-                    (click)="navigateToCustomer(customer, { product_id: overview.product_id, article_text: overview.article_text })"
-                    [title]="'Klicken um zu Kunde ' + customer + ' zu navigieren'">
-                {{ customer }}<span *ngIf="i < group.customers.length - 1">, </span>
-              </span>
+            <div class="customers-details-list" *ngIf="isArticleExpanded(overview.article_text + '-' + group.price)">
+              <div *ngFor="let customer of group.customers" class="customer-detail-item"
+                   (click)="navigateToCustomer(customer, { product_id: overview.product_id, article_text: overview.article_text })">
+                <div class="customer-number">{{ customer }}</div>
+                <div class="customer-company" *ngIf="getCustomerDetail(customer)?.last_name_company">
+                  {{ getCustomerDetail(customer)?.last_name_company }}
+                </div>
+                <div class="customer-city" *ngIf="getCustomerDetail(customer)?.city">
+                  {{ getCustomerDetail(customer)?.city }}
+                </div>
+              </div>
             </div>
           </div>
         </div>

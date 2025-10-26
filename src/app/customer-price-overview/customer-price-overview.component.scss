@@ -356,66 +356,91 @@
     }
     
     .price-group {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px 12px;
       background: #f8f9fa;
       border-radius: 6px;
       border-left: 3px solid #3498db;
+      overflow: hidden;
       
-      .price-info {
+      .price-info-header {
         display: flex;
+        justify-content: space-between;
         align-items: center;
-        gap: 10px;
+        padding: 10px 12px;
+        cursor: pointer;
+        user-select: none;
+        transition: background-color 0.2s ease;
         
-        .price-value {
-          color: #27ae60;
-          font-size: 1rem;
-          font-weight: 600;
+        &:hover {
+          background: #e9ecef;
         }
         
-        .price-count {
-          background: #3498db;
-          color: white;
-          padding: 2px 8px;
-          border-radius: 12px;
-          font-size: 0.8rem;
-          font-weight: 500;
+        .price-info {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          
+          .price-value {
+            color: #27ae60;
+            font-size: 1rem;
+            font-weight: 600;
+          }
+          
+          .price-count {
+            background: #3498db;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
+          }
+        }
+        
+        i {
+          color: #7f8c8d;
+          font-size: 1.2rem;
+          transition: transform 0.2s ease;
         }
       }
       
-      .customers-list {
-        color: #7f8c8d;
-        font-size: 0.8rem;
+      .customers-details-list {
+        padding: 0 12px 12px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
         
-        .customer-id {
-          font-family: monospace;
-          background: #ecf0f1;
-          padding: 1px 4px;
-          border-radius: 2px;
-          margin-right: 1px;
-          font-size: 0.75rem;
+        .customer-detail-item {
+          background: white;
+          border: 1px solid #e1e8ed;
+          border-radius: 6px;
+          padding: 10px;
+          cursor: pointer;
+          transition: all 0.2s ease;
           
-          &.clickable-customer {
-            cursor: pointer;
-            transition: all 0.2s ease;
-            background: #e3f2fd;
-            color: #1976d2;
-            border: 1px solid transparent;
-            
-            &:hover {
-              background: #bbdefb;
-              color: #0d47a1;
-              border-color: #1976d2;
-              transform: translateY(-1px);
-              box-shadow: 0 2px 4px rgba(25, 118, 210, 0.2);
-            }
-            
-            &:active {
-              transform: translateY(0);
-              box-shadow: 0 1px 2px rgba(25, 118, 210, 0.3);
-            }
+          &:hover {
+            background: #f0f7ff;
+            border-color: #3498db;
+            box-shadow: 0 2px 4px rgba(52, 152, 219, 0.1);
+            transform: translateX(4px);
+          }
+          
+          .customer-number {
+            font-family: monospace;
+            color: #2c3e50;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 4px;
+          }
+          
+          .customer-company {
+            color: #34495e;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-bottom: 2px;
+          }
+          
+          .customer-city {
+            color: #7f8c8d;
+            font-size: 0.8rem;
           }
         }
       }
@@ -915,42 +940,46 @@
       }
       
       .price-group {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
-        padding: 8px 10px;
-        
-        .price-info {
-          align-self: stretch;
-          justify-content: space-between;
+        .price-info-header {
+          padding: 8px 10px;
           
-          .price-value {
-            font-size: 0.9rem;
+          .price-info {
+            .price-value {
+              font-size: 0.9rem;
+            }
+            
+            .price-count {
+              font-size: 0.75rem;
+              padding: 2px 6px;
+            }
           }
           
-          .price-count {
-            font-size: 0.75rem;
-            padding: 2px 6px;
+          i {
+            font-size: 1rem;
           }
         }
         
-        .customers-list {
-          font-size: 0.75rem;
+        .customers-details-list {
+          padding: 0 10px 10px 10px;
+          gap: 6px;
           
-          .customer-id {
-            font-size: 0.7rem;
-            padding: 1px 3px;
+          .customer-detail-item {
+            padding: 8px;
             
-            &.clickable-customer {
-              &:hover {
-                transform: none; // Keine Transformation auf Touch-Geräten
-                box-shadow: none;
-              }
-              
-              &:active {
-                background: #90caf9;
-                transform: scale(0.95);
-              }
+            &:hover {
+              transform: none; // Keine Transformation auf Touch-Geräten
+            }
+            
+            .customer-number {
+              font-size: 0.85rem;
+            }
+            
+            .customer-company {
+              font-size: 0.8rem;
+            }
+            
+            .customer-city {
+              font-size: 0.75rem;
             }
           }
         }

@@ -166,6 +166,13 @@ export class CustomerPriceOverviewComponent implements OnInit {
         total_customers: prices.length
       };
     }).sort((a, b) => a.article_text.localeCompare(b.article_text)); // Sortiere nach Artikeltext
+
+    // Preload customer details for all unique customers
+    const allCustomers = new Set<string>();
+    this.customerPrices.forEach(price => {
+      allCustomers.add(price.customer_id);
+    });
+    this.preloadCustomerDetails(Array.from(allCustomers));
   }
 
   get filteredProductOverviews(): ProductPriceOverview[] {
@@ -296,6 +303,57 @@ export class CustomerPriceOverviewComponent implements OnInit {
     const highest = Math.max(...prices);
     const lowest = Math.min(...prices);
     return highest - lowest;
+  }
+
+  // Expandable/Collapsible State Management
+  expandedArticles = new Set<string>();
+
+  toggleArticleExpansion(articleText: string): void {
+    if (this.expandedArticles.has(articleText)) {
+      this.expandedArticles.delete(articleText);
+    } else {
+      this.expandedArticles.add(articleText);
+    }
+  }
+
+  isArticleExpanded(articleText: string): boolean {
+    return this.expandedArticles.has(articleText);
+  }
+
+  // Store customer details for quick access
+  customerDetailsMap = new Map<string, any>();
+
+  loadCustomerDetail(customerId: string): void {
+    if (this.customerDetailsMap.has(customerId)) {
+      return; // Already loaded
+    }
+
+    this.http.get<any[]>(`${environment.apiUrl}/api/customers`, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    }).subscribe({
+      next: (customers) => {
+        const customer = customers.find(c => c.customer_number === customerId);
+        if (customer) {
+          this.customerDetailsMap.set(customerId, customer);
+        }
+      },
+      error: (error) => {
+        console.error('Fehler beim Laden der Kundendetails:', error);
+      }
+    });
+  }
+
+  getCustomerDetail(customerId: string): any {
+    return this.customerDetailsMap.get(customerId);
+  }
+
+  // Preload customer details for visible customers
+  preloadCustomerDetails(customerIds: string[]): void {
+    customerIds.forEach(customerId => {
+      this.loadCustomerDetail(customerId);
+    });
   }
 
   // Methode zum Laden der Kundendetails
