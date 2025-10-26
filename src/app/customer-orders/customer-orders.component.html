@@ -1183,7 +1183,25 @@
               <td class="article-name">{{ sanitizeText(customerPrice.article_text || customerPrice.product_name) || 'Unbekannter Artikel' }}</td>
               <td class="article-number">{{ customerPrice.article_number || customerPrice.product_id }}</td>
               <td class="customer-price">
-                <span class="customer-price-value">€{{ customerPrice.unit_price_net }}</span>
+                @if (isEditingArticlePrices) {
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <input type="number" 
+                           [(ngModel)]="customerPrice.editedPrice" 
+                           [ngModel]="customerPrice.editedPrice || customerPrice.unit_price_net"
+                           step="0.01" 
+                           class="price-edit-input" 
+                           style="width: 80px; padding: 4px; border: 1px solid #ddd; border-radius: 4px;"
+                           placeholder="{{ customerPrice.unit_price_net }}">
+                    <button (click)="saveCustomerArticlePrice(customerPrice)" 
+                            class="save-price-btn" 
+                            title="Preis speichern"
+                            style="background: #10b981; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                      <span class="material-icons" style="font-size: 18px;">save</span>
+                    </button>
+                  </div>
+                } @else {
+                  <span class="customer-price-value">€{{ customerPrice.unit_price_net }}</span>
+                }
               </td>
               <td class="invoice-id">{{ customerPrice.invoice_id || '-' }}</td>
               <td class="invoice-date">{{ formatInvoiceDate(customerPrice.invoice_date) }}</td>
@@ -1233,10 +1251,29 @@
         @for (customerPrice of filteredArticlePrices; track customerPrice.product_id) {
         <div class="article-price-card">
           <div class="price-card-header">
-            <div class="price-badge">
-              <span class="price-amount">€{{ customerPrice.unit_price_net }}</span>
-              <span class="price-label">Kundenpreis</span>
-            </div>
+            @if (isEditingArticlePrices) {
+              <div class="price-edit-section" style="display: flex; flex-direction: column; gap: 8px; align-items: flex-start;">
+                <label style="font-size: 12px; color: #666;">Neuer Preis:</label>
+                <div style="display: flex; gap: 8px; width: 100%;">
+                  <input type="number" 
+                         [(ngModel)]="customerPrice.editedPrice" 
+                         [ngModel]="customerPrice.editedPrice || customerPrice.unit_price_net"
+                         step="0.01" 
+                         style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;"
+                         placeholder="{{ customerPrice.unit_price_net }}">
+                  <button (click)="saveCustomerArticlePrice(customerPrice)" 
+                          title="Preis speichern"
+                          style="background: #10b981; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                    <span class="material-icons" style="font-size: 20px;">save</span>
+                  </button>
+                </div>
+              </div>
+            } @else {
+              <div class="price-badge">
+                <span class="price-amount">€{{ customerPrice.unit_price_net }}</span>
+                <span class="price-label">Kundenpreis</span>
+              </div>
+            }
             <div class="card-actions">
               @if (isEditingArticlePrices) {
                 <button class="delete-btn" (click)="deleteCustomerArticlePrice(customerPrice)" title="Kundenspezifischen Preis löschen" style="background: #dc2626; color: white; border: none; padding: 8px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;">

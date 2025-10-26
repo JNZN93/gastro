@@ -3646,6 +3646,11 @@ filteredArtikelData() {
   toggleEditMode() {
     this.isEditingArticlePrices = !this.isEditingArticlePrices;
     console.log('🔧 [ARTICLE-PRICES-MODAL] Bearbeitungsmodus:', this.isEditingArticlePrices ? 'aktiviert' : 'deaktiviert');
+    
+    // Wenn Bearbeitung beendet wird, reset vorübergehende bearbeitete Preise
+    if (!this.isEditingArticlePrices) {
+      this.filterArticlePrices();
+    }
   }
 
   async deleteCustomerArticlePrice(articlePrice: any) {
@@ -3686,14 +3691,66 @@ filteredArtikelData() {
     }
   }
 
-  showArticlePricesNotification(articleName: string, quantity: number) {
+  async saveCustomerArticlePrice(articlePrice: any) {
+    if (!articlePrice.id) {
+      console.error('❌ [UPDATE-ARTICLE-PRICE] Keine ID gefunden');
+      alert('Fehler: Artikel-Preis ID nicht gefunden.');
+      return;
+    }
+
+    if (!articlePrice.editedPrice || articlePrice.editedPrice <= 0) {
+      alert('Bitte geben Sie einen gültigen Preis ein.');
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await this.http.put(`${environment.apiUrl}/api/customer-article-prices/${articlePrice.id}`, {
+        unit_price_net: Number(articlePrice.editedPrice)
+      }, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      }).toPromise();
+      
+      console.log('✅ [UPDATE-ARTICLE-PRICE] Preis erfolgreich aktualisiert:', response);
+      
+      // Aktualisiere den Preis in den lokalen Listen
+      articlePrice.unit_price_net = Number(articlePrice.editedPrice);
+      articlePrice.editedPrice = undefined; // Reset edited price
+      
+      // Aktualisiere gefilterte Liste
+      this.filterArticlePrices();
+      
+      // Aktualisiere globalArtikels mit neuen Preisen
+      this.updateArtikelsWithCustomerPrices();
+      
+      // Zeige Benachrichtigung
+      this.showArticlePricesNotification(
+        articlePrice.article_text || articlePrice.product_name, 
+        1, 
+        true // isPriceUpdate flag
+      );
+      
+    } catch (error: any) {
+      console.error('❌ [UPDATE-ARTICLE-PRICE] Fehler beim Aktualisieren:', error);
+      alert(`Fehler beim Aktualisieren: ${error.message || 'Unbekannter Fehler'}`);
+    }
+  }
+
+  showArticlePricesNotification(articleName: string, quantity: number, isPriceUpdate: boolean = false) {
     // Clear any existing timeout
     if (this.articlePricesNotificationTimeout) {
       clearTimeout(this.articlePricesNotificationTimeout);
     }
     
-    // Set notification text
-    this.articlePricesNotificationText = `${quantity}x "${articleName}" zum Auftrag hinzugefügt`;
+    // Set notification text based on action type
+    if (isPriceUpdate) {
+      this.articlePricesNotificationText = `✅ Preis für "${articleName}" erfolgreich aktualisiert`;
+    } else {
+      this.articlePricesNotificationText = `${quantity}x "${articleName}" zum Auftrag hinzugefügt`;
+    }
+    
     this.isArticlePricesNotificationVisible = true;
     
     // Auto-hide after 3 seconds
