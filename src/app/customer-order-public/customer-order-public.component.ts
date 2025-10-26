@@ -57,6 +57,12 @@ export class CustomerOrderPublicComponent implements OnInit {
     this.categoryStates[category] = !this.categoryStates[category];
   }
 
+  // Zählt die Anzahl der Artikel mit Menge > 0 in einer Kategorie
+  getArticlesWithQuantityCount(category: string): number {
+    const articles = this.groupedArticles[category] || [];
+    return articles.filter(article => article.tempQuantity && article.tempQuantity > 0).length;
+  }
+
   ngOnInit() {
     this.route.params.subscribe(params => {
       this.token = params['token'];

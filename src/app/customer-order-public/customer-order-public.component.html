@@ -55,6 +55,9 @@
             <div class="category-title">
               <span class="category-name">{{ category }}</span>
               <span class="category-count">({{ groupedArticles[category].length }} Artikel)</span>
+              <span *ngIf="getArticlesWithQuantityCount(category) > 0" class="category-badge">
+                {{ getArticlesWithQuantityCount(category) }}
+              </span>
               <span class="category-toggle-icon">
                 {{ categoryStates[category] ? '▼' : '▶' }}
               </span>
@@ -147,6 +150,9 @@
             <div class="category-title">
               <span class="category-name">{{ category }}</span>
               <span class="category-count">({{ groupedArticles[category].length }} Artikel)</span>
+              <span *ngIf="getArticlesWithQuantityCount(category) > 0" class="category-badge">
+                {{ getArticlesWithQuantityCount(category) }}
+              </span>
               <span class="category-toggle-icon">
                 {{ categoryStates[category] ? '▼' : '▶' }}
               </span>
