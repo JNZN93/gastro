@@ -320,6 +320,31 @@ export class CustomerPriceOverviewComponent implements OnInit {
     return this.expandedArticles.has(articleText);
   }
 
+  // Sortierung State Management
+  articleSortMode = new Map<string, 'count' | 'price'>(); // 'count' für nach Anzahl, 'price' für nach Preis
+
+  toggleArticleSort(articleText: string): void {
+    const currentSort = this.articleSortMode.get(articleText) || 'count';
+    const newSort = currentSort === 'count' ? 'price' : 'count';
+    this.articleSortMode.set(articleText, newSort);
+  }
+
+  getArticleSortMode(articleText: string): 'count' | 'price' {
+    return this.articleSortMode.get(articleText) || 'count';
+  }
+
+  getSortedPriceGroups(overview: ProductPriceOverview): PriceGroup[] {
+    const sortMode = this.getArticleSortMode(overview.article_text);
+    
+    if (sortMode === 'price') {
+      // Sortiere nach Preis (aufsteigend)
+      return [...overview.price_groups].sort((a, b) => a.price - b.price);
+    } else {
+      // Sortiere nach Anzahl Kunden (absteigend - bereits so in processPriceData)
+      return overview.price_groups;
+    }
+  }
+
   // Store customer details for quick access
   customerDetailsMap = new Map<string, any>();
 
@@ -354,6 +379,11 @@ export class CustomerPriceOverviewComponent implements OnInit {
     customerIds.forEach(customerId => {
       this.loadCustomerDetail(customerId);
     });
+  }
+
+  // Get invoice information for a specific customer in a price group
+  getInvoiceInfoForCustomer(customerId: string, group: PriceGroup): { customer_id: string, invoice_id: number, invoice_date: string } | undefined {
+    return group.invoice_info.find(info => info.customer_id === customerId);
   }
 
   // Methode zum Laden der Kundendetails

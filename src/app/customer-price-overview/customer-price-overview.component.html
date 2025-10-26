@@ -88,6 +88,10 @@
               <i class="bi bi-tag"></i>
             </div>
             <h3 class="product-title">{{ overview.article_text }}</h3>
+            <button class="sort-toggle-btn" (click)="toggleArticleSort(overview.article_text)" title="Sortierung umschalten">
+              <i class="bi" [class.bi-sort-numeric-down]="getArticleSortMode(overview.article_text) === 'count'" 
+                       [class.bi-sort-alpha-down]="getArticleSortMode(overview.article_text) === 'price'"></i>
+            </button>
           </div>
           <div class="product-info">
             <span class="product-id">{{ overview.product_id }}</span>
@@ -95,11 +99,15 @@
             <span *ngIf="hasMultiplePrices(overview)" class="price-variation">
               ±{{ formatPrice(getPriceDifference(overview)) }}
             </span>
+            <span class="sort-indicator" *ngIf="overview.price_groups.length > 1">
+              <i class="bi bi-info-circle"></i>
+              {{ getArticleSortMode(overview.article_text) === 'count' ? 'Sortiert nach Kundenanzahl' : 'Sortiert nach Preis' }}
+            </span>
           </div>
         </div>
 
         <div class="price-groups">
-          <div *ngFor="let group of overview.price_groups" class="price-group">
+          <div *ngFor="let group of getSortedPriceGroups(overview)" class="price-group">
             <div class="price-info-header" (click)="toggleArticleExpansion(overview.article_text + '-' + group.price)">
               <div class="price-info">
                 <span class="price-value">{{ formatPrice(group.price) }}</span>
@@ -117,6 +125,14 @@
                 </div>
                 <div class="customer-city" *ngIf="getCustomerDetail(customer)?.city">
                   {{ getCustomerDetail(customer)?.city }}
+                </div>
+                <div class="invoice-details" *ngIf="getInvoiceInfoForCustomer(customer, group)">
+                  <div class="invoice-number">
+                    <i class="bi bi-receipt"></i> #{{ getInvoiceInfoForCustomer(customer, group)?.invoice_id }}
+                  </div>
+                  <div class="invoice-date">
+                    <i class="bi bi-calendar3"></i> {{ formatInvoiceDate(getInvoiceInfoForCustomer(customer, group)?.invoice_date || '') }}
+                  </div>
                 </div>
               </div>
             </div>
