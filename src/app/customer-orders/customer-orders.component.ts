@@ -316,17 +316,20 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
             // Nach dem Laden der Artikel: Aktualisiere kundenspezifische Preise falls ein Kunde gespeichert ist
             if (this.pendingCustomerForPriceUpdate) {
               console.log('🔄 [INIT] Lade kundenspezifische Preise für gespeicherten Kunden:', this.pendingCustomerForPriceUpdate.customer_number);
-              this.loadCustomerArticlePrices(this.pendingCustomerForPriceUpdate.customer_number);
-              this.pendingCustomerForPriceUpdate = null; // Reset nach dem Laden
+              const customerNumber = this.pendingCustomerForPriceUpdate.customer_number;
+              this.pendingCustomerForPriceUpdate = null;
+              
+              // ✅ MIT .then() warten auf Kundenpreise
+              this.loadCustomerArticlePricesAsync(customerNumber).then(() => {
+                console.log('✅ [INIT] Kundenpreise geladen');
+                this.checkForPendingOrderData();
+                this.checkForEditModeData();
+              });
+            } else {
+              // Kein Kunde → sofort prüfen
+              this.checkForPendingOrderData();
+              this.checkForEditModeData();
             }
-
-            // WICHTIG: Prüfe auf pending order data NACH dem Laden der globalArtikels
-            // Damit die EK-Preise korrekt aus globalArtikels geladen werden können
-            console.log('🔍 [INIT] Prüfe auf pendingOrderData nach Laden der Artikel...');
-            this.checkForPendingOrderData();
-            
-            // Prüfe auch auf Bearbeitungsmodus-Daten für Refresh-Persistenz
-            this.checkForEditModeData();
           });
         },
         error: (error) => {
@@ -4509,6 +4512,48 @@ filteredArtikelData() {
   }
 
   // Neue Methode zum Laden der Kunden-Artikel-Preise
+  // Promise-Version für async/await oder .then()
+  loadCustomerArticlePricesAsync(customerNumber: string): Promise<void> {
+    return new Promise((resolve) => {
+      console.log('🔄 [CUSTOMER-ARTICLE-PRICES-ASYNC] Starte API-Aufruf für Kunde:', customerNumber);
+      
+      // Spezielle Behandlung für bestimmte Kunden
+      if (customerNumber === '10.022' || customerNumber === '10.003') {
+        console.log('⚠️ [CUSTOMER-ARTICLE-PRICES-ASYNC] Spezielle Behandlung');
+        this.customerArticlePrices = [];
+        this.updateArtikelsWithCustomerPrices();
+        resolve();
+        return;
+      }
+      
+      const token = localStorage.getItem('token');
+      const apiUrl = `${environment.apiUrl}/api/customer-article-prices/customer/${customerNumber}`;
+      
+      fetch(apiUrl, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+      })
+      .then(response => {
+        if (!response.ok) throw new Error(`Fehler: ${response.status}`);
+        return response.json();
+      })
+      .then(data => {
+        const filtered = Array.isArray(data) 
+          ? data.filter((price: any) => this.isArticleAvailableInGlobal(price))
+          : [];
+        this.customerArticlePrices = filtered;
+        this.updateArtikelsWithCustomerPrices();
+        console.log('✅ [CUSTOMER-ARTICLE-PRICES-ASYNC] Geladen:', filtered.length);
+        resolve();
+      })
+      .catch(error => {
+        console.error('❌ [CUSTOMER-ARTICLE-PRICES-ASYNC] Fehler:', error);
+        this.customerArticlePrices = [];
+        resolve(); // Auch bei Fehler auflösen
+      });
+    });
+  }
+
   loadCustomerArticlePrices(customerNumber: string) {
     console.log('🔄 [CUSTOMER-ARTICLE-PRICES] Starte API-Aufruf für Kunde:', customerNumber);
     
