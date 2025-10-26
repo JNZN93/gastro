@@ -757,22 +757,6 @@
 
   .company-name-container {
     position: relative;
-    cursor: pointer;
-    transition: all 0.2s ease;
-
-    &:hover {
-      background-color: rgba(0, 0, 0, 0.05);
-      border-radius: 4px;
-      padding: 2px 4px;
-      margin: -2px -4px;
-    }
-
-    &.editing {
-      background-color: rgba(0, 0, 0, 0.05);
-      border-radius: 4px;
-      padding: 2px 4px;
-      margin: -2px -4px;
-    }
 
     h4 {
       margin: 0 0 1px 0;
@@ -782,12 +766,6 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      cursor: pointer;
-      transition: color 0.2s ease;
-
-      &:hover {
-        color: #007bff;
-      }
     }
 
     .edit-indicator {
@@ -5676,22 +5654,6 @@
 
     .company-name-container {
       position: relative;
-      cursor: pointer;
-      transition: all 0.2s ease;
-
-      &:hover {
-        background-color: rgba(0, 0, 0, 0.05);
-        border-radius: 4px;
-        padding: 2px 4px;
-        margin: -2px -4px;
-      }
-
-      &.editing {
-        background-color: rgba(0, 0, 0, 0.05);
-        border-radius: 4px;
-        padding: 2px 4px;
-        margin: -2px -4px;
-      }
 
       h3 {
         margin: 0 0 4px 0;
@@ -5701,15 +5663,9 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-        cursor: pointer;
-        transition: color 0.2s ease;
         display: flex;
         align-items: center;
         gap: 6px;
-
-        &:hover {
-          color: #007bff;
-        }
       }
 
       .edit-indicator {
