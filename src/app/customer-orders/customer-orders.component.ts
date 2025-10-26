@@ -1361,8 +1361,12 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       this.differentCompanyName = orderData.differentCompanyName;
     }
     
-    // Lade kundenspezifische Preise
-    this.loadCustomerArticlePrices(customer.customer_number);
+    // ✅ Lade kundenspezifische Preise MIT async - WARTET auf Kundenpreise
+    this.loadCustomerArticlePricesAsync(customer.customer_number).then(() => {
+      console.log('✅ [SET-CUSTOMER] Kundenpreise geladen für Kunde:', customer.customer_number);
+    }).catch((error) => {
+      console.error('❌ [SET-CUSTOMER] Fehler beim Laden der Kundenpreise:', error);
+    });
   }
 
   // Neue Methode zum Laden eines Kunden aus der Bildanalyse-Response
