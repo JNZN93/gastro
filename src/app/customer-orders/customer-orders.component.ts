@@ -602,9 +602,6 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     if (!item) {
       return false;
     }
-    if (item.different_price === undefined || item.different_price === null || item.different_price === '') {
-      return false;
-    }
 
     const parseNumber = (val: any): number => {
       if (typeof val === 'number') {
@@ -618,15 +615,28 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       return NaN;
     };
 
+    // Prüfe zuerst, ob ein kundenspezifischer Preis in der Liste existiert
+    const customerPrice = this.getCustomerArticlePrice(item);
+    if (customerPrice) {
+      const customerNetPrice = parseNumber(customerPrice.unit_price_net);
+      const salePrice = parseNumber(item.sale_price);
+      
+      // Wenn ein kundenspezifischer Preis existiert UND gleich dem Standardpreis ist → grün
+      if (!isNaN(customerNetPrice) && !isNaN(salePrice) && customerNetPrice === salePrice) {
+        return true;
+      }
+    }
+
+    // Fallback: Prüfe ob different_price gesetzt ist
+    if (item.different_price === undefined || item.different_price === null || item.different_price === '') {
+      return false;
+    }
+
     const differentPrice = parseNumber(item.different_price);
     if (isNaN(differentPrice)) {
       return false;
     }
 
-    const salePrice = parseNumber(item.sale_price);
-    if (!isNaN(salePrice) && differentPrice === salePrice) {
-      return false;
-    }
 
     const hasOffer = item && item.use_offer_price && item.offer_price !== undefined && item.offer_price !== null && item.offer_price !== '';
     if (hasOffer) {
@@ -637,6 +647,33 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     }
 
     return true;
+  }
+
+  // Hilfsfunktion: Findet den kundenspezifischen Preis für einen Artikel
+  private getCustomerArticlePrice(item: any): any | null {
+    if (!item || !this.customerArticlePrices || this.customerArticlePrices.length === 0) {
+      return null;
+    }
+
+    // Suche nach dem Artikel in der kundenspezifischen Preisliste
+    return this.customerArticlePrices.find((customerPrice: any) => {
+      // Prüfe anhand der article_number
+      if (item.article_number && customerPrice.article_number === item.article_number) {
+        return true;
+      }
+      
+      // Prüfe anhand der product_id
+      if (item.product_id && customerPrice.product_id && customerPrice.product_id === item.product_id) {
+        return true;
+      }
+      
+      // Prüfe anhand der EAN
+      if (item.ean && customerPrice.ean && customerPrice.ean === item.ean) {
+        return true;
+      }
+      
+      return false;
+    }) || null;
   }
 
   ngOnDestroy(): void {
