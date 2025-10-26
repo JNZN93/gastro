@@ -1155,6 +1155,9 @@
         <table class="article-prices-table">
           <thead>
             <tr>
+              @if (isEditingArticlePrices) {
+                <th style="width: 50px;">Löschen</th>
+              }
               <th>Artikel</th>
               <th>Art.-Nr.</th>
               <th>Kundenpreis (€)</th>
@@ -1167,6 +1170,16 @@
           <tbody>
             @for (customerPrice of filteredArticlePrices; track customerPrice.product_id) {
             <tr class="article-price-row">
+              @if (isEditingArticlePrices) {
+                <td class="delete-action">
+                  <button (click)="deleteCustomerArticlePrice(customerPrice)" 
+                          class="delete-article-price-btn" 
+                          title="Kundenspezifischen Preis löschen"
+                          style="background: #dc2626; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                    <span class="material-icons" style="font-size: 18px;">delete</span>
+                  </button>
+                </td>
+              }
               <td class="article-name">{{ sanitizeText(customerPrice.article_text || customerPrice.product_name) || 'Unbekannter Artikel' }}</td>
               <td class="article-number">{{ customerPrice.article_number || customerPrice.product_id }}</td>
               <td class="customer-price">
@@ -1209,6 +1222,10 @@
           <span class="material-icons">print</span>
           Drucken
         </button>
+        <button (click)="toggleEditMode()" class="edit-article-prices-btn" [class.active]="isEditingArticlePrices" title="Artikel-Preise bearbeiten" style="display: inline-flex; align-items: center; gap: 6px; background: #f59e0b; color: #fff; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer;">
+          <span class="material-icons">{{ isEditingArticlePrices ? 'edit' : 'edit_off' }}</span>
+          {{ isEditingArticlePrices ? 'Bearbeitung beenden' : 'Bearbeiten' }}
+        </button>
       </div>
       
       <!-- Mobile Karten-Ansicht für kundenspezifische Preise -->
@@ -1221,6 +1238,11 @@
               <span class="price-label">Kundenpreis</span>
             </div>
             <div class="card-actions">
+              @if (isEditingArticlePrices) {
+                <button class="delete-btn" (click)="deleteCustomerArticlePrice(customerPrice)" title="Kundenspezifischen Preis löschen" style="background: #dc2626; color: white; border: none; padding: 8px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                  <span class="material-icons" style="font-size: 20px;">delete</span>
+                </button>
+              }
               <button class="info-btn" (click)="showCustomerPriceNotes(customerPrice)" title="Artikel-Notizen anzeigen">
                 <span class="material-icons">info</span>
               </button>

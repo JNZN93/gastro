@@ -76,6 +76,9 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   articlePricesSearchTerm: string = '';
   filteredArticlePrices: any[] = [];
   
+  // Edit mode for article prices modal
+  isEditingArticlePrices: boolean = false;
+  
   // Notification properties for article prices modal
   isArticlePricesNotificationVisible: boolean = false;
   articlePricesNotificationText: string = '';
@@ -3635,8 +3638,52 @@ filteredArtikelData() {
     this.isArticlePricesModalOpen = false;
     this.articlePricesSearchTerm = '';
     this.filteredArticlePrices = [];
+    this.isEditingArticlePrices = false; // Reset edit mode when closing
     // Clear any active notification when closing modal
     this.hideArticlePricesNotification();
+  }
+
+  toggleEditMode() {
+    this.isEditingArticlePrices = !this.isEditingArticlePrices;
+    console.log('🔧 [ARTICLE-PRICES-MODAL] Bearbeitungsmodus:', this.isEditingArticlePrices ? 'aktiviert' : 'deaktiviert');
+  }
+
+  async deleteCustomerArticlePrice(articlePrice: any) {
+    if (!articlePrice.id) {
+      console.error('❌ [DELETE-ARTICLE-PRICE] Keine ID gefunden');
+      alert('Fehler: Artikel-Preis ID nicht gefunden.');
+      return;
+    }
+
+    if (!confirm(`Möchten Sie wirklich den kundenspezifischen Preis für "${articlePrice.article_text || articlePrice.product_name}" löschen?`)) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await this.http.delete(`${environment.apiUrl}/api/customer-article-prices/${articlePrice.id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      }).toPromise();
+      console.log('✅ [DELETE-ARTICLE-PRICE] Preis erfolgreich gelöscht:', response);
+      
+      // Entferne aus customerArticlePrices
+      this.customerArticlePrices = this.customerArticlePrices.filter(p => p.id !== articlePrice.id);
+      
+      // Aktualisiere gefilterte Liste
+      this.filterArticlePrices();
+      
+      // Aktualisiere globalArtikel mit Standard-Preisen
+      this.updateArtikelsWithCustomerPrices();
+      
+      // Zeige Benachrichtigung
+      alert('Kundenspezifischer Preis erfolgreich gelöscht!');
+      
+    } catch (error: any) {
+      console.error('❌ [DELETE-ARTICLE-PRICE] Fehler beim Löschen:', error);
+      alert(`Fehler beim Löschen: ${error.message || 'Unbekannter Fehler'}`);
+    }
   }
 
   showArticlePricesNotification(articleName: string, quantity: number) {
