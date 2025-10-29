@@ -53,6 +53,7 @@ export class DeviceTrackingComponent implements OnInit, OnDestroy {
   mapInitialized = false;
   loading = false;
   error: string | null = null;
+  selectedDeviceId: number | null = null;
   private refreshSubscription?: Subscription;
   private readonly REFRESH_INTERVAL = 3000; // 3 seconds
   private readonly API_URL = 'https://server.traccar.org/api/positions';
@@ -416,6 +417,25 @@ export class DeviceTrackingComponent implements OnInit, OnDestroy {
 
   goBack(): void {
     history.back();
+  }
+
+  selectAndZoomToDevice(position: PositionData): void {
+    // Setze ausgewähltes Gerät
+    this.selectedDeviceId = position.deviceId;
+    
+    // Finde den Marker für dieses Gerät
+    const markerIndex = this.positions.findIndex(p => p.deviceId === position.deviceId);
+    
+    if (markerIndex !== -1 && this.markers[markerIndex] && this.map) {
+      const marker = this.markers[markerIndex];
+      
+      // Öffne nur das Popup, ohne zu zoomen
+      marker.openPopup();
+    }
+  }
+
+  isDeviceSelected(deviceId: number): boolean {
+    return this.selectedDeviceId === deviceId;
   }
 
   toggleMockMode(): void {

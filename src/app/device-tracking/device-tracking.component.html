@@ -57,7 +57,9 @@
         <div class="devices-list-content">
           @for (position of positions; track position.id) {
             @if (position.valid) {
-              <div class="device-card">
+              <div class="device-card" 
+                   [class.selected]="isDeviceSelected(position.deviceId)"
+                   (click)="selectAndZoomToDevice(position)">
                 <div class="device-header">
                   <div class="device-color" [style.background-color]="getDeviceColor(position.deviceId)"></div>
                   <h3>Gerät {{ position.deviceId }}</h3>

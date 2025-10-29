@@ -254,11 +254,30 @@
       padding: 12px;
       transition: all 0.2s;
       background: #fafafa;
+      cursor: pointer;
+      position: relative;
 
       &:hover {
         border-color: #3b82f6;
         box-shadow: 0 4px 6px rgba(59, 130, 246, 0.1);
-        cursor: pointer;
+        transform: translateY(-2px);
+      }
+
+      &.selected {
+        border: 2px solid #3b82f6;
+        background: #eff6ff;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+
+        &::before {
+          content: '';
+          position: absolute;
+          left: 0;
+          top: 0;
+          bottom: 0;
+          width: 4px;
+          background: #3b82f6;
+          border-radius: 8px 0 0 8px;
+        }
       }
 
       .device-header {
