@@ -18,6 +18,12 @@
     justify-content: space-between;
     gap: 20px;
 
+    .header-buttons {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
     .back-btn,
     .refresh-btn {
       display: flex;
@@ -42,6 +48,100 @@
       svg {
         width: 18px;
         height: 18px;
+      }
+    }
+
+    // Toggle Button (Pill/Medizin Pille Style)
+    .toggle-container {
+      position: relative;
+      width: 100px;
+      height: 36px;
+      background: #e5e7eb;
+      border-radius: 18px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      
+      &:hover {
+        background: #d1d5db;
+      }
+
+      .toggle-slider {
+        position: absolute;
+        top: 3px;
+        left: 3px;
+        width: 46px;
+        height: 30px;
+        background: white;
+        border-radius: 15px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        &.active {
+          left: 51px;
+          background: #f59e0b;
+          
+          .toggle-label {
+            color: white;
+            font-weight: 600;
+          }
+        }
+
+        .toggle-label {
+          position: absolute;
+          font-size: 11px;
+          font-weight: 600;
+          color: #6b7280;
+          transition: color 0.3s ease;
+          white-space: nowrap;
+        }
+      }
+
+      // Zusätzliche Labels auf dem Container
+      &::before {
+        content: 'Live';
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 11px;
+        font-weight: 600;
+        color: #6b7280;
+        transition: color 0.3s ease;
+        pointer-events: none;
+      }
+
+      &::after {
+        content: 'Test';
+        position: absolute;
+        right: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 11px;
+        font-weight: 600;
+        color: #6b7280;
+        transition: color 0.3s ease;
+        pointer-events: none;
+      }
+
+      &:has(.active) {
+        &::before {
+          color: #9ca3af;
+        }
+        &::after {
+          color: white;
+        }
+      }
+
+      &:not(:has(.active)) {
+        &::before {
+          color: white;
+        }
+        &::after {
+          color: #9ca3af;
+        }
       }
     }
   }
