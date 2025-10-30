@@ -501,6 +501,31 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
 
     this.globalArtikels = updated;
     this.artikelData = [...this.globalArtikels];
+    
+    // Normalisiere Preise in orderItems nach Annotierung mit Angebot
+    this.orderItems.forEach(item => {
+      // Finde den aktualisierten Artikel mit Angebotspreis
+      const updatedArtikel = updated.find(art => art.article_number === item.article_number || art.product_id === item.product_id);
+      if (updatedArtikel && updatedArtikel.use_offer_price && updatedArtikel.offer_price !== undefined) {
+        // Aktualisiere den Artikel im orderItem mit den Angebotsdaten
+        item.use_offer_price = updatedArtikel.use_offer_price;
+        item.offer_price = updatedArtikel.offer_price;
+        // Normalisiere den Preis (setzt different_price auf offer_price wenn günstiger)
+        this.normalizeItemPrice(item);
+      }
+    });
+    
+    // Normalisiere auch orderItems2 im Split-Modus
+    if (this.orderItems2 && this.orderItems2.length > 0) {
+      this.orderItems2.forEach(item => {
+        const updatedArtikel = updated.find(art => art.article_number === item.article_number || art.product_id === item.product_id);
+        if (updatedArtikel && updatedArtikel.use_offer_price && updatedArtikel.offer_price !== undefined) {
+          item.use_offer_price = updatedArtikel.use_offer_price;
+          item.offer_price = updatedArtikel.offer_price;
+          this.normalizeItemPrice(item);
+        }
+      });
+    }
   }
 
   private annotateCustomerPricesWithOffer(offer: OfferWithProducts): void {
@@ -561,6 +586,37 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
         return ref || p;
       });
     }
+    
+    // Normalisiere Preise in orderItems nach Annotierung von Kundenpreisen mit Angebot
+    this.orderItems.forEach(item => {
+      // Finde den aktualisierten Kundenpreis mit Angebotspreis
+      const updatedPrice = this.customerArticlePrices.find((cp: any) => 
+        (cp.product_id !== undefined && cp.product_id === item.product_id) || 
+        (cp.article_number && cp.article_number === item.article_number)
+      );
+      if (updatedPrice && updatedPrice.use_offer_price && updatedPrice.offer_price !== undefined) {
+        // Aktualisiere den Artikel im orderItem mit den Angebotsdaten
+        item.use_offer_price = updatedPrice.use_offer_price;
+        item.offer_price = updatedPrice.offer_price;
+        // Normalisiere den Preis (setzt different_price auf offer_price wenn günstiger)
+        this.normalizeItemPrice(item);
+      }
+    });
+    
+    // Normalisiere auch orderItems2 im Split-Modus
+    if (this.orderItems2 && this.orderItems2.length > 0) {
+      this.orderItems2.forEach(item => {
+        const updatedPrice = this.customerArticlePrices.find((cp: any) => 
+          (cp.product_id !== undefined && cp.product_id === item.product_id) || 
+          (cp.article_number && cp.article_number === item.article_number)
+        );
+        if (updatedPrice && updatedPrice.use_offer_price && updatedPrice.offer_price !== undefined) {
+          item.use_offer_price = updatedPrice.use_offer_price;
+          item.offer_price = updatedPrice.offer_price;
+          this.normalizeItemPrice(item);
+        }
+      });
+    }
   }
 
   // Intelligente Preisermittlung: Kundenpreise + Angebote mit intelligenter Priorität
@@ -584,17 +640,24 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     if (item && item.use_offer_price && item.offer_price !== undefined && item.offer_price !== null && item.offer_price !== '') {
       const offerPrice = typeof item.offer_price === 'number' ? item.offer_price : parseFloat(item.offer_price);
       if (!isNaN(offerPrice) && offerPrice < bestPrice) {
+        // Wenn Angebotspreis günstiger ist, setze different_price auf den Angebotspreis für das Payload
+        item.different_price = offerPrice;
         bestPrice = offerPrice; // Angebotspreis ist günstiger
         priceSource = 'offer_price';
-        console.log(`🏷️ [PRICE-LOGIC] Angebotspreis €${offerPrice} ist günstiger als ${priceSource === 'different_price' ? 'Kundenpreis' : 'Standardpreis'} €${bestPrice}`);
+        console.log(`🏷️ [PRICE-LOGIC] Angebotspreis €${offerPrice} ist günstiger als ${priceSource === 'different_price' ? 'Kundenpreis' : 'Standardpreis'} €${bestPrice} - different_price auf €${offerPrice} gesetzt`);
       }
     }
 
-    // Wichtig: different_price NICHT automatisch überschreiben.
-    // different_price soll NUR dann gesetzt sein, wenn es sich um einen echten Kundenpreis handelt.
-    // Dadurch bleibt die UI-Markierung (custom-price) korrekt.
-    console.log(`✅ [PRICE-LOGIC] Finaler Preis für ${item?.article_text}: €${bestPrice} (Quelle: ${priceSource}) - different_price unverändert gelassen`);
+    console.log(`✅ [PRICE-LOGIC] Finaler Preis für ${item?.article_text}: €${bestPrice} (Quelle: ${priceSource})`);
     return bestPrice;
+  }
+
+  // Normalisiert den Preis für ein Item und setzt different_price korrekt
+  private normalizeItemPrice(item: any): void {
+    if (!item) return;
+    
+    // Rufe resolveEffectivePrice auf, um different_price korrekt zu setzen
+    this.resolveEffectivePrice(item);
   }
 
   // Hilfsfunktion: Erkennen, ob ein echter Kundenpreis gesetzt ist
@@ -934,13 +997,18 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
         // Stelle sicher, dass original_price korrekt gesetzt ist
         const originalPrice = orderItem.original_price || orderItem.sale_price;
         
-        return {
+        const loadedItem = {
           ...orderItem,
           different_price: correctedDifferentPrice,
           original_price: originalPrice,
           // Stelle sicher, dass sale_price immer den Standard-Preis enthält
           sale_price: originalPrice
         };
+        
+        // Normalisiere den Preis des geladenen Items (prüft ob Angebotspreis günstiger ist)
+        this.normalizeItemPrice(loadedItem);
+        
+        return loadedItem;
       });
       
       console.log('✅ [LOAD-STORED] Aufträge mit korrigierten Preisen geladen');
@@ -2393,21 +2461,22 @@ filteredArtikelData() {
 
     // Spezielle Behandlung für PFAND und SCHNELLVERKAUF-Kategorien: Immer als neue Position hinzufügen
     if (artikel.category === 'PFAND' || artikel.category === 'SCHNELLVERKAUF') {
+      const newItem = { 
+        ...artikel, 
+        quantity: Number(artikel.quantity)
+      };
+      // Normalisiere den Preis des neuen Items
+      this.normalizeItemPrice(newItem);
+      
       if (this.isSplitMode && this.activeTable === 2) {
         this.orderItems2 = [
           ...this.orderItems2,
-          { 
-            ...artikel, 
-            quantity: Number(artikel.quantity)
-          },
+          newItem
         ];
       } else {
         this.orderItems = [
           ...this.orderItems,
-          { 
-            ...artikel, 
-            quantity: Number(artikel.quantity)
-          },
+          newItem
         ];
       }
     } else {
@@ -2419,13 +2488,18 @@ filteredArtikelData() {
 
         if (existingItem) {
           existingItem.quantity += Number(artikel.quantity);
+          // Normalisiere den Preis des existierenden Items
+          this.normalizeItemPrice(existingItem);
         } else {
+          const newItem = { 
+            ...artikel, 
+            quantity: Number(artikel.quantity)
+          };
+          // Normalisiere den Preis des neuen Items
+          this.normalizeItemPrice(newItem);
           this.orderItems2 = [
             ...this.orderItems2,
-            { 
-              ...artikel, 
-              quantity: Number(artikel.quantity)
-            },
+            newItem
           ];
         }
       } else {
@@ -2435,13 +2509,18 @@ filteredArtikelData() {
 
         if (existingItem) {
           existingItem.quantity += Number(artikel.quantity);
+          // Normalisiere den Preis des existierenden Items
+          this.normalizeItemPrice(existingItem);
         } else {
+          const newItem = { 
+            ...artikel, 
+            quantity: Number(artikel.quantity)
+          };
+          // Normalisiere den Preis des neuen Items
+          this.normalizeItemPrice(newItem);
           this.orderItems = [
             ...this.orderItems,
-            { 
-              ...artikel, 
-              quantity: Number(artikel.quantity)
-            },
+            newItem
           ];
         }
       }
@@ -4523,6 +4602,9 @@ filteredArtikelData() {
         different_price: parseFloat(customerPrice.unit_price_net),
         original_price: artikel.sale_price
       };
+      
+      // Normalisiere den Preis des Items (prüft ob Angebotspreis günstiger ist)
+      this.normalizeItemPrice(orderItem);
       
       // Spezielle Behandlung für PFAND und SCHNELLVERKAUF-Kategorien: Immer als neue Position hinzufügen
       if (artikel.category === 'PFAND' || artikel.category === 'SCHNELLVERKAUF') {
