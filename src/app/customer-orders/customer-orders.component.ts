@@ -5476,6 +5476,7 @@ filteredArtikelData() {
     });
   }
 
+  // test comment
   // Hilfsmethode zum Prüfen auf ungespeicherte Änderungen
   private hasUnsavedChanges(): boolean {
     return this.isEditMode || this.orderItems.length > 0;
