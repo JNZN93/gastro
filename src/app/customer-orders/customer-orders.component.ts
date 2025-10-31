@@ -3302,7 +3302,8 @@ filteredArtikelData() {
         different_price: item.different_price, // Stelle sicher, dass different_price explizit gesetzt wird
         sale_price: item.sale_price,
         quantity: item.quantity,
-        description: item.description || item.article_text
+        description: item.description || item.article_text,
+        has_offer_price: item.use_offer_price && item.offer_price !== undefined ? true : false
       }))
     };
 
@@ -3397,7 +3398,10 @@ filteredArtikelData() {
         total_price: this.getOrderTotal(),
         created_at: new Date().toISOString()
       },
-      orderItems: filteredOrderItems
+      orderItems: filteredOrderItems.map(item => ({
+        ...item,
+        has_offer_price: item.use_offer_price && item.offer_price !== undefined ? true : false
+      }))
     };
 
     const token = localStorage.getItem('token');
