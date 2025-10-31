@@ -5463,7 +5463,10 @@ filteredArtikelData() {
         total_price: this.getOrderTotal(),
         created_at: new Date().toISOString()
       },
-      orderItems: filteredOrderItems
+      orderItems: filteredOrderItems.map(item => ({
+        ...item,
+        has_offer_price: item.use_offer_price && item.offer_price !== undefined ? true : false
+      }))
     };
 
     const token = localStorage.getItem('token');
