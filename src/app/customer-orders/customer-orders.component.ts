@@ -302,7 +302,9 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
             this.isVisible = false;
             
             // Angebote laden und anwenden (erstes Angebot verwenden)
-            this.loadAndApplyFirstOffer();
+            // Zusätzlich: Async-Orchestrierung, damit nach Refresh im Edit-Mode Preise konsistent sind
+            // (Angebote + Kundenpreise → normalize)
+            await this.loadAndApplyFirstOfferAsync();
 
             // Subscription für force_active Änderungen
             this.forceActiveSubscription = this.forceActiveService.getActiveOfferObservable().subscribe({
@@ -321,18 +323,13 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
               console.log('🔄 [INIT] Lade kundenspezifische Preise für gespeicherten Kunden:', this.pendingCustomerForPriceUpdate.customer_number);
               const customerNumber = this.pendingCustomerForPriceUpdate.customer_number;
               this.pendingCustomerForPriceUpdate = null;
-              
-              // ✅ MIT .then() warten auf Kundenpreise
-              this.loadCustomerArticlePricesAsync(customerNumber).then(async () => {
-                console.log('✅ [INIT] Kundenpreise geladen');
-                await this.checkForPendingOrderData();
-                this.checkForEditModeData();
-              });
-            } else {
-              // Kein Kunde → sofort prüfen
-              await this.checkForPendingOrderData();
-              this.checkForEditModeData();
+              await this.loadCustomerArticlePricesAsync(customerNumber);
             }
+
+            // Prüfe Pending-Order + Edit-Mode Daten und normalisiere danach konsistent
+            await this.checkForPendingOrderData();
+            this.checkForEditModeData();
+            await this.ensureBestPricesAfterRefresh();
           });
         },
         error: (error) => {
@@ -445,6 +442,103 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
         // still usable without offers
       }
     });
+  }
+
+  // Async-Variante: Lädt Angebote und wendet sie an, damit nach Refresh sequenziell gearbeitet werden kann
+  private async loadAndApplyFirstOfferAsync(): Promise<void> {
+    try {
+      const forceActiveOffer = this.forceActiveService.getActiveOffer();
+
+      const response: any = await firstValueFrom(this.offersService.getAllOffersWithProducts());
+      const offers: OfferWithProducts[] = response?.data || [];
+      if (!offers || offers.length === 0) {
+        return;
+      }
+
+      let selectedOffer: OfferWithProducts | undefined;
+      if (forceActiveOffer) {
+        selectedOffer = offers.find(offer => offer.id === forceActiveOffer.offerId);
+      }
+
+      if (!selectedOffer) {
+        // Fallback: erstes aktives Angebot analog loadRegularOffers()
+        const now = new Date();
+        const nowMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const activeOffers = offers.filter(offer => {
+          const startDate = new Date(offer.start_date);
+          const endDate = new Date(offer.end_date);
+          const startDateMidnight = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+          const endDateMidnight = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+          return offer.is_active && startDateMidnight <= nowMidnight && endDateMidnight >= nowMidnight;
+        });
+        if (activeOffers.length === 0) return;
+        selectedOffer = activeOffers[0];
+      }
+
+      if (!selectedOffer) return;
+
+      this.activeOfferFirst = selectedOffer;
+      this.applyOfferPricingToGlobalArtikels(selectedOffer);
+      if (Array.isArray(this.customerArticlePrices) && this.customerArticlePrices.length > 0) {
+        this.annotateCustomerPricesWithOffer(selectedOffer);
+      }
+    } catch (error) {
+      console.error('❌ [CUSTOMER-ORDERS] Fehler in loadAndApplyFirstOfferAsync:', error);
+    }
+  }
+
+  // Nach Refresh/Init sicherstellen, dass immer der günstigste Preis genutzt wird und UI aktualisieren
+  private async ensureBestPricesAfterRefresh(): Promise<void> {
+    try {
+      console.log('🔄 [ENSURE-BEST-PRICES] Starte ensureBestPricesAfterRefresh');
+      
+      // Stelle sicher, dass alle OrderItems die aktuellen Angebotspreise aus globalArtikels haben
+      if (Array.isArray(this.orderItems) && this.orderItems.length > 0 && this.globalArtikels && this.globalArtikels.length > 0) {
+        this.orderItems.forEach(item => {
+          // Prüfe, ob der Artikel in globalArtikels ein Angebot hat
+          const matchingArtikel = this.globalArtikels.find(art => 
+            (art.article_number && art.article_number === item.article_number) ||
+            (art.product_id && art.product_id === item.product_id) ||
+            (art.id && art.id === item.product_id)
+          );
+          
+          if (matchingArtikel && matchingArtikel.use_offer_price && matchingArtikel.offer_price !== undefined) {
+            // Setze offer_price, damit normalizeItemPrice() den günstigeren Preis wählen kann
+            item.offer_price = matchingArtikel.offer_price;
+            item.use_offer_price = true;
+            console.log(`🏷️ [ENSURE-BEST-PRICES] Angebotspreis für ${item.article_number} gesetzt: €${item.offer_price}`);
+          }
+          
+          // Normalisiere den Preis - wählt automatisch den günstigeren zwischen Kunde und Angebot
+          this.normalizeItemPrice(item);
+        });
+        
+        this.globalService.saveCustomerOrders(this.orderItems);
+      }
+      
+      if (Array.isArray(this.orderItems2) && this.orderItems2.length > 0 && this.globalArtikels && this.globalArtikels.length > 0) {
+        this.orderItems2.forEach(item => {
+          const matchingArtikel = this.globalArtikels.find(art => 
+            (art.article_number && art.article_number === item.article_number) ||
+            (art.product_id && art.product_id === item.product_id) ||
+            (art.id && art.id === item.product_id)
+          );
+          
+          if (matchingArtikel && matchingArtikel.use_offer_price && matchingArtikel.offer_price !== undefined) {
+            item.offer_price = matchingArtikel.offer_price;
+            item.use_offer_price = true;
+          }
+          
+          this.normalizeItemPrice(item);
+        });
+      }
+      
+      // UI aktualisieren, damit "Preis netto" Spalte sofort den neuen Preis zeigt
+      this.cdr.detectChanges();
+      console.log('✅ [ENSURE-BEST-PRICES] Beste Preise für alle OrderItems angewendet');
+    } catch (e) {
+      console.error('❌ [CUSTOMER-ORDERS] Fehler in ensureBestPricesAfterRefresh:', e);
+    }
   }
 
   private applyOfferPricingToGlobalArtikels(offer: OfferWithProducts): void {
@@ -5058,6 +5152,15 @@ filteredArtikelData() {
       // Aktualisiere die Preise der Artikel im aktuellen Auftrag
       this.updateOrderItemsPrices(customerPriceMap);
       
+      // WICHTIG für Refresh im Edit-Mode: Wenn Angebote bereits geladen sind,
+      // wende sie auf die Kundenpreise an, damit der günstigere Preis (Angebot oder Kunde) verwendet wird
+      if (this.activeOfferFirst && Array.isArray(this.orderItems) && this.orderItems.length > 0) {
+        console.log('🏷️ [UPDATE-PRICES] Angebote bereits geladen, wende auf OrderItems an');
+        // annotateCustomerPricesWithOffer() aktualisiert die customerArticlePrices mit Angeboten
+        // und wendet dann normalizeItemPrice() auf alle OrderItems an
+        this.annotateCustomerPricesWithOffer(this.activeOfferFirst);
+      }
+      
       console.log('✅ [UPDATE-PRICES] Artikel mit kundenspezifischen Preisen erfolgreich aktualisiert');
     } else {
       console.log('⚠️ [UPDATE-PRICES] Keine kundenspezifischen Preise vorhanden, setze alle auf Standard-Preise zurück');
@@ -5116,13 +5219,39 @@ filteredArtikelData() {
         
         console.log(`💰 [UPDATE-ORDER-PRICES] Auftrag-Artikel ${orderItem.article_number} (${orderItem.article_text}): ${orderItem.sale_price}€ → ${customerNetPrice}€ (Kundenpreis)`);
         
+        // Prüfe, ob der Artikel in globalArtikels ein Angebot hat
+        // Dies ist wichtig, damit der günstigere Preis (Angebot vs. Kunde) verwendet wird
+        let offerPriceFromGlobal: number | undefined = undefined;
+        let useOfferPrice = false;
+        if (this.globalArtikels && this.globalArtikels.length > 0) {
+          const matchingArtikel = this.globalArtikels.find(art => 
+            (art.article_number && art.article_number === orderItem.article_number) ||
+            (art.product_id && art.product_id === orderItem.product_id) ||
+            (art.id && art.id === orderItem.product_id)
+          );
+          if (matchingArtikel && matchingArtikel.use_offer_price && matchingArtikel.offer_price !== undefined) {
+            offerPriceFromGlobal = matchingArtikel.offer_price;
+            useOfferPrice = true;
+            console.log(`🏷️ [UPDATE-ORDER-PRICES] Angebotspreis für ${orderItem.article_number} gefunden: €${offerPriceFromGlobal}`);
+          }
+        }
+        
         updatedOrderItems++;
-        return {
+        const updatedItem = {
           ...orderItem,
           // sale_price bleibt unverändert (Standard-Preis)
           different_price: customerNetPrice, // Setze den kundenspezifischen Preis
-          original_price: originalPrice // Behalte den ursprünglichen Standard-Preis
+          original_price: originalPrice, // Behalte den ursprünglichen Standard-Preis
+          // WICHTIG: Setze offer_price, damit normalizeItemPrice() den günstigeren Preis wählen kann
+          offer_price: offerPriceFromGlobal !== undefined ? offerPriceFromGlobal : orderItem.offer_price,
+          use_offer_price: useOfferPrice || orderItem.use_offer_price
         };
+        
+        // WICHTIG: Prüfe nach dem Setzen des Kundenpreises, ob ein Angebotspreis günstiger ist
+        // normalizeItemPrice() prüft offer_price und setzt different_price auf den günstigeren Preis
+        this.normalizeItemPrice(updatedItem);
+        
+        return updatedItem;
       } else {
         // Kein kundenspezifischer Preis verfügbar, verwende Standard-Preis
         const standardPrice = orderItem.original_price || orderItem.sale_price;
