@@ -289,7 +289,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
           this.globalService.setUserRole(response.user.role);
           this.globalService.setUserName(response.user.name || response.user.email || 'Benutzer');
           
-          this.artikelService.getData().subscribe((res) => {
+          this.artikelService.getData().subscribe(async (res) => {
             if(response.user.role == 'admin') {
               this.globalService.isAdmin = true;
             }
@@ -323,14 +323,14 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
               this.pendingCustomerForPriceUpdate = null;
               
               // ✅ MIT .then() warten auf Kundenpreise
-              this.loadCustomerArticlePricesAsync(customerNumber).then(() => {
+              this.loadCustomerArticlePricesAsync(customerNumber).then(async () => {
                 console.log('✅ [INIT] Kundenpreise geladen');
-                this.checkForPendingOrderData();
+                await this.checkForPendingOrderData();
                 this.checkForEditModeData();
               });
             } else {
               // Kein Kunde → sofort prüfen
-              this.checkForPendingOrderData();
+              await this.checkForPendingOrderData();
               this.checkForEditModeData();
             }
           });
@@ -1017,7 +1017,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   }
 
   // Prüfe auf pending order data aus dem Admin-Bereich
-  private checkForPendingOrderData(): void {
+  private async checkForPendingOrderData(): Promise<void> {
     const pendingOrderData = localStorage.getItem('pendingOrderData');
     if (pendingOrderData) {
       console.log('📥 [PENDING-ORDER] Pending Order Data gefunden');
@@ -1032,7 +1032,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
           this.showReplaceOrderConfirmation(orderData);
         } else {
           // Lade die Bestellung direkt
-          this.loadOrderData(orderData);
+          await this.loadOrderData(orderData);
         }
         
         // Entferne die pending order data aus localStorage
@@ -1137,15 +1137,15 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       }
     });
 
-    dialogRef.afterClosed().subscribe(result => {
+    dialogRef.afterClosed().subscribe(async (result) => {
       if (result === true) {
-        this.loadOrderData(orderData);
+        await this.loadOrderData(orderData);
       }
     });
   }
 
   // Lade die Bestelldaten in die Customer Orders Komponente
-  private loadOrderData(orderData: any): void {
+  private async loadOrderData(orderData: any): Promise<void> {
     console.log('🔄 [LOAD-ORDER-DATA] Lade Bestelldaten:', orderData);
     
     // Prüfe, ob wir im Bearbeitungsmodus sind
@@ -1184,18 +1184,18 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       console.log('📝 [LOAD-ORDER-DATA] Kundenanmerkungen gesetzt:', this.customerNotes1);
     }
     
-    // Setze den Kunden basierend auf der Kundennummer oder E-Mail
+    // Setze den Kunden basierend auf der Kundennummer oder E-Mail - WARTE auf Abschluss
     if (orderData.customer) {
       if (orderData.customer.customer_number) {
         console.log('👤 [LOAD-ORDER-DATA] Suche Kunde mit Kundennummer:', orderData.customer.customer_number);
         
-        // Lade den Kunden direkt aus der API
-        this.loadCustomerByNumber(orderData.customer.customer_number, orderData);
+        // Lade den Kunden direkt aus der API und WARTE
+        await this.loadCustomerByNumberAsync(orderData.customer.customer_number, orderData);
       } else if (orderData.customer.email) {
         console.log('👤 [LOAD-ORDER-DATA] Keine Kundennummer, suche Kunde mit E-Mail:', orderData.customer.email);
         
-        // Lade den Kunden anhand der E-Mail
-        this.loadCustomerByEmail(orderData.customer.email, orderData);
+        // Lade den Kunden anhand der E-Mail und WARTE
+        await this.loadCustomerByEmailAsync(orderData.customer.email, orderData);
       } else {
         console.log('⚠️ [LOAD-ORDER-DATA] Weder Kundennummer noch E-Mail vorhanden');
       }
@@ -1261,8 +1261,13 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       this.orderItems = orderData.items.map((item: any) => {
         const articleNumber = item.product_article_number || item.article_number || '';
         
-        // Suche den Artikel in globalArtikels, um den cost_price zu bekommen
+        // Suche den Artikel in globalArtikels, um den cost_price und Angebotspreise zu bekommen
         let cost_price = 0;
+        let offer_price: number | undefined;
+        let use_offer_price = false;
+        let offerId: number | undefined;
+        let offer_name: string | undefined;
+        
         if (articleNumber && this.globalArtikels && this.globalArtikels.length > 0) {
           const globalArtikel = this.globalArtikels.find(artikel => 
             artikel.article_number === articleNumber
@@ -1270,9 +1275,52 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
           if (globalArtikel) {
             cost_price = globalArtikel.cost_price || 0;
             console.log(`💰 [LOAD-ORDER-DATA] EK-Preis für ${articleNumber} gefunden: €${cost_price}`);
+            
+            // Prüfe ob der Artikel einen Angebotspreis hat
+            if (globalArtikel.use_offer_price && globalArtikel.offer_price !== undefined) {
+              offer_price = globalArtikel.offer_price;
+              use_offer_price = true;
+              offerId = globalArtikel.offerId;
+              offer_name = globalArtikel.offer_name;
+              console.log(`🏷️ [LOAD-ORDER-DATA] Angebotspreis für ${articleNumber} gefunden: €${offer_price}`);
+            }
           } else {
             console.warn(`⚠️ [LOAD-ORDER-DATA] Kein EK-Preis für ${articleNumber} gefunden`);
           }
+        }
+        
+        const salePrice = item.price || item.sale_price || 0;
+        const differentPrice = item.different_price !== undefined && item.different_price !== null 
+          ? parseFloat(item.different_price) 
+          : undefined;
+        
+        // Prüfe ob Angebotspreis günstiger ist als Kundenpreis oder Standardpreis
+        let finalPrice = differentPrice !== undefined ? differentPrice : salePrice;
+        let finalUseOfferPrice = false;
+        
+        if (offer_price !== undefined) {
+          const currentPrice = differentPrice !== undefined ? differentPrice : salePrice;
+          if (offer_price < currentPrice) {
+            finalPrice = offer_price;
+            finalUseOfferPrice = true;
+            console.log(`✅ [LOAD-ORDER-DATA] Angebotspreis €${offer_price} ist günstiger als ${differentPrice !== undefined ? 'Kundenpreis' : 'Standardpreis'} €${currentPrice} für ${articleNumber}`);
+          }
+        }
+        
+        // Setze different_price: Wenn Angebotspreis verwendet wird ODER wenn differentPrice existiert und verschieden von salePrice
+        let finalDifferentPrice: number | undefined;
+        if (finalUseOfferPrice) {
+          // Angebotspreis wird verwendet → setze different_price auf Angebotspreis
+          finalDifferentPrice = offer_price;
+        } else if (differentPrice !== undefined && differentPrice !== salePrice) {
+          // Kundenpreis existiert und ist verschieden → behalte Kundenpreis
+          finalDifferentPrice = differentPrice;
+        } else if (finalPrice !== salePrice) {
+          // Sonst nur setzen wenn finalPrice verschieden von salePrice
+          finalDifferentPrice = finalPrice;
+        } else {
+          // Wenn finalPrice == salePrice, dann kein different_price
+          finalDifferentPrice = undefined;
         }
         
         return {
@@ -1280,11 +1328,21 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
           quantity: item.quantity || 1,
           article_text: item.product_name || item.article_text || 'Unbekannter Artikel',
           article_number: articleNumber,
-          sale_price: item.price || item.sale_price || 0,
+          sale_price: salePrice,
           cost_price: cost_price, // Aus globalArtikels geladen
-          different_price: item.different_price,
-          original_price: item.original_price || item.sale_price || item.price || 0
+          different_price: finalDifferentPrice, // Korrekt gesetzt für Input-Anzeige
+          original_price: item.original_price || salePrice || item.price || 0,
+          offer_price: finalUseOfferPrice ? offer_price : undefined,
+          use_offer_price: finalUseOfferPrice,
+          isOfferProduct: finalUseOfferPrice,
+          offerId: finalUseOfferPrice ? offerId : undefined,
+          offer_name: finalUseOfferPrice ? offer_name : undefined
         };
+      });
+      
+      // Normalisiere Preise für alle geladenen Items (stellt sicher, dass different_price korrekt gesetzt ist)
+      this.orderItems.forEach(item => {
+        this.normalizeItemPrice(item);
       });
       
       // Speichere die Aufträge
@@ -1303,8 +1361,8 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
 
 
 
-  // Neue Methode zum Laden eines Kunden anhand der E-Mail
-  private loadCustomerByEmail(email: string, orderData: any): void {
+  // Neue async Methode zum Laden eines Kunden anhand der E-Mail
+  private async loadCustomerByEmailAsync(email: string, orderData: any): Promise<void> {
     console.log('🔍 [LOAD-CUSTOMER-BY-EMAIL] Lade Kunde mit E-Mail:', email);
     
     const token = localStorage.getItem('token');
@@ -1316,27 +1374,27 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     
     if (foundCustomer) {
       console.log('✅ [LOAD-CUSTOMER-BY-EMAIL] Kunde in lokaler Liste gefunden:', foundCustomer);
-      this.setCustomerFromOrderData(foundCustomer, orderData);
+      await this.setCustomerFromOrderDataAsync(foundCustomer, orderData);
       return;
     }
     
     // Wenn nicht in lokaler Liste, lade alle Kunden und suche dann
     console.log('🔄 [LOAD-CUSTOMER-BY-EMAIL] Kunde nicht in lokaler Liste, lade alle Kunden...');
     
-    fetch(`${environment.apiUrl}/api/customers`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    })
-    .then(response => {
+    try {
+      const response = await fetch(`${environment.apiUrl}/api/customers`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
       if (!response.ok) {
         throw new Error('Fehler beim Laden der Kunden');
       }
-      return response.json();
-    })
-    .then(data => {
+      
+      const data = await response.json();
       this.customers = data;
       
       // Suche den Kunden in der geladenen Liste
@@ -1346,7 +1404,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       
       if (customer) {
         console.log('✅ [LOAD-CUSTOMER-BY-EMAIL] Kunde gefunden:', customer);
-        this.setCustomerFromOrderData(customer, orderData);
+        await this.setCustomerFromOrderDataAsync(customer, orderData);
       } else {
         console.warn('⚠️ [LOAD-CUSTOMER-BY-EMAIL] Kunde nicht gefunden:', email);
         // Erstelle einen minimalen Kunden mit nur der E-Mail als Fallback
@@ -1361,10 +1419,9 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
           postal_code: '',
           _country_code: ''
         };
-        this.setCustomerFromOrderData(fallbackCustomer, orderData);
+        await this.setCustomerFromOrderDataAsync(fallbackCustomer, orderData);
       }
-    })
-    .catch(error => {
+    } catch (error) {
       console.error('❌ [LOAD-CUSTOMER-BY-EMAIL] Fehler beim Laden der Kunden:', error);
       // Erstelle einen minimalen Kunden mit nur der E-Mail als Fallback
       const fallbackCustomer = {
@@ -1378,12 +1435,17 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
         postal_code: '',
         _country_code: ''
       };
-      this.setCustomerFromOrderData(fallbackCustomer, orderData);
-    });
+      await this.setCustomerFromOrderDataAsync(fallbackCustomer, orderData);
+    }
   }
 
-  // Neue Methode zum Laden eines Kunden anhand der Kundennummer
-  private loadCustomerByNumber(customerNumber: string, orderData: any): void {
+  // Neue Methode zum Laden eines Kunden anhand der E-Mail (für andere Verwendungen)
+  private loadCustomerByEmail(email: string, orderData: any): void {
+    this.loadCustomerByEmailAsync(email, orderData);
+  }
+
+  // Neue async Methode zum Laden eines Kunden anhand der Kundennummer
+  private async loadCustomerByNumberAsync(customerNumber: string, orderData: any): Promise<void> {
     console.log('🔍 [LOAD-CUSTOMER-BY-NUMBER] Lade Kunde mit Nummer:', customerNumber);
     
     const token = localStorage.getItem('token');
@@ -1393,29 +1455,29 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       customer.customer_number === customerNumber
     );
     
-    if (foundCustomer) {
-      console.log('✅ [LOAD-CUSTOMER-BY-NUMBER] Kunde in lokaler Liste gefunden:', foundCustomer);
-      this.setCustomerFromOrderData(foundCustomer, orderData);
-      return;
-    }
+      if (foundCustomer) {
+        console.log('✅ [LOAD-CUSTOMER-BY-NUMBER] Kunde in lokaler Liste gefunden:', foundCustomer);
+        await this.setCustomerFromOrderDataAsync(foundCustomer, orderData);
+        return;
+      }
     
     // Wenn nicht in lokaler Liste, lade alle Kunden und suche dann
     console.log('🔄 [LOAD-CUSTOMER-BY-NUMBER] Kunde nicht in lokaler Liste, lade alle Kunden...');
     
-    fetch(`${environment.apiUrl}/api/customers`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    })
-    .then(response => {
+    try {
+      const response = await fetch(`${environment.apiUrl}/api/customers`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
       if (!response.ok) {
         throw new Error('Fehler beim Laden der Kunden');
       }
-      return response.json();
-    })
-    .then(data => {
+      
+      const data = await response.json();
       this.customers = data;
       
       // Suche den Kunden in der geladenen Liste
@@ -1423,7 +1485,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       
       if (customer) {
         console.log('✅ [LOAD-CUSTOMER-BY-NUMBER] Kunde gefunden:', customer);
-        this.setCustomerFromOrderData(customer, orderData);
+        await this.setCustomerFromOrderDataAsync(customer, orderData);
       } else {
         console.warn('⚠️ [LOAD-CUSTOMER-BY-NUMBER] Kunde nicht gefunden:', customerNumber);
         // Erstelle einen minimalen Kunden mit nur der Kundennummer als Fallback
@@ -1438,10 +1500,9 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
           postal_code: '',
           _country_code: ''
         };
-        this.setCustomerFromOrderData(fallbackCustomer, orderData);
+        await this.setCustomerFromOrderDataAsync(fallbackCustomer, orderData);
       }
-    })
-    .catch(error => {
+    } catch (error) {
       console.error('❌ [LOAD-CUSTOMER-BY-NUMBER] Fehler beim Laden der Kunden:', error);
       // Erstelle einen minimalen Kunden mit nur der Kundennummer als Fallback
       const fallbackCustomer = {
@@ -1455,12 +1516,17 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
         postal_code: '',
         _country_code: ''
       };
-      this.setCustomerFromOrderData(fallbackCustomer, orderData);
-    });
+      await this.setCustomerFromOrderDataAsync(fallbackCustomer, orderData);
+    }
   }
 
-  // Hilfsmethode zum Setzen des Kunden
-  private setCustomerFromOrderData(customer: any, orderData: any): void {
+  // Neue Methode zum Laden eines Kunden anhand der Kundennummer (für andere Verwendungen)
+  private loadCustomerByNumber(customerNumber: string, orderData: any): void {
+    this.loadCustomerByNumberAsync(customerNumber, orderData);
+  }
+
+  // Hilfsmethode zum Setzen des Kunden mit async/await
+  private async setCustomerFromOrderDataAsync(customer: any, orderData: any): Promise<void> {
     console.log('👤 [SET-CUSTOMER] Setze Kunde:', customer);
     this.globalService.setSelectedCustomerForOrders(customer);
     
@@ -1470,11 +1536,16 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     }
     
     // ✅ Lade kundenspezifische Preise MIT async - WARTET auf Kundenpreise
-    this.loadCustomerArticlePricesAsync(customer.customer_number).then(() => {
+    if (customer.customer_number) {
+      console.log('⏳ [SET-CUSTOMER] Warte auf Kundenpreise für Kunde:', customer.customer_number);
+      await this.loadCustomerArticlePricesAsync(customer.customer_number);
       console.log('✅ [SET-CUSTOMER] Kundenpreise geladen für Kunde:', customer.customer_number);
-    }).catch((error) => {
-      console.error('❌ [SET-CUSTOMER] Fehler beim Laden der Kundenpreise:', error);
-    });
+    }
+  }
+
+  // Hilfsmethode zum Setzen des Kunden (für andere Verwendungen ohne await)
+  private setCustomerFromOrderData(customer: any, orderData: any): void {
+    this.setCustomerFromOrderDataAsync(customer, orderData);
   }
 
   // Neue Methode zum Laden eines Kunden aus der Bildanalyse-Response
