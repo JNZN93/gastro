@@ -75,11 +75,13 @@ export class AdminComponent implements OnInit {
     }).subscribe({
       next: (customers) => {
         this.customers = customers || [];
-        // Erstelle eine Map von Kundennummer zu Kundennamen
+        // Erstelle eine Map von Kundennummer zu Kundennamen (wie in Order-Overview)
         this.customerNameMap = {};
         customers.forEach(customer => {
-          if (customer.customer_number && customer.last_name_company) {
-            this.customerNameMap[customer.customer_number] = customer.last_name_company;
+          const numberStr = String(customer?.customer_number ?? '').trim();
+          const nameStr = String(customer?.last_name_company ?? customer?.name ?? '').trim();
+          if (numberStr && nameStr) {
+            this.customerNameMap[numberStr] = nameStr;
           }
         });
         console.log('✅ [ADMIN] Kundendaten geladen:', this.customers.length);
@@ -104,6 +106,27 @@ export class AdminComponent implements OnInit {
     
     // Fallback: Zeige Kundennummer an
     return order.customer_number || 'Unbekannter Kunde';
+  }
+
+  // Methode zum Prüfen, ob eine Bestellung von einem Mitarbeiter stammt
+  isEmployeeOrder(order: any): boolean {
+    return order.role === 'admin' || order.role === 'employee';
+  }
+
+  // Methode zum Anzeigen des Kundennamens (exakt wie in Order-Overview)
+  getCustomerDisplayName(order: any): string {
+    const key = String(order.customer_number ?? '').trim();
+    if (key) {
+      const mapped = this.customerNameMap[key];
+      if (mapped && mapped.trim()) {
+        return mapped;
+      }
+      return `Kunde ${key}`;
+    }
+    if (this.isEmployeeOrder(order)) {
+      return '-';
+    }
+    return order.name;
   }
 
   // Neue Methode zum Laden aller Artikel (inkl. PFAND)

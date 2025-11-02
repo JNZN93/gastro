@@ -238,7 +238,7 @@
             <td class="order-id">{{ order.order_id }}</td>
             <td class="order-date">{{ order.created_at | date: 'dd.MM.yyyy HH:mm' }}</td>
             <td class="customer-name">{{ getCustomerName(order) }}</td>
-            <td class="company-name">{{ order.company || '-' }}</td>
+            <td class="company-name">{{ getCustomerDisplayName(order) }}</td>
             <td class="status-cell">
               <select [(ngModel)]="order.status" (change)="onStatusChange($event, order)" 
                       class="status-select" [class]="'status-' + order.status">
