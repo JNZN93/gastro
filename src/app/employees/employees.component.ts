@@ -3088,7 +3088,14 @@ export class EmployeesComponent implements OnInit, OnDestroy {
         total_price: this.getOrderTotal(),
         created_at: new Date().toISOString()
       },
-      orderItems: this.orderItems
+      orderItems: this.orderItems.map(item => ({
+        ...item,
+        different_price: item.different_price, // Stelle sicher, dass different_price explizit gesetzt wird
+        sale_price: item.sale_price,
+        quantity: item.quantity,
+        description: item.description || item.article_text,
+        has_offer_price: item.use_offer_price && item.offer_price !== undefined ? true : false
+      }))
     };
 
     const token = localStorage.getItem('token');
