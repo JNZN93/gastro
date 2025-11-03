@@ -810,16 +810,8 @@ export class OrderOverviewComponent implements OnInit {
     console.log('📦 [LOAD-ORDER] Bestellung wird ohne PFAND-Logik geladen');
     console.log('📦 [LOAD-ORDER] Anzahl Artikel:', orderData.items.length);
     
-    // Kategorie-Sortierung beibehalten (auch für bereits vorhandene PFAND-Artikel)
-    if (!this.isEmployee(order) && this.allArtikels && this.allArtikels.length > 0) {
-      console.log('📂 [LOAD-ORDER] Sortiere Artikel nach Kategorien...');
-      orderData.items = this.sortItemsByCategory(orderData.items);
-      console.log('✅ [LOAD-ORDER] Artikel nach Kategorien sortiert');
-    } else if (this.isEmployee(order)) {
-      console.log('ℹ️ [LOAD-ORDER] Sachbearbeiter-Bestellung erkannt - überspringe Kategorie-Sortierung');
-    } else {
-      console.log('⚠️ [LOAD-ORDER] Keine Artikel verfügbar, überspringe Kategorie-Sortierung');
-    }
+    // Kategorie-Sortierung entfernt - ursprüngliche Reihenfolge der Positionen wird beibehalten
+    console.log('ℹ️ [LOAD-ORDER] Ursprüngliche Reihenfolge der Positionen wird beibehalten');
 
     console.log('📦 [LOAD-ORDER] Artikel werden zur Customer Orders Komponente weitergeleitet');
     console.log('📦 [LOAD-ORDER] Anzahl Artikel:', orderData.items.length);
@@ -1121,12 +1113,8 @@ export class OrderOverviewComponent implements OnInit {
       customerNotes: order.customer_notes || '' // Übernehme die Kundenanmerkungen
     };
 
-    // Kategorie-Sortierung beibehalten
-    if (!this.isEmployee(order) && this.allArtikels && this.allArtikels.length > 0) {
-      console.log('📂 [EDIT-ORDER] Sortiere Artikel nach Kategorien...');
-      orderData.items = this.sortItemsByCategory(orderData.items);
-      console.log('✅ [EDIT-ORDER] Artikel nach Kategorien sortiert');
-    }
+    // Kategorie-Sortierung entfernt - ursprüngliche Reihenfolge der Positionen wird beibehalten
+    console.log('ℹ️ [EDIT-ORDER] Ursprüngliche Reihenfolge der Positionen wird beibehalten');
 
     // Speichere die Bestelldaten im localStorage für die Customer Orders Komponente
     localStorage.setItem('pendingOrderData', JSON.stringify(orderData));
