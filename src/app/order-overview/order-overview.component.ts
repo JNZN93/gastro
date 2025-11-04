@@ -234,34 +234,34 @@ export class OrderOverviewComponent implements OnInit {
       doc.text(`${currentPage} von ${totalPages}`, 190, 290, { align: 'right' });
     };
 
-    // Header mit modernem Design
+    // Header mit modernem Design (kompakter)
     doc.setFillColor(colors.primary[0], colors.primary[1], colors.primary[2]);
-    doc.rect(0, 0, 210, 25, 'F');
+    doc.rect(0, 0, 210, 18, 'F');
     
     // Logo/Unternehmensname
     doc.setTextColor(colors.white[0], colors.white[1], colors.white[2]);
-    doc.setFontSize(16);
+    doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
-    doc.text('GASTRO KOMMISSIONIERUNG', 15, 17);
+    doc.text('GASTRO DEPOT BESTELLUNG', 15, 12);
     
     // Untertitel
-    doc.setFontSize(10);
+    doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
-    doc.text('Kommissionierungsschein', 15, 22);
+    doc.text('Kommissionierungsschein', 15, 16.5);
 
     // Bestellnummer Badge
     doc.setFillColor(colors.accent[0], colors.accent[1], colors.accent[2]);
-    doc.roundedRect(160, 8, 35, 12, 3, 3, 'F');
+    doc.roundedRect(160, 5, 35, 10, 3, 3, 'F');
     doc.setTextColor(colors.white[0], colors.white[1], colors.white[2]);
-    doc.setFontSize(11);
+    doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
-    doc.text('#' + order.order_id.toString(), 170, 16);
+    doc.text('#' + order.order_id.toString(), 170, 12);
 
-    // Bestellinformationen in modernen Karten
+    // Bestellinformationen in modernen Karten (kompakter)
     doc.setTextColor(colors.dark[0], colors.dark[1], colors.dark[2]);
     
-    let yPos = 40;
-    const cardHeight = 25;
+    let yPos = 28;
+    const cardHeight = 20;
     const leftCardWidth = 90;
     const rightCardWidth = 90;
     const cardSpacing = 10;
@@ -277,16 +277,16 @@ export class OrderOverviewComponent implements OnInit {
     doc.setLineWidth(0.5);
     doc.roundedRect(15, yPos, leftCardWidth, cardHeight, 5, 5);
     
-    doc.setFontSize(9);
+    doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(colors.secondary[0], colors.secondary[1], colors.secondary[2]);
-    doc.text('BESTELLDETAILS', 20, yPos + 8);
+    doc.text('BESTELLDETAILS', 20, yPos + 6);
     
-    doc.setFontSize(8);
+    doc.setFontSize(7);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(colors.dark[0], colors.dark[1], colors.dark[2]);
-    doc.text('Datum: ' + orderDateFormatted, 20, yPos + 14);
-    doc.text('Erstellt: ' + createdAtFormatted, 20, yPos + 19);
+    doc.text('Datum: ' + orderDateFormatted, 20, yPos + 11);
+    doc.text('Erstellt: ' + createdAtFormatted, 20, yPos + 16);
 
     // Rechte Karte - Lieferdetails
     doc.setFillColor(colors.light[0], colors.light[1], colors.light[2]);
@@ -295,83 +295,75 @@ export class OrderOverviewComponent implements OnInit {
     doc.setLineWidth(0.5);
     doc.roundedRect(115, yPos, rightCardWidth, cardHeight, 5, 5);
     
-    doc.setFontSize(9);
+    doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(colors.secondary[0], colors.secondary[1], colors.secondary[2]);
-    doc.text('LIEFERDETAILS', 120, yPos + 8);
+    doc.text('LIEFERDETAILS', 120, yPos + 6);
     
-    doc.setFontSize(8);
+    doc.setFontSize(7);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(colors.dark[0], colors.dark[1], colors.dark[2]);
-    doc.text('Art: ' + (order.fulfillment_type === 'delivery' ? 'Lieferung' : 'Abholung'), 120, yPos + 14);
-    doc.text('Datum: ' + this.formatDate(order.delivery_date), 120, yPos + 19);
+    doc.text('Art: ' + (order.fulfillment_type === 'delivery' ? 'Lieferung' : 'Abholung'), 120, yPos + 11);
+    doc.text('Datum: ' + this.formatDate(order.delivery_date), 120, yPos + 16);
 
-    yPos += cardHeight + 15;
+    yPos += cardHeight + 10;
 
-    // Kunde und E-Mail Karten
-    const customerCardHeight = 20;
+    // Kunde Karte mit allen Informationen
+    const customerName = this.getCustomerDisplayName(order);
+    const customerNumber = order.customer_number || '';
     
-    // Kunde Karte
-    doc.setFillColor(colors.light[0], colors.light[1], colors.light[2]);
-    doc.roundedRect(15, yPos, leftCardWidth, customerCardHeight, 5, 5, 'F');
-    doc.setDrawColor(colors.primary[0], colors.primary[1], colors.primary[2]);
-    doc.setLineWidth(0.5);
-    doc.roundedRect(15, yPos, leftCardWidth, customerCardHeight, 5, 5);
-    
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(colors.secondary[0], colors.secondary[1], colors.secondary[2]);
-    doc.text('KUNDE', 20, yPos + 8);
-    
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(colors.dark[0], colors.dark[1], colors.dark[2]);
-    doc.text(this.getCustomerDisplayName(order), 20, yPos + 15);
-
-    // E-Mail Karte
-    doc.setFillColor(colors.light[0], colors.light[1], colors.light[2]);
-    doc.roundedRect(115, yPos, rightCardWidth, customerCardHeight, 5, 5, 'F');
-    doc.setDrawColor(colors.primary[0], colors.primary[1], colors.primary[2]);
-    doc.setLineWidth(0.5);
-    doc.roundedRect(115, yPos, rightCardWidth, customerCardHeight, 5, 5);
-    
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(colors.secondary[0], colors.secondary[1], colors.secondary[2]);
-    doc.text('E-MAIL', 120, yPos + 8);
-    
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(colors.dark[0], colors.dark[1], colors.dark[2]);
-    const emailText = order.email.length > 25 ? order.email.substring(0, 22) + '...' : order.email;
-    doc.text(emailText, 120, yPos + 15);
-
-    // Lieferadresse Karte (falls vorhanden)
-    if (order.shipping_address) {
-      yPos += customerCardHeight + 10;
-      
-      doc.setFillColor(colors.light[0], colors.light[1], colors.light[2]);
-      doc.roundedRect(15, yPos, leftCardWidth + rightCardWidth + cardSpacing, 18, 5, 5, 'F');
-      doc.setDrawColor(colors.primary[0], colors.primary[1], colors.primary[2]);
-      doc.setLineWidth(0.5);
-      doc.roundedRect(15, yPos, leftCardWidth + rightCardWidth + cardSpacing, 18, 5, 5);
-      
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(colors.secondary[0], colors.secondary[1], colors.secondary[2]);
-      doc.text('LIEFERADRESSE', 20, yPos + 8);
-      
-      doc.setFontSize(8);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(colors.dark[0], colors.dark[1], colors.dark[2]);
-      const addressText = order.shipping_address;
-      const splitAddress = doc.splitTextToSize(addressText, 180);
-      doc.text(splitAddress, 20, yPos + 14);
-      
-      yPos += 28;
-    } else {
-      yPos += customerCardHeight + 15;
+    // Sammle alle Kundeninformationen
+    const customerLines: string[] = [];
+    if (customerNumber) {
+      customerLines.push(customerNumber);
     }
+    if (customerName) {
+      customerLines.push(customerName);
+    }
+    
+    // Versuche zusätzliche Kundendaten aus customerNameByNumber zu holen
+    const customerKey = String(customerNumber).trim();
+    const mappedCustomer = this.customerNameByNumber[customerKey];
+    
+    // Wenn shipping_address vorhanden ist, nutze diese
+    if (order.shipping_address) {
+      const addressLines = order.shipping_address.split('\n').filter(line => line.trim());
+      customerLines.push(...addressLines);
+    }
+    
+    // Berechne die Höhe der Karte basierend auf Anzahl der Zeilen
+    const lineHeight = 5;
+    const padding = 10;
+    const customerCardHeight = Math.max(30, customerLines.length * lineHeight + padding);
+    
+    // Kunde Karte nutzt volle Breite
+    doc.setFillColor(colors.light[0], colors.light[1], colors.light[2]);
+    doc.roundedRect(15, yPos, leftCardWidth + rightCardWidth + cardSpacing, customerCardHeight, 5, 5, 'F');
+    doc.setDrawColor(colors.primary[0], colors.primary[1], colors.primary[2]);
+    doc.setLineWidth(0.5);
+    doc.roundedRect(15, yPos, leftCardWidth + rightCardWidth + cardSpacing, customerCardHeight, 5, 5);
+    
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(colors.secondary[0], colors.secondary[1], colors.secondary[2]);
+    doc.text('KUNDE', 20, yPos + 6);
+    
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(colors.dark[0], colors.dark[1], colors.dark[2]);
+    
+    let textY = yPos + 12;
+    customerLines.forEach((line, index) => {
+      if (line && line.trim()) {
+        const splitLines = doc.splitTextToSize(line, 175);
+        splitLines.forEach((splitLine: string) => {
+          doc.text(splitLine, 20, textY);
+          textY += lineHeight;
+        });
+      }
+    });
+
+    yPos += customerCardHeight + 10;
 
     // Moderne Trennlinie
     doc.setDrawColor(colors.primary[0], colors.primary[1], colors.primary[2]);
@@ -424,28 +416,28 @@ export class OrderOverviewComponent implements OnInit {
         pageCount++;
         currentY = 20;
         
-        // Header auf neuer Seite wiederholen
+        // Header auf neuer Seite wiederholen (kompakter)
         doc.setFillColor(colors.primary[0], colors.primary[1], colors.primary[2]);
-        doc.rect(0, 0, 210, 25, 'F');
+        doc.rect(0, 0, 210, 18, 'F');
         
         doc.setTextColor(colors.white[0], colors.white[1], colors.white[2]);
-        doc.setFontSize(16);
+        doc.setFontSize(14);
         doc.setFont('helvetica', 'bold');
-        doc.text('GASTRO KOMMISSIONIERUNG', 15, 17);
+        doc.text('GASTRO DEPOT BESTELLUNG', 15, 12);
         
-        doc.setFontSize(10);
+        doc.setFontSize(9);
         doc.setFont('helvetica', 'normal');
-        doc.text('Kommissionierungsschein', 15, 22);
+        doc.text('Kommissionierungsschein', 15, 16.5);
         
         // Bestellnummer Badge
         doc.setFillColor(colors.accent[0], colors.accent[1], colors.accent[2]);
-        doc.roundedRect(160, 8, 35, 12, 3, 3, 'F');
+        doc.roundedRect(160, 5, 35, 10, 3, 3, 'F');
         doc.setTextColor(colors.white[0], colors.white[1], colors.white[2]);
-        doc.setFontSize(11);
+        doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
-        doc.text('#' + order.order_id.toString(), 170, 16);
+        doc.text('#' + order.order_id.toString(), 170, 12);
         
-        currentY = 35;
+        currentY = 25;
         
         // Tabellenüberschrift auf neuer Seite wiederholen
         doc.setFillColor(colors.primary[0], colors.primary[1], colors.primary[2]);
