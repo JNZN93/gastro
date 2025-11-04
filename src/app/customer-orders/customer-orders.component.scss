@@ -1452,7 +1452,7 @@
     padding: 12px 20px;
     border: none;
     border-radius: 6px;
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 500;
     cursor: pointer;
     display: flex;
@@ -1499,13 +1499,13 @@
   }
 
   .pdf-order-btn {
-    background: #dc2626;
+    background: #2563eb;
     color: white;
     
     &:hover {
-      background: #b91c1c;
+      background: #1d4ed8;
       transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
     }
   }
 
@@ -2065,10 +2065,16 @@
   gap: 8px;
   margin-top: 8px;
   padding: 8px;
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
   border-radius: 8px;
   border: 1px solid #e2e8f0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+
+  &:hover {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    border-color: #cbd5e1;
+  }
 
   // Responsive adjustments
   @media (max-width: 768px) {
@@ -2078,8 +2084,89 @@
   }
 
   @media (max-width: 480px) {
-    padding: 4px;
+    padding: 6px;
     gap: 4px;
+  }
+  
+  // Desktop date-field styles
+  .date-field {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex: 1;
+    position: relative;
+    
+    label {
+      font-size: 10px;
+      font-weight: 600;
+      color: #334155;
+      margin-bottom: 0;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      
+      &::before {
+        content: '';
+        display: inline-block;
+        width: 2px;
+        height: 10px;
+        background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+        border-radius: 1px;
+      }
+    }
+    
+    .date-input {
+      padding: 5px 8px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 6px;
+      font-size: 12px;
+      background: #ffffff;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      height: 28px;
+      color: #1e293b;
+      font-weight: 500;
+      cursor: pointer;
+      
+      &:hover {
+        border-color: #2563eb;
+        background: #f8faff;
+        box-shadow: 0 1px 4px rgba(37, 99, 235, 0.1);
+      }
+      
+      &:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+        background: #ffffff;
+      }
+      
+      &::-webkit-calendar-picker-indicator {
+        filter: invert(0.4) sepia(1) saturate(5) hue-rotate(200deg);
+        cursor: pointer;
+        padding: 2px;
+        border-radius: 3px;
+        transition: all 0.15s ease;
+        
+        &:hover {
+          filter: invert(0.3) sepia(1) saturate(5) hue-rotate(200deg);
+          background: #eff6ff;
+        }
+      }
+      
+      &::-webkit-datetime-edit-text {
+        color: #64748b;
+        padding: 0 1px;
+      }
+      
+      &::-webkit-datetime-edit-month-field,
+      &::-webkit-datetime-edit-day-field,
+      &::-webkit-datetime-edit-year-field {
+        color: #1e293b;
+        padding: 0 1px;
+      }
+    }
   }
 }
 
@@ -2107,7 +2194,7 @@
       button {
         width: 100%;
         padding: 10px 16px;
-        font-size: 13px;
+        font-size: 11px;
       }
     }
   }
@@ -2127,63 +2214,11 @@
       
       button {
         padding: 10px 12px;
-        font-size: 13px;
+        font-size: 11px;
         font-weight: 600;
         
         .material-icons {
           font-size: 18px;
-        }
-      }
-    }
-  }
-  
-  .date-field {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    flex: 1;
-    
-    label {
-      font-size: 11px;
-      font-weight: 600;
-      color: #475569;
-      margin-bottom: 0;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    
-    .date-input {
-      padding: 4px 8px;
-      border: 1px solid #cbd5e1;
-      border-radius: 6px;
-      font-size: 11px;
-      background: white;
-      transition: all 0.2s ease;
-      height: 28px;
-      color: #1e293b;
-      font-weight: 500;
-      
-      &:hover {
-        border-color: #94a3b8;
-        background: #fefefe;
-      }
-      
-      &:focus {
-        outline: none;
-        border-color: #10b981;
-        box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.15);
-        background: #fefefe;
-      }
-      
-      &::-webkit-calendar-picker-indicator {
-        filter: invert(0.5);
-        cursor: pointer;
-        padding: 2px;
-        border-radius: 3px;
-        
-        &:hover {
-          filter: invert(0.3);
-          background: #f1f5f9;
         }
       }
     }
@@ -2197,58 +2232,92 @@
   gap: 6px;
   margin: 8px 0;
   padding: 8px;
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
   border-radius: 8px;
   border: 1px solid #e2e8f0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+  
+  &:hover {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    border-color: #cbd5e1;
+  }
   
   .mobile-date-field {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 3px;
+    position: relative;
     
     label {
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 600;
-      color: #475569;
+      color: #334155;
       margin-bottom: 0;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.3px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      
+      &::before {
+        content: '';
+        display: inline-block;
+        width: 2px;
+        height: 10px;
+        background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+        border-radius: 1px;
+      }
     }
     
     .mobile-date-input {
-      padding: 6px 8px;
-      border: 1px solid #cbd5e1;
+      padding: 5px 8px;
+      border: 1.5px solid #e2e8f0;
       border-radius: 6px;
-      font-size: 11px;
-      background: white;
-      transition: all 0.2s ease;
+      font-size: 12px;
+      background: #ffffff;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       height: 28px;
       color: #1e293b;
       font-weight: 500;
+      cursor: pointer;
       
       &:hover {
-        border-color: #94a3b8;
-        background: #fefefe;
+        border-color: #2563eb;
+        background: #f8faff;
+        box-shadow: 0 1px 4px rgba(37, 99, 235, 0.1);
       }
       
       &:focus {
         outline: none;
-        border-color: #10b981;
-        box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.15);
-        background: #fefefe;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+        background: #ffffff;
       }
       
       &::-webkit-calendar-picker-indicator {
-        filter: invert(0.5);
+        filter: invert(0.4) sepia(1) saturate(5) hue-rotate(200deg);
         cursor: pointer;
         padding: 2px;
         border-radius: 3px;
+        transition: all 0.15s ease;
         
         &:hover {
-          filter: invert(0.3);
-          background: #f1f5f9;
+          filter: invert(0.3) sepia(1) saturate(5) hue-rotate(200deg);
+          background: #eff6ff;
         }
+      }
+      
+      &::-webkit-datetime-edit-text {
+        color: #64748b;
+        padding: 0 1px;
+      }
+      
+      &::-webkit-datetime-edit-month-field,
+      &::-webkit-datetime-edit-day-field,
+      &::-webkit-datetime-edit-year-field {
+        color: #1e293b;
+        padding: 0 1px;
       }
     }
   }
@@ -2370,7 +2439,7 @@
     width: 100%;
     justify-content: center;
     padding: 10px 16px;
-    font-size: 13px;
+    font-size: 11px;
   }
 }
 
@@ -6281,7 +6350,7 @@
     padding: 12px;
     border: none;
     border-radius: 6px;
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 500;
     cursor: pointer;
     display: flex;
@@ -6305,11 +6374,11 @@
   }
 
   .pdf-order-btn {
-    background: #dc2626;
+    background: #2563eb;
     color: white;
 
     &:hover {
-      background: #b91c1c;
+      background: #1d4ed8;
     }
   }
 
