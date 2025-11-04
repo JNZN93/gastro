@@ -152,6 +152,8 @@ export class OrderOverviewComponent implements OnInit {
       });
   }
 
+  private customersByNumber: Record<string, any> = {}; // Vollständige Kundendaten
+
   private loadCustomers() {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -174,6 +176,8 @@ export class OrderOverviewComponent implements OnInit {
           const nameStr = String(customer?.last_name_company ?? customer?.name ?? '').trim();
           if (numberStr && nameStr) {
             map[numberStr] = nameStr;
+            // Speichere auch vollständige Kundendaten
+            this.customersByNumber[numberStr] = customer;
           }
         }
         this.customerNameByNumber = map;
@@ -314,19 +318,41 @@ export class OrderOverviewComponent implements OnInit {
     
     // Sammle alle Kundeninformationen
     const customerLines: string[] = [];
+    
+    // Kundennummer
     if (customerNumber) {
       customerLines.push(customerNumber);
     }
+    
+    // Firmenname/Name
     if (customerName) {
       customerLines.push(customerName);
     }
     
-    // Versuche zusätzliche Kundendaten aus customerNameByNumber zu holen
+    // Versuche vollständige Kundendaten zu holen
     const customerKey = String(customerNumber).trim();
-    const mappedCustomer = this.customerNameByNumber[customerKey];
+    const fullCustomer = this.customersByNumber[customerKey];
     
-    // Wenn shipping_address vorhanden ist, nutze diese
-    if (order.shipping_address) {
+    // Namenszusatz (z.B. "Inh. Özlem Özmeneroglu")
+    if (fullCustomer && fullCustomer.name_addition) {
+      customerLines.push(fullCustomer.name_addition);
+    }
+    
+    // Adresse aus vollständigen Kundendaten
+    if (fullCustomer) {
+      if (fullCustomer.street) {
+        customerLines.push(fullCustomer.street);
+      }
+      
+      // PLZ und Stadt
+      if (fullCustomer.postal_code || fullCustomer.city) {
+        const cityLine = `${fullCustomer.postal_code || ''} ${fullCustomer.city || ''}`.trim();
+        if (cityLine) {
+          customerLines.push(cityLine);
+        }
+      }
+    } else if (order.shipping_address) {
+      // Fallback: Nutze shipping_address wenn vollständige Kundendaten nicht verfügbar sind
       const addressLines = order.shipping_address.split('\n').filter(line => line.trim());
       customerLines.push(...addressLines);
     }
