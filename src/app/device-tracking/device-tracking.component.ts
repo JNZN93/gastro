@@ -438,6 +438,13 @@ export class DeviceTrackingComponent implements OnInit, OnDestroy {
     return this.selectedDeviceId === deviceId;
   }
 
+  hasValidCoordinates(position: PositionData): boolean {
+    return position.latitude != null && 
+           position.longitude != null && 
+           !isNaN(position.latitude) && 
+           !isNaN(position.longitude);
+  }
+
   toggleMockMode(): void {
     this.useMockData = !this.useMockData;
     

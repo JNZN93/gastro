@@ -56,7 +56,7 @@
         <h2 class="section-title">Verfügbare Geräte</h2>
         <div class="devices-list-content">
           @for (position of positions; track position.id) {
-            @if (position.valid) {
+            @if (hasValidCoordinates(position)) {
               <div class="device-card" 
                    [class.selected]="isDeviceSelected(position.deviceId)"
                    (click)="selectAndZoomToDevice(position)">
