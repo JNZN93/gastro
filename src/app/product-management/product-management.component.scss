@@ -321,10 +321,10 @@
 
         .article-name {
           color: #374151;
-          max-width: 200px;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
+          max-width: 100%;
+          white-space: normal;
+          word-break: break-word;
+          overflow-wrap: anywhere;
         }
 
         .image-cell {
