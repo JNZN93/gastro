@@ -92,16 +92,6 @@ export class DeviceTrackingComponent implements OnInit, OnDestroy {
     '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2'
   ];
 
-  // Mock data für Tests
-  useMockData = true;
-  mockPositions: PositionData[] = [];
-  private baseLocations = [
-    { lat: 49.6326, lng: 8.3594, name: 'Worms' },
-    { lat: 49.68675, lng: 8.995845, name: 'Bensheim' },
-    { lat: 49.4500, lng: 8.5500, name: 'Mannheim' },
-    { lat: 49.4870, lng: 8.4660, name: 'Ludwigshafen' },
-    { lat: 49.4769, lng: 8.4353, name: 'Heidelberg' }
-  ];
 
   constructor(private http: HttpClient) {}
 
@@ -112,12 +102,8 @@ export class DeviceTrackingComponent implements OnInit, OnDestroy {
     // Wait for DOM to be ready before initializing map
     setTimeout(() => {
       if (this.activeTab === 'live') {
-    if (this.useMockData) {
-      this.initializeMockData();
-    } else {
-      this.loadPositions();
-    }
-    this.setupAutoRefresh();
+        this.loadPositions();
+        this.setupAutoRefresh();
       } else {
         // For route tab, initialize map after a delay
         setTimeout(() => {
@@ -197,11 +183,7 @@ export class DeviceTrackingComponent implements OnInit, OnDestroy {
 
   private setupAutoRefresh(): void {
     this.refreshSubscription = interval(this.REFRESH_INTERVAL).subscribe(() => {
-      if (this.useMockData) {
-        this.updateMockPositions();
-      } else {
-        this.loadPositions();
-      }
+      this.loadPositions();
     });
   }
 
@@ -528,11 +510,7 @@ export class DeviceTrackingComponent implements OnInit, OnDestroy {
   }
 
   refresh(): void {
-    if (this.useMockData) {
-      this.updateMockPositions();
-    } else {
-      this.loadPositions();
-    }
+    this.loadPositions();
   }
 
   formatDateTime(dateTime: string): string {
@@ -569,138 +547,6 @@ export class DeviceTrackingComponent implements OnInit, OnDestroy {
            !isNaN(position.longitude);
   }
 
-  toggleMockMode(): void {
-    this.useMockData = !this.useMockData;
-    
-    // Marker und Map zurücksetzen
-    this.markers.forEach(marker => {
-      if (this.map) {
-        this.map.removeLayer(marker);
-      }
-    });
-    this.markers = [];
-    this.positions = [];
-    
-    // Neue Daten laden
-    if (this.useMockData) {
-      this.initializeMockData();
-    } else {
-      this.loadPositions();
-    }
-  }
-
-  private initializeMockData(): void {
-    console.log('Initialisiere Mock-Daten für Test-Modus');
-    this.mockPositions = [];
-    
-    // Erstelle 4 Dummy-Geräte mit verschiedenen Standorten
-    for (let i = 0; i < 4; i++) {
-      const baseLoc = this.baseLocations[i % this.baseLocations.length];
-      this.mockPositions.push({
-        id: 1000 + i,
-        attributes: {
-          priority: 0,
-          sat: 8 + Math.floor(Math.random() * 5),
-          event: 240,
-          ignition: Math.random() > 0.3,
-          motion: Math.random() > 0.2,
-          speed: Math.random() * 15, // 0-15 m/s
-          battery: 3.8 + Math.random() * 0.5,
-          io200: 0,
-          io69: 1,
-          pdop: 1.2,
-          hdop: 0.9,
-          power: 0.0,
-          io68: 40,
-          operator: 26201,
-          odometer: 6430,
-          distance: 2.5,
-          totalDistance: 5603500,
-          hours: 743000
-        },
-        deviceId: 9771 + i,
-        protocol: 'teltonika',
-        serverTime: new Date().toISOString(),
-        deviceTime: new Date().toISOString(),
-        fixTime: new Date().toISOString(),
-        valid: true,
-        latitude: baseLoc.lat + (Math.random() - 0.5) * 0.01,
-        longitude: baseLoc.lng + (Math.random() - 0.5) * 0.01,
-        altitude: 150 + Math.random() * 100,
-        speed: Math.random() * 15,
-        course: Math.random() * 360,
-        address: `${baseLoc.name} (Testdaten)`,
-        accuracy: 0.0,
-        network: null,
-        geofenceIds: null
-      });
-    }
-    // Setze realistische Start-Geschwindigkeiten für Fahrzeuge
-    this.mockPositions.forEach(pos => {
-      pos.speed = 5 + Math.random() * 10; // 5-15 m/s = 18-54 km/h
-      pos.attributes.motion = pos.speed > 5;
-      pos.attributes.ignition = pos.attributes.motion;
-    });
-    
-    this.positions = [...this.mockPositions];
-    console.log('Mock-Daten erstellt:', this.positions.length, 'Geräte');
-    this.updateMap();
-    this.loading = false;
-  }
-
-  private updateMockPositions(): void {
-    // Simuliere Bewegung der Geräte
-    this.mockPositions.forEach(position => {
-      // Größere zufällige Änderungen der Position - schnellere Bewegung
-      position.latitude += (Math.random() - 0.5) * 0.008; // 4x schneller
-      position.longitude += (Math.random() - 0.5) * 0.008; // 4x schneller
-      
-      // Größere Geschwindigkeitsänderung - realistischer für Fahrzeuge
-      position.speed = Math.max(0, position.speed + (Math.random() - 0.5) * 5);
-      // Geschwindigkeit zwischen 10-60 km/h halten (realistisch für Stadt/Land)
-      position.speed = Math.min(Math.max(position.speed, 2.8), 16.7);
-      
-      // Aktualisiere Zeitstempel
-      const now = new Date();
-      position.serverTime = now.toISOString();
-      position.deviceTime = now.toISOString();
-      position.fixTime = now.toISOString();
-      
-      // Zufällig Bewegungsstatus ändern
-      if (Math.random() > 0.7) {
-        position.attributes.motion = !position.attributes.motion;
-        if (position.attributes.motion) {
-          position.attributes.ignition = true;
-        }
-      }
-      
-      // Zufällig Batterie-Status ändern
-      if (Math.random() > 0.8 && position.attributes.battery) {
-        position.attributes.battery = Math.max(3.5, position.attributes.battery + (Math.random() - 0.5) * 0.1);
-      }
-      
-      // Adresse aktualisieren mit neuen Koordinaten
-      position.address = `${this.getNearestLocationName(position.latitude, position.longitude)} (Testdaten)`;
-    });
-    
-    this.positions = [...this.mockPositions];
-    this.updateMap();
-  }
-
-  private getNearestLocationName(lat: number, lng: number): string {
-    let nearest = this.baseLocations[0];
-    let minDist = this.calculateDistance(lat, lng, nearest.lat, nearest.lng);
-    
-    this.baseLocations.forEach(loc => {
-      const dist = this.calculateDistance(lat, lng, loc.lat, loc.lng);
-      if (dist < minDist) {
-        minDist = dist;
-        nearest = loc;
-      }
-    });
-    
-    return nearest.name;
-  }
 
   private calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
     const R = 6371; // Erdradius in km
@@ -742,11 +588,7 @@ export class DeviceTrackingComponent implements OnInit, OnDestroy {
         }, 100);
       }, 50);
       
-      if (this.useMockData) {
-        this.initializeMockData();
-      } else {
-        this.loadPositions();
-      }
+      this.loadPositions();
       this.setupAutoRefresh();
     } else {
       this.stopAutoRefresh();
