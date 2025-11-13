@@ -16,23 +16,49 @@
         Geräte-Tracking
       </h1>
       <div class="header-buttons">
-        <div class="toggle-container" (click)="toggleMockMode()">
-          <div class="toggle-slider" [class.active]="useMockData">
-            <span class="toggle-label">{{ useMockData ? 'Test' : 'Live' }}</span>
+        @if (activeTab === 'live') {
+          <div class="toggle-container" (click)="toggleMockMode()">
+            <div class="toggle-slider" [class.active]="useMockData">
+              <span class="toggle-label">{{ useMockData ? 'Test' : 'Live' }}</span>
+            </div>
           </div>
-        </div>
-        <button class="refresh-btn" (click)="refresh()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-          </svg>
-          Aktualisieren
-        </button>
+          <button class="refresh-btn" (click)="refresh()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+            Aktualisieren
+          </button>
+        }
       </div>
     </div>
   </div>
 
+  <!-- Tabs Navigation -->
+  <div class="tabs-container">
+    <div class="tabs">
+      <button 
+        class="tab-button" 
+        [class.active]="activeTab === 'live'"
+        (click)="switchTab('live')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+        </svg>
+        Live Tracking
+      </button>
+      <button 
+        class="tab-button" 
+        [class.active]="activeTab === 'route'"
+        (click)="switchTab('route')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+        </svg>
+        Route Verlauf
+      </button>
+    </div>
+  </div>
+
   <!-- Loading or Error State -->
-  @if (error) {
+  @if (activeTab === 'live' && error) {
     <div class="error-message">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -41,15 +67,26 @@
     </div>
   }
 
-  @if (loading && positions.length === 0) {
+  @if (activeTab === 'route' && routeError) {
+    <div class="error-message">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+      <p>{{ routeError }}</p>
+    </div>
+  }
+
+  @if (activeTab === 'live' && loading && positions.length === 0) {
     <div class="loading-state">
       <div class="spinner"></div>
       <p>Lade Positionsdaten...</p>
     </div>
   }
 
-  <!-- Split Layout -->
-  <div class="split-container">
+  <!-- Live Tracking Tab Content -->
+  @if (activeTab === 'live') {
+    <!-- Split Layout -->
+    <div class="split-container">
     <!-- Left: Device List -->
     @if (positions.length > 0) {
       <div class="devices-list-panel">
@@ -111,20 +148,263 @@
       </div>
     }
 
-    <!-- Right: Map Section -->
-    <div class="map-panel">
-      <div class="map-wrapper">
-        <div id="tracking-map" class="tracking-map"></div>
+      <!-- Right: Map Section -->
+      <div class="map-panel">
+        <div class="map-wrapper">
+          <div id="tracking-map" class="tracking-map"></div>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- Auto-refresh indicator -->
-  <div class="refresh-indicator">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-    </svg>
-    Automatische Aktualisierung alle 10 Sekunden
-  </div>
+    <!-- Auto-refresh indicator -->
+    <div class="refresh-indicator">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+      </svg>
+      Automatische Aktualisierung alle 3 Sekunden
+    </div>
+  }
+
+  <!-- Route Tracking Tab Content -->
+  @if (activeTab === 'route') {
+    <div class="route-container">
+      <!-- Route Form Panel -->
+      <div class="route-form-panel">
+        <h2 class="section-title">Route abrufen</h2>
+        
+        <div class="route-form">
+          <!-- Device Selection -->
+          <div class="form-group">
+            <label for="device-select">Gerät auswählen</label>
+            <select 
+              id="device-select"
+              class="form-control"
+              [(ngModel)]="selectedRouteDeviceId">
+              <option [ngValue]="null">-- Bitte wählen --</option>
+              @for (device of availableDevices; track device.id) {
+                <option [ngValue]="device.id">
+                  {{ device.name || 'Gerät ' + device.id }} (ID: {{ device.id }})
+                </option>
+              }
+            </select>
+          </div>
+
+          <!-- Date Range -->
+          <div class="form-row">
+            <div class="form-group">
+              <label for="from-date">Von Datum</label>
+              <input 
+                type="date"
+                id="from-date"
+                class="form-control"
+                [(ngModel)]="routeFromDate">
+            </div>
+            <div class="form-group">
+              <label for="from-time">Von Zeit</label>
+              <input 
+                type="time"
+                id="from-time"
+                class="form-control"
+                [(ngModel)]="routeFromTime">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="to-date">Bis Datum</label>
+              <input 
+                type="date"
+                id="to-date"
+                class="form-control"
+                [(ngModel)]="routeToDate">
+            </div>
+            <div class="form-group">
+              <label for="to-time">Bis Zeit</label>
+              <input 
+                type="time"
+                id="to-time"
+                class="form-control"
+                [(ngModel)]="routeToTime">
+            </div>
+          </div>
+
+          <!-- Load Button -->
+          <button 
+            class="load-route-btn"
+            (click)="loadRoute()"
+            [disabled]="loadingRoute">
+            @if (loadingRoute) {
+              <div class="spinner-small"></div>
+              <span>Lade Route...</span>
+            } @else {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+              </svg>
+              <span>Route laden</span>
+            }
+          </button>
+
+          <!-- Route Info -->
+          @if (routePositions.length > 0) {
+            <div class="route-info">
+              <div class="info-item">
+                <span class="info-label">Positionen:</span>
+                <span class="info-value">{{ routePositions.length }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Zeitraum:</span>
+                <span class="info-value">
+                  {{ formatDateTime(routePositions[0].fixTime) }} - 
+                  {{ formatDateTime(routePositions[routePositions.length - 1].fixTime) }}
+                </span>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Map Section -->
+      <div class="route-map-panel">
+        <div class="map-wrapper">
+          <div id="tracking-map" class="tracking-map"></div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Route Marker Details Modal -->
+  @if (showRouteMarkerModal && selectedRouteMarker) {
+    <div class="modal-overlay" (click)="closeMarkerModal()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2>Route Details - Station {{ getSelectedMarkerNumber() }}</h2>
+          <button class="modal-close" (click)="closeMarkerModal()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+        
+        <div class="modal-body">
+          <div class="detail-section">
+            <h3>Position</h3>
+            <div class="detail-grid">
+              <div class="detail-item">
+                <span class="detail-label">Marker Nummer:</span>
+                <span class="detail-value">{{ selectedRouteMarkerIndex + 1 }} / {{ routePositions.length }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Fortschritt:</span>
+                <span class="detail-value">{{ selectedRouteMarkerProgress }}%</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Breitengrad:</span>
+                <span class="detail-value">{{ selectedRouteMarker.latitude.toFixed(6) }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Längengrad:</span>
+                <span class="detail-value">{{ selectedRouteMarker.longitude.toFixed(6) }}</span>
+              </div>
+              @if (selectedRouteMarker.altitude) {
+                <div class="detail-item">
+                  <span class="detail-label">Höhe:</span>
+                  <span class="detail-value">{{ selectedRouteMarker.altitude.toFixed(1) }} m</span>
+                </div>
+              }
+            </div>
+          </div>
+
+          <div class="detail-section">
+            <h3>Zeit</h3>
+            <div class="detail-grid">
+              <div class="detail-item">
+                <span class="detail-label">Server-Zeit:</span>
+                <span class="detail-value">{{ formatDateTime(selectedRouteMarker.serverTime) }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Geräte-Zeit:</span>
+                <span class="detail-value">{{ formatDateTime(selectedRouteMarker.deviceTime) }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Fix-Zeit:</span>
+                <span class="detail-value">{{ formatDateTime(selectedRouteMarker.fixTime) }}</span>
+              </div>
+              @if (selectedRouteMarkerIndex > 0) {
+                <div class="detail-item">
+                  <span class="detail-label">Zeit seit Start:</span>
+                  <span class="detail-value">{{ getTimeDifference(routePositions[0].fixTime, selectedRouteMarker.fixTime) }}</span>
+                </div>
+              }
+            </div>
+          </div>
+
+          <div class="detail-section">
+            <h3>Bewegung</h3>
+            <div class="detail-grid">
+              <div class="detail-item">
+                <span class="detail-label">Geschwindigkeit:</span>
+                <span class="detail-value">{{ (selectedRouteMarker.speed * 3.6).toFixed(1) }} km/h</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Richtung:</span>
+                <span class="detail-value">{{ selectedRouteMarker.course.toFixed(0) }}°</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Gültig:</span>
+                <span class="detail-value" [class.valid]="selectedRouteMarker.valid" [class.invalid]="!selectedRouteMarker.valid">
+                  {{ selectedRouteMarker.valid ? 'Ja' : 'Nein' }}
+                </span>
+              </div>
+              @if (selectedRouteMarker.attributes && selectedRouteMarker.attributes.ignition !== undefined) {
+                <div class="detail-item">
+                  <span class="detail-label">Zündung:</span>
+                  <span class="detail-value">{{ selectedRouteMarker.attributes.ignition ? 'An' : 'Aus' }}</span>
+                </div>
+              }
+              @if (selectedRouteMarker.attributes && selectedRouteMarker.attributes.motion !== undefined) {
+                <div class="detail-item">
+                  <span class="detail-label">Bewegung:</span>
+                  <span class="detail-value">{{ selectedRouteMarker.attributes.motion ? 'Ja' : 'Nein' }}</span>
+                </div>
+              }
+            </div>
+          </div>
+
+          @if (selectedRouteMarker.attributes) {
+            <div class="detail-section">
+              <h3>Zusätzliche Informationen</h3>
+              <div class="detail-grid">
+                @if (selectedRouteMarker.attributes.battery) {
+                  <div class="detail-item">
+                    <span class="detail-label">Batterie:</span>
+                    <span class="detail-value">{{ selectedRouteMarker.attributes.battery.toFixed(2) }}V</span>
+                  </div>
+                }
+                @if (selectedRouteMarker.attributes.sat) {
+                  <div class="detail-item">
+                    <span class="detail-label">Satelliten:</span>
+                    <span class="detail-value">{{ selectedRouteMarker.attributes.sat }}</span>
+                  </div>
+                }
+                @if (selectedRouteMarker.attributes['odometer']) {
+                  <div class="detail-item">
+                    <span class="detail-label">Tachometer:</span>
+                    <span class="detail-value">{{ selectedRouteMarker.attributes['odometer'] }} m</span>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          @if (selectedRouteMarker.address) {
+            <div class="detail-section">
+              <h3>Adresse</h3>
+              <p class="address-text">{{ selectedRouteMarker.address }}</p>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
 </div>
 

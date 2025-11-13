@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { interval, Subscription } from 'rxjs';
 
@@ -42,7 +43,7 @@ interface PositionData {
 
 @Component({
   selector: 'app-device-tracking',
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './device-tracking.component.html',
   styleUrl: './device-tracking.component.scss',
 })
@@ -58,8 +59,31 @@ export class DeviceTrackingComponent implements OnInit, OnDestroy {
   private readonly REFRESH_INTERVAL = 3000; // 3 seconds
   private readonly API_URL = 'https://server.traccar.org/api/positions';
   private readonly DEVICES_URL = 'https://server.traccar.org/api/devices';
+  private readonly ROUTE_URL = 'https://server.traccar.org/api/reports/route';
   private readonly USERNAME = 'firat.tasyurdu@gmail.com';
   private readonly PASSWORD = 'oya0oz47';
+  
+  // Tab navigation
+  activeTab: 'live' | 'route' = 'live';
+  
+  // Route tracking properties
+  availableDevices: any[] = [];
+  selectedRouteDeviceId: number | null = null;
+  routeFromDate: string = '';
+  routeFromTime: string = '';
+  routeToDate: string = '';
+  routeToTime: string = '';
+  routePositions: PositionData[] = [];
+  routePolyline: any = null;
+  routeMarkers: any[] = [];
+  loadingRoute = false;
+  routeError: string | null = null;
+  
+  // Route marker details modal
+  showRouteMarkerModal = false;
+  selectedRouteMarker: PositionData | null = null;
+  selectedRouteMarkerIndex: number = 0;
+  selectedRouteMarkerProgress: number = 0;
   
   deviceColors: Map<number, string> = new Map();
   private colorIndex = 0;
@@ -82,19 +106,32 @@ export class DeviceTrackingComponent implements OnInit, OnDestroy {
   constructor(private http: HttpClient) {}
 
   ngOnInit(): void {
+    this.loadDevices();
+    this.hideFooter();
+    
+    // Wait for DOM to be ready before initializing map
+    setTimeout(() => {
+      if (this.activeTab === 'live') {
     if (this.useMockData) {
       this.initializeMockData();
     } else {
       this.loadPositions();
     }
     this.setupAutoRefresh();
-    this.hideFooter();
+      } else {
+        // For route tab, initialize map after a delay
+        setTimeout(() => {
+          this.initializeMapForRoute();
+        }, 200);
+      }
+    }, 100);
   }
 
   ngOnDestroy(): void {
     this.showFooter();
     this.stopAutoRefresh();
     this.destroyMap();
+    this.clearRoute(true);
   }
 
   private hideFooter(): void {
@@ -184,11 +221,11 @@ export class DeviceTrackingComponent implements OnInit, OnDestroy {
   }
 
   private initializeMap(): void {
-    if (this.mapInitialized) return;
+    if (this.mapInitialized && this.map) return;
     
     // Check if Leaflet is already loaded
     if (typeof L !== 'undefined') {
-      this.createMap();
+      this.createMapWithRetry();
     } else {
       this.loadLeaflet();
     }
@@ -208,46 +245,129 @@ export class DeviceTrackingComponent implements OnInit, OnDestroy {
       const script = document.createElement('script');
       script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
       script.onload = () => {
-        this.createMap();
+        // Wait a bit for CSS to be applied
+        setTimeout(() => {
+          this.createMapWithRetry();
+        }, 100);
+      };
+      script.onerror = () => {
+        console.error('Fehler beim Laden von Leaflet');
+        this.error = 'Fehler beim Laden der Kartenbibliothek';
       };
       document.head.appendChild(script);
+    } else {
+      // Leaflet already loaded, try to create map
+      setTimeout(() => {
+        this.createMapWithRetry();
+      }, 100);
+    }
+  }
+
+  private createMapWithRetry(retries: number = 10, delay: number = 200): void {
+      const mapContainer = document.getElementById('tracking-map');
+    
+    if (!mapContainer) {
+      if (retries > 0) {
+        console.log(`Warte auf Kartencontainer... (${retries} Versuche übrig)`);
+        setTimeout(() => {
+          this.createMapWithRetry(retries - 1, delay);
+        }, delay);
+      } else {
+        console.error('Kartencontainer konnte nicht gefunden werden');
+        this.error = 'Karte konnte nicht initialisiert werden. Bitte Seite neu laden.';
+      }
+      return;
+    }
+
+    // Check if container is visible (not hidden by tab switch)
+    const rect = mapContainer.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) {
+      if (retries > 0) {
+        setTimeout(() => {
+          this.createMapWithRetry(retries - 1, delay);
+        }, delay);
+      }
+      return;
+    }
+
+    try {
+      // Remove existing map if any
+      if (this.map) {
+        try {
+        this.map.remove();
+        } catch (e) {
+          console.warn('Fehler beim Entfernen der alten Karte:', e);
+        }
+        this.map = null;
+      }
+
+      // Clear container content in case of leftover elements
+      mapContainer.innerHTML = '';
+
+      // Initialize map
+      let center: [number, number] = [49.6326, 8.3594];
+      let zoom = 10;
+
+      if (this.activeTab === 'live' && this.positions.length > 0) {
+        const firstPos = this.positions[0];
+        if (firstPos.latitude && firstPos.longitude) {
+          center = [firstPos.latitude, firstPos.longitude];
+        }
+      }
+
+      this.map = L.map('tracking-map', {
+        preferCanvas: false
+      }).setView(center, zoom);
+
+      // Add OpenStreetMap tiles with error handling
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 19,
+        errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='
+      }).addTo(this.map);
+
+      // Wait for map to be ready
+      this.map.whenReady(() => {
+      this.mapInitialized = true;
+        console.log('Karte erfolgreich initialisiert');
+        
+        if (this.activeTab === 'live') {
+      this.updateMap();
+        }
+        
+        // Trigger resize to fix potential rendering issues
+        setTimeout(() => {
+          if (this.map) {
+            this.map.invalidateSize();
+          }
+    }, 100);
+      });
+
+    } catch (error) {
+      console.error('Fehler beim Erstellen der Karte:', error);
+      this.error = 'Fehler beim Initialisieren der Karte: ' + (error as Error).message;
+      this.mapInitialized = false;
+      this.map = null;
     }
   }
 
   private createMap(): void {
-    setTimeout(() => {
-      const mapContainer = document.getElementById('tracking-map');
-      if (!mapContainer) return;
-      
-      // Remove existing map if any
-      if (this.map) {
-        this.map.remove();
-      }
-
-      // Initialize map
-      if (this.positions.length > 0) {
-        // Use first position as center if available
-        const firstPos = this.positions[0];
-        this.map = L.map('tracking-map').setView([firstPos.latitude, firstPos.longitude], 10);
-      } else {
-        // Default center (can be adjusted)
-        this.map = L.map('tracking-map').setView([49.6326, 8.3594], 10);
-      }
-
-      // Add OpenStreetMap tiles
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
-      }).addTo(this.map);
-
-      this.mapInitialized = true;
-      this.updateMap();
-    }, 100);
+    this.createMapWithRetry();
   }
 
   private updateMap(): void {
-    if (!this.mapInitialized) {
+    if (!this.mapInitialized || !this.map) {
       this.initializeMap();
       return;
+    }
+
+    // Invalidate size to fix rendering issues
+    if (this.map) {
+      setTimeout(() => {
+        if (this.map) {
+          this.map.invalidateSize();
+        }
+      }, 50);
     }
 
     if (!this.map || this.positions.length === 0) return;
@@ -397,7 +517,11 @@ export class DeviceTrackingComponent implements OnInit, OnDestroy {
 
   private destroyMap(): void {
     if (this.map) {
+      try {
       this.map.remove();
+      } catch (e) {
+        console.warn('Fehler beim Entfernen der Karte:', e);
+      }
       this.map = null;
       this.mapInitialized = false;
     }
@@ -587,6 +711,607 @@ export class DeviceTrackingComponent implements OnInit, OnDestroy {
               Math.sin(dLng / 2) * Math.sin(dLng / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
+  }
+
+  // Tab navigation
+  switchTab(tab: 'live' | 'route'): void {
+    this.activeTab = tab;
+    this.error = null;
+    this.routeError = null;
+    
+    if (tab === 'live') {
+      this.stopAutoRefresh();
+      this.clearRoute(true);
+      
+      // Wait for Angular to render the tab content
+      setTimeout(() => {
+        // Force map reinitialization for live tracking
+        if (this.map) {
+          try {
+            this.map.remove();
+          } catch (e) {
+            console.warn('Fehler beim Entfernen der Karte:', e);
+          }
+          this.map = null;
+        }
+        this.mapInitialized = false;
+        
+        // Small delay to ensure DOM is ready
+        setTimeout(() => {
+          this.initializeMap();
+        }, 100);
+      }, 50);
+      
+      if (this.useMockData) {
+        this.initializeMockData();
+      } else {
+        this.loadPositions();
+      }
+      this.setupAutoRefresh();
+    } else {
+      this.stopAutoRefresh();
+      this.clearLiveData();
+      
+      // Wait for Angular to render the tab content
+      setTimeout(() => {
+        // Force map reinitialization for route tracking
+        if (this.map) {
+          try {
+            this.map.remove();
+          } catch (e) {
+            console.warn('Fehler beim Entfernen der Karte:', e);
+          }
+          this.map = null;
+        }
+        this.mapInitialized = false;
+        
+        // Small delay to ensure DOM is ready
+        setTimeout(() => {
+          this.initializeMapForRoute();
+        }, 100);
+      }, 50);
+      
+      // Always set default dates to today from 00:00 to 23:59 when entering route tab
+      const today = new Date();
+      const todayStart = new Date(today);
+      todayStart.setHours(0, 0, 0, 0);
+      const todayEnd = new Date(today);
+      todayEnd.setHours(23, 59, 0, 0);
+      
+      this.routeFromDate = this.formatDateForInput(todayStart);
+      this.routeFromTime = '00:00';
+      this.routeToDate = this.formatDateForInput(todayEnd);
+      this.routeToTime = '23:59';
+    }
+  }
+
+  private formatDateForInput(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  private formatTimeForInput(date: Date): string {
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${hours}:${minutes}`;
+  }
+
+  // Load available devices
+  loadDevices(): void {
+    const credentials = btoa(`${this.USERNAME}:${this.PASSWORD}`);
+    const headers = new HttpHeaders({
+      'Authorization': `Basic ${credentials}`,
+      'Content-Type': 'application/json'
+    });
+
+    this.http.get<any[]>(this.DEVICES_URL, { headers }).subscribe({
+      next: (devices) => {
+        this.availableDevices = devices;
+        console.log('Verfügbare Geräte geladen:', devices.length);
+      },
+      error: (err) => {
+        console.error('Fehler beim Laden der Geräte:', err);
+        this.availableDevices = [];
+      }
+    });
+  }
+
+  // Load route data
+  loadRoute(): void {
+    if (!this.selectedRouteDeviceId) {
+      this.routeError = 'Bitte wählen Sie ein Gerät aus';
+      return;
+    }
+
+    if (!this.routeFromDate || !this.routeFromTime || !this.routeToDate || !this.routeToTime) {
+      this.routeError = 'Bitte wählen Sie einen vollständigen Zeitraum aus';
+      return;
+    }
+
+    // Combine date and time
+    const fromDateTime = new Date(`${this.routeFromDate}T${this.routeFromTime}:00`);
+    const toDateTime = new Date(`${this.routeToDate}T${this.routeToTime}:00`);
+
+    if (isNaN(fromDateTime.getTime()) || isNaN(toDateTime.getTime())) {
+      this.routeError = 'Ungültiges Datumsformat';
+      return;
+    }
+
+    if (fromDateTime >= toDateTime) {
+      this.routeError = 'Das Enddatum muss nach dem Startdatum liegen';
+      return;
+    }
+
+    this.loadingRoute = true;
+    this.routeError = null;
+
+    // Format dates in ISO 8601 format
+    const fromISO = fromDateTime.toISOString();
+    const toISO = toDateTime.toISOString();
+
+    const credentials = btoa(`${this.USERNAME}:${this.PASSWORD}`);
+    const headers = new HttpHeaders({
+      'Authorization': `Basic ${credentials}`,
+      'Content-Type': 'application/json'
+    });
+
+    // Build query parameters
+    const params = {
+      deviceId: this.selectedRouteDeviceId.toString(),
+      from: fromISO,
+      to: toISO
+    };
+
+    // Ensure map is initialized before loading route
+    if (!this.mapInitialized || !this.map) {
+      console.log('Initialisiere Karte vor dem Laden der Route...');
+      this.initializeMapForRoute();
+    }
+
+    console.log('Lade Route mit Parametern:', params);
+    
+    this.http.get<any>(this.ROUTE_URL, { 
+      headers,
+      params: params as any
+    }).subscribe({
+      next: (data) => {
+        console.log('=== ROUTE API RESPONSE ===');
+        console.log('Response Type:', typeof data);
+        console.log('Is Array:', Array.isArray(data));
+        console.log('Data length:', Array.isArray(data) ? data.length : 'N/A');
+        console.log('Full Response:', JSON.stringify(data).substring(0, 500));
+        
+        // Handle different response formats
+        let positions: PositionData[] = [];
+        
+        if (Array.isArray(data)) {
+          // Direct array response
+          positions = data;
+        } else if (data && Array.isArray(data.data)) {
+          // Wrapped in data property
+          positions = data.data;
+        } else if (data && Array.isArray(data.positions)) {
+          // Wrapped in positions property
+          positions = data.positions;
+        } else if (data && typeof data === 'object') {
+          // Single object response, wrap in array
+          positions = [data];
+        } else {
+          console.error('Unbekanntes Response-Format:', data);
+          this.routeError = 'Unerwartetes Datenformat von der API';
+          this.loadingRoute = false;
+          return;
+        }
+        
+        console.log('Verarbeitete Positionen:', positions.length);
+        if (positions.length > 0) {
+          console.log('Erste Position:', JSON.stringify(positions[0], null, 2));
+          console.log('Letzte Position:', JSON.stringify(positions[positions.length - 1], null, 2));
+          
+          // Check if coordinates exist
+          const firstPos = positions[0];
+          console.log('Erste Position Koordinaten:', {
+            latitude: firstPos.latitude,
+            longitude: firstPos.longitude,
+            hasLat: !!firstPos.latitude,
+            hasLng: !!firstPos.longitude
+          });
+        }
+        
+        this.routePositions = positions;
+        
+        // Ensure map is ready before drawing
+        if (!this.mapInitialized || !this.map) {
+          console.log('Warte auf Karteninitialisierung...');
+          setTimeout(() => {
+            this.drawRouteWithRetry();
+          }, 500);
+        } else {
+          // Small delay to ensure everything is ready
+          setTimeout(() => {
+            this.drawRoute();
+          }, 100);
+        }
+        
+        this.loadingRoute = false;
+      },
+      error: (error) => {
+        console.error('Fehler beim Laden der Route:', error);
+        console.error('Error details:', error.error || error);
+        this.routeError = 'Fehler beim Laden der Route. Bitte versuchen Sie es erneut.';
+        this.loadingRoute = false;
+      }
+    });
+  }
+
+  // Draw route on map with retry logic
+  private drawRouteWithRetry(retries: number = 5): void {
+    if (!this.mapInitialized || !this.map) {
+      if (retries > 0) {
+        console.log(`Warte auf Karte... (${retries} Versuche übrig)`);
+        setTimeout(() => {
+          this.drawRouteWithRetry(retries - 1);
+        }, 300);
+      } else {
+        console.error('Karte konnte nicht initialisiert werden');
+        this.routeError = 'Karte konnte nicht initialisiert werden. Bitte Seite neu laden.';
+      }
+      return;
+    }
+    
+    this.drawRoute();
+  }
+
+  // Draw route on map
+  private drawRoute(): void {
+    console.log('Zeichne Route...');
+    console.log('Karte initialisiert:', this.mapInitialized);
+    console.log('Karte vorhanden:', !!this.map);
+    console.log('Route-Positionen:', this.routePositions.length);
+    
+    if (!this.mapInitialized || !this.map) {
+      console.warn('Karte nicht initialisiert, versuche es erneut...');
+      this.initializeMapForRoute();
+      setTimeout(() => {
+        if (this.mapInitialized && this.map) {
+          this.drawRoute();
+        } else {
+          this.drawRouteWithRetry();
+        }
+      }, 500);
+      return;
+    }
+
+    // Clear existing route layers but keep data
+    this.clearRoute(false);
+
+    if (!this.map || this.routePositions.length === 0) {
+      return;
+    }
+
+    // Filter valid positions - handle different property names
+    // Accept positions even if valid: false, as long as coordinates exist
+    const validPositions = this.routePositions.filter((pos: any) => {
+      // Check for latitude/longitude in different possible formats
+      const lat = pos.latitude || pos.lat || pos.y;
+      const lng = pos.longitude || pos.lng || pos.lon || pos.x;
+      
+      const isValid = lat != null && lng != null && 
+                     !isNaN(Number(lat)) && !isNaN(Number(lng)) &&
+                     // Allow 0,0 coordinates (they might be valid)
+                     Number(lat) >= -90 && Number(lat) <= 90 &&
+                     Number(lng) >= -180 && Number(lng) <= 180;
+      
+      if (!isValid && pos) {
+        console.warn('Ungültige Position gefunden:', {
+          original: pos,
+          lat: lat,
+          lng: lng
+        });
+      }
+      
+      return isValid;
+    }).map((pos: any) => {
+      // Normalize position data to ensure consistent format
+      const normalized = {
+        ...pos,
+        latitude: pos.latitude || pos.lat || pos.y,
+        longitude: pos.longitude || pos.lng || pos.lon || pos.x,
+        deviceId: pos.deviceId || pos.device_id || (pos.device && pos.device.id) || this.selectedRouteDeviceId
+      } as PositionData;
+      
+      return normalized;
+    });
+
+    console.log('Gültige Positionen:', validPositions.length, 'von', this.routePositions.length);
+    
+    if (validPositions.length > 0) {
+      console.log('Beispiel Position:', {
+        lat: validPositions[0].latitude,
+        lng: validPositions[0].longitude,
+        valid: validPositions[0].valid
+      });
+    }
+
+    if (validPositions.length === 0) {
+      console.error('Keine gültigen Positionen gefunden!');
+      this.routeError = 'Keine gültigen Positionsdaten für den ausgewählten Zeitraum gefunden';
+      return;
+    }
+
+    if (validPositions.length < 2) {
+      console.warn('Nur eine Position gefunden, kann keine Route zeichnen');
+      this.routeError = 'Zu wenige Positionen für eine Route (mindestens 2 erforderlich)';
+      return;
+    }
+
+    // Create polyline coordinates
+    const latlngs = validPositions.map(pos => [pos.latitude, pos.longitude] as [number, number]);
+    
+    console.log('Erstelle Polylinie mit', latlngs.length, 'Punkten');
+    console.log('Erster Punkt:', latlngs[0]);
+    console.log('Letzter Punkt:', latlngs[latlngs.length - 1]);
+
+    // Get device color
+    const deviceId = validPositions[0].deviceId;
+    
+    // Use a nice blue color for routes (different from red)
+    const routeColor = '#2563eb'; // Blue-600
+    const routeWeight = 5;
+    
+    console.log('Verwende Farbe:', routeColor, 'für Route von Gerät', deviceId);
+
+    try {
+      // Check if Leaflet is available
+      if (typeof L === 'undefined') {
+        console.error('Leaflet ist nicht verfügbar!');
+        this.routeError = 'Kartenbibliothek nicht geladen';
+        return;
+      }
+      
+      // Verify map exists and is ready
+      if (!this.map) {
+        console.error('Karte existiert nicht!');
+        this.routeError = 'Karte ist nicht initialisiert';
+        return;
+      }
+      
+      console.log('Erstelle Polylinie mit', latlngs.length, 'Punkten auf Karte:', !!this.map);
+      
+      // Draw polyline with arrow markers to show direction
+      this.routePolyline = L.polyline(latlngs, {
+        color: routeColor,
+        weight: routeWeight,
+        opacity: 0.8,
+        smoothFactor: 1
+      });
+      
+      // Add to map
+      this.routePolyline.addTo(this.map);
+      
+      console.log('Polylinie erfolgreich erstellt und zur Karte hinzugefügt');
+      console.log('Polylinie Layer-ID:', this.routePolyline._leaflet_id);
+      
+      // Force map update
+      this.map.invalidateSize();
+      
+    } catch (error) {
+      console.error('Fehler beim Erstellen der Polylinie:', error);
+      console.error('Error stack:', (error as Error).stack);
+      this.routeError = 'Fehler beim Zeichnen der Route: ' + (error as Error).message;
+      return;
+    }
+
+    // Add numbered markers along the route to show progression
+    // Calculate how many markers we want (more for longer routes)
+    const totalPositions = validPositions.length;
+    let markerInterval = Math.max(1, Math.floor(totalPositions / 15)); // Max 15 markers
+    if (markerInterval < 1) markerInterval = 1;
+    
+    console.log(`Erstelle ${Math.floor(totalPositions / markerInterval)} nummerierte Marker mit Intervall ${markerInterval}`);
+    
+    let markerNumber = 1;
+    const markerPositions: { pos: PositionData, index: number, number: number }[] = [];
+    
+    // Always include start (first position)
+    markerPositions.push({ pos: validPositions[0], index: 0, number: markerNumber++ });
+    
+    // Add markers at regular intervals
+    for (let i = markerInterval; i < totalPositions - 1; i += markerInterval) {
+      if (markerNumber <= 20) { // Limit to 20 markers max
+        markerPositions.push({ pos: validPositions[i], index: i, number: markerNumber++ });
+      }
+    }
+    
+    // Always include end (last position) if not already added
+    if (markerPositions[markerPositions.length - 1].index !== totalPositions - 1) {
+      markerPositions.push({ pos: validPositions[totalPositions - 1], index: totalPositions - 1, number: markerNumber });
+    }
+    
+    // Create markers
+    markerPositions.forEach(({ pos, index, number }) => {
+      const progress = Math.round((index / (totalPositions - 1)) * 100);
+      const isStart = number === 1;
+      const isEnd = number === markerPositions.length;
+      
+      // Different colors for start/end
+      let backgroundColor = '#3b82f6'; // Blue
+      let size = 26;
+      
+      if (isStart) {
+        backgroundColor = '#10b981'; // Green
+        size = 28;
+      } else if (isEnd) {
+        backgroundColor = '#ef4444'; // Red
+        size = 28;
+      }
+      
+      const icon = L.divIcon({
+        className: 'route-marker',
+        html: `<div style="background-color: ${backgroundColor}; border: 3px solid white; width: ${size}px; height: ${size}px; border-radius: 50%; box-shadow: 0 2px 8px rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: ${isStart || isEnd ? '14px' : '12px'};">${number}</div>`,
+        iconSize: [size, size],
+        iconAnchor: [size / 2, size / 2]
+      });
+      
+      const marker = L.marker([pos.latitude, pos.longitude], { icon: icon });
+      
+      // Store position data in marker for modal
+      (marker as any).routePositionData = pos;
+      (marker as any).routeMarkerIndex = index;
+      (marker as any).routeMarkerNumber = number;
+      (marker as any).routeMarkerProgress = progress;
+      
+      // Add click handler to show modal
+      marker.on('click', () => {
+        this.showMarkerDetails(pos, index, number, progress);
+      });
+      
+      marker.addTo(this.map);
+      
+      // Simple popup on hover
+      const label = isStart ? 'Start' : isEnd ? 'Ende' : `Station ${number}`;
+      marker.bindPopup(`${label}<br>${progress}% der Route`);
+      
+      this.routeMarkers.push(marker);
+    });
+    
+    console.log(`${this.routeMarkers.length} Marker erstellt`);
+
+    // Fit map to show entire route
+    if (this.routePolyline) {
+      try {
+        const bounds = this.routePolyline.getBounds();
+        console.log('Route-Grenzen:', bounds);
+        
+        if (bounds.isValid()) {
+          console.log('Passe Kartenansicht an Route an...');
+          this.map.fitBounds(bounds.pad(0.1));
+          
+          // Invalidate size after fitting bounds to ensure proper rendering
+          setTimeout(() => {
+            if (this.map) {
+              this.map.invalidateSize();
+              console.log('Kartengröße aktualisiert');
+            }
+          }, 100);
+        } else {
+          console.warn('Ungültige Grenzen für Route');
+        }
+      } catch (error) {
+        console.error('Fehler beim Anpassen der Kartenansicht:', error);
+      }
+    }
+    
+    console.log('Route erfolgreich gezeichnet!');
+  }
+
+  private initializeMapForRoute(): void {
+    if (this.mapInitialized && this.map && this.activeTab === 'route') {
+      // Map already initialized for route tab, just invalidate size
+      setTimeout(() => {
+        if (this.map) {
+          this.map.invalidateSize();
+        }
+      }, 100);
+      return;
+    }
+    
+    // Reset initialization flag if switching tabs
+    if (this.activeTab === 'route') {
+      this.mapInitialized = false;
+    }
+    
+    if (typeof L !== 'undefined') {
+      this.createMapWithRetry();
+    } else {
+      this.loadLeaflet();
+    }
+  }
+
+  private clearRoute(resetPositions: boolean = false): void {
+    // Remove polyline
+    if (this.routePolyline && this.map) {
+      this.map.removeLayer(this.routePolyline);
+      this.routePolyline = null;
+    }
+
+    // Remove markers
+    this.routeMarkers.forEach(marker => {
+      if (this.map) {
+        this.map.removeLayer(marker);
+      }
+    });
+    this.routeMarkers = [];
+    
+    if (resetPositions) {
+      this.routePositions = [];
+    }
+  }
+
+  private clearLiveData(): void {
+    // Clear live tracking markers
+    this.markers.forEach(marker => {
+      if (this.map) {
+        this.map.removeLayer(marker);
+      }
+    });
+    this.markers = [];
+    this.positions = [];
+  }
+
+  // Show marker details modal
+  showMarkerDetails(position: PositionData, index: number, markerNumber: number, progress: number): void {
+    this.selectedRouteMarker = position;
+    this.selectedRouteMarkerIndex = index;
+    this.selectedRouteMarkerProgress = progress;
+    this.showRouteMarkerModal = true;
+  }
+
+  // Close marker details modal
+  closeMarkerModal(): void {
+    this.showRouteMarkerModal = false;
+    this.selectedRouteMarker = null;
+  }
+
+  // Calculate distance between two positions
+  calculateDistanceBetweenPositions(pos1: PositionData, pos2: PositionData): number {
+    return this.calculateDistance(pos1.latitude, pos1.longitude, pos2.latitude, pos2.longitude);
+  }
+
+  // Get time difference
+  getTimeDifference(startTime: string, endTime: string): string {
+    const start = new Date(startTime);
+    const end = new Date(endTime);
+    const diffMs = end.getTime() - start.getTime();
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+    const diffSeconds = Math.floor((diffMs % (1000 * 60)) / 1000);
+    
+    if (diffHours > 0) {
+      return `${diffHours}h ${diffMinutes}m`;
+    } else if (diffMinutes > 0) {
+      return `${diffMinutes}m ${diffSeconds}s`;
+    } else {
+      return `${diffSeconds}s`;
+    }
+  }
+
+  // Get selected marker number for display
+  getSelectedMarkerNumber(): number {
+    if (!this.selectedRouteMarker) return 0;
+    
+    const markerIndex = this.routeMarkers.findIndex((m: any) => 
+      m.routePositionData === this.selectedRouteMarker
+    );
+    
+    if (markerIndex >= 0 && (this.routeMarkers[markerIndex] as any).routeMarkerNumber) {
+      return (this.routeMarkers[markerIndex] as any).routeMarkerNumber;
+    }
+    
+    // Fallback to index-based numbering
+    return this.selectedRouteMarkerIndex + 1;
   }
 }
 
