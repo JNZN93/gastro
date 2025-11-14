@@ -440,10 +440,10 @@
                       <td class="article-number">{{ item.product_article_number }}</td>
                       <td class="price">
                         @if (item.different_price) {
-                          <span class="original-price">{{ item.price | currency:'EUR':'symbol':'1.2-2' }}</span>
+                          <span class="original-price">{{ (item.standard_price || item.price) | currency:'EUR':'symbol':'1.2-2' }}</span>
                           <span class="different-price">{{ item.different_price | currency:'EUR':'symbol':'1.2-2' }}</span>
                         } @else {
-                          {{ item.price | currency:'EUR':'symbol':'1.2-2' }}
+                          {{ (item.standard_price || item.price) | currency:'EUR':'symbol':'1.2-2' }}
                         }
                       </td>
                       <td class="price-gross">

@@ -15,6 +15,7 @@ interface OrderItem {
   quantity: number;
   price: string;
   different_price: string | null;
+  standard_price?: string;
   product_name: string;
   product_article_number: string;
   tax_code?: number;
