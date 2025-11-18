@@ -2,23 +2,32 @@
 
   <!-- Back Button Header -->
   <div class="back-header">
-    <button class="back-button" (click)="goBack()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-      </svg>
-      Zurück
-    </button>
-    
-    <!-- Edit Mode Indicator -->
-    @if (isEditMode) {
-      <div class="edit-mode-indicator-inline">
-        <span class="material-icons edit-icon">edit</span>
-        <div class="edit-mode-text">
-          <strong>Bearbeitungsmodus aktiv</strong>
-          <span class="edit-mode-subtext">Sie bearbeiten Bestellung #{{ editingOrderId }}</span>
+    <div class="back-header-left">
+      <button class="back-button" (click)="goBack()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+        Zurück
+      </button>
+
+      <button class="order-overview-button" (click)="goToOrderOverview()">
+        <span class="material-icons">view_list</span>
+        Auftragsübersicht
+      </button>
+    </div>
+
+    <div class="back-header-right">
+      <!-- Edit Mode Indicator -->
+      @if (isEditMode) {
+        <div class="edit-mode-indicator-inline">
+          <span class="material-icons edit-icon">edit</span>
+          <div class="edit-mode-text">
+            <strong>Bearbeitungsmodus aktiv</strong>
+            <span class="edit-mode-subtext">Sie bearbeiten Bestellung #{{ editingOrderId }}</span>
+          </div>
         </div>
-      </div>
-    }
+      }
+    </div>
   </div>
 
   <div class="content">

@@ -5771,11 +5771,8 @@ filteredArtikelData() {
     return this.isEditMode || this.orderItems.length > 0;
   }
 
-  // Navigation method
-  goBack(): void {
-    // Prüfe, ob wir im Bearbeitungsmodus sind oder ungespeicherte Änderungen haben
+  private navigateWithUnsavedChanges(targetRoute: string[], confirmLabel: string): void {
     if (this.hasUnsavedChanges()) {
-      // Zeige Bestätigungsdialog für ungespeicherte Änderungen
       const dialogRef = this.dialog.open(MyDialogComponent, {
         width: '400px',
         data: {
@@ -5784,25 +5781,30 @@ filteredArtikelData() {
             ? `Sie bearbeiten Bestellung #${this.editingOrderId} mit ungespeicherten Änderungen. Möchten Sie wirklich zurück gehen?`
             : `Sie haben einen Auftrag mit ${this.orderItems.length} Artikel(n) ohne Speicherung. Möchten Sie wirklich zurück gehen?`,
           isConfirmation: true,
-          confirmLabel: 'Zurück gehen',
+          confirmLabel,
           cancelLabel: 'Abbrechen'
         }
       });
 
       dialogRef.afterClosed().subscribe(result => {
         if (result === true) {
-          // Stelle den ursprünglichen Status wieder her, bevor wir gehen
           this.restoreOriginalStatus();
-          
-          // Bereinige alle Daten und navigiere zurück
           this.clearAllOrderData();
-          this.router.navigate(['/admin']);
+          this.router.navigate(targetRoute);
         }
       });
     } else {
-      // Keine ungespeicherten Änderungen, direkt zurück navigieren
-      this.router.navigate(['/admin']);
+      this.router.navigate(targetRoute);
     }
+  }
+
+  // Navigation method
+  goBack(): void {
+    this.navigateWithUnsavedChanges(['/admin'], 'Zurück gehen');
+  }
+
+  goToOrderOverview(): void {
+    this.navigateWithUnsavedChanges(['/order-overview'], 'Zur Übersicht wechseln');
   }
 
   // Hilfsfunktion um lange URLs in mehrere Zeilen aufzuteilen
