@@ -14,6 +14,13 @@
   display: flex;
   justify-content: flex-start;
 
+  .back-buttons {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
   .back-btn {
     display: flex;
     align-items: center;
@@ -41,6 +48,37 @@
       background: rgba(255, 255, 255, 1);
       transform: translateY(-2px);
       box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+  }
+
+  .customer-orders-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: linear-gradient(135deg, #2563eb, #3b82f6);
+    border: none;
+    border-radius: 12px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 10px 25px rgba(37, 99, 235, 0.25);
+    font-family: 'Poppins', sans-serif;
+
+    .material-icons {
+      font-size: 20px;
+    }
+
+    &:hover {
+      background: linear-gradient(135deg, #1d4ed8, #2563eb);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 30px rgba(37, 99, 235, 0.3);
     }
 
     &:active {

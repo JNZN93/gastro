@@ -1147,6 +1147,10 @@ export class OrderOverviewComponent implements OnInit {
     this.router.navigate(['/admin']);
   }
 
+  goToCustomerOrders(): void {
+    this.router.navigate(['/customer-orders']);
+  }
+
   // Methode zum Anzeigen der Warnung bei bereits bearbeiteten Bestellungen
   private showOrderBeingProcessedWarning(order: Order, message: string): void {
     this.processingOrderId = order.order_id;
