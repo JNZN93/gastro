@@ -1200,8 +1200,11 @@ export class OrderOverviewComponent implements OnInit {
 
   // Hilfsmethode um den Gesamt-Bruttopreis einer Bestellung zu berechnen
   getOrderTotalGross(order: Order): number {
+    if (!order || !order.items || order.items.length === 0) {
+      return 0;
+    }
     return order.items.reduce((sum, item) => {
-      const netPrice = parseFloat(item.different_price || item.price);
+      const netPrice = parseFloat(item.different_price || item.price || '0');
       const grossPrice = this.getGrossPrice(netPrice, item.tax_code);
       const quantity = Number(item.quantity) || 0;
       return sum + (grossPrice * quantity);

@@ -82,7 +82,7 @@
               <th>Sachbearbeiter</th>
               <th>Kunde</th>
               <th>Status</th>
-              <th>Gesamtpreis</th>
+              <th>Gesamtpreis <span style="font-size: 0.7em;">(Brutto)</span></th>
               <th>Aktionen</th>
             </tr>
           </thead>
@@ -99,7 +99,7 @@
                     {{ getStatusText(order.status) }}
                   </span>
                 </td>
-                <td class="total-price">{{ order.total_price | currency:'EUR':'symbol':'1.2-2' }}</td>
+                <td class="total-price">{{ getOrderTotalGross(order) | currency:'EUR':'symbol':'1.2-2' }}</td>
                 <td class="actions-cell">
                   <div class="action-buttons">
                     <button class="view-btn" (click)="onOrderClick(order); $event.stopPropagation()">
@@ -166,7 +166,7 @@
             </div>
             <div class="info-row total-row">
               <span class="info-label">Gesamtpreis:</span>
-              <span class="info-value total-price">{{ order.total_price | currency:'EUR':'symbol':'1.2-2' }}</span>
+              <span class="info-value total-price">{{ getOrderTotalGross(order) | currency:'EUR':'symbol':'1.2-2' }}</span>
             </div>
           </div>
           
