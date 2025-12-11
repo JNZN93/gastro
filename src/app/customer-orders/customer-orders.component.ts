@@ -96,6 +96,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   isOrderConfirmationModalOpen: boolean = false;
   orderConfirmationData: any = null;
   isSavingOrder: boolean = false;
+  isSavingAsOpen: boolean = false; // Flag für Zwischenspeichern (Status: open)
   eanAssignmentItem: any = null;
   eanCode: string = '';
   isEanScanning: boolean = false;
@@ -3175,6 +3176,8 @@ filteredArtikelData() {
   }
 
   saveOrder(): void {
+    // Reset flag für normales Speichern
+    this.isSavingAsOpen = false;
     // Im Split-Modus: Speichere immer beide Aufträge
     if (this.isSplitMode) {
       this.showSplitSaveDialog();
@@ -3632,22 +3635,9 @@ filteredArtikelData() {
 
   // Neue Methode für Bestätigungs-Modal beim Zwischenspeichern
   confirmSaveOrderAsOpen(): void {
-    const dialogRef = this.dialog.open(MyDialogComponent, {
-      width: '400px',
-      data: {
-        title: 'Auftrag zwischenspeichern',
-        message: 'Möchten Sie den Auftrag wirklich zwischenspeichern? Der Auftrag wird mit dem Status "Offen" gespeichert und kann später bearbeitet werden.',
-        isConfirmation: true,
-        confirmLabel: 'Zwischenspeichern',
-        cancelLabel: 'Abbrechen'
-      }
-    });
-
-    dialogRef.afterClosed().subscribe(result => {
-      if (result === true) {
-        this.saveOrderAsOpen();
-      }
-    });
+    // Öffne das gleiche Modal wie beim normalen Speichern, aber mit Flag für Zwischenspeichern
+    this.isSavingAsOpen = true;
+    this.openOrderConfirmationModal();
   }
 
   // Neue Methode für Bestätigungs-Modal beim Löschen des gesamten Auftrags
@@ -5337,11 +5327,13 @@ filteredArtikelData() {
   openOrderConfirmationModal(): void {
     if (!this.globalService.selectedCustomerForOrders) {
       alert('Bitte wählen Sie zuerst einen Kunden aus.');
+      this.isSavingAsOpen = false; // Reset flag
       return;
     }
 
     if (this.orderItems.length === 0) {
       alert('Bitte fügen Sie Artikel zum Auftrag hinzu.');
+      this.isSavingAsOpen = false; // Reset flag
       return;
     }
 
@@ -5360,7 +5352,8 @@ filteredArtikelData() {
     const customerName = this.globalService.selectedCustomerForOrders.last_name_company;
     
     // Erweiterte Bestellübersicht mit Datumsfeldern
-    let confirmMessage = `📋 Auftrag bestätigen\n\nKunde: ${customerName}\n\nArtikel:\n${orderSummary}\n\nGesamtpreis: €${totalPrice.toFixed(2)}`;
+    const statusText = this.isSavingAsOpen ? 'zwischenspeichern (Status: Offen)' : 'speichern';
+    let confirmMessage = `📋 Auftrag ${statusText}\n\nKunde: ${customerName}\n\nArtikel:\n${orderSummary}\n\nGesamtpreis: €${totalPrice.toFixed(2)}`;
     
     // Füge Datumsfelder zur Übersicht hinzu, falls ausgefüllt
     if (this.orderDate) {
@@ -5378,7 +5371,11 @@ filteredArtikelData() {
       confirmMessage += `\n\n⚠️ WARNUNG: Folgende Artikel werden unter dem Einkaufspreis verkauft:\n\n${itemNames}`;
     }
     
-    confirmMessage += `\n\nMöchten Sie diesen Auftrag speichern?`;
+    if (this.isSavingAsOpen) {
+      confirmMessage += `\n\nDer Auftrag wird mit dem Status "Offen" gespeichert und kann später bearbeitet werden.`;
+    }
+    
+    confirmMessage += `\n\nMöchten Sie diesen Auftrag ${statusText}?`;
     
     // Bereite die Modal-Daten vor
     this.orderConfirmationData = {
@@ -5398,6 +5395,7 @@ filteredArtikelData() {
     this.isOrderConfirmationModalOpen = false;
     this.orderConfirmationData = null;
     this.isSavingOrder = false;
+    this.isSavingAsOpen = false; // Reset flag when closing modal
   }
 
   confirmOrderSave(): void {
@@ -5421,13 +5419,15 @@ filteredArtikelData() {
     });
 
     // Kundendaten für den Request
+    // Wenn isSavingAsOpen true ist, Status auf "open" setzen, sonst "completed"
+    const orderStatus = this.isSavingAsOpen ? 'open' : 'completed';
     const customerData: any = {
       customer_id: this.globalService.selectedCustomerForOrders.id,
       customer_number: this.globalService.selectedCustomerForOrders.customer_number,
       customer_name: this.globalService.selectedCustomerForOrders.last_name_company,
       customer_addition: this.globalService.selectedCustomerForOrders.name_addition,
       customer_email: this.globalService.selectedCustomerForOrders.email,
-      status: 'completed'
+      status: orderStatus
     };
 
     // Nur Kundendaten mitsenden, wenn der Name geändert wurde
@@ -5521,9 +5521,10 @@ filteredArtikelData() {
     })
     .then(data => {
       this.isSavingOrder = false;
+      const statusText = this.isSavingAsOpen ? 'zwischengespeichert (Status: Offen)' : 'gespeichert';
       const successMessage = isEditMode 
-        ? 'Bestellung erfolgreich aktualisiert!' 
-        : 'Auftrag erfolgreich gespeichert!';
+        ? `Bestellung erfolgreich aktualisiert${this.isSavingAsOpen ? ' (Status: Offen)' : ''}!` 
+        : `Auftrag erfolgreich ${statusText}!`;
       alert(successMessage);
       this.closeOrderConfirmationModal();
       this.clearAllOrderData();

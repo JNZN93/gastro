@@ -1382,7 +1382,11 @@
 <div class="order-confirmation-modal" *ngIf="isOrderConfirmationModalOpen">
   <div class="order-confirmation-modal-content">
     <div class="order-confirmation-modal-header">
-      <h2>📋 Auftrag bestätigen</h2>
+      <h2>@if (isSavingAsOpen) {
+        📋 Auftrag zwischenspeichern
+      } @else {
+        📋 Auftrag bestätigen
+      }</h2>
       <button class="close-order-confirmation-modal" (click)="closeOrderConfirmationModal()">
         <span class="material-icons">close</span>
       </button>
@@ -1455,6 +1459,13 @@
               <span class="total-amount">€{{ orderConfirmationData.totalPrice.toFixed(2) }}</span>
             </div>
           </div>
+
+          <!-- Hinweis für Zwischenspeichern -->
+          @if (isSavingAsOpen) {
+            <div class="confirmation-section info-section">
+              <p class="info-text">ℹ️ Der Auftrag wird mit dem Status "Offen" gespeichert und kann später bearbeitet werden.</p>
+            </div>
+          }
         </div>
       }
     </div>
@@ -1469,8 +1480,12 @@
           <span class="material-icons spinner">hourglass_empty</span>
           Wird gespeichert...
         } @else {
-          <span class="material-icons">save</span>
-          Auftrag speichern
+          <span class="material-icons">@if (isSavingAsOpen) { schedule } @else { save }</span>
+          @if (isSavingAsOpen) {
+            Zwischenspeichern
+          } @else {
+            Auftrag speichern
+          }
         }
       </button>
     </div>
