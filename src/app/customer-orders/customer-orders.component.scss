@@ -1544,10 +1544,23 @@
     background: #f59e0b;
     color: white;
     
-    &:hover {
+    &:hover:not(:disabled) {
       background: #d97706;
       transform: translateY(-1px);
       box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+    }
+
+    &:disabled {
+      background: #9ca3af;
+      color: #e5e7eb;
+      cursor: not-allowed;
+      opacity: 0.6;
+      
+      &:hover {
+        transform: none;
+        box-shadow: none;
+        background: #9ca3af;
+      }
     }
   }
 
@@ -6421,8 +6434,19 @@
     background: #f59e0b;
     color: white;
 
-    &:hover {
+    &:hover:not(:disabled) {
       background: #d97706;
+    }
+
+    &:disabled {
+      background: #9ca3af;
+      color: #e5e7eb;
+      cursor: not-allowed;
+      opacity: 0.6;
+      
+      &:hover {
+        background: #9ca3af;
+      }
     }
   }
 

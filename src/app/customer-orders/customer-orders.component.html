@@ -471,7 +471,7 @@
               <span class="material-icons">print</span>
               Drucken
             </button>
-            <button (click)="confirmSaveOrderAsOpen()" class="save-order-open-btn">
+            <button (click)="confirmSaveOrderAsOpen()" class="save-order-open-btn" [disabled]="isSplitMode">
               <span class="material-icons">schedule</span>
               Zwischenspeichern
             </button>
@@ -905,7 +905,7 @@
                   <span class="material-icons">print</span>
                   Drucken
                 </button>
-                <button (click)="confirmSaveOrderAsOpen()" class="save-order-open-btn">
+                <button (click)="confirmSaveOrderAsOpen()" class="save-order-open-btn" [disabled]="isSplitMode">
                   <span class="material-icons">schedule</span>
                   Zwischenspeichern
                 </button>
