@@ -278,37 +278,60 @@ export class InventoryComponent implements OnInit {
   exportInventory(): void {
     this.isLoading = true;
     
-    // Lade alle Inventur-Einträge aus der Datenbank
-    this.http.get<any[]>(`${environment.apiUrl}/api/inventory`, { headers: this.getAuthHeaders() }).subscribe({
-      next: (dbEntries) => {
-        if (dbEntries.length === 0) {
-          alert('Keine Inventur-Einträge in der Datenbank gefunden.');
-          this.isLoading = false;
-          return;
-        }
+    // Lade alle verfügbaren Artikel für Inventur und alle Inventur-Einträge parallel
+    this.http.get<any[]>(`${environment.apiUrl}/api/inventory/products`, { headers: this.getAuthHeaders() }).subscribe({
+      next: (availableProducts) => {
+        // Lade alle Inventur-Einträge aus der Datenbank
+        this.http.get<any[]>(`${environment.apiUrl}/api/inventory`, { headers: this.getAuthHeaders() }).subscribe({
+          next: (dbEntries) => {
+            // Erstelle Map für schnellen Zugriff auf Inventur-Einträge
+            const inventoryMap = new Map<string, number>();
+            dbEntries.forEach(entry => {
+              inventoryMap.set(entry.article_number, entry.quantity);
+            });
 
-        // Erstelle CSV-Content aus DB-Daten
-        const csvContent = dbEntries
-          .map(entry => `${entry.article_number};${entry.quantity}`)
-          .join('\n');
-        
-        // Download CSV
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        link.setAttribute('download', `inventur_db_${new Date().toISOString().split('T')[0]}.csv`);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        this.isLoading = false;
-        console.log(`Export abgeschlossen: ${dbEntries.length} Einträge aus der Datenbank exportiert.`);
+            // Erstelle Export-Liste: Alle verfügbaren Artikel mit ihren Mengen (0 wenn kein Eintrag)
+            const exportEntries = availableProducts.map(product => {
+              const quantity = inventoryMap.get(product.article_number) || 0;
+              return {
+                article_number: product.article_number,
+                quantity: quantity
+              };
+            });
+
+            // Sortiere nach Artikelnummer
+            exportEntries.sort((a, b) => a.article_number.localeCompare(b.article_number));
+
+            // Erstelle CSV-Content
+            const csvContent = exportEntries
+              .map(entry => `${entry.article_number};${entry.quantity}`)
+              .join('\n');
+            
+            // Download CSV
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `inventur_db_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            this.isLoading = false;
+            const entriesWithQuantity = exportEntries.filter(e => e.quantity > 0).length;
+            console.log(`Export abgeschlossen: ${exportEntries.length} Artikel exportiert (${entriesWithQuantity} mit Menge > 0, ${exportEntries.length - entriesWithQuantity} mit Menge 0).`);
+          },
+          error: (error) => {
+            console.error('Fehler beim Laden der Inventur-Einträge:', error);
+            alert('Fehler beim Laden der Inventur-Einträge aus der Datenbank.');
+            this.isLoading = false;
+          }
+        });
       },
       error: (error) => {
-        console.error('Fehler beim Exportieren der Inventur-Daten:', error);
-        alert('Fehler beim Laden der Inventur-Daten aus der Datenbank.');
+        console.error('Fehler beim Laden der verfügbaren Artikel:', error);
+        alert('Fehler beim Laden der verfügbaren Artikel.');
         this.isLoading = false;
       }
     });
