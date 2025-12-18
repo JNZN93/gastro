@@ -148,6 +148,15 @@
         <div class="section-header">
           <h2 class="section-title">Inventur-Einträge</h2>
           <div class="section-actions">
+            <!-- Export Type Toggle -->
+            <div class="export-toggle-container">
+              <label class="toggle-label">
+                <span class="toggle-text">{{ isFullInventory ? 'Gesamtinventur' : 'Teilinventur' }}</span>
+                <div class="toggle-switch" [class.active]="isFullInventory" (click)="isFullInventory = !isFullInventory">
+                  <div class="toggle-slider"></div>
+                </div>
+              </label>
+            </div>
             <button 
               class="action-btn export-btn" 
               (click)="exportInventory()"

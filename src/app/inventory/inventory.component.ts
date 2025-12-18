@@ -69,6 +69,9 @@ export class InventoryComponent implements OnInit {
     BarcodeFormat.ITF
   ];
 
+  // Export type toggle: true = Gesamtinventur (alle Artikel), false = Teilinventur (nur gezählte)
+  isFullInventory: boolean = true;
+
   videoConstraints: MediaTrackConstraints = {
     width: { ideal: 1280 },
     height: { ideal: 720 },
@@ -291,13 +294,18 @@ export class InventoryComponent implements OnInit {
             });
 
             // Erstelle Export-Liste: Alle verfügbaren Artikel mit ihren Mengen (0 wenn kein Eintrag)
-            const exportEntries = availableProducts.map(product => {
+            let exportEntries = availableProducts.map(product => {
               const quantity = inventoryMap.get(product.article_number) || 0;
               return {
                 article_number: product.article_number,
                 quantity: quantity
               };
             });
+
+            // Bei Teilinventur: Nur Artikel mit Menge > 0 exportieren
+            if (!this.isFullInventory) {
+              exportEntries = exportEntries.filter(entry => entry.quantity > 0);
+            }
 
             // Sortiere nach Artikelnummer
             exportEntries.sort((a, b) => a.article_number.localeCompare(b.article_number));
@@ -308,11 +316,12 @@ export class InventoryComponent implements OnInit {
               .join('\n');
             
             // Download CSV
+            const exportType = this.isFullInventory ? 'gesamt' : 'teil';
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
             const url = URL.createObjectURL(blob);
             link.setAttribute('href', url);
-            link.setAttribute('download', `inventur_db_${new Date().toISOString().split('T')[0]}.csv`);
+            link.setAttribute('download', `inventur_${exportType}_${new Date().toISOString().split('T')[0]}.csv`);
             link.style.visibility = 'hidden';
             document.body.appendChild(link);
             link.click();
@@ -320,7 +329,8 @@ export class InventoryComponent implements OnInit {
             
             this.isLoading = false;
             const entriesWithQuantity = exportEntries.filter(e => e.quantity > 0).length;
-            console.log(`Export abgeschlossen: ${exportEntries.length} Artikel exportiert (${entriesWithQuantity} mit Menge > 0, ${exportEntries.length - entriesWithQuantity} mit Menge 0).`);
+            const exportTypeLabel = this.isFullInventory ? 'Gesamtinventur' : 'Teilinventur';
+            console.log(`${exportTypeLabel} abgeschlossen: ${exportEntries.length} Artikel exportiert (${entriesWithQuantity} mit Menge > 0${this.isFullInventory ? `, ${exportEntries.length - entriesWithQuantity} mit Menge 0` : ''}).`);
           },
           error: (error) => {
             console.error('Fehler beim Laden der Inventur-Einträge:', error);
