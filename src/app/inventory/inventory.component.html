@@ -88,7 +88,7 @@
                 *ngIf="getSavedInventoryQuantity(article.article_number) > 0">
                 DB: {{ getSavedInventoryQuantity(article.article_number) }}
               </span>
-              <button class="add-btn" (click)="openQuantityModal(article); $event.stopPropagation()" title="Menge hinzufügen">
+              <button class="add-btn" (click)="openQuantityModal(article); $event.stopPropagation()" title="Menge ändern">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
                 </svg>
@@ -229,7 +229,7 @@
   <div class="modal-overlay" *ngIf="showQuantityModal" (click)="closeQuantityModal()">
     <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h3>Menge hinzufügen</h3>
+        <h3>Menge ändern</h3>
         <button class="close-btn" (click)="closeQuantityModal()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
@@ -243,24 +243,24 @@
           <span class="category">{{ selectedArticle.category }}</span>
         </div>
         <div class="quantity-input-section">
-          <label for="quantityInput">Menge:</label>
+          <label for="quantityInput">Menge (positiv zum Hinzufügen, negativ zum Abziehen):</label>
           <input
             id="quantityInput"
             type="number"
             [(ngModel)]="quantityInput"
-            min="1"
+            min="-9999"
             max="9999"
             class="quantity-input"
             #quantityInputRef
             (keyup.enter)="addToInventoryFromModal()"
-            placeholder="Menge eingeben..."
+            placeholder="Menge eingeben (z.B. +5 oder -3)..."
           >
         </div>
       </div>
       <div class="modal-footer">
         <button class="btn-cancel" (click)="closeQuantityModal()">Abbrechen</button>
-        <button class="btn-confirm" (click)="addToInventoryFromModal()" [disabled]="quantityInput <= 0">
-          Hinzufügen
+        <button class="btn-confirm" (click)="addToInventoryFromModal()" [disabled]="!quantityInput || quantityInput === 0">
+          Übernehmen
         </button>
       </div>
     </div>

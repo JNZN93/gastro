@@ -393,17 +393,24 @@ export class InventoryComponent implements OnInit {
   }
 
   addToInventoryFromModal(): void {
-    if (this.selectedArticle && this.quantityInput > 0) {
+    if (this.selectedArticle && this.quantityInput !== null && this.quantityInput !== 0) {
       const existingEntry = this.inventoryEntries.find(entry => entry.article_number === this.selectedArticle!.article_number);
       
       if (existingEntry) {
         existingEntry.quantity += this.quantityInput;
+        // Wenn Menge 0 oder weniger, entferne den Eintrag
+        if (existingEntry.quantity <= 0) {
+          this.removeEntry(this.selectedArticle.article_number);
+        }
       } else {
-        this.inventoryEntries.push({
-          article_number: this.selectedArticle.article_number,
-          quantity: this.quantityInput,
-          article_text: this.selectedArticle.article_text
-        });
+        // Nur hinzufügen, wenn Menge positiv ist
+        if (this.quantityInput > 0) {
+          this.inventoryEntries.push({
+            article_number: this.selectedArticle.article_number,
+            quantity: this.quantityInput,
+            article_text: this.selectedArticle.article_text
+          });
+        }
       }
       
       // Sortiere nach Artikelnummer
