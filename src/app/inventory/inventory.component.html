@@ -432,6 +432,41 @@
     </div>
   </div>
 
+  <!-- Confirm Save Inventory Modal -->
+  <div class="modal-overlay" *ngIf="showConfirmSaveModal" (click)="cancelSaveInventory()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Inventur speichern</h3>
+        <button class="close-btn" (click)="cancelSaveInventory()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="confirm-message">
+          <svg class="warning-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
+          </svg>
+          <p>Möchten Sie wirklich <strong>{{ inventoryEntries.length }}</strong> Inventur-Einträge in der Datenbank speichern?</p>
+          <div class="inventory-summary" style="margin-top: 1rem; padding: 0.75rem; background: #f8fafc; border-radius: 6px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-weight: 500; color: #374151;">Gesamtmenge:</span>
+              <span style="font-size: 1.125rem; font-weight: 700; color: #1e293b;">{{ getTotalQuantity() }}</span>
+            </div>
+          </div>
+          <p class="warning-text" style="margin-top: 1rem;">Die aktuelle Inventur wird in der Datenbank gespeichert und die Inventur-Einträge werden zurückgesetzt.</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="cancelSaveInventory()">Abbrechen</button>
+        <button class="btn-confirm" (click)="confirmSaveInventory()">
+          Speichern
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Barcode Scanner Modal -->
   <div class="scanner-modal" *ngIf="isScanning">
     <div class="scanner-overlay" (click)="stopScanner()"></div>

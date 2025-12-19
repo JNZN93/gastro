@@ -62,6 +62,7 @@ export class InventoryComponent implements OnInit {
   showConfirmClearAllSavedModal: boolean = false;
   showConfirmRemoveModal: boolean = false;
   selectedEntryToRemove: InventoryEntry | null = null;
+  showConfirmSaveModal: boolean = false;
 
   // Scanner properties
   isScanning: boolean = false;
@@ -280,8 +281,17 @@ export class InventoryComponent implements OnInit {
     if (this.inventoryEntries.length === 0) {
       return;
     }
+    this.showConfirmSaveModal = true;
+  }
+
+  confirmSaveInventory(): void {
+    if (this.inventoryEntries.length === 0) {
+      this.showConfirmSaveModal = false;
+      return;
+    }
 
     this.isLoading = true;
+    this.showConfirmSaveModal = false;
     
     const inventoryData = {
       entries: this.inventoryEntries.map(entry => ({
@@ -317,6 +327,10 @@ export class InventoryComponent implements OnInit {
         // Hier könnte eine Fehlermeldung angezeigt werden
       }
     });
+  }
+
+  cancelSaveInventory(): void {
+    this.showConfirmSaveModal = false;
   }
 
   exportInventory(): void {
