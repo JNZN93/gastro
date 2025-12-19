@@ -715,35 +715,109 @@
       border: 1px solid #e2e8f0;
       width: 100%;
 
-      .section-title {
-        margin: 0 0 1rem 0;
-        font-size: 1.125rem;
-        font-weight: 600;
-        color: #475569;
+      .section-header-toggle {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        cursor: pointer;
+        user-select: none;
+
+        .section-title {
+          margin: 0;
+          font-size: 1.125rem;
+          font-weight: 600;
+          color: #475569;
+        }
+
+        .toggle-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 2rem;
+          height: 2rem;
+          border: none;
+          background: transparent;
+          color: #64748b;
+          border-radius: 6px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          flex-shrink: 0;
+
+          svg {
+            width: 1.25rem;
+            height: 1.25rem;
+            transition: transform 0.3s ease;
+          }
+
+          &:hover {
+            background: #e2e8f0;
+            color: #475569;
+          }
+
+          &.expanded svg {
+            transform: rotate(180deg);
+          }
+        }
+      }
+
+      .saved-inventory-content {
+        overflow: hidden;
+        transition: max-height 0.3s ease, opacity 0.3s ease;
+        max-height: 1000px;
+        opacity: 1;
+
+        &.collapsed {
+          max-height: 0;
+          opacity: 0;
+          margin-bottom: 0;
+        }
       }
 
       .saved-inventory-list {
         display: flex;
         flex-direction: column;
-        gap: 0.75rem;
+        gap: 0.875rem;
         width: 100%;
+        max-height: 400px;
+        overflow-y: auto;
         overflow-x: hidden;
+        padding: 0.5rem 1rem 0.5rem 0.5rem;
+        box-sizing: border-box;
+        
+        // Custom scrollbar styling
+        &::-webkit-scrollbar {
+          width: 8px;
+        }
+
+        &::-webkit-scrollbar-track {
+          background: #f1f5f9;
+          border-radius: 4px;
+        }
+
+        &::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
+          border-radius: 4px;
+
+          &:hover {
+            background: #94a3b8;
+          }
+        }
       }
 
       .saved-inventory-entry {
         box-sizing: border-box !important;
         display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 0.75rem 1rem;
+        align-items: flex-start;
+        padding: 0.875rem 1rem;
         background: white;
         border-radius: 8px;
         border: 1px solid #e2e8f0;
         transition: box-shadow 0.2s ease;
         width: 100% !important;
-        max-width: 100%;
-        min-width: 0;
-        overflow: hidden;
+        gap: 0.875rem;
+        min-height: fit-content;
+        overflow: visible;
 
         &:hover {
           box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
@@ -753,51 +827,45 @@
           box-sizing: border-box;
           display: flex;
           flex-direction: column;
-          gap: 0.25rem;
+          gap: 0.375rem;
           flex: 1;
           min-width: 0;
-          overflow: hidden;
+          overflow: visible;
 
           .entry-number {
             font-weight: 600;
             color: #1e40af;
-            font-size: 0.875rem;
+            font-size: 0.9375rem;
             white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
           }
 
           .entry-name {
             color: #64748b;
             font-size: 0.875rem;
-            line-height: 1.4;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
+            line-height: 1.5;
             word-break: break-word;
+            display: block;
+            overflow-wrap: break-word;
           }
         }
 
         .entry-quantity {
-          margin-right: 1rem;
           flex-shrink: 0;
           
           .quantity-value {
             background: #dcfce7;
             color: #166534;
-            padding: 0.25rem 0.75rem;
+            padding: 0.375rem 0.75rem;
             border-radius: 6px;
             font-weight: 600;
             font-size: 0.875rem;
             white-space: nowrap;
+            display: inline-block;
           }
         }
 
         .entry-actions {
           flex-shrink: 0;
-          min-width: 0;
           
           .delete-saved-btn {
             display: flex;

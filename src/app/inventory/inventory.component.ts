@@ -78,6 +78,9 @@ export class InventoryComponent implements OnInit {
   // Export type toggle: true = Gesamtinventur (alle Artikel), false = Teilinventur (nur gezählte)
   isFullInventory: boolean = true;
 
+  // Collapse/expand state for saved inventory section
+  isSavedInventoryExpanded: boolean = true;
+
   videoConstraints: MediaTrackConstraints = {
     width: { ideal: 1280 },
     height: { ideal: 720 },
@@ -592,5 +595,9 @@ export class InventoryComponent implements OnInit {
       // Fallback für Browser ohne Audio-Support
       console.log('Beep sound played');
     });
+  }
+
+  toggleSavedInventory(): void {
+    this.isSavedInventoryExpanded = !this.isSavedInventoryExpanded;
   }
 }

@@ -104,40 +104,49 @@
 
       <!-- Saved Inventory Data Section -->
       <div class="saved-inventory-section">
-        <h2 class="section-title">Bereits gezählte Artikel (aus DB)</h2>
-        <div class="saved-inventory-list" *ngIf="!isLoadingSavedData">
-          <div 
-            class="saved-inventory-entry" 
-            *ngFor="let entry of savedInventoryEntries; trackBy: trackByEntry">
-            <div class="entry-info">
-              <span class="entry-number">{{ entry.article_number }}</span>
-              <span class="entry-name">{{ entry.article_text }}</span>
-            </div>
-            <div class="entry-quantity">
-              <span class="quantity-value">{{ entry.quantity }}</span>
-            </div>
-            <div class="entry-actions">
-              <button 
-                class="delete-saved-btn" 
-                (click)="deleteSavedInventoryEntry(entry.article_number)"
-                title="Gespeicherten Eintrag löschen">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                </svg>
-              </button>
+        <div class="section-header-toggle" (click)="toggleSavedInventory()">
+          <h2 class="section-title">Bereits gezählte Artikel (aus DB)</h2>
+          <button class="toggle-btn" [class.expanded]="isSavedInventoryExpanded" title="Ein-/Ausklappen">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </button>
+        </div>
+        <div class="saved-inventory-content" [class.collapsed]="!isSavedInventoryExpanded">
+          <div class="saved-inventory-list" *ngIf="!isLoadingSavedData">
+            <div 
+              class="saved-inventory-entry" 
+              *ngFor="let entry of savedInventoryEntries; trackBy: trackByEntry">
+              <div class="entry-info">
+                <span class="entry-number">{{ entry.article_number }}</span>
+                <span class="entry-name">{{ entry.article_text }}</span>
+              </div>
+              <div class="entry-quantity">
+                <span class="quantity-value">{{ entry.quantity }}</span>
+              </div>
+              <div class="entry-actions">
+                <button 
+                  class="delete-saved-btn" 
+                  (click)="deleteSavedInventoryEntry(entry.article_number)"
+                  title="Gespeicherten Eintrag löschen">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-        <div class="loading-state" *ngIf="isLoadingSavedData">
-          <div class="spinner"></div>
-          <p>Gespeicherte Daten werden geladen...</p>
-        </div>
-        <div class="empty-state" *ngIf="!isLoadingSavedData && savedInventoryEntries.length === 0">
-          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
-          </svg>
-          <h3>Keine gespeicherten Inventur-Daten</h3>
-          <p>Es wurden noch keine Artikel in der Datenbank gespeichert.</p>
+          <div class="loading-state" *ngIf="isLoadingSavedData">
+            <div class="spinner"></div>
+            <p>Gespeicherte Daten werden geladen...</p>
+          </div>
+          <div class="empty-state" *ngIf="!isLoadingSavedData && savedInventoryEntries.length === 0">
+            <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+            </svg>
+            <h3>Keine gespeicherten Inventur-Daten</h3>
+            <p>Es wurden noch keine Artikel in der Datenbank gespeichert.</p>
+          </div>
         </div>
       </div>
     </div>
