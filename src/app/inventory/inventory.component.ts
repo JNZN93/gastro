@@ -13,6 +13,7 @@ interface Article {
   category: string;
   current_stock?: number;
   ean?: string;
+  eans?: string[]; // Array von EANs aus product_eans Tabelle
 }
 
 interface InventoryEntry {
@@ -164,10 +165,31 @@ export class InventoryComponent implements OnInit {
     if (!this.searchTerm.trim()) {
       this.filteredArticles = [...this.articles];
     } else {
-      this.filteredArticles = this.articles.filter(article =>
-        article.article_number.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        article.article_text.toLowerCase().includes(this.searchTerm.toLowerCase())
-      );
+      const searchTermLower = this.searchTerm.toLowerCase().trim();
+      this.filteredArticles = this.articles.filter(article => {
+        // Suche nach Artikelnummer
+        if (article.article_number.toLowerCase().includes(searchTermLower)) {
+          return true;
+        }
+        // Suche nach Artikeltext
+        if (article.article_text.toLowerCase().includes(searchTermLower)) {
+          return true;
+        }
+        // Suche nach EAN aus products.ean (falls vorhanden)
+        if (article.ean && article.ean.toLowerCase().includes(searchTermLower)) {
+          return true;
+        }
+        // Suche nach EANs aus product_eans Tabelle (Array)
+        if (article.eans && Array.isArray(article.eans)) {
+          const foundEan = article.eans.some(ean => 
+            ean && ean.toLowerCase().includes(searchTermLower)
+          );
+          if (foundEan) {
+            return true;
+          }
+        }
+        return false;
+      });
     }
   }
 
@@ -590,11 +612,108 @@ export class InventoryComponent implements OnInit {
     this.playBeep();
     this.stopScanner();
     
-    // Schreibe den gescannten Code in das Suchfeld
-    this.searchTerm = result;
-    this.onSearchChange();
+    // Prüfe ob es ein EAN-Code ist (8 oder 13 Ziffern)
+    const trimmedResult = result.trim();
+    const isEanCode = /^\d{8}$|^\d{13}$/.test(trimmedResult);
     
-    console.log('Barcode gescannt und in Suchfeld eingetragen:', result);
+    if (isEanCode) {
+      // EAN-Code: Suche Artikel über API
+      console.log('EAN-Code erkannt, suche Artikel:', trimmedResult);
+      this.searchArticleByEan(trimmedResult);
+    } else {
+      // Kein EAN-Code: Normale Suche
+      this.searchTerm = result;
+      this.onSearchChange();
+      console.log('Barcode gescannt und in Suchfeld eingetragen:', result);
+    }
+  }
+
+  searchArticleByEan(ean: string): void {
+    const eanLower = ean.toLowerCase().trim();
+    
+    // Zuerst in lokalen Artikeln suchen (schneller, kein API-Call nötig)
+    const foundArticle = this.articles.find(article => {
+      // Suche in products.ean
+      if (article.ean && article.ean.toLowerCase() === eanLower) {
+        return true;
+      }
+      // Suche in product_eans Array
+      if (article.eans && Array.isArray(article.eans)) {
+        return article.eans.some(e => e && e.toLowerCase() === eanLower);
+      }
+      return false;
+    });
+    
+    if (foundArticle) {
+      // Artikel lokal gefunden: Öffne direkt Mengen-Modal
+      console.log('Artikel lokal gefunden für EAN:', ean, 'Artikelnummer:', foundArticle.article_number);
+      this.openQuantityModal(foundArticle);
+      return;
+    }
+    
+    // Nicht lokal gefunden: Suche über API
+    console.log('EAN nicht lokal gefunden, suche über API:', ean);
+    this.isLoading = true;
+    
+    this.http.post<any>(`${environment.apiUrl}/api/product-eans/scan`, 
+      { ean: ean }, 
+      { headers: this.getAuthHeaders() }
+    ).subscribe({
+      next: (response) => {
+        this.isLoading = false;
+        
+        if (response.success && response.data) {
+          const articleNumber = response.data.article_number;
+          console.log('Artikel über API gefunden für EAN:', ean, 'Artikelnummer:', articleNumber);
+          
+          // Suche Artikel in der lokalen Liste
+          const article = this.articles.find(a => a.article_number === articleNumber);
+          
+          if (article) {
+            // Artikel gefunden: Öffne Mengen-Modal
+            this.openQuantityModal(article);
+          } else {
+            // Artikel nicht in lokaler Liste: Lade Artikel neu und öffne dann Modal
+            console.log('Artikel nicht in lokaler Liste, lade Artikel neu...');
+            this.loadArticles();
+            
+            // Warte kurz und versuche erneut
+            setTimeout(() => {
+              const reloadedArticle = this.articles.find(a => a.article_number === articleNumber);
+              if (reloadedArticle) {
+                this.openQuantityModal(reloadedArticle);
+              } else {
+                // Artikel konnte nicht geladen werden
+                alert(`Artikel mit EAN ${ean} gefunden (${articleNumber}), aber konnte nicht geladen werden.`);
+                this.searchTerm = articleNumber;
+                this.onSearchChange();
+              }
+            }, 500);
+          }
+        } else {
+          // EAN nicht gefunden
+          console.log('EAN nicht in Datenbank gefunden:', ean);
+          alert(`EAN-Code ${ean} wurde nicht gefunden. Bitte ordnen Sie ihn zuerst einem Artikel zu.`);
+          this.searchTerm = ean;
+          this.onSearchChange();
+        }
+      },
+      error: (error) => {
+        this.isLoading = false;
+        console.error('Fehler beim Suchen nach EAN:', error);
+        
+        // Bei 404: EAN nicht gefunden
+        if (error.status === 404) {
+          alert(`EAN-Code ${ean} wurde nicht gefunden. Bitte ordnen Sie ihn zuerst einem Artikel zu.`);
+        } else {
+          alert(`Fehler beim Suchen nach EAN: ${error.error?.message || error.message}`);
+        }
+        
+        // Fallback: Normale Suche
+        this.searchTerm = ean;
+        this.onSearchChange();
+      }
+    });
   }
 
   stopScanner(): void {
