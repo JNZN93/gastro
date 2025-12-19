@@ -241,6 +241,88 @@
         background: #9ca3af;
         cursor: not-allowed;
       }
+
+      &.btn-danger {
+        background: #dc2626;
+        color: white;
+
+        &:hover:not(:disabled) {
+          background: #b91c1c;
+        }
+      }
+    }
+  }
+}
+
+// Confirm Modal Styles
+.confirm-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1rem;
+
+  .warning-icon {
+    width: 3rem;
+    height: 3rem;
+    color: #f59e0b;
+  }
+
+  p {
+    margin: 0;
+    color: #374151;
+    line-height: 1.6;
+
+    strong {
+      color: #1e293b;
+      font-weight: 600;
+    }
+  }
+
+  .warning-text {
+    color: #dc2626;
+    font-weight: 500;
+    font-size: 0.875rem;
+  }
+
+  .entry-details {
+    width: 100%;
+    text-align: left;
+
+    .entry-preview {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: #f8fafc;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+
+      .preview-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #e2e8f0;
+
+        &:last-child {
+          border-bottom: none;
+        }
+
+        .preview-label {
+          font-weight: 500;
+          color: #64748b;
+          font-size: 0.875rem;
+          margin-right: 1rem;
+        }
+
+        .preview-value {
+          color: #1e293b;
+          font-weight: 600;
+          font-size: 0.875rem;
+          text-align: right;
+          word-break: break-word;
+          flex: 1;
+        }
+      }
     }
   }
 }

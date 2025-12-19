@@ -275,6 +275,154 @@
     </div>
   </div>
 
+  <!-- Confirm Remove Entry Modal -->
+  <div class="modal-overlay" *ngIf="showConfirmRemoveModal" (click)="cancelRemoveEntry()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Eintrag entfernen</h3>
+        <button class="close-btn" (click)="cancelRemoveEntry()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body" *ngIf="selectedEntryToRemove">
+        <div class="confirm-message">
+          <svg class="warning-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+          </svg>
+          <div class="entry-details">
+            <p>Möchten Sie diesen Inventur-Eintrag wirklich entfernen?</p>
+            <div class="entry-preview">
+              <div class="preview-item">
+                <span class="preview-label">Artikelnummer:</span>
+                <span class="preview-value">{{ selectedEntryToRemove.article_number }}</span>
+              </div>
+              <div class="preview-item" *ngIf="selectedEntryToRemove.article_text">
+                <span class="preview-label">Artikelname:</span>
+                <span class="preview-value">{{ selectedEntryToRemove.article_text }}</span>
+              </div>
+              <div class="preview-item">
+                <span class="preview-label">Menge:</span>
+                <span class="preview-value">{{ selectedEntryToRemove.quantity }}</span>
+              </div>
+            </div>
+          </div>
+          <p class="warning-text">Der Eintrag wird aus der aktuellen Inventur entfernt.</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="cancelRemoveEntry()">Abbrechen</button>
+        <button class="btn-confirm btn-danger" (click)="confirmRemoveEntry()">
+          Entfernen
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm Delete Single Entry Modal -->
+  <div class="modal-overlay" *ngIf="showConfirmDeleteModal" (click)="cancelDeleteSavedEntry()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Eintrag löschen</h3>
+        <button class="close-btn" (click)="cancelDeleteSavedEntry()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body" *ngIf="selectedEntryToDelete">
+        <div class="confirm-message">
+          <svg class="warning-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+          </svg>
+          <div class="entry-details">
+            <p>Möchten Sie den gespeicherten Inventur-Eintrag wirklich löschen?</p>
+            <div class="entry-preview">
+              <div class="preview-item">
+                <span class="preview-label">Artikelnummer:</span>
+                <span class="preview-value">{{ selectedEntryToDelete.article_number }}</span>
+              </div>
+              <div class="preview-item" *ngIf="selectedEntryToDelete.article_text">
+                <span class="preview-label">Artikelname:</span>
+                <span class="preview-value">{{ selectedEntryToDelete.article_text }}</span>
+              </div>
+              <div class="preview-item">
+                <span class="preview-label">Menge:</span>
+                <span class="preview-value">{{ selectedEntryToDelete.quantity }}</span>
+              </div>
+            </div>
+          </div>
+          <p class="warning-text">Diese Aktion kann nicht rückgängig gemacht werden.</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="cancelDeleteSavedEntry()">Abbrechen</button>
+        <button class="btn-confirm btn-danger" (click)="confirmDeleteSavedEntry()">
+          Löschen
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm Clear All Saved Entries Modal -->
+  <div class="modal-overlay" *ngIf="showConfirmClearAllSavedModal" (click)="cancelClearAllSavedEntries()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Alle gespeicherten Einträge löschen</h3>
+        <button class="close-btn" (click)="cancelClearAllSavedEntries()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="confirm-message">
+          <svg class="warning-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+          </svg>
+          <p>Möchten Sie wirklich alle <strong>{{ savedInventoryEntries.length }}</strong> gespeicherten Inventur-Einträge aus der Datenbank löschen?</p>
+          <p class="warning-text">Diese Aktion kann nicht rückgängig gemacht werden.</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="cancelClearAllSavedEntries()">Abbrechen</button>
+        <button class="btn-confirm btn-danger" (click)="confirmClearAllSavedEntries()">
+          Alle löschen
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm Clear All Modal -->
+  <div class="modal-overlay" *ngIf="showConfirmClearModal" (click)="cancelClearAllEntries()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Alle Einträge löschen</h3>
+        <button class="close-btn" (click)="cancelClearAllEntries()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="confirm-message">
+          <svg class="warning-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+          </svg>
+          <p>Möchten Sie wirklich alle <strong>{{ inventoryEntries.length }}</strong> Inventur-Einträge löschen?</p>
+          <p class="warning-text">Diese Aktion kann nicht rückgängig gemacht werden.</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="cancelClearAllEntries()">Abbrechen</button>
+        <button class="btn-confirm btn-danger" (click)="confirmClearAllEntries()">
+          Alle löschen
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Barcode Scanner Modal -->
   <div class="scanner-modal" *ngIf="isScanning">
     <div class="scanner-overlay" (click)="stopScanner()"></div>

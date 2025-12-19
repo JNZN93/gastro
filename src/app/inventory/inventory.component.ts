@@ -56,6 +56,12 @@ export class InventoryComponent implements OnInit {
   showQuantityModal: boolean = false;
   selectedArticle: Article | null = null;
   quantityInput: number = 1;
+  showConfirmClearModal: boolean = false;
+  showConfirmDeleteModal: boolean = false;
+  selectedEntryToDelete: InventoryEntry | null = null;
+  showConfirmClearAllSavedModal: boolean = false;
+  showConfirmRemoveModal: boolean = false;
+  selectedEntryToRemove: InventoryEntry | null = null;
 
   // Scanner properties
   isScanning: boolean = false;
@@ -224,15 +230,47 @@ export class InventoryComponent implements OnInit {
   }
 
   removeEntry(articleNumber: string): void {
+    const entry = this.inventoryEntries.find(e => e.article_number === articleNumber);
+    if (entry) {
+      this.selectedEntryToRemove = entry;
+      this.showConfirmRemoveModal = true;
+    }
+  }
+
+  confirmRemoveEntry(): void {
+    if (!this.selectedEntryToRemove) {
+      return;
+    }
+
+    const articleNumber = this.selectedEntryToRemove.article_number;
     this.inventoryEntries = this.inventoryEntries.filter(entry => entry.article_number !== articleNumber);
     // Speichere in localStorage
     this.saveInventoryToStorage();
+    this.showConfirmRemoveModal = false;
+    this.selectedEntryToRemove = null;
+  }
+
+  cancelRemoveEntry(): void {
+    this.showConfirmRemoveModal = false;
+    this.selectedEntryToRemove = null;
   }
 
   clearAllEntries(): void {
+    if (this.inventoryEntries.length === 0) {
+      return;
+    }
+    this.showConfirmClearModal = true;
+  }
+
+  confirmClearAllEntries(): void {
     this.inventoryEntries = [];
     // Speichere in localStorage (leert den Storage)
     this.saveInventoryToStorage();
+    this.showConfirmClearModal = false;
+  }
+
+  cancelClearAllEntries(): void {
+    this.showConfirmClearModal = false;
   }
 
   saveInventory(): void {
@@ -366,34 +404,94 @@ export class InventoryComponent implements OnInit {
   }
 
   deleteSavedInventoryEntry(articleNumber: string): void {
-    if (confirm(`Möchten Sie den gespeicherten Inventur-Eintrag für Artikel ${articleNumber} wirklich löschen?`)) {
-      this.isLoadingSavedData = true;
-      
-      this.http.delete(`${environment.apiUrl}/api/inventory/${articleNumber}`, { headers: this.getAuthHeaders() }).subscribe({
-        next: (response) => {
-          console.log('Gespeicherter Inventur-Eintrag gelöscht:', response);
-          
-          // Entferne den Eintrag aus der lokalen Liste
-          this.savedInventoryEntries = this.savedInventoryEntries.filter(entry => entry.article_number !== articleNumber);
-          
-          this.isLoadingSavedData = false;
-          
-          // Zeige Erfolgsmeldung
-          this.showSuccessMessage = true;
-          this.successMessage = `Inventur-Eintrag für Artikel ${articleNumber} wurde gelöscht.`;
-          
-          // Nach 3 Sekunden Nachricht ausblenden
-          setTimeout(() => {
-            this.showSuccessMessage = false;
-          }, 3000);
-        },
-        error: (error) => {
-          console.error('Fehler beim Löschen des gespeicherten Inventur-Eintrags:', error);
-          alert('Fehler beim Löschen des Inventur-Eintrags.');
-          this.isLoadingSavedData = false;
-        }
-      });
+    const entry = this.savedInventoryEntries.find(e => e.article_number === articleNumber);
+    if (entry) {
+      this.selectedEntryToDelete = entry;
+      this.showConfirmDeleteModal = true;
     }
+  }
+
+  confirmDeleteSavedEntry(): void {
+    if (!this.selectedEntryToDelete) {
+      return;
+    }
+
+    const articleNumber = this.selectedEntryToDelete.article_number;
+    this.isLoadingSavedData = true;
+    this.showConfirmDeleteModal = false;
+    
+    this.http.delete(`${environment.apiUrl}/api/inventory/${articleNumber}`, { headers: this.getAuthHeaders() }).subscribe({
+      next: (response) => {
+        console.log('Gespeicherter Inventur-Eintrag gelöscht:', response);
+        
+        // Entferne den Eintrag aus der lokalen Liste
+        this.savedInventoryEntries = this.savedInventoryEntries.filter(entry => entry.article_number !== articleNumber);
+        
+        this.isLoadingSavedData = false;
+        
+        // Zeige Erfolgsmeldung
+        this.showSuccessMessage = true;
+        this.successMessage = `Inventur-Eintrag für Artikel ${articleNumber} wurde gelöscht.`;
+        
+        // Nach 3 Sekunden Nachricht ausblenden
+        setTimeout(() => {
+          this.showSuccessMessage = false;
+        }, 3000);
+      },
+      error: (error) => {
+        console.error('Fehler beim Löschen des gespeicherten Inventur-Eintrags:', error);
+        alert('Fehler beim Löschen des Inventur-Eintrags.');
+        this.isLoadingSavedData = false;
+      }
+    });
+
+    this.selectedEntryToDelete = null;
+  }
+
+  cancelDeleteSavedEntry(): void {
+    this.showConfirmDeleteModal = false;
+    this.selectedEntryToDelete = null;
+  }
+
+  clearAllSavedEntries(): void {
+    if (this.savedInventoryEntries.length === 0) {
+      return;
+    }
+    this.showConfirmClearAllSavedModal = true;
+  }
+
+  confirmClearAllSavedEntries(): void {
+    this.isLoadingSavedData = true;
+    this.showConfirmClearAllSavedModal = false;
+    
+    this.http.delete(`${environment.apiUrl}/api/inventory`, { headers: this.getAuthHeaders() }).subscribe({
+      next: (response) => {
+        console.log('Alle gespeicherten Inventur-Einträge gelöscht:', response);
+        
+        // Leere die lokale Liste
+        this.savedInventoryEntries = [];
+        
+        this.isLoadingSavedData = false;
+        
+        // Zeige Erfolgsmeldung
+        this.showSuccessMessage = true;
+        this.successMessage = 'Alle gespeicherten Inventur-Einträge wurden erfolgreich gelöscht.';
+        
+        // Nach 3 Sekunden Nachricht ausblenden
+        setTimeout(() => {
+          this.showSuccessMessage = false;
+        }, 3000);
+      },
+      error: (error) => {
+        console.error('Fehler beim Löschen aller gespeicherten Inventur-Einträge:', error);
+        alert('Fehler beim Löschen aller gespeicherten Inventur-Einträge.');
+        this.isLoadingSavedData = false;
+      }
+    });
+  }
+
+  cancelClearAllSavedEntries(): void {
+    this.showConfirmClearAllSavedModal = false;
   }
 
   trackByArticleNumber(index: number, article: Article): string {
