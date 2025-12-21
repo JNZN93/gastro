@@ -166,32 +166,114 @@ export class InventoryComponent implements OnInit {
     if (!this.searchTerm.trim()) {
       this.filteredArticles = [...this.articles];
     } else {
-      const searchTermLower = this.searchTerm.toLowerCase().trim();
-      this.filteredArticles = this.articles.filter(article => {
-        // Suche nach Artikelnummer
-        if (article.article_number.toLowerCase().includes(searchTermLower)) {
-          return true;
-        }
-        // Suche nach Artikeltext
-        if (article.article_text.toLowerCase().includes(searchTermLower)) {
-          return true;
-        }
-        // Suche nach EAN aus products.ean (falls vorhanden)
-        if (article.ean && article.ean.toLowerCase().includes(searchTermLower)) {
-          return true;
-        }
-        // Suche nach EANs aus product_eans Tabelle (Array)
-        if (article.eans && Array.isArray(article.eans)) {
-          const foundEan = article.eans.some(ean => 
-            ean && ean.toLowerCase().includes(searchTermLower)
-          );
-          if (foundEan) {
+      const trimmedTerm = this.searchTerm.trim();
+      
+      // Mindestlänge prüfen (außer bei EAN)
+      const isEanSearch = /^\d{8}$|^\d{13}$/.test(trimmedTerm);
+      if (!isEanSearch && trimmedTerm.length < 3) {
+        this.filteredArticles = [];
+        return;
+      }
+
+      // Mehrere Suchbegriffe unterstützen (getrennt durch Leerzeichen)
+      const terms = trimmedTerm.toLowerCase().split(/\s+/);
+      
+      // Filtere Artikel: Alle Begriffe müssen gefunden werden (AND-Logik)
+      const filtered = this.articles.filter((article) => {
+        return terms.every((term) => {
+          // Suche nach Artikelnummer
+          if (article.article_number.toLowerCase().includes(term)) {
             return true;
           }
+          // Suche nach Artikeltext
+          if (article.article_text.toLowerCase().includes(term)) {
+            return true;
+          }
+          // Suche nach EAN aus products.ean (falls vorhanden)
+          if (article.ean && article.ean.toLowerCase().includes(term)) {
+            return true;
+          }
+          // Suche nach EANs aus product_eans Tabelle (Array)
+          if (article.eans && Array.isArray(article.eans)) {
+            const foundEan = article.eans.some(ean => 
+              ean && ean.toLowerCase().includes(term)
+            );
+            if (foundEan) {
+              return true;
+            }
+          }
+          return false;
+        });
+      });
+
+      // Intelligente Sortierung: exakte Matches zuerst, dann "starts with", dann alphabetisch
+      const searchTermLower = trimmedTerm.toLowerCase();
+      this.filteredArticles = filtered.sort((a, b) => {
+        const aArticleNumberExact = a.article_number?.toLowerCase() === searchTermLower;
+        const bArticleNumberExact = b.article_number?.toLowerCase() === searchTermLower;
+        const aArticleTextExact = a.article_text.toLowerCase() === searchTermLower;
+        const bArticleTextExact = b.article_text.toLowerCase() === searchTermLower;
+        const aEanExact = a.ean?.toLowerCase() === searchTermLower;
+        const bEanExact = b.ean?.toLowerCase() === searchTermLower;
+
+        const aArticleNumberStartsWith = a.article_number?.toLowerCase().startsWith(searchTermLower);
+        const bArticleNumberStartsWith = b.article_number?.toLowerCase().startsWith(searchTermLower);
+        const aArticleTextStartsWith = a.article_text.toLowerCase().startsWith(searchTermLower);
+        const bArticleTextStartsWith = b.article_text.toLowerCase().startsWith(searchTermLower);
+        const aEanStartsWith = a.ean?.toLowerCase().startsWith(searchTermLower);
+        const bEanStartsWith = b.ean?.toLowerCase().startsWith(searchTermLower);
+
+        // Exakte Matches zuerst
+        if (aArticleNumberExact && !bArticleNumberExact) return -1;
+        if (!aArticleNumberExact && bArticleNumberExact) return 1;
+        if (aArticleTextExact && !bArticleTextExact) return -1;
+        if (!aArticleTextExact && bArticleTextExact) return 1;
+        if (aEanExact && !bEanExact) return -1;
+        if (!aEanExact && bEanExact) return 1;
+        
+        // Dann "starts with" Matches
+        if (aArticleNumberStartsWith && !bArticleNumberStartsWith) return -1;
+        if (!aArticleNumberStartsWith && bArticleNumberStartsWith) return 1;
+        if (aArticleTextStartsWith && !bArticleTextStartsWith) return -1;
+        if (!aArticleTextStartsWith && bArticleTextStartsWith) return 1;
+        if (aEanStartsWith && !bEanStartsWith) return -1;
+        if (!aEanStartsWith && bEanStartsWith) return 1;
+
+        // Dann nach Artikelnummer sortieren (intelligent)
+        const articleNumberComparison = this.compareArticleNumbers(a.article_number, b.article_number);
+        if (articleNumberComparison !== 0) {
+          return articleNumberComparison;
         }
-        return false;
+        
+        // Zuletzt alphabetisch nach Artikeltext
+        return a.article_text.localeCompare(b.article_text);
       });
     }
+  }
+
+  /**
+   * Vergleicht zwei Artikelnummern intelligent (numerisch und alphabetisch)
+   * @param a Erste Artikelnummer
+   * @param b Zweite Artikelnummer
+   * @returns -1 wenn a < b, 0 wenn a = b, 1 wenn a > b
+   */
+  private compareArticleNumbers(a: string | undefined, b: string | undefined): number {
+    // Behandle undefined/null Werte
+    if (!a && !b) return 0;
+    if (!a) return 1;
+    if (!b) return -1;
+    
+    // Versuche numerischen Vergleich für reine Zahlen
+    const aNum = parseFloat(a);
+    const bNum = parseFloat(b);
+    
+    // Wenn beide Artikelnummern reine Zahlen sind, vergleiche sie numerisch
+    if (!isNaN(aNum) && !isNaN(bNum) && a.toString() === aNum.toString() && b.toString() === bNum.toString()) {
+      return aNum - bNum;
+    }
+    
+    // Ansonsten alphabetischen Vergleich
+    return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
   }
 
   clearSearch(): void {
