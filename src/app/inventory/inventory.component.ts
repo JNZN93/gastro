@@ -14,6 +14,7 @@ interface Article {
   current_stock?: number;
   ean?: string;
   eans?: string[]; // Array von EANs aus product_eans Tabelle
+  article_notes?: string; // Artikel-Notizen
 }
 
 interface InventoryEntry {
