@@ -105,7 +105,12 @@
       <!-- Saved Inventory Data Section -->
       <div class="saved-inventory-section">
         <div class="section-header-toggle" (click)="toggleSavedInventory()">
-          <h2 class="section-title">Bereits gezählte Artikel (aus DB)</h2>
+          <h2 class="section-title">
+            Bereits gezählte Artikel (aus DB)
+            <span class="badge-count" *ngIf="savedInventoryEntries.length > 0">
+              {{ savedInventoryEntries.length }}
+            </span>
+          </h2>
           <button class="toggle-btn" [class.expanded]="isSavedInventoryExpanded" title="Ein-/Ausklappen">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
@@ -146,6 +151,61 @@
             </svg>
             <h3>Keine gespeicherten Inventur-Daten</h3>
             <p>Es wurden noch keine Artikel in der Datenbank gespeichert.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- History Section -->
+      <div class="history-section">
+        <div class="section-header-toggle" (click)="toggleHistory()">
+          <h2 class="section-title">
+            Eingabe-Historie
+            <span class="badge-count" *ngIf="inventoryHistory.length > 0">
+              {{ inventoryHistory.length }}
+            </span>
+          </h2>
+          <div class="header-actions">
+            <button 
+              class="clear-history-btn" 
+              (click)="clearHistory(); $event.stopPropagation()"
+              *ngIf="inventoryHistory.length > 0"
+              title="Historie löschen">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+              </svg>
+            </button>
+            <button class="toggle-btn" [class.expanded]="isHistoryExpanded" title="Ein-/Ausklappen">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="history-content" [class.collapsed]="!isHistoryExpanded">
+          <div class="history-list" *ngIf="!isLoading && inventoryHistory.length > 0">
+            <div 
+              class="history-entry" 
+              *ngFor="let entry of inventoryHistory.slice().reverse(); trackBy: trackByHistoryEntry">
+              <div class="entry-info">
+                <span class="entry-number">{{ entry.article_number }}</span>
+                <span class="entry-name" *ngIf="entry.article_text">{{ entry.article_text }}</span>
+              </div>
+              <div class="entry-quantity">
+                <span class="quantity-value" [class.negative]="entry.quantity < 0">
+                  {{ entry.quantity > 0 ? '+' : '' }}{{ entry.quantity }}
+                </span>
+              </div>
+              <div class="entry-timestamp">
+                <span class="timestamp-value">{{ formatTimestamp(entry.timestamp) }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="empty-state" *ngIf="!isLoading && inventoryHistory.length === 0">
+            <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <h3>Keine Historie</h3>
+            <p>Es wurden noch keine Mengen eingegeben.</p>
           </div>
         </div>
       </div>

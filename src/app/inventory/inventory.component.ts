@@ -23,6 +23,13 @@ interface InventoryEntry {
   article_text?: string;
 }
 
+interface InventoryHistoryEntry {
+  article_number: string;
+  article_text?: string;
+  quantity: number;
+  timestamp: string; // ISO string
+}
+
 @Component({
   selector: 'app-inventory',
   imports: [CommonModule, FormsModule, ZXingScannerModule],
@@ -47,6 +54,7 @@ export class InventoryComponent implements OnInit {
   filteredArticles: Article[] = [];
   inventoryEntries: InventoryEntry[] = [];
   savedInventoryEntries: InventoryEntry[] = []; // Gespeicherte Daten aus der DB
+  inventoryHistory: InventoryHistoryEntry[] = []; // Historie der eingegebenen Mengen
   inputText: string = '';
   searchTerm: string = '';
   isLoading: boolean = false;
@@ -83,6 +91,7 @@ export class InventoryComponent implements OnInit {
 
   // Collapse/expand state for saved inventory section
   isSavedInventoryExpanded: boolean = true;
+  isHistoryExpanded: boolean = false; // Historie ein-/ausklappen
 
   videoConstraints: MediaTrackConstraints = {
     width: { ideal: 1280 },
@@ -126,9 +135,52 @@ export class InventoryComponent implements OnInit {
     localStorage.removeItem('inventory_entries');
   }
 
+  // Historie localStorage methods
+  private saveHistoryToStorage(): void {
+    if (this.inventoryHistory.length > 0) {
+      // Begrenze Historie auf die letzten 1000 Einträge
+      const limitedHistory = this.inventoryHistory.slice(-1000);
+      localStorage.setItem('inventory_history', JSON.stringify(limitedHistory));
+    } else {
+      localStorage.removeItem('inventory_history');
+    }
+  }
+
+  private loadHistoryFromStorage(): void {
+    const savedHistory = localStorage.getItem('inventory_history');
+    if (savedHistory) {
+      try {
+        this.inventoryHistory = JSON.parse(savedHistory);
+        console.log('Inventur-Historie aus localStorage geladen:', this.inventoryHistory.length, 'Einträge');
+      } catch (error) {
+        console.error('Fehler beim Laden der Inventur-Historie:', error);
+        localStorage.removeItem('inventory_history');
+      }
+    }
+  }
+
+  private addToHistory(articleNumber: string, articleText: string | undefined, quantity: number): void {
+    const historyEntry: InventoryHistoryEntry = {
+      article_number: articleNumber,
+      article_text: articleText,
+      quantity: quantity,
+      timestamp: new Date().toISOString()
+    };
+    
+    this.inventoryHistory.push(historyEntry);
+    
+    // Begrenze Historie auf die letzten 1000 Einträge
+    if (this.inventoryHistory.length > 1000) {
+      this.inventoryHistory = this.inventoryHistory.slice(-1000);
+    }
+    
+    this.saveHistoryToStorage();
+  }
+
   ngOnInit(): void {
     this.loadArticles();
     this.loadInventoryFromStorage();
+    this.loadHistoryFromStorage();
     this.loadSavedInventoryData();
   }
 
@@ -320,6 +372,13 @@ export class InventoryComponent implements OnInit {
 
     // Füge neue Einträge zu bestehenden hinzu
     newEntries.forEach(newEntry => {
+      // Historie speichern
+      this.addToHistory(
+        newEntry.article_number,
+        newEntry.article_text,
+        newEntry.quantity
+      );
+      
       const existingIndex = this.inventoryEntries.findIndex(e => e.article_number === newEntry.article_number);
       if (existingIndex >= 0) {
         this.inventoryEntries[existingIndex].quantity += newEntry.quantity;
@@ -624,6 +683,10 @@ export class InventoryComponent implements OnInit {
     return entry.article_number;
   }
 
+  trackByHistoryEntry(index: number, entry: InventoryHistoryEntry): string {
+    return `${entry.article_number}-${entry.timestamp}`;
+  }
+
   // Modal methods
   openQuantityModal(article: Article): void {
     this.selectedArticle = article;
@@ -648,6 +711,13 @@ export class InventoryComponent implements OnInit {
   addToInventoryFromModal(): void {
     if (this.selectedArticle && this.quantityInput !== null && this.quantityInput !== 0) {
       const existingEntry = this.inventoryEntries.find(entry => entry.article_number === this.selectedArticle!.article_number);
+      
+      // Historie speichern
+      this.addToHistory(
+        this.selectedArticle.article_number,
+        this.selectedArticle.article_text,
+        this.quantityInput
+      );
       
       if (existingEntry) {
         existingEntry.quantity += this.quantityInput;
@@ -815,5 +885,49 @@ export class InventoryComponent implements OnInit {
 
   toggleSavedInventory(): void {
     this.isSavedInventoryExpanded = !this.isSavedInventoryExpanded;
+  }
+
+  toggleHistory(): void {
+    this.isHistoryExpanded = !this.isHistoryExpanded;
+  }
+
+  formatTimestamp(timestamp: string): string {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) {
+      return 'gerade eben';
+    } else if (diffMins < 60) {
+      return `vor ${diffMins} Min.`;
+    } else if (diffHours < 24) {
+      return `vor ${diffHours} Std.`;
+    } else if (diffDays < 7) {
+      return `vor ${diffDays} Tag${diffDays > 1 ? 'en' : ''}`;
+    } else {
+      // Format: DD.MM.YYYY HH:MM
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      return `${day}.${month}.${year} ${hours}:${minutes}`;
+    }
+  }
+
+  getHistoryForArticle(articleNumber: string): InventoryHistoryEntry[] {
+    return this.inventoryHistory
+      .filter(entry => entry.article_number === articleNumber)
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  }
+
+  clearHistory(): void {
+    if (confirm('Möchten Sie wirklich die gesamte Historie löschen?')) {
+      this.inventoryHistory = [];
+      this.saveHistoryToStorage();
+    }
   }
 }
