@@ -534,9 +534,11 @@ export class InventoryComponent implements OnInit {
               .map(entry => `${entry.article_number};${entry.quantity}`)
               .join('\n');
             
-            // Download CSV
+            // Download CSV mit UTF-8 BOM für korrekte Erkennung von Umlauten in Excel
             const exportType = this.isFullInventory ? 'gesamt' : 'teil';
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            // UTF-8 BOM: EF BB BF (explizit als Bytes für maximale Kompatibilität)
+            const BOM = new Uint8Array([0xEF, 0xBB, 0xBF]);
+            const blob = new Blob([BOM, csvContent], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
             const url = URL.createObjectURL(blob);
             link.setAttribute('href', url);
