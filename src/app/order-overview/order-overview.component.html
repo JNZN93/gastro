@@ -76,13 +76,43 @@
         <table class="orders-table">
           <thead>
             <tr>
-              <th>Bestellnummer</th>
-              <th>Datum</th>
-              <th>Kundennummer</th>
+              <th class="sortable-header" (click)="sortByColumn('order_id')">
+                <span class="header-text">Bestellnummer</span>
+                @if (isSortColumn('order_id')) {
+                  <span class="sort-icon">{{ getSortIcon('order_id') }}</span>
+                }
+              </th>
+              <th class="sortable-header" (click)="sortByColumn('order_date')">
+                <span class="header-text">Datum</span>
+                @if (isSortColumn('order_date')) {
+                  <span class="sort-icon">{{ getSortIcon('order_date') }}</span>
+                }
+              </th>
+              <th class="sortable-header" (click)="sortByColumn('customer_number')">
+                <span class="header-text">Kundennummer</span>
+                @if (isSortColumn('customer_number')) {
+                  <span class="sort-icon">{{ getSortIcon('customer_number') }}</span>
+                }
+              </th>
               <th>Sachbearbeiter</th>
-              <th>Kunde</th>
-              <th>Status</th>
-              <th>Gesamtpreis <span style="font-size: 0.7em;">(Brutto)</span></th>
+              <th class="sortable-header" (click)="sortByColumn('customer_name')">
+                <span class="header-text">Kunde</span>
+                @if (isSortColumn('customer_name')) {
+                  <span class="sort-icon">{{ getSortIcon('customer_name') }}</span>
+                }
+              </th>
+              <th class="sortable-header" (click)="sortByColumn('status')">
+                <span class="header-text">Status</span>
+                @if (isSortColumn('status')) {
+                  <span class="sort-icon">{{ getSortIcon('status') }}</span>
+                }
+              </th>
+              <th class="sortable-header" (click)="sortByColumn('total_price')">
+                <span class="header-text">Gesamtpreis <span style="font-size: 0.7em;">(Brutto)</span></span>
+                @if (isSortColumn('total_price')) {
+                  <span class="sort-icon">{{ getSortIcon('total_price') }}</span>
+                }
+              </th>
               <th>Aktionen</th>
             </tr>
           </thead>

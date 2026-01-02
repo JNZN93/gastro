@@ -56,6 +56,8 @@ export class OrderOverviewComponent implements OnInit {
   selectedOrder: Order | null = null;
   isLoading = false;
   searchTerm = '';
+  sortBy: string = 'order_date';
+  sortDirection: 'asc' | 'desc' = 'desc';
   showDeleteModal = false;
   orderToDelete: Order | null = null;
   isDeleting = false;
@@ -189,22 +191,117 @@ export class OrderOverviewComponent implements OnInit {
   }
 
   get filteredOrders(): Order[] {
-    if (!this.searchTerm) {
-      return this.orders;
+    let filtered = this.orders;
+    
+    // Filter anwenden
+    if (this.searchTerm) {
+      const term = this.searchTerm.toLowerCase();
+      filtered = this.orders.filter(order => {
+        const mappedCustomerName = (this.getCustomerDisplayName(order) || '').toLowerCase();
+        return (
+          order.order_id?.toString().includes(this.searchTerm) ||
+          order.name?.toLowerCase().includes(term) ||
+          order.company?.toLowerCase().includes(term) ||
+          order.email?.toLowerCase().includes(term) ||
+          order.customer_number?.toLowerCase().includes(term) ||
+          (order.role && order.role.toLowerCase().includes(term)) ||
+          (mappedCustomerName && mappedCustomerName.includes(term))
+        );
+      });
     }
-    const term = this.searchTerm.toLowerCase();
-    return this.orders.filter(order => {
-      const mappedCustomerName = (this.getCustomerDisplayName(order) || '').toLowerCase();
-      return (
-        order.order_id?.toString().includes(this.searchTerm) ||
-        order.name?.toLowerCase().includes(term) ||
-        order.company?.toLowerCase().includes(term) ||
-        order.email?.toLowerCase().includes(term) ||
-        order.customer_number?.toLowerCase().includes(term) ||
-        (order.role && order.role.toLowerCase().includes(term)) ||
-        (mappedCustomerName && mappedCustomerName.includes(term))
-      );
+    
+    // Sortierung anwenden
+    return this.sortOrders(filtered);
+  }
+
+  sortOrders(orders: Order[]): Order[] {
+    const sorted = [...orders];
+    
+    sorted.sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+      
+      switch (this.sortBy) {
+        case 'order_id':
+          aValue = a.order_id;
+          bValue = b.order_id;
+          break;
+        case 'order_date':
+          aValue = a.order_date ? new Date(a.order_date).getTime() : 0;
+          bValue = b.order_date ? new Date(b.order_date).getTime() : 0;
+          break;
+        case 'created_at':
+          aValue = a.created_at ? new Date(a.created_at).getTime() : 0;
+          bValue = b.created_at ? new Date(b.created_at).getTime() : 0;
+          break;
+        case 'delivery_date':
+          aValue = a.delivery_date ? new Date(a.delivery_date).getTime() : 0;
+          bValue = b.delivery_date ? new Date(b.delivery_date).getTime() : 0;
+          break;
+        case 'status':
+          aValue = a.status || '';
+          bValue = b.status || '';
+          break;
+        case 'customer_number':
+          aValue = a.customer_number || '';
+          bValue = b.customer_number || '';
+          break;
+        case 'total_price':
+          aValue = parseFloat(a.total_price || '0');
+          bValue = parseFloat(b.total_price || '0');
+          break;
+        case 'customer_name':
+          aValue = this.getCustomerDisplayName(a).toLowerCase();
+          bValue = this.getCustomerDisplayName(b).toLowerCase();
+          break;
+        case 'fulfillment_type':
+          aValue = a.fulfillment_type || '';
+          bValue = b.fulfillment_type || '';
+          break;
+        case 'payment_status':
+          aValue = a.payment_status || '';
+          bValue = b.payment_status || '';
+          break;
+        default:
+          return 0;
+      }
+      
+      if (aValue < bValue) {
+        return this.sortDirection === 'asc' ? -1 : 1;
+      }
+      if (aValue > bValue) {
+        return this.sortDirection === 'asc' ? 1 : -1;
+      }
+      return 0;
     });
+    
+    return sorted;
+  }
+
+  toggleSortDirection(): void {
+    this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+  }
+
+  sortByColumn(column: string): void {
+    if (this.sortBy === column) {
+      // Wenn bereits nach dieser Spalte sortiert wird, Richtung umkehren
+      this.toggleSortDirection();
+    } else {
+      // Neue Spalte, Standardrichtung setzen
+      this.sortBy = column;
+      this.sortDirection = 'desc';
+    }
+  }
+
+  isSortColumn(column: string): boolean {
+    return this.sortBy === column;
+  }
+
+  getSortIcon(column: string): string {
+    if (!this.isSortColumn(column)) {
+      return '';
+    }
+    return this.sortDirection === 'asc' ? '↑' : '↓';
   }
 
   onOrderClick(order: Order) {
