@@ -91,7 +91,9 @@ export class OrderOverviewComponent implements OnInit {
 
   ngOnInit(): void {
     this.checkUserRole();
-    this.loadOrders();
+    this.loadOrders().catch(error => {
+      console.error('Fehler beim initialen Laden der Bestellungen:', error);
+    });
     this.loadCustomers();
     this.loadAllArtikels();
   }
@@ -127,31 +129,36 @@ export class OrderOverviewComponent implements OnInit {
     });
   }
 
-  loadOrders() {
-    this.isLoading = true;
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
-      this.router.navigate(['/login']);
-      return;
-    }
+  loadOrders(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.isLoading = true;
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        this.router.navigate(['/login']);
+        reject('No token');
+        return;
+      }
 
-    const headers = new HttpHeaders({
-      'Authorization': `Bearer ${token}`
-    });
-
-    this.http.get<OrdersResponse>(`${environment.apiUrl}/api/orders/all-orders`, { headers })
-      .subscribe({
-        next: (response) => {
-          this.orders = response.orders || [];
-          this.isLoading = false;
-        },
-        error: (error) => {
-          console.error('Fehler beim Laden der Bestellungen:', error);
-          this.orders = [];
-          this.isLoading = false;
-        }
+      const headers = new HttpHeaders({
+        'Authorization': `Bearer ${token}`
       });
+
+      this.http.get<OrdersResponse>(`${environment.apiUrl}/api/orders/all-orders`, { headers })
+        .subscribe({
+          next: (response) => {
+            this.orders = response.orders || [];
+            this.isLoading = false;
+            resolve();
+          },
+          error: (error) => {
+            console.error('Fehler beim Laden der Bestellungen:', error);
+            this.orders = [];
+            this.isLoading = false;
+            reject(error);
+          }
+        });
+    });
   }
 
   private customersByNumber: Record<string, any> = {}; // Vollständige Kundendaten
@@ -304,15 +311,48 @@ export class OrderOverviewComponent implements OnInit {
     return this.sortDirection === 'asc' ? '↑' : '↓';
   }
 
-  onOrderClick(order: Order) {
-    this.selectedOrder = order;
+  async onOrderClick(order: Order) {
+    // Lade Daten neu bevor Details angezeigt werden
+    console.log('🔄 [ORDER-DETAILS] Lade Bestellungen neu vor Anzeige der Details');
+    try {
+      await this.loadOrders();
+      // Finde die aktualisierte Bestellung nach dem Neuladen
+      const updatedOrder = this.orders.find(o => o.order_id === order.order_id);
+      if (updatedOrder) {
+        this.selectedOrder = updatedOrder;
+      } else {
+        // Falls Bestellung nicht mehr existiert, verwende die ursprüngliche
+        this.selectedOrder = order;
+      }
+    } catch (error) {
+      console.error('Fehler beim Neuladen der Bestellungen:', error);
+      // Bei Fehler trotzdem Details anzeigen
+      this.selectedOrder = order;
+    }
   }
 
   closeOrderDetails() {
     this.selectedOrder = null;
   }
 
-  generatePdf(order: Order) {
+  async generatePdf(order: Order) {
+    // Lade Daten neu bevor PDF generiert wird
+    console.log('🔄 [PDF-GENERATE] Lade Bestellungen neu vor PDF-Generierung');
+    try {
+      await this.loadOrders();
+      // Finde die aktualisierte Bestellung nach dem Neuladen
+      const updatedOrder = this.orders.find(o => o.order_id === order.order_id);
+      if (!updatedOrder) {
+        console.warn('⚠️ [PDF-GENERATE] Bestellung nicht mehr gefunden, verwende ursprüngliche Daten');
+        // Falls Bestellung nicht mehr existiert, verwende die ursprüngliche
+      } else {
+        order = updatedOrder;
+      }
+    } catch (error) {
+      console.error('Fehler beim Neuladen der Bestellungen:', error);
+      // Bei Fehler trotzdem PDF mit ursprünglichen Daten generieren
+    }
+    
     const doc = new jsPDF();
     let pageCount = 1;
     let totalPages = 1; // Wird später berechnet
@@ -775,7 +815,24 @@ export class OrderOverviewComponent implements OnInit {
     return '-'; // Keine Anzeige für normale Kunden in der Sachbearbeiter-Spalte
   }
 
-  deleteOrder(order: Order) {
+  async deleteOrder(order: Order) {
+    // Lade Daten neu bevor Lösch-Dialog geöffnet wird
+    console.log('🔄 [DELETE-ORDER] Lade Bestellungen neu vor Lösch-Dialog');
+    try {
+      await this.loadOrders();
+      // Finde die aktualisierte Bestellung nach dem Neuladen
+      const updatedOrder = this.orders.find(o => o.order_id === order.order_id);
+      if (!updatedOrder) {
+        console.warn('⚠️ [DELETE-ORDER] Bestellung nicht mehr gefunden');
+        // Bestellung existiert nicht mehr, zeige keine Fehlermeldung, da sie bereits gelöscht wurde
+        return;
+      }
+      order = updatedOrder;
+    } catch (error) {
+      console.error('Fehler beim Neuladen der Bestellungen:', error);
+      // Bei Fehler trotzdem fortfahren mit ursprünglichen Daten
+    }
+    
     this.orderToDelete = order;
     this.showDeleteModal = true;
     this.deleteConfirmationText = '';
@@ -873,8 +930,24 @@ export class OrderOverviewComponent implements OnInit {
   }
 
   // Neue Methode zum Laden einer Bestellung in die Customer Orders Komponente
-  loadOrderToCustomerOrders(order: Order): void {
+  async loadOrderToCustomerOrders(order: Order): Promise<void> {
     console.log('🔄 [LOAD-ORDER] Lade Bestellung in Customer Orders:', order);
+    
+    // Lade Daten neu bevor Bestellung geladen wird
+    console.log('🔄 [LOAD-ORDER] Lade Bestellungen neu vor Import');
+    try {
+      await this.loadOrders();
+      // Finde die aktualisierte Bestellung nach dem Neuladen
+      const updatedOrder = this.orders.find(o => o.order_id === order.order_id);
+      if (!updatedOrder) {
+        console.error('❌ [LOAD-ORDER] Bestellung nicht mehr gefunden');
+        return;
+      }
+      order = updatedOrder;
+    } catch (error) {
+      console.error('Fehler beim Neuladen der Bestellungen:', error);
+      // Bei Fehler trotzdem fortfahren mit ursprünglichen Daten
+    }
     
     // Speichere den ursprünglichen Status vor der Bearbeitung
     const originalStatus = order.status;
@@ -1139,8 +1212,24 @@ export class OrderOverviewComponent implements OnInit {
   }
 
   // Methode zum Bearbeiten einer offenen Bestellung
-  editOrder(order: Order): void {
+  async editOrder(order: Order): Promise<void> {
     console.log('✏️ [EDIT-ORDER] Bearbeite offene Bestellung:', order);
+    
+    // Lade Daten neu bevor Bearbeitung startet
+    console.log('🔄 [EDIT-ORDER] Lade Bestellungen neu vor Bearbeitung');
+    try {
+      await this.loadOrders();
+      // Finde die aktualisierte Bestellung nach dem Neuladen
+      const updatedOrder = this.orders.find(o => o.order_id === order.order_id);
+      if (!updatedOrder) {
+        console.error('❌ [EDIT-ORDER] Bestellung nicht mehr gefunden');
+        return;
+      }
+      order = updatedOrder;
+    } catch (error) {
+      console.error('Fehler beim Neuladen der Bestellungen:', error);
+      // Bei Fehler trotzdem fortfahren mit ursprünglichen Daten
+    }
     
     // Prüfe, ob die Bestellung bearbeitbar ist
     if (!this.isOrderEditable(order)) {
