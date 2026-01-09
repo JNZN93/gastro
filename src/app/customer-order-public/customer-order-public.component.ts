@@ -1179,28 +1179,37 @@ export class CustomerOrderPublicComponent implements OnInit {
     // Sammle alle Artikel mit Mengen > 0
     const itemsWithQuantity = this.customerArticlePrices
       .filter(article => article.tempQuantity && article.tempQuantity > 0)
-      .map(article => ({
-        product_id: article.product_id,
-        article_text: article.article_text,
-        article_number: article.article_number,
-        quantity: Number(article.tempQuantity),
-        unit_price: Number(article.unit_price_net) || 0,
-        total_price: (Number(article.unit_price_net) || 0) * Number(article.tempQuantity),
-        // Alle zusätzlichen Felder aus der API-Response hinzufügen
-        category: article.category,
-        created_at: article.created_at,
-        customer_id: article.customer_id,
-        id: article.id,
-        invoice_date: article.invoice_date,
-        invoice_id: article.invoice_id,
-        product_category: article.product_category,
-        product_database_id: article.product_database_id,
-        product_name: article.product_name,
-        unit_price_gross: article.unit_price_gross,
-        vat_percentage: article.vat_percentage,
-        updated_at: article.updated_at,
-        product_custom_field_1: article.product_custom_field_1 // PFAND-Referenz hinzufügen
-      }));
+      .map(article => {
+        // Berechne Bruttopreis für diesen Artikel
+        const grossPrice = article.hasOffer && article.offerPrice 
+          ? this.getOfferGrossPrice(article)
+          : this.getGrossPrice(article);
+        const quantity = Number(article.tempQuantity) || 0;
+        
+        return {
+          product_id: article.product_id,
+          article_text: article.article_text,
+          article_number: article.article_number,
+          quantity: quantity,
+          unit_price: grossPrice, // Bruttopreis verwenden
+          total_price: grossPrice * quantity, // Bruttopreis * Menge
+          // Alle zusätzlichen Felder aus der API-Response hinzufügen
+          category: article.category,
+          created_at: article.created_at,
+          customer_id: article.customer_id,
+          id: article.id,
+          invoice_date: article.invoice_date,
+          invoice_id: article.invoice_id,
+          product_category: article.product_category,
+          product_database_id: article.product_database_id,
+          product_name: article.product_name,
+          unit_price_gross: grossPrice, // Bruttopreis
+          unit_price_net: Number(article.unit_price_net) || 0, // Netto für Referenz
+          vat_percentage: article.vat_percentage,
+          updated_at: article.updated_at,
+          product_custom_field_1: article.product_custom_field_1 // PFAND-Referenz hinzufügen
+        };
+      });
 
     if (itemsWithQuantity.length === 0) {
       alert('Bitte geben Sie mindestens eine Menge für einen Artikel ein.');
@@ -1368,30 +1377,39 @@ export class CustomerOrderPublicComponent implements OnInit {
   getOrderItems() {
     return this.customerArticlePrices
       .filter(article => article.tempQuantity && article.tempQuantity > 0)
-      .map(article => ({
-        product_id: article.product_id,
-        article_text: article.article_text,
-        article_number: article.article_number || (article.isCustom ? 'Eigener Artikel' : ''),
-        quantity: Number(article.tempQuantity),
-        unit_price: Number(article.unit_price_net) || 0,
-        total_price: (Number(article.tempQuantity) || 0) * (Number(article.unit_price_net) || 0),
-        invoice_date: article.invoice_date,
-        isCustom: article.isCustom || false,
-        main_image_url: article.main_image_url, // Bild-URL hinzufügen
-        // Alle zusätzlichen Felder aus der API-Response hinzufügen
-        category: article.category,
-        created_at: article.created_at,
-        customer_id: article.customer_id,
-        id: article.id,
-        invoice_id: article.invoice_id,
-        product_category: article.product_category,
-        product_database_id: article.product_database_id,
-        product_name: article.product_name,
-        unit_price_gross: article.unit_price_gross,
-        vat_percentage: article.vat_percentage,
-        updated_at: article.updated_at,
-        product_custom_field_1: article.product_custom_field_1 // PFAND-Referenz hinzufügen! ✅
-      }));
+      .map(article => {
+        // Berechne Bruttopreis für diesen Artikel
+        const grossPrice = article.hasOffer && article.offerPrice 
+          ? this.getOfferGrossPrice(article)
+          : this.getGrossPrice(article);
+        const quantity = Number(article.tempQuantity) || 0;
+        
+        return {
+          product_id: article.product_id,
+          article_text: article.article_text,
+          article_number: article.article_number || (article.isCustom ? 'Eigener Artikel' : ''),
+          quantity: quantity,
+          unit_price: grossPrice, // Bruttopreis verwenden
+          total_price: grossPrice * quantity, // Bruttopreis * Menge
+          invoice_date: article.invoice_date,
+          isCustom: article.isCustom || false,
+          main_image_url: article.main_image_url, // Bild-URL hinzufügen
+          // Alle zusätzlichen Felder aus der API-Response hinzufügen
+          category: article.category,
+          created_at: article.created_at,
+          customer_id: article.customer_id,
+          id: article.id,
+          invoice_id: article.invoice_id,
+          product_category: article.product_category,
+          product_database_id: article.product_database_id,
+          product_name: article.product_name,
+          unit_price_gross: grossPrice, // Bruttopreis
+          unit_price_net: Number(article.unit_price_net) || 0, // Netto für Referenz
+          vat_percentage: article.vat_percentage,
+          updated_at: article.updated_at,
+          product_custom_field_1: article.product_custom_field_1 // PFAND-Referenz hinzufügen! ✅
+        };
+      });
   }
 
   // Plus-Button: Menge erhöhen
@@ -1423,7 +1441,10 @@ export class CustomerOrderPublicComponent implements OnInit {
       .filter(article => article.tempQuantity && article.tempQuantity > 0)
       .reduce((total, article) => {
         const quantity = Number(article.tempQuantity) || 0;
-        const price = Number(article.unit_price_net) || 0;
+        // Verwende Bruttopreis (Angebotspreis falls vorhanden, sonst normaler Bruttopreis)
+        const price = article.hasOffer && article.offerPrice 
+          ? this.getOfferGrossPrice(article)
+          : this.getGrossPrice(article);
         return total + (price * quantity);
       }, 0);
   }
@@ -1431,6 +1452,33 @@ export class CustomerOrderPublicComponent implements OnInit {
   // Hilfsmethode zum Konvertieren von Strings zu Zahlen
   toNumber(value: any): number {
     return Number(value) || 0;
+  }
+  
+  // Berechnet den Bruttopreis (verwendet unit_price_gross falls vorhanden, sonst berechnet aus Netto + MwSt)
+  getGrossPrice(article: any): number {
+    // Wenn unit_price_gross vorhanden ist, verwende es
+    if (article.unit_price_gross && Number(article.unit_price_gross) > 0) {
+      return Number(article.unit_price_gross);
+    }
+    
+    // Sonst berechne aus Netto + MwSt
+    const netPrice = Number(article.unit_price_net) || 0;
+    const vatPercentage = Number(article.vat_percentage) || 19; // Standard: 19% MwSt
+    
+    return netPrice * (1 + vatPercentage / 100);
+  }
+  
+  // Berechnet den Bruttopreis für Angebote
+  getOfferGrossPrice(article: any): number {
+    if (!article.hasOffer || !article.offerPrice) {
+      return this.getGrossPrice(article);
+    }
+    
+    // Für Angebote: Berechne Brutto aus Angebots-Nettopreis
+    const offerNetPrice = Number(article.offerPrice) || 0;
+    const vatPercentage = Number(article.vat_percentage) || 19;
+    
+    return offerNetPrice * (1 + vatPercentage / 100);
   }
 
   // Methode die aufgerufen wird, wenn sich die Menge über das Input-Feld ändert
@@ -1440,6 +1488,17 @@ export class CustomerOrderPublicComponent implements OnInit {
   }
 
   // Prüft, ob mindestens ein Artikel eine Menge hat
+  // Warenkorb-Statistiken
+  getCartItemCount(): number {
+    return this.customerArticlePrices.filter(article => article.tempQuantity && article.tempQuantity > 0).length;
+  }
+  
+  getCartTotalQuantity(): number {
+    return this.customerArticlePrices.reduce((total, article) => {
+      return total + (article.tempQuantity || 0);
+    }, 0);
+  }
+  
   hasAnyQuantity(): boolean {
     return this.customerArticlePrices.some(article => 
       article.tempQuantity && article.tempQuantity > 0

@@ -1,6 +1,23 @@
 <div class="public-order-container">
-  <!-- Header -->
-  <div class="header">
+  <!-- Sticky Header mit Warenkorb-Zusammenfassung -->
+  <div class="sticky-header">
+    <div class="header-content">
+      <div class="header-left">
+        <h1>Bestellsystem</h1>
+        <p class="customer-info-mobile">{{ customer?.last_name_company || customerNumber }}</p>
+      </div>
+      <div class="header-cart" *ngIf="!isLoading && !error">
+        <div class="cart-summary">
+          <span class="cart-icon">🛒</span>
+          <span class="cart-count" *ngIf="getCartItemCount() > 0">{{ getCartItemCount() }}</span>
+          <span class="cart-total">€{{ toNumber(getOrderTotal()).toFixed(2) }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Original Header (nur Desktop, nicht sticky) -->
+  <div class="header desktop-only">
     <div class="container">
       <h1>Bestellsystem</h1>
       <p class="customer-info">Kunde: {{ customer?.last_name_company || customerNumber }}</p>
@@ -41,14 +58,14 @@
         </div>
       </div>
       
-      <!-- Suchfeld -->
-      <div class="search-container">
+      <!-- Sticky Suchfeld -->
+      <div class="search-container sticky-search">
         <div class="search-wrapper">
           <input 
             type="text" 
             [(ngModel)]="searchTerm"
             (input)="onSearchChange()"
-            placeholder="Artikel suchen (Name oder Artikelnummer)..."
+            placeholder="Artikel suchen..."
             class="search-input"
           />
           <button 
@@ -63,6 +80,11 @@
         <div *ngIf="searchTerm.trim()" class="search-results-info">
           {{ getFilteredCategories().length }} Kategorie(n) gefunden
         </div>
+      </div>
+      
+      <!-- Preis-Hinweis kompakt -->
+      <div class="price-disclaimer-compact">
+        <small>ℹ️ Preise können abweichen</small>
       </div>
 
 
@@ -115,7 +137,7 @@
                     {{ article.offerName }}
                   </div>
                   <div class="price-with-offer">
-                    <span class="offer-price">€{{ article.offerPrice?.toFixed(2) }}</span>
+                    <span class="offer-price">€{{ getOfferGrossPrice(article).toFixed(2) }}</span>
                   </div>
                   <div *ngIf="article.offerMinQuantity || article.offerMaxQuantity" class="offer-limits">
                     <small>
@@ -126,7 +148,7 @@
                 </div>
                 <!-- Normaler Preis ohne Angebot -->
                 <div *ngIf="!article.hasOffer" class="normal-price">
-                  €{{ toNumber(article.unit_price_net).toFixed(2) }}
+                  €{{ getGrossPrice(article).toFixed(2) }}
                 </div>
               </div>
               </div>
@@ -213,7 +235,7 @@
                     {{ article.offerName }}
                   </div>
                   <div class="price-with-offer">
-                    <span class="offer-price">€{{ article.offerPrice?.toFixed(2) }}</span>
+                    <span class="offer-price">€{{ getOfferGrossPrice(article).toFixed(2) }}</span>
                   </div>
                   <div *ngIf="article.offerMinQuantity || article.offerMaxQuantity" class="offer-limits">
                     <small>
@@ -224,7 +246,7 @@
                 </div>
                 <!-- Normaler Preis ohne Angebot -->
                 <div *ngIf="!article.hasOffer" class="normal-price">
-                  €{{ toNumber(article.unit_price_net).toFixed(2) }}
+                  €{{ getGrossPrice(article).toFixed(2) }}
                 </div>
               </div>
               <div class="col-qty">
@@ -407,8 +429,8 @@
       </div>
     </div>
 
-    <!-- Order Summary -->
-    <div *ngIf="!isLoading && !error && customerArticlePrices.length > 0" class="order-summary">
+    <!-- Order Summary (Desktop) -->
+    <div *ngIf="!isLoading && !error && customerArticlePrices.length > 0" class="order-summary desktop-only">
       <div class="section-divider"></div>
       <h2>Bestellung abschließen</h2>
       
@@ -425,6 +447,23 @@
           Bestellung überprüfen
         </button>
       </div>
+    </div>
+    
+    <!-- Floating Action Button für Mobile -->
+    <div *ngIf="!isLoading && !error && customerArticlePrices.length > 0" class="fab-container mobile-only">
+      <button 
+        class="fab-button"
+        (click)="showOrderConfirmation()"
+        [disabled]="!hasAnyQuantity()"
+        [ngClass]="{'fab-active': hasAnyQuantity()}"
+      >
+        <span class="fab-icon">🛒</span>
+        <span class="fab-text">
+          <span class="fab-count" *ngIf="getCartItemCount() > 0">{{ getCartItemCount() }}</span>
+          <span class="fab-total">€{{ toNumber(getOrderTotal()).toFixed(2) }}</span>
+        </span>
+        <span class="fab-label">Bestellen</span>
+      </button>
     </div>
 
     <!-- Empty State -->
