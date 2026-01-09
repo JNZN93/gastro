@@ -46,6 +46,11 @@ export class CustomerOrderPublicComponent implements OnInit {
   
   // Neue Eigenschaft für den Zustand der Kategorien (aufgeklappt/zugeklappt)
   categoryStates: { [category: string]: boolean } = {};
+  
+  // Suchfunktion
+  searchTerm: string = '';
+  filteredGroupedArticles: { [category: string]: any[] } = {};
+  filteredOrderedCategories: string[] = [];
 
   // localStorage Key für diesen Kunden
   private get localStorageKey(): string {
@@ -59,8 +64,143 @@ export class CustomerOrderPublicComponent implements OnInit {
 
   // Zählt die Anzahl der Artikel mit Menge > 0 in einer Kategorie
   getArticlesWithQuantityCount(category: string): number {
-    const articles = this.groupedArticles[category] || [];
+    const articles = this.getFilteredArticlesForCategory(category);
     return articles.filter(article => article.tempQuantity && article.tempQuantity > 0).length;
+  }
+  
+  // Gibt die gefilterten Artikel für eine Kategorie zurück
+  getFilteredArticlesForCategory(category: string): any[] {
+    if (this.searchTerm.trim()) {
+      return this.filteredGroupedArticles[category] || [];
+    }
+    return this.groupedArticles[category] || [];
+  }
+  
+  // Gibt die gefilterten Kategorien zurück
+  getFilteredCategories(): string[] {
+    if (this.searchTerm.trim()) {
+      return this.filteredOrderedCategories;
+    }
+    return this.orderedCategories;
+  }
+  
+  // Suchfunktion (basierend auf customer-orders Komponente)
+  onSearchChange(): void {
+    const trimmedTerm = this.searchTerm.trim();
+    
+    if (!trimmedTerm) {
+      // Wenn Suchfeld leer ist, alle Kategorien schließen
+      this.orderedCategories.forEach(category => {
+        this.categoryStates[category] = false;
+      });
+      this.filteredGroupedArticles = {};
+      this.filteredOrderedCategories = [];
+      return;
+    }
+    
+    // Mindestlänge prüfen (außer bei EAN)
+    const isEanSearch = /^\d{8}$|^\d{13}$/.test(trimmedTerm);
+    if (!isEanSearch && trimmedTerm.length < 3) {
+      this.filteredGroupedArticles = {};
+      this.filteredOrderedCategories = [];
+      return;
+    }
+    
+    // Filtere Artikel basierend auf Suchbegriff (wie in customer-orders)
+    const filteredGroups: { [key: string]: any[] } = {};
+    
+    for (const category of this.orderedCategories) {
+      const articles = this.groupedArticles[category] || [];
+      
+      let filteredArticles: any[] = [];
+      
+      if (isEanSearch) {
+        // EAN-Suche: Exakte Übereinstimmung
+        filteredArticles = articles.filter(article => {
+          const ean = (article.ean || '').toLowerCase();
+          return ean === trimmedTerm.toLowerCase();
+        });
+      } else {
+        // Normale Text-Suche: Teile Suchbegriff in Wörter auf
+        const terms = trimmedTerm.toLowerCase().split(/\s+/);
+        
+        filteredArticles = articles.filter((article) => {
+          const articleText = (article.article_text || '').toLowerCase();
+          const articleNumber = (article.article_number || article.product_id || '').toString().toLowerCase();
+          const ean = (article.ean || '').toLowerCase();
+          
+          // Jedes Wort muss in mindestens einem Feld enthalten sein
+          return terms.every((term) =>
+            articleText.includes(term) ||
+            articleNumber.includes(term) ||
+            ean.includes(term)
+          );
+        });
+        
+        // Intelligente Sortierung (wie in customer-orders)
+        filteredArticles = filteredArticles.sort((a, b) => {
+          const searchTermLower = trimmedTerm.toLowerCase();
+          
+          // Exakte Matches
+          const aArticleNumberExact = (a.article_number || a.product_id || '').toString().toLowerCase() === searchTermLower;
+          const bArticleNumberExact = (b.article_number || b.product_id || '').toString().toLowerCase() === searchTermLower;
+          const aArticleTextExact = (a.article_text || '').toLowerCase() === searchTermLower;
+          const bArticleTextExact = (b.article_text || '').toLowerCase() === searchTermLower;
+          const aEanExact = (a.ean || '').toLowerCase() === searchTermLower;
+          const bEanExact = (b.ean || '').toLowerCase() === searchTermLower;
+          
+          // Starts-with Matches
+          const aArticleNumberStartsWith = (a.article_number || a.product_id || '').toString().toLowerCase().startsWith(searchTermLower);
+          const bArticleNumberStartsWith = (b.article_number || b.product_id || '').toString().toLowerCase().startsWith(searchTermLower);
+          const aArticleTextStartsWith = (a.article_text || '').toLowerCase().startsWith(searchTermLower);
+          const bArticleTextStartsWith = (b.article_text || '').toLowerCase().startsWith(searchTermLower);
+          const aEanStartsWith = (a.ean || '').toLowerCase().startsWith(searchTermLower);
+          const bEanStartsWith = (b.ean || '').toLowerCase().startsWith(searchTermLower);
+          
+          // Exakte Matches zuerst
+          if (aArticleNumberExact && !bArticleNumberExact) return -1;
+          if (!aArticleNumberExact && bArticleNumberExact) return 1;
+          if (aArticleTextExact && !bArticleTextExact) return -1;
+          if (!aArticleTextExact && bArticleTextExact) return 1;
+          if (aEanExact && !bEanExact) return -1;
+          if (!aEanExact && bEanExact) return 1;
+          
+          // Starts-with Matches
+          if (aArticleNumberStartsWith && !bArticleNumberStartsWith) return -1;
+          if (!aArticleNumberStartsWith && bArticleNumberStartsWith) return 1;
+          if (aArticleTextStartsWith && !bArticleTextStartsWith) return -1;
+          if (!aArticleTextStartsWith && bArticleTextStartsWith) return 1;
+          if (aEanStartsWith && !bEanStartsWith) return -1;
+          if (!aEanStartsWith && bEanStartsWith) return 1;
+          
+          // Alphabetische Sortierung
+          return (a.article_text || '').localeCompare(b.article_text || '');
+        });
+      }
+      
+      if (filteredArticles.length > 0) {
+        filteredGroups[category] = filteredArticles;
+      }
+    }
+    
+    this.filteredGroupedArticles = filteredGroups;
+    this.filteredOrderedCategories = Object.keys(filteredGroups);
+    
+    // Öffne alle gefilterten Kategorien automatisch
+    this.filteredOrderedCategories.forEach(category => {
+      this.categoryStates[category] = true;
+    });
+    
+    console.log('🔍 [SEARCH] Suche nach:', trimmedTerm);
+    console.log('🔍 [SEARCH] EAN-Suche:', isEanSearch);
+    console.log('🔍 [SEARCH] Gefundene Kategorien:', this.filteredOrderedCategories);
+    console.log('🔍 [SEARCH] Gefundene Artikel:', Object.values(filteredGroups).flat().length);
+  }
+  
+  // Suchfeld leeren
+  clearSearch(): void {
+    this.searchTerm = '';
+    this.onSearchChange();
   }
 
   ngOnInit() {
