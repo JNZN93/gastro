@@ -27,8 +27,14 @@
       </h1>
       <div class="header-stats">
         <div class="stat-item">
-          <span class="stat-number">{{ orders.length }}</span>
-          <span class="stat-label">Gesamt Bestellungen</span>
+          <span class="stat-number">{{ filteredOrders.length }}</span>
+          <span class="stat-label">
+            @if (dateFrom || dateTo || searchTerm) {
+              Gefilterte Bestellungen
+            } @else {
+              Gesamt Bestellungen
+            }
+          </span>
         </div>
       </div>
       <div class="header-actions">
@@ -44,8 +50,8 @@
     </div>
   </div>
 
-  <!-- Search Section -->
-  <div class="search-section">
+  <!-- Search and Filter Section -->
+  <div class="search-filter-section">
     <div class="search-container">
       <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
@@ -56,6 +62,41 @@
         [(ngModel)]="searchTerm" 
         class="search-input"
       >
+    </div>
+    <div class="date-filter-container">
+      <svg class="calendar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" (click)="focusDateInput('dateFrom')">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+      </svg>
+      <div class="date-input-wrapper">
+        <input 
+          type="date" 
+          id="dateFrom"
+          [(ngModel)]="dateFrom" 
+          class="date-input"
+          placeholder="Von"
+          #dateFromInput
+          (click)="openDatePicker('dateFrom')"
+        >
+      </div>
+      <span class="date-separator">bis</span>
+      <div class="date-input-wrapper">
+        <input 
+          type="date" 
+          id="dateTo"
+          [(ngModel)]="dateTo" 
+          class="date-input"
+          placeholder="Bis"
+          #dateToInput
+          (click)="openDatePicker('dateTo')"
+        >
+      </div>
+      @if (dateFrom || dateTo) {
+        <button class="clear-date-filter-btn" (click)="clearDateFilter()" title="Datumfilter zurücksetzen">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      }
     </div>
   </div>
 

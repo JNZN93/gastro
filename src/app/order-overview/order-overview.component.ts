@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { environment } from '../../environments/environment';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -56,6 +56,8 @@ export class OrderOverviewComponent implements OnInit {
   selectedOrder: Order | null = null;
   isLoading = false;
   searchTerm = '';
+  dateFrom: string = '';
+  dateTo: string = '';
   sortBy: string = 'order_date';
   sortDirection: 'asc' | 'desc' = 'desc';
   showDeleteModal = false;
@@ -79,6 +81,9 @@ export class OrderOverviewComponent implements OnInit {
   
   // Alle Artikel inkl. PFAND für die custom_field_1 Überprüfung (nur bei Kundenbestellungen)
   allArtikels: any[] = [];
+
+  @ViewChild('dateFromInput', { static: false }) dateFromInput!: ElementRef<HTMLInputElement>;
+  @ViewChild('dateToInput', { static: false }) dateToInput!: ElementRef<HTMLInputElement>;
 
   constructor(
     private http: HttpClient,
@@ -200,10 +205,34 @@ export class OrderOverviewComponent implements OnInit {
   get filteredOrders(): Order[] {
     let filtered = this.orders;
     
-    // Filter anwenden
+    // Datumsfilter anwenden
+    if (this.dateFrom || this.dateTo) {
+      filtered = filtered.filter(order => {
+        if (!order.order_date) return false;
+        
+        const orderDate = new Date(order.order_date);
+        orderDate.setHours(0, 0, 0, 0); // Zeit auf Mitternacht setzen für genauen Vergleich
+        
+        if (this.dateFrom) {
+          const fromDate = new Date(this.dateFrom);
+          fromDate.setHours(0, 0, 0, 0);
+          if (orderDate < fromDate) return false;
+        }
+        
+        if (this.dateTo) {
+          const toDate = new Date(this.dateTo);
+          toDate.setHours(23, 59, 59, 999); // Ende des Tages
+          if (orderDate > toDate) return false;
+        }
+        
+        return true;
+      });
+    }
+    
+    // Suchfilter anwenden
     if (this.searchTerm) {
       const term = this.searchTerm.toLowerCase();
-      filtered = this.orders.filter(order => {
+      filtered = filtered.filter(order => {
         const mappedCustomerName = (this.getCustomerDisplayName(order) || '').toLowerCase();
         return (
           order.order_id?.toString().includes(this.searchTerm) ||
@@ -1335,6 +1364,34 @@ export class OrderOverviewComponent implements OnInit {
 
   goToCustomerOrders(): void {
     this.router.navigate(['/customer-orders']);
+  }
+
+  clearDateFilter(): void {
+    this.dateFrom = '';
+    this.dateTo = '';
+  }
+
+  focusDateInput(inputId: string): void {
+    this.openDatePicker(inputId);
+  }
+
+  openDatePicker(inputId: string): void {
+    const input = inputId === 'dateFrom' ? this.dateFromInput?.nativeElement : this.dateToInput?.nativeElement;
+    if (input) {
+      // Versuche showPicker() API zu verwenden (moderne Browser)
+      if (input.showPicker) {
+        try {
+          input.showPicker();
+        } catch (error) {
+          // Fallback: focus() sollte den Kalender öffnen
+          input.focus();
+        }
+      } else {
+        // Fallback für ältere Browser
+        input.focus();
+        input.click();
+      }
+    }
   }
 
   // Methode zum Anzeigen der Warnung bei bereits bearbeiteten Bestellungen

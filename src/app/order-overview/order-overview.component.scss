@@ -188,35 +188,41 @@
   }
 }
 
-// Search Section
-.search-section {
-  margin-bottom: 30px;
+// Search and Filter Section
+.search-filter-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
 
   .search-container {
     position: relative;
-    max-width: 500px;
+    flex: 1;
+    min-width: 200px;
+    max-width: 400px;
 
     .search-icon {
       position: absolute;
-      left: 16px;
+      left: 12px;
       top: 50%;
       transform: translateY(-50%);
-      width: 20px;
-      height: 20px;
+      width: 18px;
+      height: 18px;
       color: #64748b;
       z-index: 2;
     }
 
     .search-input {
       width: 100%;
-      padding: 16px 16px 16px 48px;
+      padding: 10px 12px 10px 36px;
       border: 2px solid #e2e8f0;
-      border-radius: 12px;
-      font-size: 16px;
+      border-radius: 8px;
+      font-size: 14px;
       background: white;
       transition: all 0.3s ease;
       box-sizing: border-box;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 
       &:focus {
         outline: none;
@@ -226,6 +232,115 @@
 
       &::placeholder {
         color: #94a3b8;
+      }
+    }
+  }
+
+  .date-filter-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 10px;
+    height: 42px;
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    box-sizing: border-box;
+
+    .calendar-icon {
+      width: 16px;
+      height: 16px;
+      color: #667eea;
+      flex-shrink: 0;
+      cursor: pointer;
+      transition: opacity 0.2s ease;
+
+      &:hover {
+        opacity: 0.7;
+      }
+    }
+
+    .date-input-wrapper {
+      position: relative;
+      
+      .date-input {
+        padding: 6px 8px 6px 8px;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        font-size: 13px;
+        background: white;
+        transition: all 0.2s ease;
+        box-sizing: border-box;
+        color: #1e293b;
+        font-family: inherit;
+        cursor: pointer;
+        width: 130px;
+        height: 30px;
+
+        &:focus {
+          outline: none;
+          border-color: #667eea;
+          box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+        }
+
+        &:hover {
+          border-color: #cbd5e1;
+        }
+
+        &::-webkit-calendar-picker-indicator {
+          cursor: pointer;
+          opacity: 0.6;
+          transition: opacity 0.2s ease;
+
+          &:hover {
+            opacity: 1;
+          }
+        }
+
+        // Firefox
+        &::-moz-calendar-picker-indicator {
+          cursor: pointer;
+        }
+      }
+    }
+
+    .date-separator {
+      font-size: 12px;
+      color: #64748b;
+      font-weight: 500;
+      padding: 0 2px;
+      flex-shrink: 0;
+    }
+
+    .clear-date-filter-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px;
+      background: #f1f5f9;
+      color: #64748b;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      width: 28px;
+      height: 28px;
+      flex-shrink: 0;
+
+      svg {
+        width: 14px;
+        height: 14px;
+      }
+
+      &:hover {
+        background: #e2e8f0;
+        color: #475569;
+        border-color: #cbd5e1;
+      }
+
+      &:active {
+        transform: scale(0.95);
       }
     }
   }
@@ -1386,6 +1501,34 @@
 
     .overview-title {
       font-size: 24px;
+    }
+  }
+
+  .search-filter-section {
+    flex-direction: column;
+    gap: 12px;
+
+    .search-container {
+      max-width: 100%;
+      width: 100%;
+    }
+
+    .date-filter-container {
+      width: 100%;
+      flex-wrap: wrap;
+      padding: 0 12px;
+      height: auto;
+      min-height: 42px;
+
+      .date-input-wrapper .date-input {
+        width: 100%;
+        flex: 1;
+        min-width: 140px;
+      }
+
+      .date-separator {
+        flex-shrink: 0;
+      }
     }
   }
 
