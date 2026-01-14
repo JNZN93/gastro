@@ -164,7 +164,7 @@
                 <td class="order-date">{{ order.order_date | date: 'dd.MM.yyyy' }}</td>
                 <td class="customer-number">{{ order.customer_number || '-' }}</td>
                 <td class="employee-name">{{ getEmployeeDisplayName(order) }}</td>
-                <td class="customer-name">{{ getCustomerDisplayName(order) }}</td>
+                <td class="customer-name" [title]="getCustomerDisplayName(order)">{{ getCustomerDisplayName(order) }}</td>
                 <td class="status-cell">
                   <span class="status-badge" [class]="getStatusClass(order.status)">
                     {{ getStatusText(order.status) }}
@@ -233,7 +233,7 @@
             </div>
             <div class="info-row">
               <span class="info-label">Kunde:</span>
-              <span class="info-value">{{ getCustomerDisplayName(order) }}</span>
+              <span class="info-value" [title]="getCustomerDisplayName(order)">{{ getCustomerDisplayName(order) }}</span>
             </div>
             <div class="info-row total-row">
               <span class="info-label">Gesamtpreis:</span>
