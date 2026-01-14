@@ -948,12 +948,73 @@ export class OpenInvoicesComponent implements OnInit {
       filtered = filtered.filter(invoice => invoice.status !== 'paid');
     }
 
-    // Apply search filter
+    // Apply search filter with flexible matching
     if (this.searchTerm) {
-      filtered = filtered.filter(invoice =>
-        invoice.invoice_number?.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        invoice.supplier_name?.toLowerCase().includes(this.searchTerm.toLowerCase())
-      );
+      // Normalize search term: remove all whitespace and convert to lowercase
+      const normalizedSearchTerm = this.searchTerm.replace(/\s+/g, '').toLowerCase();
+      
+      filtered = filtered.filter(invoice => {
+        // Normalize invoice number: remove whitespace and convert to lowercase
+        const normalizedInvoiceNumber = (invoice.invoice_number || '').replace(/\s+/g, '').toLowerCase();
+        
+        // Normalize supplier name: remove extra whitespace and convert to lowercase
+        const normalizedSupplierName = (invoice.supplier_name || '').replace(/\s+/g, ' ').trim().toLowerCase();
+        
+        // Check if search term matches invoice number (with whitespace ignored)
+        if (normalizedInvoiceNumber.includes(normalizedSearchTerm)) {
+          return true;
+        }
+        
+        // Check if search term matches supplier name (flexible whitespace matching)
+        if (normalizedSupplierName.includes(normalizedSearchTerm)) {
+          return true;
+        }
+        
+        // Check if search term matches amount (numeric search)
+        // Extract numbers from search term (handle both . and , as decimal separators)
+        const searchNumberStr = normalizedSearchTerm.replace(/[^\d.,-]/g, '');
+        if (searchNumberStr.length > 0) {
+          // Try parsing with both comma and dot as decimal separator
+          const searchWithDot = parseFloat(searchNumberStr.replace(',', '.'));
+          const searchWithComma = parseFloat(searchNumberStr.replace('.', ','));
+          const searchAsNumber = !isNaN(searchWithDot) ? searchWithDot : (!isNaN(searchWithComma) ? searchWithComma : null);
+          
+          if (searchAsNumber !== null && !isNaN(searchAsNumber)) {
+            const invoiceAmount = typeof invoice.amount === 'string' ? parseFloat(invoice.amount) : invoice.amount || 0;
+            
+            // Convert amount to string without decimals for partial matching (e.g., "1250" matches "1250.50")
+            const amountAsString = Math.abs(invoiceAmount).toString().replace(/\./g, '');
+            const searchAsString = Math.abs(searchAsNumber).toString().replace(/\./g, '');
+            
+            // Check if the search number is contained in the amount string (partial match)
+            if (amountAsString.includes(searchAsString) || searchAsString.includes(amountAsString)) {
+              return true;
+            }
+            
+            // Check exact match (within 0.01 difference to handle floating point precision)
+            if (Math.abs(invoiceAmount - searchAsNumber) < 0.01) {
+              return true;
+            }
+          }
+        }
+        
+        // Check if search term matches formatted amount string (e.g., "1.250,50" or "1250,50")
+        const invoiceAmount = typeof invoice.amount === 'string' ? parseFloat(invoice.amount) : invoice.amount || 0;
+        const formattedAmount = this.formatCurrency(invoiceAmount)
+          .replace(/\s+/g, '')
+          .replace(/€/g, '')
+          .toLowerCase();
+        
+        // Remove thousand separators and normalize decimal separator
+        const normalizedFormattedAmount = formattedAmount.replace(/\./g, '').replace(',', '.');
+        const normalizedSearchForAmount = normalizedSearchTerm.replace(/[^\d.,-]/g, '').replace(',', '.');
+        
+        if (normalizedSearchForAmount && normalizedFormattedAmount.includes(normalizedSearchForAmount)) {
+          return true;
+        }
+        
+        return false;
+      });
     }
 
     this._filteredInvoices = this.sortInvoices(filtered);
