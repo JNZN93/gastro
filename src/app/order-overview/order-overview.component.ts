@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { environment } from '../../environments/environment';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -82,9 +82,6 @@ export class OrderOverviewComponent implements OnInit {
   // Alle Artikel inkl. PFAND für die custom_field_1 Überprüfung (nur bei Kundenbestellungen)
   allArtikels: any[] = [];
 
-  @ViewChild('dateFromInput', { static: false }) dateFromInput!: ElementRef<HTMLInputElement>;
-  @ViewChild('dateToInput', { static: false }) dateToInput!: ElementRef<HTMLInputElement>;
-
   constructor(
     private http: HttpClient,
     private router: Router,
@@ -96,9 +93,7 @@ export class OrderOverviewComponent implements OnInit {
 
   ngOnInit(): void {
     this.checkUserRole();
-    this.loadOrders().catch(error => {
-      console.error('Fehler beim initialen Laden der Bestellungen:', error);
-    });
+    this.loadOrders();
     this.loadCustomers();
     this.loadAllArtikels();
   }
@@ -134,36 +129,31 @@ export class OrderOverviewComponent implements OnInit {
     });
   }
 
-  loadOrders(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      this.isLoading = true;
-      const token = localStorage.getItem('token');
-      
-      if (!token) {
-        this.router.navigate(['/login']);
-        reject('No token');
-        return;
-      }
+  loadOrders() {
+    this.isLoading = true;
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+      this.router.navigate(['/login']);
+      return;
+    }
 
-      const headers = new HttpHeaders({
-        'Authorization': `Bearer ${token}`
-      });
-
-      this.http.get<OrdersResponse>(`${environment.apiUrl}/api/orders/all-orders`, { headers })
-        .subscribe({
-          next: (response) => {
-            this.orders = response.orders || [];
-            this.isLoading = false;
-            resolve();
-          },
-          error: (error) => {
-            console.error('Fehler beim Laden der Bestellungen:', error);
-            this.orders = [];
-            this.isLoading = false;
-            reject(error);
-          }
-        });
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${token}`
     });
+
+    this.http.get<OrdersResponse>(`${environment.apiUrl}/api/orders/all-orders`, { headers })
+      .subscribe({
+        next: (response) => {
+          this.orders = response.orders || [];
+          this.isLoading = false;
+        },
+        error: (error) => {
+          console.error('Fehler beim Laden der Bestellungen:', error);
+          this.orders = [];
+          this.isLoading = false;
+        }
+      });
   }
 
   private customersByNumber: Record<string, any> = {}; // Vollständige Kundendaten
@@ -211,7 +201,7 @@ export class OrderOverviewComponent implements OnInit {
         if (!order.order_date) return false;
         
         const orderDate = new Date(order.order_date);
-        orderDate.setHours(0, 0, 0, 0); // Zeit auf Mitternacht setzen für genauen Vergleich
+        orderDate.setHours(0, 0, 0, 0);
         
         if (this.dateFrom) {
           const fromDate = new Date(this.dateFrom);
@@ -221,7 +211,7 @@ export class OrderOverviewComponent implements OnInit {
         
         if (this.dateTo) {
           const toDate = new Date(this.dateTo);
-          toDate.setHours(23, 59, 59, 999); // Ende des Tages
+          toDate.setHours(23, 59, 59, 999);
           if (orderDate > toDate) return false;
         }
         
@@ -229,20 +219,27 @@ export class OrderOverviewComponent implements OnInit {
       });
     }
     
-    // Suchfilter anwenden
-    if (this.searchTerm) {
-      const term = this.searchTerm.toLowerCase();
+    // Suchfilter anwenden - Leerzeichen trimmen und normalisieren
+    const trimmedSearchTerm = this.searchTerm?.trim().replace(/\s+/g, ' ') || '';
+    if (trimmedSearchTerm) {
+      // Suchbegriff in einzelne Wörter aufteilen (Leerzeichen als Trenner)
+      const searchWords = trimmedSearchTerm.toLowerCase().split(/\s+/).filter(word => word.length > 0);
+      
       filtered = filtered.filter(order => {
-        const mappedCustomerName = (this.getCustomerDisplayName(order) || '').toLowerCase();
-        return (
-          order.order_id?.toString().includes(this.searchTerm) ||
-          order.name?.toLowerCase().includes(term) ||
-          order.company?.toLowerCase().includes(term) ||
-          order.email?.toLowerCase().includes(term) ||
-          order.customer_number?.toLowerCase().includes(term) ||
-          (order.role && order.role.toLowerCase().includes(term)) ||
-          (mappedCustomerName && mappedCustomerName.includes(term))
-        );
+        // Alle Suchfelder in einem String zusammenfassen für die Suche
+        const searchableText = [
+          order.order_id?.toString() || '',
+          order.name || '',
+          order.company || '',
+          order.email || '',
+          order.customer_number || '',
+          order.role || '',
+          this.getCustomerDisplayName(order) || ''
+        ].join(' ').toLowerCase();
+        
+        // Jedes Suchwort muss im kombinierten Text gefunden werden
+        // Die Reihenfolge spielt keine Rolle
+        return searchWords.every(word => searchableText.includes(word));
       });
     }
     
@@ -340,48 +337,15 @@ export class OrderOverviewComponent implements OnInit {
     return this.sortDirection === 'asc' ? '↑' : '↓';
   }
 
-  async onOrderClick(order: Order) {
-    // Lade Daten neu bevor Details angezeigt werden
-    console.log('🔄 [ORDER-DETAILS] Lade Bestellungen neu vor Anzeige der Details');
-    try {
-      await this.loadOrders();
-      // Finde die aktualisierte Bestellung nach dem Neuladen
-      const updatedOrder = this.orders.find(o => o.order_id === order.order_id);
-      if (updatedOrder) {
-        this.selectedOrder = updatedOrder;
-      } else {
-        // Falls Bestellung nicht mehr existiert, verwende die ursprüngliche
-        this.selectedOrder = order;
-      }
-    } catch (error) {
-      console.error('Fehler beim Neuladen der Bestellungen:', error);
-      // Bei Fehler trotzdem Details anzeigen
-      this.selectedOrder = order;
-    }
+  onOrderClick(order: Order) {
+    this.selectedOrder = order;
   }
 
   closeOrderDetails() {
     this.selectedOrder = null;
   }
 
-  async generatePdf(order: Order) {
-    // Lade Daten neu bevor PDF generiert wird
-    console.log('🔄 [PDF-GENERATE] Lade Bestellungen neu vor PDF-Generierung');
-    try {
-      await this.loadOrders();
-      // Finde die aktualisierte Bestellung nach dem Neuladen
-      const updatedOrder = this.orders.find(o => o.order_id === order.order_id);
-      if (!updatedOrder) {
-        console.warn('⚠️ [PDF-GENERATE] Bestellung nicht mehr gefunden, verwende ursprüngliche Daten');
-        // Falls Bestellung nicht mehr existiert, verwende die ursprüngliche
-      } else {
-        order = updatedOrder;
-      }
-    } catch (error) {
-      console.error('Fehler beim Neuladen der Bestellungen:', error);
-      // Bei Fehler trotzdem PDF mit ursprünglichen Daten generieren
-    }
-    
+  generatePdf(order: Order) {
     const doc = new jsPDF();
     let pageCount = 1;
     let totalPages = 1; // Wird später berechnet
@@ -844,24 +808,7 @@ export class OrderOverviewComponent implements OnInit {
     return '-'; // Keine Anzeige für normale Kunden in der Sachbearbeiter-Spalte
   }
 
-  async deleteOrder(order: Order) {
-    // Lade Daten neu bevor Lösch-Dialog geöffnet wird
-    console.log('🔄 [DELETE-ORDER] Lade Bestellungen neu vor Lösch-Dialog');
-    try {
-      await this.loadOrders();
-      // Finde die aktualisierte Bestellung nach dem Neuladen
-      const updatedOrder = this.orders.find(o => o.order_id === order.order_id);
-      if (!updatedOrder) {
-        console.warn('⚠️ [DELETE-ORDER] Bestellung nicht mehr gefunden');
-        // Bestellung existiert nicht mehr, zeige keine Fehlermeldung, da sie bereits gelöscht wurde
-        return;
-      }
-      order = updatedOrder;
-    } catch (error) {
-      console.error('Fehler beim Neuladen der Bestellungen:', error);
-      // Bei Fehler trotzdem fortfahren mit ursprünglichen Daten
-    }
-    
+  deleteOrder(order: Order) {
     this.orderToDelete = order;
     this.showDeleteModal = true;
     this.deleteConfirmationText = '';
@@ -959,24 +906,8 @@ export class OrderOverviewComponent implements OnInit {
   }
 
   // Neue Methode zum Laden einer Bestellung in die Customer Orders Komponente
-  async loadOrderToCustomerOrders(order: Order): Promise<void> {
+  loadOrderToCustomerOrders(order: Order): void {
     console.log('🔄 [LOAD-ORDER] Lade Bestellung in Customer Orders:', order);
-    
-    // Lade Daten neu bevor Bestellung geladen wird
-    console.log('🔄 [LOAD-ORDER] Lade Bestellungen neu vor Import');
-    try {
-      await this.loadOrders();
-      // Finde die aktualisierte Bestellung nach dem Neuladen
-      const updatedOrder = this.orders.find(o => o.order_id === order.order_id);
-      if (!updatedOrder) {
-        console.error('❌ [LOAD-ORDER] Bestellung nicht mehr gefunden');
-        return;
-      }
-      order = updatedOrder;
-    } catch (error) {
-      console.error('Fehler beim Neuladen der Bestellungen:', error);
-      // Bei Fehler trotzdem fortfahren mit ursprünglichen Daten
-    }
     
     // Speichere den ursprünglichen Status vor der Bearbeitung
     const originalStatus = order.status;
@@ -1241,24 +1172,8 @@ export class OrderOverviewComponent implements OnInit {
   }
 
   // Methode zum Bearbeiten einer offenen Bestellung
-  async editOrder(order: Order): Promise<void> {
+  editOrder(order: Order): void {
     console.log('✏️ [EDIT-ORDER] Bearbeite offene Bestellung:', order);
-    
-    // Lade Daten neu bevor Bearbeitung startet
-    console.log('🔄 [EDIT-ORDER] Lade Bestellungen neu vor Bearbeitung');
-    try {
-      await this.loadOrders();
-      // Finde die aktualisierte Bestellung nach dem Neuladen
-      const updatedOrder = this.orders.find(o => o.order_id === order.order_id);
-      if (!updatedOrder) {
-        console.error('❌ [EDIT-ORDER] Bestellung nicht mehr gefunden');
-        return;
-      }
-      order = updatedOrder;
-    } catch (error) {
-      console.error('Fehler beim Neuladen der Bestellungen:', error);
-      // Bei Fehler trotzdem fortfahren mit ursprünglichen Daten
-    }
     
     // Prüfe, ob die Bestellung bearbeitbar ist
     if (!this.isOrderEditable(order)) {
@@ -1366,34 +1281,6 @@ export class OrderOverviewComponent implements OnInit {
     this.router.navigate(['/customer-orders']);
   }
 
-  clearDateFilter(): void {
-    this.dateFrom = '';
-    this.dateTo = '';
-  }
-
-  focusDateInput(inputId: string): void {
-    this.openDatePicker(inputId);
-  }
-
-  openDatePicker(inputId: string): void {
-    const input = inputId === 'dateFrom' ? this.dateFromInput?.nativeElement : this.dateToInput?.nativeElement;
-    if (input) {
-      // Versuche showPicker() API zu verwenden (moderne Browser)
-      if (input.showPicker) {
-        try {
-          input.showPicker();
-        } catch (error) {
-          // Fallback: focus() sollte den Kalender öffnen
-          input.focus();
-        }
-      } else {
-        // Fallback für ältere Browser
-        input.focus();
-        input.click();
-      }
-    }
-  }
-
   // Methode zum Anzeigen der Warnung bei bereits bearbeiteten Bestellungen
   private showOrderBeingProcessedWarning(order: Order, message: string): void {
     this.processingOrderId = order.order_id;
@@ -1452,5 +1339,29 @@ export class OrderOverviewComponent implements OnInit {
       const quantity = Number(item.quantity) || 0;
       return sum + (grossPrice * quantity);
     }, 0);
+  }
+
+  // Datumsfilter-Methoden
+  clearDateFilter(): void {
+    this.dateFrom = '';
+    this.dateTo = '';
+  }
+
+  focusDateInput(field: 'dateFrom' | 'dateTo'): void {
+    const inputId = field === 'dateFrom' ? 'dateFrom' : 'dateTo';
+    const input = document.getElementById(inputId) as HTMLInputElement;
+    if (input) {
+      input.focus();
+      input.showPicker?.();
+    }
+  }
+
+  openDatePicker(field: 'dateFrom' | 'dateTo'): void {
+    const inputId = field === 'dateFrom' ? 'dateFrom' : 'dateTo';
+    const input = document.getElementById(inputId) as HTMLInputElement;
+    if (input) {
+      input.focus();
+      input.showPicker?.();
+    }
   }
 } 
