@@ -801,6 +801,54 @@ export class OrderOverviewComponent implements OnInit {
     return order.name;
   }
 
+  getFullCustomerInfo(order: Order): string {
+    const key = String(order.customer_number ?? '').trim();
+    if (!key) {
+      if (this.isEmployee(order)) {
+        return '-';
+      }
+      return order.name || '-';
+    }
+
+    const customer = this.customersByNumber[key];
+    if (!customer) {
+      return this.getCustomerDisplayName(order);
+    }
+
+    const parts: string[] = [];
+    
+    // Name/Firmenname
+    const name = customer.last_name_company || customer.name || '';
+    if (name) {
+      parts.push(name);
+    }
+    
+    // Namenszusatz
+    if (customer.name_addition) {
+      parts.push(customer.name_addition);
+    }
+    
+    // Adresse
+    if (customer.street) {
+      parts.push(customer.street);
+    }
+    
+    // PLZ und Stadt
+    if (customer.postal_code || customer.city) {
+      const cityLine = `${customer.postal_code || ''} ${customer.city || ''}`.trim();
+      if (cityLine) {
+        parts.push(cityLine);
+      }
+    }
+
+    // Fallback: Wenn keine vollständigen Daten vorhanden sind, nutze shipping_address
+    if (parts.length === 0 && order.shipping_address) {
+      return order.shipping_address;
+    }
+
+    return parts.length > 0 ? parts.join('\n') : this.getCustomerDisplayName(order);
+  }
+
   getEmployeeDisplayName(order: Order): string {
     if (this.isEmployee(order)) {
       return order.name;

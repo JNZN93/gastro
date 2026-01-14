@@ -398,7 +398,6 @@
       </div>
     </div>
   }
-</div>
 
   <!-- Order Details Modal -->
   @if (selectedOrder) {
@@ -446,7 +445,7 @@
               </div>
               <div class="detail-item">
                 <span class="detail-label">Kunde:</span>
-                <span class="detail-value">{{ getCustomerDisplayName(selectedOrder) }}</span>
+                <span class="detail-value" style="white-space: pre-line;">{{ getFullCustomerInfo(selectedOrder) }}</span>
               </div>
               <div class="detail-item">
                 <span class="detail-label">Lieferadresse:</span>
