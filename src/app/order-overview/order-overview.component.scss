@@ -195,6 +195,7 @@
   gap: 12px;
   margin-bottom: 20px;
   flex-wrap: wrap;
+  justify-content: space-between;
 
   .search-container {
     position: relative;
@@ -342,6 +343,50 @@
       &:active {
         transform: scale(0.95);
       }
+    }
+  }
+
+  .reload-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+    height: 42px;
+    margin-left: auto;
+
+    svg {
+      width: 18px;
+      height: 18px;
+      transition: transform 0.3s ease;
+
+      &.spinning {
+        animation: spin 1s linear infinite;
+      }
+    }
+
+    &:hover:not(:disabled) {
+      background: #2563eb;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    &:active:not(:disabled) {
+      transform: translateY(0);
     }
   }
 }
@@ -1492,21 +1537,62 @@
   }
 
   .overview-header {
-    padding: 20px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    border-radius: 12px;
 
     .header-content {
       flex-direction: column;
       text-align: center;
+      gap: 12px;
     }
 
     .overview-title {
-      font-size: 24px;
+      font-size: 20px;
+      gap: 8px;
+
+      .overview-icon {
+        width: 24px;
+        height: 24px;
+      }
+    }
+
+    .header-stats {
+      gap: 12px;
+
+      .stat-item {
+        padding: 10px 16px;
+        border-radius: 8px;
+
+        .stat-number {
+          font-size: 20px;
+          margin-bottom: 2px;
+        }
+
+        .stat-label {
+          font-size: 12px;
+        }
+      }
+    }
+
+    .header-actions {
+      gap: 10px;
+
+      .delete-all-btn {
+        padding: 10px 16px;
+        font-size: 13px;
+
+        svg {
+          width: 16px;
+          height: 16px;
+        }
+      }
     }
   }
 
   .search-filter-section {
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
 
     .search-container {
       max-width: 100%;
@@ -1516,18 +1602,30 @@
     .date-filter-container {
       width: 100%;
       flex-wrap: wrap;
-      padding: 0 12px;
+      padding: 0 10px;
       height: auto;
-      min-height: 42px;
+      min-height: 38px;
+      gap: 8px;
 
       .date-input-wrapper .date-input {
         width: 100%;
         flex: 1;
-        min-width: 140px;
+        min-width: 120px;
+        height: 38px;
+        padding: 8px 10px;
+        font-size: 13px;
       }
 
       .date-separator {
         flex-shrink: 0;
+        font-size: 12px;
+        padding: 0 4px;
+      }
+
+      .clear-date-filter-btn {
+        width: 32px;
+        height: 32px;
+        padding: 6px;
       }
     }
   }
@@ -1638,6 +1736,90 @@
 
   .card-actions {
     gap: 0.5rem;
+  }
+}
+
+@media (max-width: 425px) {
+  .search-filter-section {
+    flex-direction: column;
+    gap: 8px;
+
+    .search-container {
+      width: 100%;
+      max-width: 100%;
+    }
+
+    .date-filter-container {
+      width: 100%;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 6px;
+      padding: 8px;
+      height: auto;
+      min-height: auto;
+      border-radius: 8px;
+
+      .calendar-icon {
+        display: none; // Icon verstecken auf sehr kleinen Bildschirmen
+      }
+
+      .date-input-wrapper {
+        width: 100%;
+        display: block;
+
+        .date-input {
+          width: 100%;
+          min-width: 100%;
+          height: 36px;
+          padding: 8px 12px;
+          font-size: 13px;
+          border: 2px solid #e2e8f0;
+          border-radius: 6px;
+          background: white;
+        }
+      }
+
+      .date-separator {
+        display: block;
+        text-align: center;
+        font-size: 11px;
+        color: #64748b;
+        font-weight: 500;
+        padding: 2px 0;
+        line-height: 1;
+      }
+
+      .clear-date-filter-btn {
+        align-self: flex-end;
+        width: auto;
+        min-width: 100px;
+        height: 36px;
+        padding: 8px 12px;
+        margin-top: 0;
+        border-radius: 6px;
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        background: #f1f5f9;
+        border: 2px solid #e2e8f0;
+
+        svg {
+          width: 14px;
+          height: 14px;
+        }
+      }
+    }
+
+    .reload-btn {
+      width: 100%;
+      margin-left: 0;
+      justify-content: center;
+      height: 38px;
+      font-size: 13px;
+      padding: 8px 16px;
+    }
   }
 } 
 // Styling für Bruttopreis-Spalte und MwSt-Label in Order Details

@@ -98,6 +98,12 @@ export class OrderOverviewComponent implements OnInit {
     this.loadAllArtikels();
   }
 
+  reloadOrders(): void {
+    this.loadOrders();
+    this.loadCustomers();
+    this.loadAllArtikels();
+  }
+
   // Neue Methode zum Laden aller Artikel (inkl. PFAND)
   loadAllArtikels(): void {
     this.artikelService.getData().subscribe({
