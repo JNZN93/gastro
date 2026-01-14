@@ -60,6 +60,9 @@ export class OpenInvoicesComponent implements OnInit {
   // Tab navigation
   activeTab: 'all' | 'open' | 'paid' | 'overdue' | 'sepa' = 'all';
 
+  // Toggle for showing/hiding paid invoices
+  showPaidInvoices: boolean = true; // Default: show paid invoices
+
   // Filtered invoices cache for better performance
   private _filteredInvoices: Invoice[] = [];
 
@@ -902,14 +905,20 @@ export class OpenInvoicesComponent implements OnInit {
     this.updateFilteredInvoices();
   }
 
-  // Sortieren nach Lieferant (alphabetisch) und dann nach Rechnungsdatum
-  sortBySupplier() {
-    if (this.sortColumn !== 'supplier_name') {
-      this.sortColumn = 'supplier_name';
+  // Generic sort method for all columns
+  sortBy(column: string) {
+    if (this.sortColumn !== column) {
+      this.sortColumn = column;
       this.sortDirection = 'asc';
     } else {
       this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
     }
+    this.updateFilteredInvoices();
+  }
+
+  // Sortieren nach Lieferant (alphabetisch) und dann nach Rechnungsdatum
+  sortBySupplier() {
+    this.sortBy('supplier_name');
   }
 
   // Method to switch tabs
@@ -933,6 +942,12 @@ export class OpenInvoicesComponent implements OnInit {
       }
     }
 
+    // Apply paid invoices toggle filter (hide paid invoices by default)
+    // Only apply this filter if we're not on the 'paid' tab (paid tab should always show paid invoices)
+    if (!this.showPaidInvoices && this.activeTab !== 'paid') {
+      filtered = filtered.filter(invoice => invoice.status !== 'paid');
+    }
+
     // Apply search filter
     if (this.searchTerm) {
       filtered = filtered.filter(invoice =>
@@ -944,26 +959,75 @@ export class OpenInvoicesComponent implements OnInit {
     this._filteredInvoices = this.sortInvoices(filtered);
   }
 
+  // Toggle paid invoices visibility
+  togglePaidInvoices() {
+    this.showPaidInvoices = !this.showPaidInvoices;
+    this.updateFilteredInvoices();
+  }
+
   get filteredInvoices() {
     return this._filteredInvoices;
   }
 
   private sortInvoices(invoices: Invoice[]): Invoice[] {
     return invoices.sort((a, b) => {
-      // Sortiere zuerst nach Lieferant (alphabetisch)
-      const supplierA = a.supplier_name?.toLowerCase() || '';
-      const supplierB = b.supplier_name?.toLowerCase() || '';
-
       let comparison = 0;
-      if (supplierA < supplierB) {
-        comparison = -1;
-      } else if (supplierA > supplierB) {
-        comparison = 1;
-      } else {
-        // Bei gleichen Lieferanten nach Rechnungsdatum sortieren
-        const dateA = new Date(a.date || '1970-01-01').getTime();
-        const dateB = new Date(b.date || '1970-01-01').getTime();
-        comparison = dateA - dateB;
+
+      switch (this.sortColumn) {
+        case 'supplier_name':
+          const supplierA = a.supplier_name?.toLowerCase() || '';
+          const supplierB = b.supplier_name?.toLowerCase() || '';
+          if (supplierA < supplierB) {
+            comparison = -1;
+          } else if (supplierA > supplierB) {
+            comparison = 1;
+          }
+          break;
+
+        case 'invoice_number':
+          const invoiceNumA = a.invoice_number?.toLowerCase() || '';
+          const invoiceNumB = b.invoice_number?.toLowerCase() || '';
+          if (invoiceNumA < invoiceNumB) {
+            comparison = -1;
+          } else if (invoiceNumA > invoiceNumB) {
+            comparison = 1;
+          }
+          break;
+
+        case 'date':
+          const dateA = new Date(a.date || '1970-01-01').getTime();
+          const dateB = new Date(b.date || '1970-01-01').getTime();
+          comparison = dateA - dateB;
+          break;
+
+        case 'due_date':
+          const dueDateA = new Date(a.due_date || '1970-01-01').getTime();
+          const dueDateB = new Date(b.due_date || '1970-01-01').getTime();
+          comparison = dueDateA - dueDateB;
+          break;
+
+        case 'amount':
+          const amountA = typeof a.amount === 'string' ? parseFloat(a.amount) : a.amount || 0;
+          const amountB = typeof b.amount === 'string' ? parseFloat(b.amount) : b.amount || 0;
+          comparison = amountA - amountB;
+          break;
+
+        case 'status':
+          const statusOrder = { 'open': 1, 'overdue': 2, 'sepa': 3, 'paid': 4 };
+          const statusA = statusOrder[a.status as keyof typeof statusOrder] || 0;
+          const statusB = statusOrder[b.status as keyof typeof statusOrder] || 0;
+          comparison = statusA - statusB;
+          break;
+
+        default:
+          // Fallback: sort by supplier name
+          const defaultSupplierA = a.supplier_name?.toLowerCase() || '';
+          const defaultSupplierB = b.supplier_name?.toLowerCase() || '';
+          if (defaultSupplierA < defaultSupplierB) {
+            comparison = -1;
+          } else if (defaultSupplierA > defaultSupplierB) {
+            comparison = 1;
+          }
       }
 
       return this.sortDirection === 'asc' ? comparison : -comparison;
@@ -1592,9 +1656,9 @@ export class OpenInvoicesComponent implements OnInit {
     return invoice.id;
   }
 
-  // Gibt das Sortiersymbol für die Lieferant-Spalte zurück
-  getSortIcon(): string {
-    if (this.sortColumn !== 'supplier_name') return '';
+  // Gibt das Sortiersymbol für die aktuelle Spalte zurück
+  getSortIcon(column: string): string {
+    if (this.sortColumn !== column) return '';
     return this.sortDirection === 'asc' ? '↑' : '↓';
   }
 

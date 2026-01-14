@@ -69,6 +69,19 @@
             </svg>
             <input type="text" placeholder="Suchen..." [(ngModel)]="searchTerm" class="search-input">
           </div>
+          <button class="toggle-paid-btn" 
+                  [class.active]="showPaidInvoices"
+                  (click)="togglePaidInvoices()"
+                  title="Bezahlte Rechnungen {{ showPaidInvoices ? 'ausblenden' : 'einblenden' }}">
+            <svg *ngIf="!showPaidInvoices" class="toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.29 3.29m0 0L12 12m-5.71-5.71L12 12m0 0l3.29 3.29M12 12l3.29-3.29M12 12l-3.29-3.29m0 0L3 3"/>
+            </svg>
+            <svg *ngIf="showPaidInvoices" class="toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+            </svg>
+            <span class="toggle-text">{{ showPaidInvoices ? 'Bezahlte ausblenden' : 'Bezahlte einblenden' }}</span>
+          </button>
           <div class="export-buttons">
             <button class="export-btn export-btn-view" (click)="exportToPDF(false)">
               <svg class="export-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -129,15 +142,30 @@
       <table class="invoices-table">
         <thead>
           <tr>
-            <th class="sortable-header" (click)="sortBySupplier()">
+            <th class="sortable-header" (click)="sortBy('supplier_name')">
               <span class="header-text">Lieferant</span>
-              <span class="sort-icon">{{ getSortIcon() }}</span>
+              <span class="sort-icon">{{ getSortIcon('supplier_name') }}</span>
             </th>
-            <th>Rechnungsnummer</th>
-            <th>Datum</th>
-            <th>Fälligkeitsdatum</th>
-            <th>Betrag</th>
-            <th>Status</th>
+            <th class="sortable-header" (click)="sortBy('invoice_number')">
+              <span class="header-text">Rechnungsnummer</span>
+              <span class="sort-icon">{{ getSortIcon('invoice_number') }}</span>
+            </th>
+            <th class="sortable-header" (click)="sortBy('date')">
+              <span class="header-text">Datum</span>
+              <span class="sort-icon">{{ getSortIcon('date') }}</span>
+            </th>
+            <th class="sortable-header" (click)="sortBy('due_date')">
+              <span class="header-text">Fälligkeitsdatum</span>
+              <span class="sort-icon">{{ getSortIcon('due_date') }}</span>
+            </th>
+            <th class="sortable-header" (click)="sortBy('amount')">
+              <span class="header-text">Betrag</span>
+              <span class="sort-icon">{{ getSortIcon('amount') }}</span>
+            </th>
+            <th class="sortable-header" (click)="sortBy('status')">
+              <span class="header-text">Status</span>
+              <span class="sort-icon">{{ getSortIcon('status') }}</span>
+            </th>
             <th>Anhang</th>
             <th>Aktionen</th>
           </tr>
