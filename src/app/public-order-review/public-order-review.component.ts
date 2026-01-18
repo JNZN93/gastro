@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { environment } from '../../environments/environment';
 import { Component, OnInit, inject, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -11,7 +12,7 @@ import 'jspdf-autotable';
 @Component({
   selector: 'app-public-order-review',
   standalone: true,
-  imports: [CommonModule, MatDialogModule],
+  imports: [CommonModule, MatDialogModule, FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="review-page">
@@ -27,9 +28,71 @@ import 'jspdf-autotable';
         </button>
       </div>
 
+      <!-- Lieferart und Datum Auswahl -->
+      <div class="delivery-options" *ngIf="items && items.length && !orderSubmitted">
+        <div class="delivery-options-content">
+          <h3>Lieferdetails</h3>
+          
+          <!-- Lieferart Auswahl -->
+          <div class="form-group">
+            <label for="fulfillmentType">Lieferart *</label>
+            <div class="radio-group">
+              <label class="radio-option">
+                <input 
+                  type="radio" 
+                  id="delivery" 
+                  name="fulfillmentType" 
+                  value="delivery" 
+                  [(ngModel)]="selectedFulfillmentType"
+                  (change)="onFulfillmentTypeChange()"
+                />
+                <span class="radio-label">
+                  <span class="radio-icon">🚚</span>
+                  Lieferung
+                </span>
+              </label>
+              
+              <label class="radio-option">
+                <input 
+                  type="radio" 
+                  id="pickup" 
+                  name="fulfillmentType" 
+                  value="pickup" 
+                  [(ngModel)]="selectedFulfillmentType"
+                  (change)="onFulfillmentTypeChange()"
+                />
+                <span class="radio-label">
+                  <span class="radio-icon">🏪</span>
+                  Abholung
+                </span>
+              </label>
+            </div>
+          </div>
+          
+          <!-- Datum Auswahl -->
+          <div class="form-group">
+            <label for="deliveryDate">{{ selectedFulfillmentType === 'pickup' ? 'Abholdatum' : 'Lieferdatum' }} *</label>
+            <input 
+              type="date" 
+              id="deliveryDate" 
+              class="date-input"
+              [(ngModel)]="selectedDate"
+              [min]="getMinDate()"
+              (change)="onDateChange()"
+              placeholder="Bitte Datum wählen"
+            />
+          </div>
+          
+          <div class="form-hint" *ngIf="!isFormValid()">
+            <span class="warning-icon">⚠️</span>
+            Bitte wählen Sie eine Lieferart und ein Datum aus
+          </div>
+        </div>
+      </div>
+
       <!-- Submit button directly under topbar -->
       <div class="submit-container" *ngIf="items && items.length && !orderSubmitted">
-        <button class="submit" (click)="confirmAndSubmitOrder()" [disabled]="isSubmitting">
+        <button class="submit" (click)="confirmAndSubmitOrder()" [disabled]="isSubmitting || !isFormValid()">
           <span *ngIf="!isSubmitting">Bestellung absenden</span>
           <span *ngIf="isSubmitting">Sende...</span>
         </button>
@@ -187,6 +250,151 @@ import 'jspdf-autotable';
       font-size: 12px; 
       margin-top: 2px; 
     }
+    
+    /* Lieferart und Datum Styles */
+    .delivery-options {
+      flex-shrink: 0;
+      padding: 20px 16px;
+      background: #ffffff;
+      border-bottom: 1px solid #eee;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    
+    .delivery-options-content {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    
+    .delivery-options h3 {
+      margin: 0 0 16px 0;
+      font-size: 18px;
+      font-weight: 600;
+      color: #111827;
+    }
+    
+    .form-group {
+      margin-bottom: 16px;
+    }
+    
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    
+    .radio-group {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    
+    .radio-option {
+      flex: 1;
+      min-width: 140px;
+      position: relative;
+      cursor: pointer;
+    }
+    
+    .radio-option input[type="radio"] {
+      position: absolute;
+      opacity: 0;
+      cursor: pointer;
+    }
+    
+    .radio-label {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 16px;
+      background: #f9fafb;
+      border: 2px solid #e5e7eb;
+      border-radius: 10px;
+      transition: all 0.2s;
+      font-weight: 500;
+      color: #374151;
+    }
+    
+    .radio-option input[type="radio"]:checked + .radio-label {
+      background: #dbeafe;
+      border-color: #3b82f6;
+      color: #1e40af;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    
+    .radio-label:hover {
+      border-color: #3b82f6;
+    }
+    
+    .radio-icon {
+      font-size: 20px;
+    }
+    
+    .date-input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid #e5e7eb;
+      border-radius: 10px;
+      font-size: 16px;
+      font-family: inherit;
+      transition: all 0.2s;
+      background: #ffffff;
+      color: #111827;
+    }
+    
+    .date-input:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    
+    .date-input:invalid {
+      border-color: #ef4444;
+    }
+    
+    .form-hint {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      background: #fef3c7;
+      border: 1px solid #fbbf24;
+      border-radius: 8px;
+      color: #92400e;
+      font-size: 13px;
+      margin-top: 12px;
+    }
+    
+    .warning-icon {
+      font-size: 16px;
+    }
+    
+    @media (max-width: 767px) {
+      .delivery-options {
+        padding: 16px 12px;
+      }
+      
+      .delivery-options h3 {
+        font-size: 16px;
+      }
+      
+      .radio-option {
+        min-width: 120px;
+      }
+      
+      .radio-label {
+        padding: 10px 12px;
+        font-size: 14px;
+      }
+      
+      .date-input {
+        font-size: 15px;
+        padding: 10px 14px;
+      }
+    }
+    
     .content { 
       flex: 1;
       max-width: 1000px; 
@@ -631,6 +839,12 @@ export class PublicOrderReviewComponent implements OnInit {
   orderSubmitted = false;
   savedItems: any[] = []; // Lokale Kopie der Artikel für PDF-Download
   savedTotal: number = 0; // Lokale Kopie des Gesamtpreises
+  savedFulfillmentType: 'delivery' | 'pickup' = 'delivery'; // Lokale Kopie für PDF
+  savedDate: string = ''; // Lokale Kopie für PDF
+  
+  // Neue Properties für Lieferart und Datum
+  selectedFulfillmentType: 'delivery' | 'pickup' = 'delivery';
+  selectedDate: string = '';
 
   ngOnInit(): void {
     // Verhindere Body-Scroll auf Safari
@@ -1133,9 +1347,9 @@ export class PublicOrderReviewComponent implements OnInit {
       status: 'open',
       customer_notes: '',
       shipping_address: '',
-      fulfillment_type: 'delivery',
+      fulfillment_type: this.selectedFulfillmentType, // Verwende die ausgewählte Lieferart
       total_price: this.total,
-      delivery_date: new Date().toISOString().split('T')[0]
+      delivery_date: this.selectedDate // Verwende das ausgewählte Datum
     };
 
     // Baue orderItems mit korrekter PFAND-Positionierung: PFAND direkt nach Hauptartikel
@@ -1201,8 +1415,8 @@ export class PublicOrderReviewComponent implements OnInit {
     console.log('💰 [REVIEW] Gesamtpreis:', this.total);
     console.log('📦 [REVIEW] Anzahl Artikel:', this.items.length);
     console.log('👤 [REVIEW] Kunde:', completeOrder.orderData.customer_number);
-    console.log('📅 [REVIEW] Lieferdatum:', completeOrder.orderData.delivery_date);
-    console.log('📍 [REVIEW] Lieferart:', completeOrder.orderData.fulfillment_type);
+    console.log('📅 [REVIEW] Lieferdatum:', completeOrder.orderData.delivery_date, '(vom Benutzer gewählt)');
+    console.log('📍 [REVIEW] Lieferart:', completeOrder.orderData.fulfillment_type === 'delivery' ? '🚚 Lieferung' : '🏪 Abholung', '(vom Benutzer gewählt)');
     console.log('🏠 [REVIEW] Lieferadresse:', orderData.shipping_address);
     console.log('📝 [REVIEW] Anmerkungen:', orderData.customer_notes);
     console.log('🌐 [REVIEW] Endpoint:', '${environment.apiUrl}/api/orders/without-auth');
@@ -1237,10 +1451,13 @@ export class PublicOrderReviewComponent implements OnInit {
       console.log('✅ Bestellung erfolgreich abgesendet:', data);
       this.isSubmitting = false;
       
-      // Artikel und Total vor dem Löschen des localStorage speichern
+      // Artikel, Total und Lieferdetails vor dem Löschen des localStorage speichern
       this.savedItems = [...this.items];
       this.savedTotal = this.total;
+      this.savedFulfillmentType = this.selectedFulfillmentType;
+      this.savedDate = this.selectedDate;
       console.log('💾 Artikel für PDF-Download gespeichert:', this.savedItems.length, 'Artikel');
+      console.log('💾 Lieferdetails für PDF gespeichert:', this.savedFulfillmentType, this.savedDate);
       
       // Bestellung als erfolgreich markieren
       this.orderSubmitted = true;
@@ -1261,10 +1478,19 @@ export class PublicOrderReviewComponent implements OnInit {
   }
 
   confirmAndSubmitOrder() {
+    // Validierung vor dem Bestätigen
+    if (!this.isFormValid()) {
+      alert('Bitte wählen Sie eine Lieferart und ein Datum aus.');
+      return;
+    }
+    
+    const deliveryTypeText = this.selectedFulfillmentType === 'delivery' ? 'Lieferung' : 'Abholung';
+    const selectedDateFormatted = new Date(this.selectedDate).toLocaleDateString('de-DE');
+    
     this.dialog.open(MyDialogComponent, {
       data: {
         title: 'Bestellung bestätigen',
-        message: 'Sind Sie sicher, dass Sie die Bestellung absenden möchten? Alle ausgewählten Artikel werden in Ihre Bestellung aufgenommen.',
+        message: `Sind Sie sicher, dass Sie die Bestellung absenden möchten?\n\n${deliveryTypeText} am ${selectedDateFormatted}\n\nAlle ausgewählten Artikel werden in Ihre Bestellung aufgenommen.`,
         isConfirmation: true,
         confirmLabel: 'Bestellen',
         cancelLabel: 'Abbrechen'
@@ -1276,6 +1502,29 @@ export class PublicOrderReviewComponent implements OnInit {
         this.submitOrder();
       }
     });
+  }
+  
+  // Validierung: Lieferart und Datum müssen ausgefüllt sein
+  isFormValid(): boolean {
+    return !!(this.selectedFulfillmentType && this.selectedDate);
+  }
+  
+  // Mindestdatum: Heute
+  getMinDate(): string {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  }
+  
+  // Event Handler für Lieferart-Änderung
+  onFulfillmentTypeChange() {
+    console.log('Lieferart geändert:', this.selectedFulfillmentType);
+    this.cdr.detectChanges();
+  }
+  
+  // Event Handler für Datum-Änderung
+  onDateChange() {
+    console.log('Datum geändert:', this.selectedDate);
+    this.cdr.detectChanges();
   }
 
   // Neue Methode: PFAND-Artikel automatisch zur Bestellung hinzufügen
@@ -1565,6 +1814,8 @@ export class PublicOrderReviewComponent implements OnInit {
     // Verwende gespeicherte Artikel (falls vorhanden) oder aktuelle Artikel
     const itemsToUse = this.savedItems.length > 0 ? this.savedItems : this.items;
     const totalToUse = this.savedTotal > 0 ? this.savedTotal : this.total;
+    const fulfillmentTypeToUse = this.savedFulfillmentType || this.selectedFulfillmentType;
+    const dateToUse = this.savedDate || this.selectedDate;
     
     if (!itemsToUse || itemsToUse.length === 0) {
       alert('Keine Bestelldaten zum Herunterladen vorhanden.');
@@ -1582,12 +1833,12 @@ export class PublicOrderReviewComponent implements OnInit {
     doc.setFontSize(12);
     doc.setFont('helvetica', 'normal');
 
-    // Datum und Uhrzeit
+    // Datum und Uhrzeit (Bestelldatum)
     const currentDate = new Date();
-    const dateFormatted = currentDate.toLocaleDateString('de-DE');
+    const orderDateFormatted = currentDate.toLocaleDateString('de-DE');
     const timeFormatted = currentDate.toLocaleTimeString('de-DE');
 
-    doc.text('Datum: ' + dateFormatted, 14, 40);
+    doc.text('Bestelldatum: ' + orderDateFormatted, 14, 40);
     doc.text('Uhrzeit: ' + timeFormatted, 14, 50);
     
     // Kundendaten
@@ -1595,22 +1846,28 @@ export class PublicOrderReviewComponent implements OnInit {
       doc.text('Kunde: ' + (this.customer.last_name_company || this.customer.customer_number || 'Unbekannt'), 14, 60);
       doc.text('Kundennummer: ' + (this.customer.customer_number || this.customer.customer_id || 'Unbekannt'), 14, 70);
     }
+    
+    // Lieferdetails
+    const fulfillmentTypeText = fulfillmentTypeToUse === 'delivery' ? 'Lieferung' : 'Abholung';
+    const deliveryDateFormatted = dateToUse ? new Date(dateToUse).toLocaleDateString('de-DE') : 'Nicht angegeben';
+    doc.text('Lieferart: ' + fulfillmentTypeText, 14, 80);
+    doc.text((fulfillmentTypeToUse === 'delivery' ? 'Lieferdatum: ' : 'Abholdatum: ') + deliveryDateFormatted, 14, 90);
 
     // Trennlinie
-    doc.line(14, 85, 200, 85);
+    doc.line(14, 105, 200, 105);
 
     // Artikelüberschrift
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
-    doc.text('Menge', 14, 95);
-    doc.text('Artikel', 40, 95);
-    doc.text('Artikelnr.', 120, 95);
+    doc.text('Menge', 14, 115);
+    doc.text('Artikel', 40, 115);
+    doc.text('Artikelnr.', 120, 115);
 
     // Artikel und Mengen
     doc.setFontSize(12);
     doc.setFont('helvetica', 'normal');
 
-    let yPosition = 105;
+    let yPosition = 125;
     const lineHeight = 10;
     const pageHeight = 297; // A4 in mm
     const bottomMargin = 20;
@@ -1647,7 +1904,7 @@ export class PublicOrderReviewComponent implements OnInit {
       if (yPosition + lineHeight > pageHeight - bottomMargin) {
         doc.addPage();
         doc.text('Bestellübersicht', 14, 20);
-        doc.text('Datum: ' + dateFormatted, 14, 40);
+        doc.text('Bestelldatum: ' + orderDateFormatted, 14, 40);
         if (this.customer) {
           doc.text('Kunde: ' + (this.customer.last_name_company || this.customer.customer_number || 'Unbekannt'), 14, 50);
         }
@@ -1686,7 +1943,7 @@ export class PublicOrderReviewComponent implements OnInit {
         if (yPosition + lineHeight > pageHeight - bottomMargin) {
           doc.addPage();
           doc.text('Bestellübersicht', 14, 20);
-          doc.text('Datum: ' + dateFormatted, 14, 40);
+          doc.text('Bestelldatum: ' + orderDateFormatted, 14, 40);
           if (this.customer) {
             doc.text('Kunde: ' + (this.customer.last_name_company || this.customer.customer_number || 'Unbekannt'), 14, 50);
           }
@@ -1714,7 +1971,7 @@ export class PublicOrderReviewComponent implements OnInit {
     // Kein Gesamtpreis mehr in der PDF
 
     // PDF herunterladen
-    const fileName = `Bestellung_${dateFormatted.replace(/\./g, '-')}_${this.customer?.customer_number || 'Kunde'}.pdf`;
+    const fileName = `Bestellung_${orderDateFormatted.replace(/\./g, '-')}_${this.customer?.customer_number || 'Kunde'}.pdf`;
     doc.save(fileName);
   }
 

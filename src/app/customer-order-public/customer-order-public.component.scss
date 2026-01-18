@@ -1929,6 +1929,17 @@
   text-align: center;
   margin: 2rem 0;
   
+  // Mobile: Extra Abstand nach unten für FAB
+  @media (max-width: 768px) {
+    margin: 2rem 0 8rem 0; // 8rem Abstand für den FAB Button
+    padding-bottom: 2rem; // Zusätzliches Padding
+  }
+  
+  @media (max-width: 480px) {
+    margin: 1.5rem 0 9rem 0; // Noch mehr Abstand auf kleinen Bildschirmen
+    padding-bottom: 2.5rem;
+  }
+  
   .custom-article-heading {
     margin: 0 0 1.5rem 0;
     color: #7f8c8d;
@@ -1967,6 +1978,17 @@
 
 .custom-article-form {
   margin: 2rem 0;
+  
+  // Mobile: Extra Abstand nach unten für FAB
+  @media (max-width: 768px) {
+    margin: 2rem 0 8rem 0; // 8rem Abstand für den FAB Button
+    padding-bottom: 2rem; // Zusätzliches Padding
+  }
+  
+  @media (max-width: 480px) {
+    margin: 1.5rem 0 9rem 0; // Noch mehr Abstand auf kleinen Bildschirmen
+    padding-bottom: 2.5rem;
+  }
   
   h3 {
     text-align: center;
