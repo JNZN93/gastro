@@ -389,6 +389,49 @@
       transform: translateY(0);
     }
   }
+
+  .toggle-archived-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: #6b7280;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(107, 114, 128, 0.2);
+    height: 42px;
+
+    svg {
+      width: 18px;
+      height: 18px;
+      transition: transform 0.3s ease;
+    }
+
+    &:hover {
+      background: #4b5563;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3);
+    }
+
+    &.active {
+      background: #059669;
+      box-shadow: 0 2px 8px rgba(5, 150, 105, 0.2);
+
+      &:hover {
+        background: #047857;
+        box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+      }
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+  }
 }
 
 // Table Section
@@ -1813,6 +1856,15 @@
     }
 
     .reload-btn {
+      width: 100%;
+      margin-left: 0;
+      justify-content: center;
+      height: 38px;
+      font-size: 13px;
+      padding: 8px 16px;
+    }
+
+    .toggle-archived-btn {
       width: 100%;
       margin-left: 0;
       justify-content: center;

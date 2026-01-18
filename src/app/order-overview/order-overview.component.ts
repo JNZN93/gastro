@@ -58,8 +58,9 @@ export class OrderOverviewComponent implements OnInit {
   searchTerm = '';
   dateFrom: string = '';
   dateTo: string = '';
-  sortBy: string = 'order_date';
+  sortBy: string = 'order_id';
   sortDirection: 'asc' | 'desc' = 'desc';
+  showArchived: boolean = false;
   showDeleteModal = false;
   orderToDelete: Order | null = null;
   isDeleting = false;
@@ -200,6 +201,11 @@ export class OrderOverviewComponent implements OnInit {
 
   get filteredOrders(): Order[] {
     let filtered = this.orders;
+    
+    // Archiv-Filter anwenden
+    if (!this.showArchived) {
+      filtered = filtered.filter(order => order.status !== 'archived');
+    }
     
     // Datumsfilter anwenden
     if (this.dateFrom || this.dateTo) {
@@ -1417,5 +1423,9 @@ export class OrderOverviewComponent implements OnInit {
       input.focus();
       input.showPicker?.();
     }
+  }
+
+  toggleArchived(): void {
+    this.showArchived = !this.showArchived;
   }
 } 
