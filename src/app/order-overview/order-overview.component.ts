@@ -97,6 +97,7 @@ export class OrderOverviewComponent implements OnInit {
     this.loadOrders();
     this.loadCustomers();
     this.loadAllArtikels();
+    this.loadDateFiltersFromLocalStorage();
   }
 
   reloadOrders(): void {
@@ -1405,6 +1406,45 @@ export class OrderOverviewComponent implements OnInit {
   clearDateFilter(): void {
     this.dateFrom = '';
     this.dateTo = '';
+    // Lösche die Datumswerte aus LocalStorage
+    localStorage.removeItem('orderOverviewDateFrom');
+    localStorage.removeItem('orderOverviewDateTo');
+  }
+  
+  // Lade Datumsfilter aus LocalStorage
+  private loadDateFiltersFromLocalStorage(): void {
+    const savedDateFrom = localStorage.getItem('orderOverviewDateFrom');
+    const savedDateTo = localStorage.getItem('orderOverviewDateTo');
+    
+    if (savedDateFrom) {
+      this.dateFrom = savedDateFrom;
+      console.log('📅 [ORDER-OVERVIEW] Datum Von aus LocalStorage geladen:', this.dateFrom);
+    }
+    
+    if (savedDateTo) {
+      this.dateTo = savedDateTo;
+      console.log('📅 [ORDER-OVERVIEW] Datum Bis aus LocalStorage geladen:', this.dateTo);
+    }
+  }
+  
+  // Event-Handler für Datum Von Änderung
+  onDateFromChange(value: string): void {
+    if (value) {
+      localStorage.setItem('orderOverviewDateFrom', value);
+      console.log('💾 [ORDER-OVERVIEW] Datum Von in LocalStorage gespeichert:', value);
+    } else {
+      localStorage.removeItem('orderOverviewDateFrom');
+    }
+  }
+  
+  // Event-Handler für Datum Bis Änderung
+  onDateToChange(value: string): void {
+    if (value) {
+      localStorage.setItem('orderOverviewDateTo', value);
+      console.log('💾 [ORDER-OVERVIEW] Datum Bis in LocalStorage gespeichert:', value);
+    } else {
+      localStorage.removeItem('orderOverviewDateTo');
+    }
   }
 
   focusDateInput(field: 'dateFrom' | 'dateTo'): void {

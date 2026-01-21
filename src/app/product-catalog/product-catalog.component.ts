@@ -732,6 +732,20 @@ export class ProductCatalogComponent implements OnInit, OnDestroy {
       
       // BROT & BACKWAREN - Brot und Backprodukte
       'BROT & BACKWAREN': '/brot.jpg',
+
+      'WASCHMITTEL': '/waschmittel.jpg',
+      
+      'REINIGUNGSMITTEL': '/reinigungsmittel.jpg',
+
+      'FERTIGSALATE': '/fertigsalate.jpg',
+
+      'MEHL': '/mehl.jpg',
+
+      'PASTA': '/pasta.webp',
+
+      'GRILLZUBEHÖR': '/grillzubehoer.jpg',
+
+      'SAUCEN': '/saucen.webp',
     };
 
     // Standard-Bild für unbekannte Kategorien - Allgemeine Lebensmittel

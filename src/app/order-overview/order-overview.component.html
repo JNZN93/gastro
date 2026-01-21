@@ -72,6 +72,7 @@
           type="date" 
           id="dateFrom"
           [(ngModel)]="dateFrom" 
+          (ngModelChange)="onDateFromChange($event)"
           class="date-input"
           placeholder="Von"
           #dateFromInput
@@ -84,6 +85,7 @@
           type="date" 
           id="dateTo"
           [(ngModel)]="dateTo" 
+          (ngModelChange)="onDateToChange($event)"
           class="date-input"
           placeholder="Bis"
           #dateToInput
