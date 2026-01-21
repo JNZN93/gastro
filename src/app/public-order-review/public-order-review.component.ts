@@ -83,9 +83,27 @@ import 'jspdf-autotable';
             />
           </div>
           
+          <!-- Uhrzeit Auswahl (nur bei Abholung) -->
+          <div class="form-group" *ngIf="selectedFulfillmentType === 'pickup'">
+            <label for="pickupTime">Abholzeit *</label>
+            <input 
+              type="time" 
+              id="pickupTime" 
+              class="date-input"
+              [(ngModel)]="selectedTime"
+              (change)="onTimeChange()"
+              placeholder="Bitte Uhrzeit wählen"
+            />
+          </div>
+          
           <div class="form-hint" *ngIf="!isFormValid()">
             <span class="warning-icon">⚠️</span>
-            Bitte wählen Sie eine Lieferart und ein Datum aus
+            <span *ngIf="selectedFulfillmentType === 'pickup'">
+              Bitte wählen Sie eine Lieferart, ein Datum und eine Uhrzeit aus
+            </span>
+            <span *ngIf="selectedFulfillmentType !== 'pickup'">
+              Bitte wählen Sie eine Lieferart und ein Datum aus
+            </span>
           </div>
         </div>
       </div>
@@ -841,10 +859,12 @@ export class PublicOrderReviewComponent implements OnInit {
   savedTotal: number = 0; // Lokale Kopie des Gesamtpreises
   savedFulfillmentType: 'delivery' | 'pickup' = 'delivery'; // Lokale Kopie für PDF
   savedDate: string = ''; // Lokale Kopie für PDF
+  savedTime: string = ''; // Lokale Kopie der Uhrzeit für PDF
   
   // Neue Properties für Lieferart und Datum
   selectedFulfillmentType: 'delivery' | 'pickup' = 'delivery';
   selectedDate: string = '';
+  selectedTime: string = ''; // Neue Property für Uhrzeit
 
   ngOnInit(): void {
     // Verhindere Body-Scroll auf Safari
@@ -1338,6 +1358,13 @@ export class PublicOrderReviewComponent implements OnInit {
     // Bestellung direkt von der Review-Seite abschicken
     this.isSubmitting = true;
     
+    // Kombiniere Datum und Uhrzeit (nur bei Abholung)
+    let finalDeliveryDate = this.selectedDate;
+    if (this.selectedFulfillmentType === 'pickup' && this.selectedTime) {
+      finalDeliveryDate = `${this.selectedDate}T${this.selectedTime}:00`;
+      console.log('📅 [REVIEW] Datum mit Uhrzeit kombiniert:', finalDeliveryDate);
+    }
+    
     // Bestellung an den API-Endpoint senden - nur customer_number verfügbar
     const orderData = {
       // Nur die verfügbare customer_number senden
@@ -1349,7 +1376,7 @@ export class PublicOrderReviewComponent implements OnInit {
       shipping_address: '',
       fulfillment_type: this.selectedFulfillmentType, // Verwende die ausgewählte Lieferart
       total_price: this.total,
-      delivery_date: this.selectedDate // Verwende das ausgewählte Datum
+      delivery_date: finalDeliveryDate // Verwende das ausgewählte Datum (mit Uhrzeit bei Abholung)
     };
 
     // Baue orderItems mit korrekter PFAND-Positionierung: PFAND direkt nach Hauptartikel
@@ -1456,8 +1483,9 @@ export class PublicOrderReviewComponent implements OnInit {
       this.savedTotal = this.total;
       this.savedFulfillmentType = this.selectedFulfillmentType;
       this.savedDate = this.selectedDate;
+      this.savedTime = this.selectedTime;
       console.log('💾 Artikel für PDF-Download gespeichert:', this.savedItems.length, 'Artikel');
-      console.log('💾 Lieferdetails für PDF gespeichert:', this.savedFulfillmentType, this.savedDate);
+      console.log('💾 Lieferdetails für PDF gespeichert:', this.savedFulfillmentType, this.savedDate, this.savedTime);
       
       // Bestellung als erfolgreich markieren
       this.orderSubmitted = true;
@@ -1480,17 +1508,27 @@ export class PublicOrderReviewComponent implements OnInit {
   confirmAndSubmitOrder() {
     // Validierung vor dem Bestätigen
     if (!this.isFormValid()) {
-      alert('Bitte wählen Sie eine Lieferart und ein Datum aus.');
+      const errorMessage = this.selectedFulfillmentType === 'pickup' 
+        ? 'Bitte wählen Sie eine Lieferart, ein Datum und eine Uhrzeit aus.'
+        : 'Bitte wählen Sie eine Lieferart und ein Datum aus.';
+      alert(errorMessage);
       return;
     }
     
     const deliveryTypeText = this.selectedFulfillmentType === 'delivery' ? 'Lieferung' : 'Abholung';
     const selectedDateFormatted = new Date(this.selectedDate).toLocaleDateString('de-DE');
     
+    // Message mit oder ohne Uhrzeit
+    let message = `Sind Sie sicher, dass Sie die Bestellung absenden möchten?\n\n${deliveryTypeText} am ${selectedDateFormatted}`;
+    if (this.selectedFulfillmentType === 'pickup' && this.selectedTime) {
+      message += ` um ${this.selectedTime} Uhr`;
+    }
+    message += '\n\nAlle ausgewählten Artikel werden in Ihre Bestellung aufgenommen.';
+    
     this.dialog.open(MyDialogComponent, {
       data: {
         title: 'Bestellung bestätigen',
-        message: `Sind Sie sicher, dass Sie die Bestellung absenden möchten?\n\n${deliveryTypeText} am ${selectedDateFormatted}\n\nAlle ausgewählten Artikel werden in Ihre Bestellung aufgenommen.`,
+        message: message,
         isConfirmation: true,
         confirmLabel: 'Bestellen',
         cancelLabel: 'Abbrechen'
@@ -1504,9 +1542,16 @@ export class PublicOrderReviewComponent implements OnInit {
     });
   }
   
-  // Validierung: Lieferart und Datum müssen ausgefüllt sein
+  // Validierung: Lieferart und Datum müssen ausgefüllt sein, bei Abholung auch Uhrzeit
   isFormValid(): boolean {
-    return !!(this.selectedFulfillmentType && this.selectedDate);
+    if (!this.selectedFulfillmentType || !this.selectedDate) {
+      return false;
+    }
+    // Bei Abholung ist auch die Uhrzeit Pflicht
+    if (this.selectedFulfillmentType === 'pickup' && !this.selectedTime) {
+      return false;
+    }
+    return true;
   }
   
   // Mindestdatum: Heute
@@ -1518,12 +1563,22 @@ export class PublicOrderReviewComponent implements OnInit {
   // Event Handler für Lieferart-Änderung
   onFulfillmentTypeChange() {
     console.log('Lieferart geändert:', this.selectedFulfillmentType);
+    // Uhrzeit zurücksetzen, wenn von Abholung zu Lieferung gewechselt wird
+    if (this.selectedFulfillmentType === 'delivery') {
+      this.selectedTime = '';
+    }
     this.cdr.detectChanges();
   }
   
   // Event Handler für Datum-Änderung
   onDateChange() {
     console.log('Datum geändert:', this.selectedDate);
+    this.cdr.detectChanges();
+  }
+  
+  // Event Handler für Uhrzeit-Änderung
+  onTimeChange() {
+    console.log('Uhrzeit geändert:', this.selectedTime);
     this.cdr.detectChanges();
   }
 
@@ -1816,6 +1871,7 @@ export class PublicOrderReviewComponent implements OnInit {
     const totalToUse = this.savedTotal > 0 ? this.savedTotal : this.total;
     const fulfillmentTypeToUse = this.savedFulfillmentType || this.selectedFulfillmentType;
     const dateToUse = this.savedDate || this.selectedDate;
+    const timeToUse = this.savedTime || this.selectedTime;
     
     if (!itemsToUse || itemsToUse.length === 0) {
       alert('Keine Bestelldaten zum Herunterladen vorhanden.');
@@ -1851,23 +1907,33 @@ export class PublicOrderReviewComponent implements OnInit {
     const fulfillmentTypeText = fulfillmentTypeToUse === 'delivery' ? 'Lieferung' : 'Abholung';
     const deliveryDateFormatted = dateToUse ? new Date(dateToUse).toLocaleDateString('de-DE') : 'Nicht angegeben';
     doc.text('Lieferart: ' + fulfillmentTypeText, 14, 80);
-    doc.text((fulfillmentTypeToUse === 'delivery' ? 'Lieferdatum: ' : 'Abholdatum: ') + deliveryDateFormatted, 14, 90);
+    
+    let nextYPosition = 90;
+    // Bei Abholung Datum und Uhrzeit anzeigen
+    if (fulfillmentTypeToUse === 'pickup' && timeToUse) {
+      doc.text('Abholdatum: ' + deliveryDateFormatted, 14, 90);
+      doc.text('Abholzeit: ' + timeToUse + ' Uhr', 14, 100);
+      nextYPosition = 110;
+    } else {
+      doc.text((fulfillmentTypeToUse === 'delivery' ? 'Lieferdatum: ' : 'Abholdatum: ') + deliveryDateFormatted, 14, 90);
+      nextYPosition = 100;
+    }
 
     // Trennlinie
-    doc.line(14, 105, 200, 105);
+    doc.line(14, nextYPosition + 5, 200, nextYPosition + 5);
 
     // Artikelüberschrift
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
-    doc.text('Menge', 14, 115);
-    doc.text('Artikel', 40, 115);
-    doc.text('Artikelnr.', 120, 115);
+    doc.text('Menge', 14, nextYPosition + 15);
+    doc.text('Artikel', 40, nextYPosition + 15);
+    doc.text('Artikelnr.', 120, nextYPosition + 15);
 
     // Artikel und Mengen
     doc.setFontSize(12);
     doc.setFont('helvetica', 'normal');
 
-    let yPosition = 125;
+    let yPosition = nextYPosition + 25;
     const lineHeight = 10;
     const pageHeight = 297; // A4 in mm
     const bottomMargin = 20;
