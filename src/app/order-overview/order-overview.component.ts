@@ -408,9 +408,7 @@ export class OrderOverviewComponent implements OnInit {
     doc.setTextColor(colors.dark[0], colors.dark[1], colors.dark[2]);
     
     let yPos = 28;
-    // Kartenhöhe anpassen, wenn Uhrzeit vorhanden ist
-    const hasTime = order.delivery_date && order.delivery_date.includes('T');
-    const cardHeight = hasTime ? 25 : 20;
+    const cardHeight = 20;
     const leftCardWidth = 90;
     const rightCardWidth = 90;
     const cardSpacing = 10;
@@ -453,29 +451,7 @@ export class OrderOverviewComponent implements OnInit {
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(colors.dark[0], colors.dark[1], colors.dark[2]);
     doc.text('Art: ' + (order.fulfillment_type === 'delivery' ? 'Lieferung' : 'Abholung'), 120, yPos + 11);
-    
-    // Datum und Uhrzeit extrahieren
-    const deliveryDate = new Date(order.delivery_date);
-    const dateStr = this.formatDate(order.delivery_date);
-    
-    // Prüfe ob eine Uhrzeit im delivery_date vorhanden ist (ISO-Format mit 'T')
-    if (order.delivery_date && order.delivery_date.includes('T')) {
-      const timeStr = deliveryDate.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
-      doc.text('Datum: ' + dateStr, 120, yPos + 16);
-      
-      // Bei Abholung die Uhrzeit fett anzeigen
-      if (order.fulfillment_type === 'pickup') {
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(8);
-        doc.text('Uhrzeit: ' + timeStr + ' Uhr', 120, yPos + 21);
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(7);
-      } else {
-        doc.text('Uhrzeit: ' + timeStr + ' Uhr', 120, yPos + 21);
-      }
-    } else {
-      doc.text('Datum: ' + dateStr, 120, yPos + 16);
-    }
+    doc.text('Datum: ' + this.formatDate(order.delivery_date), 120, yPos + 16);
 
     yPos += cardHeight + 10;
 

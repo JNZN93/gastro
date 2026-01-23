@@ -103,7 +103,7 @@ export class OpenInvoicesComponent implements OnInit {
   }
 
   // Also listen to window scroll as fallback
-  @HostListener('window:scroll', ['$event'])
+  @HostListener('window:scroll')
   onWindowScroll() {
     // Hide title when scrolled more than 100px
     this.isScrolled = window.pageYOffset > 100;
@@ -948,69 +948,71 @@ export class OpenInvoicesComponent implements OnInit {
       filtered = filtered.filter(invoice => invoice.status !== 'paid');
     }
 
-    // Apply search filter with flexible matching
+    // Apply search filter with strict matching
     if (this.searchTerm) {
-      // Normalize search term: remove all whitespace and convert to lowercase
-      const normalizedSearchTerm = this.searchTerm.replace(/\s+/g, '').toLowerCase();
+      // Normalize search term: trim and convert to lowercase, but keep structure
+      const searchTerm = this.searchTerm.trim().toLowerCase();
+      const searchTermNoSpaces = searchTerm.replace(/\s+/g, '');
       
       filtered = filtered.filter(invoice => {
-        // Normalize invoice number: remove whitespace and convert to lowercase
-        const normalizedInvoiceNumber = (invoice.invoice_number || '').replace(/\s+/g, '').toLowerCase();
+        // Check invoice number: match from start or exact match (allows some whitespace flexibility)
+        const invoiceNumber = (invoice.invoice_number || '').toLowerCase();
+        const invoiceNumberNoSpaces = invoiceNumber.replace(/\s+/g, '');
         
-        // Normalize supplier name: remove extra whitespace and convert to lowercase
-        const normalizedSupplierName = (invoice.supplier_name || '').replace(/\s+/g, ' ').trim().toLowerCase();
-        
-        // Check if search term matches invoice number (with whitespace ignored)
-        if (normalizedInvoiceNumber.includes(normalizedSearchTerm)) {
+        // Match if search term starts the invoice number (with or without spaces)
+        if (invoiceNumber.startsWith(searchTerm) || invoiceNumberNoSpaces.startsWith(searchTermNoSpaces)) {
           return true;
         }
         
-        // Check if search term matches supplier name (flexible whitespace matching)
-        if (normalizedSupplierName.includes(normalizedSearchTerm)) {
+        // Exact match (ignoring whitespace)
+        if (invoiceNumberNoSpaces === searchTermNoSpaces) {
           return true;
         }
         
-        // Check if search term matches amount (numeric search)
+        // Check supplier name: match whole words or from start of name
+        const supplierName = (invoice.supplier_name || '').toLowerCase().trim();
+        
+        // Match if search term starts the supplier name
+        if (supplierName.startsWith(searchTerm)) {
+          return true;
+        }
+        
+        // Match if search term matches a whole word in supplier name
+        const supplierWords = supplierName.split(/\s+/);
+        if (supplierWords.some(word => word === searchTerm || word.startsWith(searchTerm))) {
+          return true;
+        }
+        
+        // Check if search term matches amount (exact or partial from start)
         // Extract numbers from search term (handle both . and , as decimal separators)
-        const searchNumberStr = normalizedSearchTerm.replace(/[^\d.,-]/g, '');
+        const searchNumberStr = searchTerm.replace(/[^\d.,-]/g, '');
         if (searchNumberStr.length > 0) {
           // Try parsing with both comma and dot as decimal separator
           const searchWithDot = parseFloat(searchNumberStr.replace(',', '.'));
-          const searchWithComma = parseFloat(searchNumberStr.replace('.', ','));
-          const searchAsNumber = !isNaN(searchWithDot) ? searchWithDot : (!isNaN(searchWithComma) ? searchWithComma : null);
+          const searchAsNumber = !isNaN(searchWithDot) ? searchWithDot : null;
           
           if (searchAsNumber !== null && !isNaN(searchAsNumber)) {
             const invoiceAmount = typeof invoice.amount === 'string' ? parseFloat(invoice.amount) : invoice.amount || 0;
             
-            // Convert amount to string without decimals for partial matching (e.g., "1250" matches "1250.50")
-            const amountAsString = Math.abs(invoiceAmount).toString().replace(/\./g, '');
-            const searchAsString = Math.abs(searchAsNumber).toString().replace(/\./g, '');
-            
-            // Check if the search number is contained in the amount string (partial match)
-            if (amountAsString.includes(searchAsString) || searchAsString.includes(amountAsString)) {
-              return true;
-            }
-            
-            // Check exact match (within 0.01 difference to handle floating point precision)
+            // Exact match (within 0.01 difference to handle floating point precision)
             if (Math.abs(invoiceAmount - searchAsNumber) < 0.01) {
               return true;
             }
+            
+            // Partial match: check if search number matches the beginning of the amount
+            // Only if search has at least 2 digits to avoid too many false positives
+            const searchDigits = searchNumberStr.replace(/[^\d]/g, '');
+            if (searchDigits.length >= 2) {
+              // Convert amount to string without decimal point for comparison
+              const amountStr = Math.abs(invoiceAmount).toString().replace('.', '');
+              const searchStr = Math.abs(searchAsNumber).toString().replace('.', '');
+              
+              // Match if search string starts the amount string (e.g., "1250" matches "1250.50")
+              if (amountStr.startsWith(searchStr)) {
+                return true;
+              }
+            }
           }
-        }
-        
-        // Check if search term matches formatted amount string (e.g., "1.250,50" or "1250,50")
-        const invoiceAmount = typeof invoice.amount === 'string' ? parseFloat(invoice.amount) : invoice.amount || 0;
-        const formattedAmount = this.formatCurrency(invoiceAmount)
-          .replace(/\s+/g, '')
-          .replace(/€/g, '')
-          .toLowerCase();
-        
-        // Remove thousand separators and normalize decimal separator
-        const normalizedFormattedAmount = formattedAmount.replace(/\./g, '').replace(',', '.');
-        const normalizedSearchForAmount = normalizedSearchTerm.replace(/[^\d.,-]/g, '').replace(',', '.');
-        
-        if (normalizedSearchForAmount && normalizedFormattedAmount.includes(normalizedSearchForAmount)) {
-          return true;
         }
         
         return false;
