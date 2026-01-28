@@ -540,6 +540,12 @@ export class DeviceTrackingComponent implements OnInit, OnDestroy {
     return this.selectedDeviceId === deviceId;
   }
 
+  /** Gerätename für Anzeige (z. B. im device-header). Fallback: "Gerät &lt;id&gt;" */
+  getDeviceName(deviceId: number): string {
+    const device = this.availableDevices.find(d => d.id === deviceId);
+    return device?.name || `Gerät ${deviceId}`;
+  }
+
   hasValidCoordinates(position: PositionData): boolean {
     return position.latitude != null && 
            position.longitude != null && 

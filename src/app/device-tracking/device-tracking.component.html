@@ -94,7 +94,7 @@
                    (click)="selectAndZoomToDevice(position)">
                 <div class="device-header">
                   <div class="device-color" [style.background-color]="getDeviceColor(position.deviceId)"></div>
-                  <h3>Gerät {{ position.deviceId }}</h3>
+                  <h3>{{ getDeviceName(position.deviceId) }}</h3>
                 </div>
                 <div class="device-info">
                   <p class="device-location">
