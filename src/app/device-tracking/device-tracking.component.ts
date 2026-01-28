@@ -343,117 +343,94 @@ export class DeviceTrackingComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Invalidate size to fix rendering issues
-    if (this.map) {
-      setTimeout(() => {
-        if (this.map) {
-          this.map.invalidateSize();
-        }
-      }, 50);
-    }
-
-    if (!this.map || this.positions.length === 0) return;
-
-    // Update existing markers instead of clearing them
-    if (this.markers.length > 0 && this.positions.length === this.markers.length) {
-      this.updateExistingMarkers();
+    if (!this.map || this.positions.length === 0) {
+      this.markers.forEach(m => this.map.removeLayer(m));
+      this.markers = [];
+      this.addLegend(); // Legende leeren
       return;
     }
 
-    // Clear existing markers only if no markers exist yet or count changed
-    this.markers.forEach(marker => {
-      this.map.removeLayer(marker);
-    });
-    this.markers = [];
+    const validPositions = this.positions.filter(p =>
+      p.latitude != null && p.longitude != null &&
+      !isNaN(p.latitude) && !isNaN(p.longitude)
+    );
+    const currentDeviceIds = new Set(validPositions.map(p => p.deviceId));
+    const hadMarkers = this.markers.length > 0;
+    const previousDeviceIds = new Set(this.markers.map((m: any) => m.deviceId));
+    const deviceSetChanged = previousDeviceIds.size !== currentDeviceIds.size ||
+      [...previousDeviceIds].some((id: number) => !currentDeviceIds.has(id));
 
-    // Add new markers
-    this.positions.forEach(position => {
-      // Akzeptiere auch ungültige Positionen, aber nur wenn Koordinaten vorhanden
-      if (position.latitude && position.longitude && !isNaN(position.latitude) && !isNaN(position.longitude)) {
-        const color = this.getDeviceColor(position.deviceId);
-        
-        // Create custom icon with color
-        const icon = L.divIcon({
-          className: 'tracking-marker',
-          html: `<div style="background-color: ${color}; border: 2px solid white; width: 24px; height: 24px; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
-          iconSize: [24, 24],
-          iconAnchor: [12, 12]
-        });
+    // Marker nach deviceId finden (wird beim Anlegen gesetzt)
+    const getMarkerByDeviceId = (deviceId: number) =>
+      this.markers.find((m: any) => m.deviceId === deviceId);
 
-        const marker = L.marker([position.latitude, position.longitude], { 
-          icon: icon 
-        }).addTo(this.map);
-
-        // Create popup content
-        const speedKmh = position.speed * 3.6; // Convert m/s to km/h
-        const validIndicator = position.valid ? '🟢' : '🟡';
-        const popupContent = `
-          <div class="popup-content">
-            <h4 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600;">
-              ${validIndicator} Gerät ${position.deviceId}
-            </h4>
-            <div style="font-size: 12px; line-height: 1.6;">
-              ${position.address ? `<p style="margin: 4px 0;"><strong>Adresse:</strong><br>${position.address}</p>` : ''}
-              <p style="margin: 4px 0;"><strong>Status:</strong> ${position.valid ? 'Gültig' : 'Ungültig'}</p>
-              <p style="margin: 4px 0;"><strong>Geschwindigkeit:</strong> ${speedKmh.toFixed(1)} km/h</p>
-              ${position.attributes?.battery ? `<p style="margin: 4px 0;"><strong>Batterie:</strong> ${position.attributes.battery.toFixed(2)}V</p>` : ''}
-              ${position.attributes?.sat ? `<p style="margin: 4px 0;"><strong>Satelliten:</strong> ${position.attributes.sat}</p>` : ''}
-              ${position.attributes?.ignition !== undefined ? `<p style="margin: 4px 0;"><strong>Zündung:</strong> ${position.attributes.ignition ? '🟢 An' : '🔴 Aus'}</p>` : ''}
-              ${position.attributes?.motion !== undefined ? `<p style="margin: 4px 0;"><strong>Bewegung:</strong> ${position.attributes.motion ? '🟢 Ja' : '⚪ Nein'}</p>` : ''}
-              <p style="margin: 4px 0;"><strong>Letztes Update:</strong><br>${this.formatDateTime(position.fixTime)}</p>
-            </div>
-          </div>
-        `;
-
-        marker.bindPopup(popupContent);
+    // Bestehende Marker aktualisieren oder neue anlegen
+    for (const position of validPositions) {
+      const existing = getMarkerByDeviceId(position.deviceId);
+      if (existing) {
+        existing.setLatLng([position.latitude, position.longitude]);
+        existing.setPopupContent(this.buildMarkerPopupContent(position));
+      } else {
+        const marker = this.createPositionMarker(position);
+        (marker as any).deviceId = position.deviceId;
+        marker.addTo(this.map);
         this.markers.push(marker);
       }
+    }
+
+    // Marker entfernen, deren Gerät nicht mehr in den Positionen ist
+    const toRemove = this.markers.filter((m: any) => !currentDeviceIds.has(m.deviceId));
+    toRemove.forEach(m => {
+      this.map.removeLayer(m);
+      this.markers = this.markers.filter(mark => mark !== m);
     });
 
-    // Fit map to show all markers
-    if (this.markers.length > 0) {
+    // Nur beim ersten Mal Marker fitBounds, danach Karte nicht mehr verschieben
+    if (!hadMarkers && this.markers.length > 0) {
       const group = new L.featureGroup(this.markers);
       if (group.getBounds().isValid()) {
         this.map.fitBounds(group.getBounds().pad(0.1));
       }
+      this.addLegend();
+    } else if (deviceSetChanged) {
+      this.addLegend();
     }
-
-    // Add legend
-    this.addLegend();
   }
 
-  private updateExistingMarkers(): void {
-    // Update existing markers with new positions
-    this.positions.forEach((position, index) => {
-      // Akzeptiere auch ungültige Positionen, aber nur wenn Koordinaten vorhanden
-      if (position.latitude && position.longitude && !isNaN(position.latitude) && !isNaN(position.longitude)) {
-        const marker = this.markers[index];
-        if (marker) {
-          // Update marker position
-          marker.setLatLng([position.latitude, position.longitude]);
-          
-          // Update popup content
-          const speedKmh = position.speed * 3.6;
-          const popupContent = `
-            <div class="popup-content">
-              <h4 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600;">
-                🚗 Gerät ${position.deviceId}
-              </h4>
-              <div style="font-size: 12px; line-height: 1.6;">
-                ${position.address ? `<p style="margin: 4px 0;"><strong>Adresse:</strong><br>${position.address}</p>` : ''}
-                <p style="margin: 4px 0;"><strong>Geschwindigkeit:</strong> ${speedKmh.toFixed(1)} km/h</p>
-                ${position.attributes?.battery ? `<p style="margin: 4px 0;"><strong>Batterie:</strong> ${position.attributes.battery.toFixed(2)}V</p>` : ''}
-                ${position.attributes?.sat ? `<p style="margin: 4px 0;"><strong>Satelliten:</strong> ${position.attributes.sat}</p>` : ''}
-                ${position.attributes?.ignition !== undefined ? `<p style="margin: 4px 0;"><strong>Zündung:</strong> ${position.attributes.ignition ? '🟢 An' : '🔴 Aus'}</p>` : ''}
-                ${position.attributes?.motion !== undefined ? `<p style="margin: 4px 0;"><strong>Bewegung:</strong> ${position.attributes.motion ? '🟢 Ja' : '⚪ Nein'}</p>` : ''}
-                <p style="margin: 4px 0;"><strong>Letztes Update:</strong><br>${this.formatDateTime(position.fixTime)}</p>
-              </div>
-            </div>
-          `;
-          marker.setPopupContent(popupContent);
-        }
-      }
+  private buildMarkerPopupContent(position: PositionData): string {
+    const speedKmh = position.speed * 3.6;
+    const validIndicator = position.valid ? '🟢' : '🟡';
+    const name = this.getDeviceName(position.deviceId);
+    return `
+      <div class="popup-content">
+        <h4 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600;">
+          ${validIndicator} ${name}
+        </h4>
+        <div style="font-size: 12px; line-height: 1.6;">
+          ${position.address ? `<p style="margin: 4px 0;"><strong>Adresse:</strong><br>${position.address}</p>` : ''}
+          <p style="margin: 4px 0;"><strong>Status:</strong> ${position.valid ? 'Gültig' : 'Ungültig'}</p>
+          <p style="margin: 4px 0;"><strong>Geschwindigkeit:</strong> ${speedKmh.toFixed(1)} km/h</p>
+          ${position.attributes?.battery ? `<p style="margin: 4px 0;"><strong>Batterie:</strong> ${position.attributes.battery.toFixed(2)}V</p>` : ''}
+          ${position.attributes?.sat ? `<p style="margin: 4px 0;"><strong>Satelliten:</strong> ${position.attributes.sat}</p>` : ''}
+          ${position.attributes?.ignition !== undefined ? `<p style="margin: 4px 0;"><strong>Zündung:</strong> ${position.attributes.ignition ? '🟢 An' : '🔴 Aus'}</p>` : ''}
+          ${position.attributes?.motion !== undefined ? `<p style="margin: 4px 0;"><strong>Bewegung:</strong> ${position.attributes.motion ? '🟢 Ja' : '⚪ Nein'}</p>` : ''}
+          <p style="margin: 4px 0;"><strong>Letztes Update:</strong><br>${this.formatDateTime(position.fixTime)}</p>
+        </div>
+      </div>
+    `;
+  }
+
+  private createPositionMarker(position: PositionData): any {
+    const color = this.getDeviceColor(position.deviceId);
+    const icon = L.divIcon({
+      className: 'tracking-marker',
+      html: `<div style="background-color: ${color}; border: 2px solid white; width: 24px; height: 24px; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
+      iconSize: [24, 24],
+      iconAnchor: [12, 12]
     });
+    const marker = L.marker([position.latitude, position.longitude], { icon });
+    marker.bindPopup(this.buildMarkerPopupContent(position));
+    return marker;
   }
 
   private addLegend(): void {
@@ -525,13 +502,8 @@ export class DeviceTrackingComponent implements OnInit, OnDestroy {
     // Setze ausgewähltes Gerät
     this.selectedDeviceId = position.deviceId;
     
-    // Finde den Marker für dieses Gerät
-    const markerIndex = this.positions.findIndex(p => p.deviceId === position.deviceId);
-    
-    if (markerIndex !== -1 && this.markers[markerIndex] && this.map) {
-      const marker = this.markers[markerIndex];
-      
-      // Öffne nur das Popup, ohne zu zoomen
+    const marker = this.markers.find((m: any) => m.deviceId === position.deviceId);
+    if (marker && this.map) {
       marker.openPopup();
     }
   }
