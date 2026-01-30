@@ -181,7 +181,7 @@
           </thead>
           <tbody>
             @for (order of filteredOrders; track order.order_id) {
-              <tr class="order-row" (click)="onOrderClick(order)">
+              <tr class="order-row" (click)="openDetailsAfterReload(order)">
                 <td class="order-id">{{ order.order_id }}</td>
                 <td class="order-date">{{ order.order_date | date: 'dd.MM.yyyy' }}</td>
                 <td class="customer-number">{{ order.customer_number || '-' }}</td>
@@ -195,21 +195,21 @@
                 <td class="total-price">{{ getOrderTotalGross(order) | currency:'EUR':'symbol':'1.2-2' }}</td>
                 <td class="actions-cell">
                   <div class="action-buttons">
-                    <button class="view-btn" (click)="onOrderClick(order); $event.stopPropagation()">
+                    <button class="view-btn" (click)="openDetailsAfterReload(order); $event.stopPropagation()">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                       </svg>
                       Details
                     </button>
-                    <button class="print-btn" (click)="generatePdf(order); $event.stopPropagation()" title="Kommissionierungsschein drucken">
+                    <button class="print-btn" (click)="printAfterReload(order); $event.stopPropagation()" title="Kommissionierungsschein drucken">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
                       </svg>
                       Drucken
                     </button>
                     @if (isOrderEditable(order)) {
-                      <button class="edit-btn" (click)="editOrder(order); $event.stopPropagation()" title="Bestellung bearbeiten">
+                      <button class="edit-btn" (click)="editOrderAfterReload(order); $event.stopPropagation()" title="Bestellung bearbeiten">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                         </svg>
@@ -233,7 +233,7 @@
       <!-- Mobile Card View -->
       <div class="cards-container mobile-view">
         @for (order of filteredOrders; track order.order_id) {
-        <div class="order-card" (click)="onOrderClick(order)">
+        <div class="order-card" (click)="openDetailsAfterReload(order)">
           <div class="card-header">
             <div class="order-info">
               <h3 class="order-id">#{{ order.order_id }}</h3>
@@ -264,21 +264,21 @@
           </div>
           
           <div class="card-actions" (click)="$event.stopPropagation()">
-            <button class="view-btn" (click)="onOrderClick(order)">
+            <button class="view-btn" (click)="openDetailsAfterReload(order)">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
               </svg>
               Details
             </button>
-            <button class="print-btn" (click)="generatePdf(order)" title="Kommissionierungsschein drucken">
+            <button class="print-btn" (click)="printAfterReload(order)" title="Kommissionierungsschein drucken">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
               </svg>
               Drucken
             </button>
             @if (isOrderEditable(order)) {
-              <button class="edit-btn" (click)="editOrder(order)" title="Bestellung bearbeiten">
+              <button class="edit-btn" (click)="editOrderAfterReload(order)" title="Bestellung bearbeiten">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                 </svg>
@@ -580,7 +580,7 @@
         <div class="modal-footer">
           <button class="btn-secondary" (click)="closeOrderDetails()">Schließen</button>
           @if (selectedOrder.status === 'open') {
-            <button class="btn-edit" (click)="editOrder(selectedOrder)">
+            <button class="btn-edit" (click)="editOrderAfterReload(selectedOrder)">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
               </svg>
@@ -594,7 +594,7 @@
               In Customer Orders importieren
             </button>
           }
-          <button class="btn-primary" (click)="generatePdf(selectedOrder)">
+          <button class="btn-primary" (click)="printAfterReload(selectedOrder)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
             </svg>

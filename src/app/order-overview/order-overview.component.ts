@@ -5,6 +5,8 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { jsPDF } from 'jspdf';
 import { Router } from '@angular/router';
+import { Observable, of } from 'rxjs';
+import { tap, catchError } from 'rxjs/operators';
 import { AuthService } from '../authentication.service';
 import { OrderService } from '../order.service';
 import { GlobalService } from '../global.service';
@@ -94,14 +96,14 @@ export class OrderOverviewComponent implements OnInit {
 
   ngOnInit(): void {
     this.checkUserRole();
-    this.loadOrders();
+    this.loadOrders().subscribe();
     this.loadCustomers();
     this.loadAllArtikels();
     this.loadDateFiltersFromLocalStorage();
   }
 
   reloadOrders(): void {
-    this.loadOrders();
+    this.loadOrders().subscribe();
     this.loadCustomers();
     this.loadAllArtikels();
   }
@@ -137,31 +139,36 @@ export class OrderOverviewComponent implements OnInit {
     });
   }
 
-  loadOrders() {
+  /**
+   * Lädt alle Bestellungen. Gibt ein Observable zurück, damit nach dem Laden
+   * weitere Aktionen ausgeführt werden können (z. B. Details, Drucken, Bearbeiten).
+   */
+  loadOrders(): Observable<OrdersResponse> {
     this.isLoading = true;
     const token = localStorage.getItem('token');
-    
+
     if (!token) {
       this.router.navigate(['/login']);
-      return;
+      this.isLoading = false;
+      return of({ orders: [] });
     }
 
     const headers = new HttpHeaders({
       'Authorization': `Bearer ${token}`
     });
 
-    this.http.get<OrdersResponse>(`${environment.apiUrl}/api/orders/all-orders`, { headers })
-      .subscribe({
-        next: (response) => {
-          this.orders = response.orders || [];
-          this.isLoading = false;
-        },
-        error: (error) => {
-          console.error('Fehler beim Laden der Bestellungen:', error);
-          this.orders = [];
-          this.isLoading = false;
-        }
-      });
+    return this.http.get<OrdersResponse>(`${environment.apiUrl}/api/orders/all-orders`, { headers }).pipe(
+      tap((response) => {
+        this.orders = response.orders || [];
+        this.isLoading = false;
+      }),
+      catchError((error) => {
+        console.error('Fehler beim Laden der Bestellungen:', error);
+        this.orders = [];
+        this.isLoading = false;
+        return of({ orders: [] });
+      })
+    );
   }
 
   private customersByNumber: Record<string, any> = {}; // Vollständige Kundendaten
@@ -352,6 +359,44 @@ export class OrderOverviewComponent implements OnInit {
 
   onOrderClick(order: Order) {
     this.selectedOrder = order;
+  }
+
+  /**
+   * Lädt alle Bestellungen neu und führt danach die gewünschte Aktion aus.
+   * So wird immer mit aktuellen Daten gearbeitet (Details, Drucken, Bearbeiten).
+   */
+  private getOrderAfterReload(orderId: number): Order | undefined {
+    return this.orders.find(o => o.order_id === orderId);
+  }
+
+  /** Erst Bestellungen neu laden, dann Details anzeigen. */
+  openDetailsAfterReload(order: Order): void {
+    this.loadOrders().subscribe({
+      next: () => {
+        const refreshed = this.getOrderAfterReload(order.order_id) ?? order;
+        this.onOrderClick(refreshed);
+      }
+    });
+  }
+
+  /** Erst Bestellungen neu laden, dann PDF drucken. */
+  printAfterReload(order: Order): void {
+    this.loadOrders().subscribe({
+      next: () => {
+        const refreshed = this.getOrderAfterReload(order.order_id) ?? order;
+        this.generatePdf(refreshed);
+      }
+    });
+  }
+
+  /** Erst Bestellungen neu laden, dann Bearbeiten ausführen. */
+  editOrderAfterReload(order: Order): void {
+    this.loadOrders().subscribe({
+      next: () => {
+        const refreshed = this.getOrderAfterReload(order.order_id) ?? order;
+        this.editOrder(refreshed);
+      }
+    });
   }
 
   closeOrderDetails() {
@@ -1382,7 +1427,7 @@ export class OrderOverviewComponent implements OnInit {
     
     // Lade die Bestellungen neu, um den aktuellen Status zu aktualisieren
     console.log('🔄 [CLOSE-WARNING] Lade Bestellungen neu nach Warnung...');
-    this.loadOrders();
+    this.loadOrders().subscribe();
   }
 
   // Hilfsmethode um MwSt-Rate basierend auf tax_code zu bekommen
