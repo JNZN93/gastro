@@ -10,7 +10,8 @@
   <link rel="icon" type="image/x-icon" href="logo.webp">
   <meta name="theme-color" content="#1976d2">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <!-- default = System-Standard (kein erzwungener schwarzer Balken, weniger dunkler Eindruck) -->
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Gastro Depot">
   <link rel="apple-touch-icon" href="logo.webp">
   <link rel="manifest" href="/manifest.json">
@@ -21,6 +22,10 @@
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=barcode,receipt_long" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <!-- Heller Hintergrund sofort (vermeidet dunklen First-Paint auf einigen Smartphones nach QR-Scan) -->
+  <style>
+    html, body { background-color: #f5f5f5; margin: 0; padding: 0; }
+  </style>
 </head>
 <body class="mat-typography">
   <app-root></app-root>
