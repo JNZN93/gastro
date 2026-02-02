@@ -4,7 +4,7 @@
   font-family: 'Poppins', sans-serif;
   margin-top: 0;
   padding-top: 100px; // Platz für sticky header
-  padding-bottom: 100px; // Platz für FAB
+  padding-bottom: 2rem; // FAB ist im Dokumentfluss
 }
 
 /* Sticky Header mit Warenkorb */
@@ -773,13 +773,10 @@
   }
 }
 
-/* Floating Action Button für Mobile */
+/* Floating Action Button für Mobile – im Dokumentfluss (nicht fixed, bessere Smartphone-Kompatibilität) */
 .fab-container {
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 1000;
+  position: relative;
+  margin: 1.5rem auto;
   width: calc(100% - 40px);
   max-width: 400px;
   
@@ -1929,15 +1926,14 @@
   text-align: center;
   margin: 2rem 0;
   
-  // Mobile: Extra Abstand nach unten für FAB
   @media (max-width: 768px) {
-    margin: 2rem 0 8rem 0; // 8rem Abstand für den FAB Button
-    padding-bottom: 2rem; // Zusätzliches Padding
+    margin: 2rem 0;
+    padding-bottom: 1rem;
   }
   
   @media (max-width: 480px) {
-    margin: 1.5rem 0 9rem 0; // Noch mehr Abstand auf kleinen Bildschirmen
-    padding-bottom: 2.5rem;
+    margin: 1.5rem 0;
+    padding-bottom: 1rem;
   }
   
   .custom-article-heading {
@@ -1979,15 +1975,14 @@
 .custom-article-form {
   margin: 2rem 0;
   
-  // Mobile: Extra Abstand nach unten für FAB
   @media (max-width: 768px) {
-    margin: 2rem 0 8rem 0; // 8rem Abstand für den FAB Button
-    padding-bottom: 2rem; // Zusätzliches Padding
+    margin: 2rem 0;
+    padding-bottom: 1rem;
   }
   
   @media (max-width: 480px) {
-    margin: 1.5rem 0 9rem 0; // Noch mehr Abstand auf kleinen Bildschirmen
-    padding-bottom: 2.5rem;
+    margin: 1.5rem 0;
+    padding-bottom: 1rem;
   }
   
   h3 {
@@ -2480,25 +2475,111 @@
   .offers-validity-header {
     margin: 1rem 0;
     padding: 0.75rem 1rem;
+    max-width: 100%;
+    box-sizing: border-box;
     
     .validity-header-content {
       gap: 0.5rem;
+      min-width: 0;
       
       .validity-header-label {
         font-size: 1rem;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
       }
       
       .offers-validity-list {
         flex-direction: column;
         gap: 0.5rem;
-        align-items: center;
+        align-items: stretch;
+        min-width: 0;
         
         .offer-validity-item {
           padding: 0.4rem 0.8rem;
           font-size: 0.9rem;
           text-align: center;
           width: 100%;
-          max-width: 300px;
+          max-width: none;
+          box-sizing: border-box;
+          word-wrap: break-word;
+          overflow-wrap: break-word;
+        }
+      }
+    }
+  }
+}
+
+/* ===== Nur "Aktuelle Angebote" responsive ===== */
+/* Kategorie-Header "Aktuelle Angebote" – Umbruch und kompakte Darstellung */
+@media (max-width: 768px) {
+  .category-header-mobile.offers-category .category-title,
+  .category-header.offers-category .category-title {
+    flex-wrap: wrap;
+    padding: 0.6rem 1rem;
+    gap: 0.5rem;
+    
+    .category-name {
+      flex: 1 1 100%;
+      min-width: 0;
+      font-size: 1rem;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      padding-right: 2rem; /* Platz für Toggle-Icon */
+    }
+    
+    .category-count {
+      flex: 1 1 auto;
+      font-size: 0.85rem;
+    }
+    
+    .category-toggle-icon {
+      position: absolute;
+      top: 50%;
+      right: 1rem;
+      transform: translateY(-50%);
+    }
+  }
+}
+
+@media (min-width: 769px) {
+  .category-header.offers-category .category-title {
+    .category-name {
+      min-width: 0;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+    }
+  }
+}
+
+/* Angebots-Karten unter "Aktuelle Angebote" – responsive Preise/Badges */
+@media (max-width: 768px) {
+  .category-header-mobile.offers-category + .category-content .product-card .card-header {
+    flex-wrap: wrap;
+    
+    .article-price {
+      flex: 1 1 100%;
+      min-width: 0;
+      margin-top: 0.5rem;
+      
+      .offer-price-container {
+        width: 100%;
+        max-width: 100%;
+        text-align: left;
+        
+        .offer-badge {
+          font-size: 0.65rem;
+          padding: 0.2rem 0.4rem;
+          max-width: 100%;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        
+        .price-with-offer .offer-price {
+          font-size: 1rem;
+        }
+        
+        .offer-limits {
+          font-size: 0.65rem;
         }
       }
     }
