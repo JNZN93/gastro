@@ -948,73 +948,77 @@ export class OpenInvoicesComponent implements OnInit {
       filtered = filtered.filter(invoice => invoice.status !== 'paid');
     }
 
-    // Apply search filter with strict matching
+    // Apply search filter: one search box matches all fields (Name, Rechnungsnummer, Datum, Betrag, Status), precisely
     if (this.searchTerm) {
-      // Normalize search term: trim and convert to lowercase, but keep structure
       const searchTerm = this.searchTerm.trim().toLowerCase();
       const searchTermNoSpaces = searchTerm.replace(/\s+/g, '');
-      
+
       filtered = filtered.filter(invoice => {
-        // Check invoice number: match from start or exact match (allows some whitespace flexibility)
+        // 1) Rechnungsnummer: exakt, beginnt mit oder enthält (ohne Leerzeichen)
         const invoiceNumber = (invoice.invoice_number || '').toLowerCase();
         const invoiceNumberNoSpaces = invoiceNumber.replace(/\s+/g, '');
-        
-        // Match if search term starts the invoice number (with or without spaces)
-        if (invoiceNumber.startsWith(searchTerm) || invoiceNumberNoSpaces.startsWith(searchTermNoSpaces)) {
+        if (
+          invoiceNumber.startsWith(searchTerm) ||
+          invoiceNumberNoSpaces.startsWith(searchTermNoSpaces) ||
+          invoiceNumberNoSpaces === searchTermNoSpaces ||
+          (searchTermNoSpaces.length >= 2 && invoiceNumberNoSpaces.includes(searchTermNoSpaces))
+        ) {
           return true;
         }
-        
-        // Exact match (ignoring whitespace)
-        if (invoiceNumberNoSpaces === searchTermNoSpaces) {
-          return true;
-        }
-        
-        // Check supplier name: match whole words or from start of name
+
+        // 2) Lieferant/Name: beginnt mit, exaktes Wort oder Wort beginnt mit Suchbegriff
         const supplierName = (invoice.supplier_name || '').toLowerCase().trim();
-        
-        // Match if search term starts the supplier name
-        if (supplierName.startsWith(searchTerm)) {
-          return true;
-        }
-        
-        // Match if search term matches a whole word in supplier name
+        if (supplierName.startsWith(searchTerm)) return true;
         const supplierWords = supplierName.split(/\s+/);
-        if (supplierWords.some(word => word === searchTerm || word.startsWith(searchTerm))) {
-          return true;
+        if (supplierWords.some(word => word === searchTerm || word.startsWith(searchTerm))) return true;
+        if (searchTerm.length >= 2 && supplierName.includes(searchTerm)) return true;
+
+        // 3) Datum: Rechnungsdatum und Fälligkeitsdatum (verschiedene Formate)
+        const normDate = (d: string) => (d || '').replace(/\s/g, '');
+        const invoiceDateStr = normDate(invoice.date || '');
+        const dueDateStr = normDate(invoice.due_date || '');
+        // Suchbegriff als Datum interpretieren: YYYY-MM-DD, DD.MM.YYYY, DD.MM.YY, DD.MM., YYYY-MM
+        const searchDateNorm = searchTerm.replace(/\./g, '-').replace(/\s/g, '');
+        if (searchDateNorm.length >= 4) {
+          const yyyyMmDd = this.parseSearchTermToYyyyMmDd(searchTerm, searchDateNorm);
+          if (yyyyMmDd) {
+            if (invoiceDateStr.includes(yyyyMmDd) || dueDateStr.includes(yyyyMmDd)) return true;
+          }
+          if (/^\d{4}-\d{2}$/.test(searchDateNorm) && (invoiceDateStr.startsWith(searchDateNorm) || dueDateStr.startsWith(searchDateNorm))) return true;
         }
-        
-        // Check if search term matches amount (exact or partial from start)
-        // Extract numbers from search term (handle both . and , as decimal separators)
-        const searchNumberStr = searchTerm.replace(/[^\d.,-]/g, '');
-        if (searchNumberStr.length > 0) {
-          // Try parsing with both comma and dot as decimal separator
-          const searchWithDot = parseFloat(searchNumberStr.replace(',', '.'));
-          const searchAsNumber = !isNaN(searchWithDot) ? searchWithDot : null;
-          
-          if (searchAsNumber !== null && !isNaN(searchAsNumber)) {
-            const invoiceAmount = typeof invoice.amount === 'string' ? parseFloat(invoice.amount) : invoice.amount || 0;
-            
-            // Exact match (within 0.01 difference to handle floating point precision)
-            if (Math.abs(invoiceAmount - searchAsNumber) < 0.01) {
-              return true;
-            }
-            
-            // Partial match: check if search number matches the beginning of the amount
-            // Only if search has at least 2 digits to avoid too many false positives
-            const searchDigits = searchNumberStr.replace(/[^\d]/g, '');
-            if (searchDigits.length >= 2) {
-              // Convert amount to string without decimal point for comparison
-              const amountStr = Math.abs(invoiceAmount).toString().replace('.', '');
-              const searchStr = Math.abs(searchAsNumber).toString().replace('.', '');
-              
-              // Match if search string starts the amount string (e.g., "1250" matches "1250.50")
-              if (amountStr.startsWith(searchStr)) {
-                return true;
+        if (invoiceDateStr.includes(searchTermNoSpaces) || dueDateStr.includes(searchTermNoSpaces)) return true;
+
+        // 4) Betrag: nur wenn Suchbegriff wie Betrag aussieht (keine Buchstaben), sonst würden z.B. "RE26-0800339" als 26€ getroffen
+        const looksLikeAmount = !/[a-zA-Z]/.test(searchTerm);
+        if (looksLikeAmount) {
+          const searchNumberStr = searchTerm.replace(/[^\d.,-]/g, '');
+          if (searchNumberStr.length > 0) {
+            const searchWithDot = parseFloat(searchNumberStr.replace(',', '.'));
+            const searchAsNumber = !isNaN(searchWithDot) ? searchWithDot : null;
+            if (searchAsNumber !== null && !isNaN(searchAsNumber)) {
+              const invoiceAmount = typeof invoice.amount === 'string' ? parseFloat(invoice.amount) : invoice.amount || 0;
+              if (Math.abs(invoiceAmount - searchAsNumber) < 0.01) return true;
+              const searchDigits = searchNumberStr.replace(/[^\d]/g, '');
+              if (searchDigits.length >= 2) {
+                const amountStr = Math.abs(invoiceAmount).toString().replace('.', '');
+                const searchStr = Math.abs(searchAsNumber).toString().replace('.', '');
+                if (amountStr.startsWith(searchStr)) return true;
               }
             }
           }
         }
-        
+
+        // 5) Status: Offen, Bezahlt, Überfällig, SEPA (Stichwörter)
+        const statusMap: Record<string, string[]> = {
+          open: ['offen', 'open'],
+          paid: ['bezahlt', 'paid'],
+          overdue: ['überfällig', 'overdue'],
+          sepa: ['sepa']
+        };
+        for (const [status, keywords] of Object.entries(statusMap)) {
+          if (invoice.status === status && keywords.some(kw => searchTerm === kw || searchTerm.startsWith(kw))) return true;
+        }
+
         return false;
       });
     }
@@ -1252,6 +1256,33 @@ export class OpenInvoicesComponent implements OnInit {
         this.loadInvoices();
       }
     }
+  }
+
+  // Parse user search input to YYYY-MM-DD for precise date matching (DD.MM.YYYY, DD.MM.YY, YYYY-MM-DD)
+  private parseSearchTermToYyyyMmDd(searchTerm: string, searchDateNorm: string): string | null {
+    // YYYY-MM-DD (e.g. 2024-09-01)
+    const isoMatch = searchDateNorm.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (isoMatch) {
+      const [, yStr, mStr, dStr] = isoMatch;
+      const y = parseInt(yStr!, 10);
+      const m = parseInt(mStr!, 10);
+      const d = parseInt(dStr!, 10);
+      if (y >= 1900 && y <= 2100 && m >= 1 && m <= 12 && d >= 1 && d <= 31) {
+        return `${y}-${mStr}-${dStr}`;
+      }
+    }
+    // DD.MM.YYYY or DD.MM.YY (e.g. 01.09.2024 or 01.09.24)
+    const dotParts = searchTerm.split('.').map(p => p.trim()).filter(p => /^\d+$/.test(p));
+    if (dotParts.length >= 2 && dotParts[0].length <= 2 && dotParts[1].length <= 2) {
+      const d = parseInt(dotParts[0], 10);
+      const m = parseInt(dotParts[1], 10);
+      let y = dotParts[2] ? parseInt(dotParts[2], 10) : new Date().getFullYear();
+      if (y < 100) y += y < 50 ? 2000 : 1900;
+      if (y >= 1900 && y <= 2100 && m >= 1 && m <= 12 && d >= 1 && d <= 31) {
+        return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      }
+    }
+    return null;
   }
 
   // Normalize date values from API to ensure consistent format
