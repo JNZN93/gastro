@@ -10,7 +10,7 @@
         <div class="cart-summary">
           <span class="cart-icon">🛒</span>
           <span class="cart-count" *ngIf="getCartItemCount() > 0">{{ getCartItemCount() }}</span>
-          <span class="cart-total">€{{ toNumber(getOrderTotal()).toFixed(2) }}</span>
+          <span class="cart-total">€{{ toNumber(getOrderTotalNet()).toFixed(2) }}</span>
         </div>
       </div>
     </div>
@@ -84,7 +84,7 @@
       
       <!-- Preis-Hinweis kompakt -->
       <div class="price-disclaimer-compact">
-        <small>ℹ️ Preise können abweichen</small>
+        <small>ℹ️ Alle Preise Nettopreise (zzgl. MwSt.). Preise können abweichen.</small>
       </div>
 
 
@@ -137,7 +137,7 @@
                     {{ article.offerName }}
                   </div>
                   <div class="price-with-offer">
-                    <span class="offer-price">€{{ getOfferGrossPrice(article).toFixed(2) }}</span>
+                    <span class="offer-price">€{{ getOfferNetPrice(article).toFixed(2) }}</span>
                   </div>
                   <div *ngIf="article.offerMinQuantity || article.offerMaxQuantity" class="offer-limits">
                     <small>
@@ -148,7 +148,7 @@
                 </div>
                 <!-- Normaler Preis ohne Angebot -->
                 <div *ngIf="!article.hasOffer" class="normal-price">
-                  €{{ getGrossPrice(article).toFixed(2) }}
+                  €{{ getNetPrice(article).toFixed(2) }}
                 </div>
               </div>
               </div>
@@ -235,7 +235,7 @@
                     {{ article.offerName }}
                   </div>
                   <div class="price-with-offer">
-                    <span class="offer-price">€{{ getOfferGrossPrice(article).toFixed(2) }}</span>
+                    <span class="offer-price">€{{ getOfferNetPrice(article).toFixed(2) }}</span>
                   </div>
                   <div *ngIf="article.offerMinQuantity || article.offerMaxQuantity" class="offer-limits">
                     <small>
@@ -246,7 +246,7 @@
                 </div>
                 <!-- Normaler Preis ohne Angebot -->
                 <div *ngIf="!article.hasOffer" class="normal-price">
-                  €{{ getGrossPrice(article).toFixed(2) }}
+                  €{{ getNetPrice(article).toFixed(2) }}
                 </div>
               </div>
               <div class="col-qty">
@@ -435,7 +435,7 @@
       <h2>Bestellung abschließen</h2>
       
       <div class="order-total">
-        <h3>Gesamtpreis: €{{ toNumber(getOrderTotal()).toFixed(2) }}</h3>
+        <h3>Gesamtpreis: €{{ toNumber(getOrderTotalNet()).toFixed(2) }}</h3>
       </div>
 
       <div class="order-actions">
@@ -460,7 +460,7 @@
         <span class="fab-icon">🛒</span>
         <span class="fab-text">
           <span class="fab-count" *ngIf="getCartItemCount() > 0">{{ getCartItemCount() }}</span>
-          <span class="fab-total">€{{ toNumber(getOrderTotal()).toFixed(2) }}</span>
+          <span class="fab-total">€{{ toNumber(getOrderTotalNet()).toFixed(2) }}</span>
         </span>
         <span class="fab-label">Bestellung überprüfen</span>
       </button>
@@ -536,7 +536,7 @@
       <div class="order-summary-section">
         <div class="summary-row">
           <span class="label">Gesamtpreis:</span>
-          <span class="value total-price">€{{ toNumber(getOrderTotal()).toFixed(2) }}</span>
+          <span class="value total-price">€{{ toNumber(getOrderTotalNet()).toFixed(2) }}</span>
         </div>
       </div>
     </div>
