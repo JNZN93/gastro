@@ -523,25 +523,30 @@
   box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
 }
 
-/* Gemeinsame Kategorie-Header Basis-Styles */
+/* Gemeinsame Kategorie-Header Basis-Styles – sticky direkt unter dem Suchfeld für einfaches Auf-/Zuklappen */
 .category-header, .category-header-mobile {
   cursor: pointer;
   transition: all 0.3s ease;
   margin: 2rem 0 1rem 0;
   overflow: visible;
-  
+  position: sticky;
+  /* Unter sticky-header + Suchfeld: Suchfeld klebt bei top 80px (Desktop) / 70px (Mobile), plus Höhe Suchbereich */
+  top: 145px; /* Desktop: 80px (Suchfeld-top) + ~65px (Suchfeld-Höhe) */
+  z-index: 98; /* Unter .sticky-search (z-index 999), über Inhalt */
+
   @media (max-width: 768px) {
     margin: 1rem 0 0.75rem 0;
+    top: 130px; /* Mobile: 70px + ~60px Suchfeld */
   }
-  
+
   &:hover {
     transform: translateY(-2px);
   }
-  
+
   &:active {
     transform: translateY(0);
   }
-  
+
   .category-title {
     background: linear-gradient(135deg, #2c3e50, #34495e);
     color: white;
@@ -555,23 +560,30 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
+    gap: 0.75rem;
     position: relative;
-    overflow: visible;
+    overflow: hidden;
+    flex-wrap: nowrap;
     
     .category-name {
-      flex: 1;
+      flex: 1 1 auto;
+      min-width: 0;
       text-align: left;
       color: white;
       font-weight: 600;
       font-size: 1.1rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     
     .category-count {
+      flex-shrink: 0;
       font-size: 0.9rem;
       opacity: 0.8;
       font-weight: 400;
       color: rgba(255, 255, 255, 0.9);
+      white-space: nowrap;
     }
     
     .category-badge {
@@ -2509,44 +2521,32 @@
   }
 }
 
-/* ===== Nur "Aktuelle Angebote" responsive ===== */
-/* Kategorie-Header "Aktuelle Angebote" – Umbruch und kompakte Darstellung */
+/* ===== Kategorie-Header: name + count immer eine Zeile (auch "Aktuelle Angebote" auf Mobile) ===== */
 @media (max-width: 768px) {
   .category-header-mobile.offers-category .category-title,
   .category-header.offers-category .category-title {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     padding: 0.6rem 1rem;
     gap: 0.5rem;
     
     .category-name {
-      flex: 1 1 100%;
+      flex: 1 1 auto;
       min-width: 0;
       font-size: 1rem;
-      word-wrap: break-word;
-      overflow-wrap: break-word;
-      padding-right: 2rem; /* Platz für Toggle-Icon */
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding-right: 0.5rem;
     }
     
     .category-count {
-      flex: 1 1 auto;
+      flex-shrink: 0;
       font-size: 0.85rem;
+      white-space: nowrap;
     }
     
     .category-toggle-icon {
-      position: absolute;
-      top: 50%;
-      right: 1rem;
-      transform: translateY(-50%);
-    }
-  }
-}
-
-@media (min-width: 769px) {
-  .category-header.offers-category .category-title {
-    .category-name {
-      min-width: 0;
-      word-wrap: break-word;
-      overflow-wrap: break-word;
+      flex-shrink: 0;
     }
   }
 }
