@@ -1,22 +1,23 @@
 .gd-flyer {
   min-height: 100vh;
-  background: #ffffff;
+  background: #e5e7eb; /* neutraler, heller Seitenhintergrund */
   font-family: 'Poppins', sans-serif;
+  padding: 10mm 0;
 }
 
 .a4 {
   width: 210mm;
-  height: 420mm; /* increased height further for more content space on screen */
-  margin: 0 auto;
-  background: #222327;
-  color: #fff;
+  height: 420mm; /* Screen-Layout, Print bleibt DIN A4 in @media print */
+  margin: 0 auto 25mm;
+  background: #f1f5f9; /* helles Grau mit dezentem Blaustich, passt zum dunklen Header */
+  color: #111827;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  border-radius: 4mm;
+  box-shadow: 0 18px 60px rgba(15, 23, 42, 0.18);
+  border: 0.4mm solid #d1d5db;
 }
-
-/* large visual spacing between multiple flyers on screen */
-.a4 + .a4 { margin-top: 25mm; }
 
 /* Temporär: Nur die erste Flyer-Seite anzeigen */
 .a4:not(:first-of-type) {
@@ -26,87 +27,152 @@
 .gd-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  padding: 2.5mm 5.5mm; /* more compact */
-  gap: 2.5mm;
-  background: #222327;
+  align-items: flex-start;
+  padding: 8mm 9mm 5mm;
+  gap: 6mm;
+  background: #111827; /* dunkler Kopfbereich */
+  border-bottom: 0.4mm solid #111827;
 }
 
 .header-left {
   display: flex;
   flex-direction: column;
-  gap: 1.5mm; /* more compact */
+  gap: 3mm;
 }
 
 .stock-pill {
   align-self: flex-start;
-  background: #e53935;
-  color: #fff;
-  padding: 0.7mm 2.8mm; /* more compact */
-  border-radius: 6mm;
-  font-weight: 700;
+  background: rgba(15, 23, 42, 0.7);
+  color: #f9fafb;
+  padding: 0.8mm 4mm;
+  border-radius: 999px;
+  font-weight: 600;
   font-size: 2.6mm;
+  border: 0.3mm solid rgba(156, 163, 175, 0.8);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
 }
 
 .info-row {
   display: flex;
-  gap: 1.5mm; /* more compact */
-}
-
-.info-box.green {
-  background: #9acd32;
-  color: #fff;
-  border-radius: 2mm;
-  padding: 1.8mm 3.2mm; /* more compact */
-}
-.quality .quality-text { font-weight: 700; font-size: 3.2mm; line-height: 1.15; }
-.times .times-title { font-weight: 900; font-size: 3.2mm; margin-bottom: .6mm; }
-.times .times-line { font-weight: 600; font-size: 2.9mm; }
-
-.headline-container {
-  display: flex;
-  align-items: center;
+  flex-wrap: wrap;
   gap: 3mm;
 }
 
+.info-box.green {
+  background: #1f2937;
+  color: #f9fafb;
+  border-radius: 2.2mm;
+  padding: 2.2mm 3.8mm;
+  border: 0.3mm solid #4b5563;
+  backdrop-filter: none;
+}
+.quality .quality-text {
+  font-weight: 600;
+  font-size: 3mm;
+  line-height: 1.4;
+}
+.times .times-title {
+  font-weight: 700;
+  font-size: 3mm;
+  margin-bottom: 0.8mm;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+}
+.times .times-line {
+  font-weight: 500;
+  font-size: 2.7mm;
+  display: flex;
+  align-items: baseline;
+  gap: 0;
+}
+.times .times-days {
+  width: 12.5mm; /* feste Breite, Uhrzeiten exakt untereinander */
+  flex-shrink: 0;
+  display: inline-block;
+}
+.times .times-range {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em; /* einheitlicher Abstand der Ziffern */
+}
+
+.headline-container {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 4mm;
+}
+
 .headline-red {
-  background: #e53935;
-  color: #fff;
-  padding: 1.8mm 4.2mm; /* more compact */
-  border-radius: 2mm;
-  font-size: 8.2mm; /* slightly smaller */
-  font-weight: 900;
-  letter-spacing: .1mm;
+  background: transparent;
+  color: #f9fafb;
+  padding: 0;
+  border-radius: 0;
+  font-size: 10mm;
+  font-weight: 800;
+  letter-spacing: 0.04em;
   width: fit-content;
+  text-transform: uppercase;
+}
+
+.headline-red::after {
+  content: '';
+  display: block;
+  margin-top: 2mm;
+  width: 34mm;
+  height: 1.4mm;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #f97316, #ef4444);
 }
 
 .headline-description {
-  background: #ff8c00; /* orange color */
-  color: #fff;
-  padding: 3.4mm 4.2mm; /* adjusted padding to match height of offer name container */
-  border-radius: 2mm;
-  font-size: 6.2mm; /* smaller font size than offer name */
-  font-weight: 900; /* same font weight as offer name */
-  letter-spacing: .1mm; /* same letter spacing as offer name */
-  max-width: 60mm;
-  height: fit-content;
-  display: flex;
-  align-items: center;
+  background: transparent;
+  color: #e5e7eb;
+  padding: 0;
+  border-radius: 0;
+  font-size: 3.6mm;
+  font-weight: 400;
+  letter-spacing: 0;
+  max-width: 80mm;
+  height: auto;
+  display: block;
+  opacity: 0.9;
 }
 
 .header-right {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 2.5mm; /* smaller */
+  justify-content: center;
+  gap: 1.5mm;
 }
-.gd-logo { width: 36mm; height: 36mm; object-fit: contain; }
-.gd-brand { display: none; }
-.gd-name { font-weight: 900; font-size: 4.2mm; letter-spacing: .4mm; }
-.gd-sub { font-weight: 700; font-size: 3mm; }
+.gd-logo {
+  width: 28mm;
+  height: 28mm;
+  object-fit: contain;
+  filter: none;
+}
+.gd-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.gd-name {
+  font-weight: 600;
+  font-size: 2.9mm;
+  letter-spacing: 0.14em;
+  color: #f9fafb;
+}
+.gd-sub {
+  font-weight: 400;
+  font-size: 2.6mm;
+  color: #e5e7eb;
+}
 
 .gd-body {
-  flex: 2.2; /* take even more height between header and footer */
-  padding: 4mm 7mm; /* reduced further to give more height to grid */
+  flex: 2.2; /* nimmt den Platz zwischen Header und Footer ein */
+  padding: 7mm 9mm;
   overflow: hidden;
 }
 
@@ -114,86 +180,196 @@
   height: 100%;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 3mm; /* wider gap to make cards visually narrower */
-  align-items: start; /* prevent stretching to row height */
-  justify-items: center; /* allow cards to be narrower than the track and centered */
+  gap: 4mm;
+  align-items: start;
+  justify-items: center;
 }
 
 .tile {
-  background: #2b2d31;
+  background: #ffffff;
   border-radius: 3mm;
-  padding: 2.5mm; /* even smaller to scale card */
+  padding: 2.4mm;
   display: flex;
   flex-direction: column;
-  min-height: 0; /* allow to shrink inside grid cell */
+  min-height: 0;
   overflow: hidden;
-  height: 260px; /* smaller fixed card height to avoid spanning */
+  height: 260px; /* bewusst fix, damit 3x3 Raster auf eine Seite passt */
   width: 100%;
-  max-width: 58mm; /* make cards visually narrower than the grid track */
-  justify-self: center; /* center each card within its grid cell */
+  max-width: 58mm;
+  justify-self: center;
   box-sizing: border-box;
+  border: 0.35mm solid #e5e7eb;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
 }
 
 .tile-media {
-  height: 180px; /* increased height for images */
-  min-height: 180px;
+  height: 160px;
+  min-height: 160px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #1f2023;
+  background: #ffffff;
   border-radius: 2.5mm;
   overflow: hidden;
+  border: 0.3mm solid rgba(148, 163, 184, 0.45);
 }
-.tile-media img { width: 100%; height: 100%; object-fit: cover; }
-.placeholder { display:flex; align-items:center; justify-content:center; width:100%; height:100%; color:#61646b; }
-.placeholder svg { width: 11mm; height: 11mm; }
+.tile-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.placeholder {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:100%;
+  height:100%;
+  color:#6b7280;
+}
+.placeholder svg {
+  width: 11mm;
+  height: 11mm;
+}
 
-.tile-info { display: flex; flex-direction: column; align-items: stretch; gap: 1.2mm; margin-top: 1.5mm; }
-.title-wrap { overflow: hidden; min-height: calc(1.1em * 2); max-height: calc(1.1em * 2); }
-.title { color: #fff; font-weight: 400; font-size: 3.2mm; margin: 0; max-width: 100%; line-height: 1.1; overflow: hidden; display: block; }
+.tile-info {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 1.2mm;
+  margin-top: 1.4mm;
+}
+.title-wrap {
+  overflow: hidden;
+  min-height: calc(1.15em * 2);
+  max-height: calc(1.15em * 2);
+}
+.title {
+  color: #111827;
+  font-weight: 500;
+  font-size: 3.2mm;
+  margin: 0;
+  max-width: 100%;
+  line-height: 1.2;
+  overflow: hidden;
+  display: block;
+}
 
 .price-chip {
-  background: #e53935;
-  color: #fff;
+  background: #b91c1c; /* kräftiges Dunkelrot – fällt ins Auge */
+  color: #fef2f2;
   display: inline-flex;
   align-items: center;
   gap: 1mm;
-  padding: 0.6mm 1.8mm; /* even more compact */
+  padding: 1.1mm 3.2mm;
   border-radius: 5mm;
-  font-weight: 900;
+  font-weight: 700;
   flex-shrink: 0;
-  font-size: 4mm; /* very large font size for prices */
-  align-self: flex-end; /* position on the right side */
-  width: fit-content; /* only take the width needed */
-  margin-top: -2.5mm; /* move button slightly upward */
+  font-size: 4.9mm;
+  align-self: flex-end;
+  width: fit-content;
+  margin-top: 0.5mm;
 }
-.price-chip .cart { width: 3.5mm; height: 3.5mm; }
+.price-chip[data-kind='offer'] {
+  background: #991b1b; /* noch dunkleres Rot für Angebotspreise */
+}
+.price-chip .cart {
+  width: 3.5mm;
+  height: 3.5mm;
+  filter: none;
+}
 
 .fineprint {
-  color: #231c10;
-  background: #d5b079;
-  padding: 0.8mm 6mm; /* more compact */
+  color: #374151;
+  background: #e5e7eb; /* neutraler Streifen über dem Footer */
+  padding: 1.6mm 9mm;
   margin-top: 0;
-  font-weight: 700;
-  font-size: 3mm; /* smaller text */
-  line-height: 1.2;
-  border-top: 0.8mm solid #b89352;
+  font-weight: 400;
+  font-size: 2.8mm;
+  line-height: 1.3;
+  border-top: 0.4mm solid #d1d5db;
 }
 
 .contact {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #222327;
-  padding: 2mm 6mm 3mm 6mm; /* more compact */
+  background: #111827; /* dunkler Footer passend zum Header */
+  padding: 3mm 9mm 4mm 9mm;
+  border-top: 0.4mm solid #111827;
 }
-.company .line { font-weight: 900; font-size: 3.2mm; line-height: 1.2; }
-.contact-list .item { font-weight: 900; font-size: 3.2mm; line-height: 1.2; }
+.company .line {
+  font-weight: 500;
+  font-size: 3mm;
+  line-height: 1.3;
+  color: #e5e7eb;
+}
+.contact-list .item {
+  font-weight: 500;
+  font-size: 3mm;
+  line-height: 1.3;
+  text-align: right;
+  color: #e5e7eb;
+}
 
 @media print {
-  .a4 { width: auto; height: 297mm; page-break-after: always; margin-top: 0; }
-  .a4 + .a4 { margin-top: 0; } /* spacing only for screen */
-  .tiles { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); }
+  .gd-flyer {
+    background: #e5e7eb;
+    padding: 0;
+  }
+
+  .a4 {
+    width: auto;
+    height: 297mm; /* fixiert auf eine DIN A4 Seite */
+    margin: 0 auto;
+    background: #f1f5f9;
+    page-break-after: always;
+    border-radius: 0;
+    box-shadow: none;
+    border: none;
+  }
+
+  /* Header & Grid im Druck kompakter, damit unten alle 3 Reihen sichtbar bleiben */
+  .gd-header {
+    padding: 4mm 7mm 3mm;
+    gap: 3mm;
+  }
+
+  .headline-red {
+    font-size: 7mm;
+  }
+
+  .headline-red::after {
+    margin-top: 1.2mm;
+    height: 1mm;
+    width: 26mm;
+  }
+
+  .headline-description {
+    font-size: 3mm;
+    max-width: 70mm;
+  }
+
+  .gd-body {
+    padding: 6mm 8mm;
+  }
+
+  .tile {
+    height: 235px;
+  }
+
+  .tile-media {
+    height: 140px;
+    min-height: 140px;
+  }
+
+  .a4 + .a4 {
+    margin-top: 0;
+  }
+
+  .tiles {
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+  }
 }
 
 
