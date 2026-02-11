@@ -2007,11 +2007,44 @@
   background: #f9fafb;
 }
 
-// Anmerkungsfelder im Header für Split-Modus
+// Anmerkungsfelder im Header für Split-Modus / Einzelauftrag
 .split-notes-wrapper {
   padding: 8px 12px;
   background: #ffffff;
   border-top: 1px solid #e5e7eb;
+}
+
+// Anmerkung kompakt im Kundendaten-Feld
+.customer-notes-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.customer-notes-label-inline {
+  font-size: 11px;
+  color: #6b7280;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.customer-notes-input {
+  flex: 1;
+  min-width: 0;
+  font-size: 11px;
+  padding: 3px 6px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: #fff;
+
+  &::placeholder {
+    color: #9ca3af;
+  }
+  &:focus {
+    outline: none;
+    border-color: #94a3b8;
+  }
 }
 
 .notes-textarea-compact {
@@ -2600,6 +2633,13 @@
           display: none; // Verstecke Text, zeige nur Icon
         }
       }
+    }
+    
+    .customer-notes-inline {
+      margin-top: 2px;
+      gap: 4px;
+      .customer-notes-label-inline { font-size: 10px !important; }
+      .customer-notes-input { font-size: 10px !important; padding: 2px 4px !important; }
     }
     
     .clear-customer-btn {
@@ -4568,6 +4608,11 @@
         font-size: 7px !important;
         padding: 1px 3px !important;
       }
+    }
+    
+    .customer-notes-inline {
+      .customer-notes-label-inline { font-size: 9px !important; }
+      .customer-notes-input { font-size: 9px !important; padding: 2px 4px !important; }
     }
     
     .clear-customer-btn {

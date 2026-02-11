@@ -93,6 +93,16 @@
                   </div>
                 }
               </div>
+              @if (!isSplitMode) {
+              <div class="customer-notes-inline">
+                <span class="customer-notes-label-inline">Anmerkung:</span>
+                <input type="text"
+                  [(ngModel)]="customerNotes1"
+                  placeholder="optional..."
+                  class="customer-notes-input"
+                  maxlength="500">
+              </div>
+              }
             </div>
             <button (click)="confirmClearSelectedCustomer()" class="clear-customer-btn" title="Kunde entfernen">
               <span class="material-icons">close</span>

@@ -6144,6 +6144,12 @@ filteredArtikelData() {
           customerLines.push(cityLine);
         }
       }
+
+      // Kundenanmerkung (Anmerkung aus dem Auftrag) unter "KUNDE" anzeigen
+      const customerNotes = (this.customerNotes1 || '').trim();
+      if (customerNotes) {
+        customerLines.push(`Anmerkung: ${customerNotes}`);
+      }
       
       // Berechne die Höhe der Karte basierend auf Anzahl der Zeilen
       const lineHeight = 5;

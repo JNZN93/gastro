@@ -573,6 +573,17 @@
       max-width: 150px;
     }
 
+    .customer-notes-cell {
+      color: #4b5563;
+      font-size: 12px;
+      width: 18%;
+      max-width: 180px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-style: italic;
+    }
+
     .employee-name {
       font-weight: 500;
       color: #7c3aed;

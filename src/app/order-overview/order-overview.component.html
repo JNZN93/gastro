@@ -164,6 +164,9 @@
                   <span class="sort-icon">{{ getSortIcon('customer_name') }}</span>
                 }
               </th>
+              <th>
+                <span class="header-text">Anmerkung</span>
+              </th>
               <th class="sortable-header" (click)="sortByColumn('status')">
                 <span class="header-text">Status</span>
                 @if (isSortColumn('status')) {
@@ -187,6 +190,9 @@
                 <td class="customer-number">{{ order.customer_number || '-' }}</td>
                 <td class="employee-name">{{ getEmployeeDisplayName(order) }}</td>
                 <td class="customer-name" [title]="getCustomerDisplayName(order)">{{ getCustomerDisplayName(order) }}</td>
+                <td class="customer-notes-cell" [title]="order.customer_notes || ''">
+                  {{ order.customer_notes || '-' }}
+                </td>
                 <td class="status-cell">
                   <span class="status-badge" [class]="getStatusClass(order.status)">
                     {{ getStatusText(order.status) }}
@@ -257,6 +263,12 @@
               <span class="info-label">Kunde:</span>
               <span class="info-value" [title]="getCustomerDisplayName(order)">{{ getCustomerDisplayName(order) }}</span>
             </div>
+            @if (order.customer_notes) {
+            <div class="info-row">
+              <span class="info-label">Anmerkung:</span>
+              <span class="info-value">{{ order.customer_notes }}</span>
+            </div>
+            }
             <div class="info-row total-row">
               <span class="info-label">Gesamtpreis:</span>
               <span class="info-value total-price">{{ getOrderTotalGross(order) | currency:'EUR':'symbol':'1.2-2' }}</span>
@@ -473,6 +485,12 @@
                 <span class="detail-label">Lieferadresse:</span>
                 <span class="detail-value">{{ selectedOrder.shipping_address || 'Keine Angabe' }}</span>
               </div>
+              @if (selectedOrder.customer_notes) {
+              <div class="detail-item detail-item-notes">
+                <span class="detail-label">Anmerkung:</span>
+                <span class="detail-value">{{ selectedOrder.customer_notes }}</span>
+              </div>
+              }
             </div>
           </div>
 

@@ -563,6 +563,12 @@ export class OrderOverviewComponent implements OnInit {
       const addressLines = order.shipping_address.split('\n').filter(line => line.trim());
       customerLines.push(...addressLines);
     }
+
+    // Kundenanmerkung (customer_notes) unter "KUNDE" anzeigen, falls vorhanden
+    const customerNotes = (order.customer_notes || '').trim();
+    if (customerNotes) {
+      customerLines.push(`Anmerkung: ${customerNotes}`);
+    }
     
     // Berechne die Höhe der Karte basierend auf Anzahl der Zeilen
     const lineHeight = 5;
