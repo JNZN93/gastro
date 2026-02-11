@@ -426,20 +426,15 @@ export class OrderOverviewComponent implements OnInit {
       doc.text(`${currentPage} von ${totalPages}`, 190, 290, { align: 'right' });
     };
 
-    // Header mit modernem Design (kompakter)
-    doc.setFillColor(colors.primary[0], colors.primary[1], colors.primary[2]);
-    doc.rect(0, 0, 210, 18, 'F');
-    
-    // Logo/Unternehmensname
-    doc.setTextColor(colors.white[0], colors.white[1], colors.white[2]);
-    doc.setFontSize(14);
+    // Hinweis: Kein Rechnungsdokument
+    doc.setTextColor(colors.secondary[0], colors.secondary[1], colors.secondary[2]);
+    doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
-    doc.text('GASTRO DEPOT BESTELLUNG', 15, 12);
+    doc.text('Kommissionierungsschein – kein Rechnungsdokument', 15, 12);
     
-    // Untertitel
-    doc.setFontSize(9);
+    doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
-    doc.text('Kommissionierungsschein', 15, 16.5);
+    doc.text('Dieses Dokument dient ausschließlich der Kommissionierung und ersetzt keine Rechnung.', 15, 16.5);
 
     // Bestellnummer Badge
     doc.setFillColor(colors.accent[0], colors.accent[1], colors.accent[2]);
@@ -654,18 +649,15 @@ export class OrderOverviewComponent implements OnInit {
         pageCount++;
         currentY = 20;
         
-        // Header auf neuer Seite wiederholen (kompakter)
-        doc.setFillColor(colors.primary[0], colors.primary[1], colors.primary[2]);
-        doc.rect(0, 0, 210, 18, 'F');
-        
-        doc.setTextColor(colors.white[0], colors.white[1], colors.white[2]);
-        doc.setFontSize(14);
+        // Hinweis auf neuer Seite wiederholen: Kein Rechnungsdokument
+        doc.setTextColor(colors.secondary[0], colors.secondary[1], colors.secondary[2]);
+        doc.setFontSize(11);
         doc.setFont('helvetica', 'bold');
-        doc.text('GASTRO DEPOT BESTELLUNG', 15, 12);
+        doc.text('Kommissionierungsschein – kein Rechnungsdokument', 15, 12);
         
-        doc.setFontSize(9);
+        doc.setFontSize(8);
         doc.setFont('helvetica', 'normal');
-        doc.text('Kommissionierungsschein', 15, 16.5);
+        doc.text('Dieses Dokument dient ausschließlich der Kommissionierung und ersetzt keine Rechnung.', 15, 16.5);
         
         // Bestellnummer Badge
         doc.setFillColor(colors.accent[0], colors.accent[1], colors.accent[2]);
@@ -790,7 +782,6 @@ export class OrderOverviewComponent implements OnInit {
     const currentTime = new Date().toLocaleTimeString();
     
     doc.text('Erstellt am ' + currentDate + ' um ' + currentTime, 15, footerY + 8);
-    doc.text('Gastro Kommissionierung System', 140, footerY + 8);
 
     // Gesamtseitenzahl berechnen
     totalPages = pageCount;
