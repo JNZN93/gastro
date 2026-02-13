@@ -78,6 +78,8 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   
   // Edit mode for article prices modal
   isEditingArticlePrices: boolean = false;
+  /** Wird true während auf die Kunden-Artikel-Preise gewartet wird (z. B. beim Klick auf Bearbeiten). */
+  isLoadingArticlePrices: boolean = false;
   
   // Notification properties for article prices modal
   isArticlePricesNotificationVisible: boolean = false;
@@ -3926,25 +3928,39 @@ filteredArtikelData() {
     this.hideArticlePricesNotification();
   }
 
-  toggleEditMode() {
-    this.isEditingArticlePrices = !this.isEditingArticlePrices;
-    console.log('🔧 [ARTICLE-PRICES-MODAL] Bearbeitungsmodus:', this.isEditingArticlePrices ? 'aktiviert' : 'deaktiviert');
-    
+  async toggleEditMode() {
     if (this.isEditingArticlePrices) {
-      // Initialisiere editedPrice für alle Artikel beim Aktivieren des Bearbeitungsmodus
-      this.filteredArticlePrices.forEach(articlePrice => {
-        if (articlePrice.editedPrice === undefined) {
-          articlePrice.editedPrice = articlePrice.unit_price_net;
-        }
-      });
-    } else {
-      // Wenn Bearbeitung beendet wird, reset vorübergehende bearbeitete Preise
+      this.isEditingArticlePrices = false;
+      console.log('🔧 [ARTICLE-PRICES-MODAL] Bearbeitungsmodus deaktiviert');
       this.filterArticlePrices();
-      // Setze editedPrice zurück
       this.filteredArticlePrices.forEach(articlePrice => {
         articlePrice.editedPrice = undefined;
       });
+      return;
     }
+
+    const customerNumber = this.globalService.selectedCustomerForOrders?.customer_number;
+    if (customerNumber) {
+      this.isLoadingArticlePrices = true;
+      this.cdr.detectChanges();
+      try {
+        await this.loadCustomerArticlePricesAsync(customerNumber);
+        this.filterArticlePrices();
+      } finally {
+        this.isLoadingArticlePrices = false;
+        this.cdr.detectChanges();
+      }
+    } else {
+      this.filterArticlePrices();
+    }
+
+    this.isEditingArticlePrices = true;
+    console.log('🔧 [ARTICLE-PRICES-MODAL] Bearbeitungsmodus aktiviert (hinterlegte Preise geladen)');
+    this.filteredArticlePrices.forEach(articlePrice => {
+      if (articlePrice.editedPrice === undefined) {
+        articlePrice.editedPrice = articlePrice.unit_price_net;
+      }
+    });
   }
 
   async deleteCustomerArticlePrice(articlePrice: any) {

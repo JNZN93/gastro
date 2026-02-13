@@ -1232,9 +1232,14 @@
           <span class="material-icons">print</span>
           Drucken
         </button>
-        <button (click)="toggleEditMode()" class="edit-article-prices-btn" [class.active]="isEditingArticlePrices" title="Artikel-Preise bearbeiten" style="display: inline-flex; align-items: center; gap: 6px; background: #f59e0b; color: #fff; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer;">
-          <span class="material-icons">{{ isEditingArticlePrices ? 'edit' : 'edit_off' }}</span>
-          {{ isEditingArticlePrices ? 'Bearbeitung beenden' : 'Bearbeiten' }}
+        <button (click)="toggleEditMode()" class="edit-article-prices-btn" [class.active]="isEditingArticlePrices" [disabled]="isLoadingArticlePrices" title="Artikel-Preise bearbeiten" style="display: inline-flex; align-items: center; gap: 6px; background: #f59e0b; color: #fff; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer;">
+          @if (isLoadingArticlePrices) {
+            <span class="material-icons" style="animation: spin 1s linear infinite;">refresh</span>
+            Preise werden geladen…
+          } @else {
+            <span class="material-icons">{{ isEditingArticlePrices ? 'edit' : 'edit_off' }}</span>
+            {{ isEditingArticlePrices ? 'Bearbeitung beenden' : 'Bearbeiten' }}
+          }
         </button>
       </div>
       
