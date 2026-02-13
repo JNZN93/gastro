@@ -1363,12 +1363,14 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
         let offerId: number | undefined;
         let offer_name: string | undefined;
         
+        let catalogSalePrice: number | undefined;
         if (articleNumber && this.globalArtikels && this.globalArtikels.length > 0) {
           const globalArtikel = this.globalArtikels.find(artikel => 
             artikel.article_number === articleNumber
           );
           if (globalArtikel) {
             cost_price = globalArtikel.cost_price || 0;
+            catalogSalePrice = typeof globalArtikel.sale_price === 'number' ? globalArtikel.sale_price : parseFloat(globalArtikel.sale_price) || undefined;
             console.log(`💰 [LOAD-ORDER-DATA] EK-Preis für ${articleNumber} gefunden: €${cost_price}`);
             
             // Prüfe ob der Artikel einen Angebotspreis hat
@@ -1384,7 +1386,13 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
           }
         }
         
-        const salePrice = item.price || item.sale_price || 0;
+        // Preis aus Bestellung verwenden; wenn 0 oder fehlend (z. B. Public-Order), aus Katalog ergänzen
+        const rawSalePrice = item.price ?? item.sale_price;
+        let salePrice = (typeof rawSalePrice === 'number' ? rawSalePrice : parseFloat(rawSalePrice)) || 0;
+        if (salePrice <= 0 && catalogSalePrice !== undefined) {
+          salePrice = catalogSalePrice;
+          console.log(`💰 [LOAD-ORDER-DATA] Preis für ${articleNumber} aus Katalog übernommen: €${salePrice}`);
+        }
         const differentPrice = item.different_price !== undefined && item.different_price !== null 
           ? parseFloat(item.different_price) 
           : undefined;
