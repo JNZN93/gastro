@@ -1298,6 +1298,15 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       }
     }
     
+    // Im Bearbeitungsmodus: Auf Kundenpreise (different_price) warten, bevor Artikel geladen werden.
+    // Der Preis aus customer-order-public ist egal – maßgeblich sind die in customer-orders hinterlegten Preise.
+    if (orderData.editMode === true && this.globalService.selectedCustomerForOrders?.customer_number) {
+      const customerNumber = this.globalService.selectedCustomerForOrders.customer_number;
+      console.log('⏳ [LOAD-ORDER-DATA] Bearbeitungsmodus: warte auf Kundenpreise (different_price) für', customerNumber);
+      await this.loadCustomerArticlePricesAsync(customerNumber);
+      console.log('✅ [LOAD-ORDER-DATA] Kundenpreise geladen, lade jetzt Bestellartikel');
+    }
+    
     // Setze die Bestellartikel
     if (orderData.items && orderData.items.length > 0) {
       console.log('📦 [LOAD-ORDER-DATA] Setze Bestellartikel:', orderData.items.length);
@@ -1388,16 +1397,39 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
           }
         }
         
-        // Preis aus Bestellung verwenden; wenn 0 oder fehlend (z. B. Public-Order), aus Katalog ergänzen
-        const rawSalePrice = item.price ?? item.sale_price;
-        let salePrice = (typeof rawSalePrice === 'number' ? rawSalePrice : parseFloat(rawSalePrice)) || 0;
-        if (salePrice <= 0 && catalogSalePrice !== undefined) {
-          salePrice = catalogSalePrice;
-          console.log(`💰 [LOAD-ORDER-DATA] Preis für ${articleNumber} aus Katalog übernommen: €${salePrice}`);
+        // Im Bearbeitungsmodus: Preis kommt aus den hinterlegten Kundenpreisen (customerArticlePrices), nicht aus der Bestellung.
+        let salePrice: number;
+        let differentPrice: number | undefined;
+        if (orderData.editMode === true && this.customerArticlePrices?.length > 0) {
+          const customerPriceEntry = this.customerArticlePrices.find((cp: any) =>
+            (cp.article_number && String(cp.article_number) === String(articleNumber)) ||
+            (cp.product_id != null && cp.product_id === item.id)
+          );
+          salePrice = catalogSalePrice ?? (typeof item.sale_price === 'number' ? item.sale_price : parseFloat(item.sale_price) || 0);
+          if (customerPriceEntry != null && customerPriceEntry.unit_price_net != null && customerPriceEntry.unit_price_net !== '') {
+            const customerNet = typeof customerPriceEntry.unit_price_net === 'number'
+              ? customerPriceEntry.unit_price_net
+              : parseFloat(customerPriceEntry.unit_price_net);
+            if (!isNaN(customerNet)) {
+              differentPrice = customerNet;
+              console.log(`💰 [LOAD-ORDER-DATA] Bearbeitungsmodus: Kundenpreis für ${articleNumber} aus hinterlegten Preisen: €${differentPrice}`);
+            }
+          }
+          if (differentPrice === undefined && (item.different_price != null && item.different_price !== '')) {
+            differentPrice = typeof item.different_price === 'number' ? item.different_price : parseFloat(item.different_price);
+          }
+        } else {
+          // Nicht Bearbeitungsmodus oder keine Kundenpreise: Preis aus Bestellung bzw. Katalog
+          const rawSalePrice = item.price ?? item.sale_price;
+          salePrice = (typeof rawSalePrice === 'number' ? rawSalePrice : parseFloat(rawSalePrice)) || 0;
+          if (salePrice <= 0 && catalogSalePrice !== undefined) {
+            salePrice = catalogSalePrice;
+            console.log(`💰 [LOAD-ORDER-DATA] Preis für ${articleNumber} aus Katalog übernommen: €${salePrice}`);
+          }
+          differentPrice = item.different_price !== undefined && item.different_price !== null && item.different_price !== ''
+            ? (typeof item.different_price === 'number' ? item.different_price : parseFloat(item.different_price))
+            : undefined;
         }
-        const differentPrice = item.different_price !== undefined && item.different_price !== null 
-          ? parseFloat(item.different_price) 
-          : undefined;
         
         // Prüfe ob Angebotspreis günstiger ist als Kundenpreis oder Standardpreis
         let finalPrice = differentPrice !== undefined ? differentPrice : salePrice;
