@@ -1298,12 +1298,13 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       }
     }
     
-    // Im Bearbeitungsmodus: Auf Kundenpreise (different_price) warten, bevor Artikel geladen werden.
-    // Der Preis aus customer-order-public ist egal – maßgeblich sind die in customer-orders hinterlegten Preise.
-    if (orderData.editMode === true && this.globalService.selectedCustomerForOrders?.customer_number) {
-      const customerNumber = this.globalService.selectedCustomerForOrders.customer_number;
-      console.log('⏳ [LOAD-ORDER-DATA] Bearbeitungsmodus: warte auf Kundenpreise (different_price) für', customerNumber);
-      await this.loadCustomerArticlePricesAsync(customerNumber);
+    // Im Bearbeitungsmodus: Immer auf Kundenpreise (different_price) warten, bevor Artikel geladen werden.
+    // Gilt für: Bearbeitung aus order-overview (z. B. Auftrag von Computer A auf Computer B bearbeiten),
+    // sowie für Bestellungen aus customer-order-public. Maßgeblich sind die in customer-orders hinterlegten Preise.
+    const editModeCustomerNumber = orderData.customer?.customer_number || this.globalService.selectedCustomerForOrders?.customer_number;
+    if (orderData.editMode === true && editModeCustomerNumber) {
+      console.log('⏳ [LOAD-ORDER-DATA] Bearbeitungsmodus: warte auf Kundenpreise (different_price) für', editModeCustomerNumber);
+      await this.loadCustomerArticlePricesAsync(String(editModeCustomerNumber));
       console.log('✅ [LOAD-ORDER-DATA] Kundenpreise geladen, lade jetzt Bestellartikel');
     }
     
