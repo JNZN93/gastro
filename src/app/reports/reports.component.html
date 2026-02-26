@@ -109,13 +109,13 @@
 
     <!-- Product Details -->
     <div class="product-details" *ngIf="filteredOrders.length > 0">
-      <!-- Export Button -->
+      <!-- Export-Bereich (alle Kategorien) -->
       <div class="export-section">
-        <button class="export-button" (click)="exportToPDF()">
+        <button class="export-button" (click)="exportToPDF('ALL')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
           </svg>
-          Als PDF exportieren
+          Alle Kategorien als PDF
         </button>
       </div>
 
@@ -138,6 +138,7 @@
                 <th>GEMÜSE Menge</th>
                 <th>OBST Menge</th>
                 <th>DIVERS Menge</th>
+                <th>FRISCHE HÄHNCHEN Menge</th>
                 <th>Gesamtmenge</th>
                 <th>Anzahl Bestellungen</th>
                 <th>Bestellnummern</th>
@@ -150,6 +151,7 @@
                 <td class="gemuese-amount">{{ customer.gemueseTotal % 1 === 0 ? customer.gemueseTotal : customer.gemueseTotal.toFixed(2).replace('.', ',') }}</td>
                 <td class="obst-amount">{{ customer.obstTotal % 1 === 0 ? customer.obstTotal : customer.obstTotal.toFixed(2).replace('.', ',') }}</td>
                 <td class="divers-amount">{{ customer.schnellverkaufTotal % 1 === 0 ? customer.schnellverkaufTotal : customer.schnellverkaufTotal.toFixed(2).replace('.', ',') }}</td>
+                <td class="frische-haehnchen-amount">{{ customer.frischeHaehnchenTotal % 1 === 0 ? customer.frischeHaehnchenTotal : customer.frischeHaehnchenTotal.toFixed(2).replace('.', ',') }}</td>
                 <td class="total-amount">{{ customer.totalProducts % 1 === 0 ? customer.totalProducts : customer.totalProducts.toFixed(2).replace('.', ',') }}</td>
                 <td class="order-count">{{ customer.orders.length }}</td>
                 <td class="order-ids">{{ customer.orders.join(', ') }}</td>
@@ -160,22 +162,34 @@
       </div>
 
       <!-- GEMÜSE & OBST Products -->
-      <div class="product-category" *ngIf="reportData.gemueseProductList.length > 0 || reportData.obstProductList.length > 0">
-        <div class="section-header" (click)="toggleProductCategory()">
-          <h2>OBST, GEMÜSE & DIVERS Produkte</h2>
-          <button class="toggle-button" [class.collapsed]="isProductCategoryCollapsed">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-            </svg>
-          </button>
+      <div class="product-category" *ngIf="reportData.gemueseProductList.length > 0 || reportData.obstProductList.length > 0 || reportData.schnellverkaufProductList.length > 0">
+        <div class="section-header">
+          <h2 (click)="toggleProductCategory()">OBST, GEMÜSE & DIVERS Produkte</h2>
+          <div class="section-actions">
+            <button class="export-button small" type="button" (click)="exportToPDF('GEMUESE')">
+              GEMÜSE PDF
+            </button>
+            <button class="export-button small" type="button" (click)="exportToPDF('OBST')">
+              OBST PDF
+            </button>
+            <button class="export-button small" type="button" (click)="exportToPDF('DIVERS')">
+              DIVERS PDF
+            </button>
+            <button class="toggle-button" type="button" [class.collapsed]="isProductCategoryCollapsed">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+              </svg>
+            </button>
+          </div>
         </div>
         <div class="category-table-container" [class.collapsed]="isProductCategoryCollapsed">
           <table class="category-table">
             <thead>
               <tr>
+                <th>Menge</th>
+                <th>Artikelnummer</th>
                 <th>Produktname</th>
                 <th>Kategorie</th>
-                <th>Gesamtmenge</th>
                 <th>Bestellnummern</th>
                 <th>Kunden</th>
               </tr>
@@ -183,9 +197,10 @@
             <tbody>
               <!-- GEMÜSE Products -->
               <tr *ngFor="let product of reportData.gemueseProductList" class="gemuese-row">
+                <td class="product-quantity">{{ product.quantity % 1 === 0 ? product.quantity : product.quantity.toFixed(2).replace('.', ',') }}</td>
+                <td class="product-article-number">{{ product.articleNumber }}</td>
                 <td class="product-name">{{ product.name }}</td>
                 <td class="product-category gemuese-category">GEMÜSE</td>
-                <td class="product-quantity">{{ product.quantity % 1 === 0 ? product.quantity : product.quantity.toFixed(2).replace('.', ',') }}</td>
                 <td class="product-order-ids">{{ product.orders.join(', ') }}</td>
                 <td class="product-customers">
                   <div class="customer-list">
@@ -197,9 +212,10 @@
               </tr>
               <!-- OBST Products -->
               <tr *ngFor="let product of reportData.obstProductList" class="obst-row">
+                <td class="product-quantity">{{ product.quantity % 1 === 0 ? product.quantity : product.quantity.toFixed(2).replace('.', ',') }}</td>
+                <td class="product-article-number">{{ product.articleNumber }}</td>
                 <td class="product-name">{{ product.name }}</td>
                 <td class="product-category obst-category">OBST</td>
-                <td class="product-quantity">{{ product.quantity % 1 === 0 ? product.quantity : product.quantity.toFixed(2).replace('.', ',') }}</td>
                 <td class="product-order-ids">{{ product.orders.join(', ') }}</td>
                 <td class="product-customers">
                   <div class="customer-list">
@@ -211,9 +227,53 @@
               </tr>
               <!-- DIVERS Products -->
               <tr *ngFor="let product of reportData.schnellverkaufProductList" class="schnellverkauf-row">
+                <td class="product-quantity">{{ product.quantity % 1 === 0 ? product.quantity : product.quantity.toFixed(2).replace('.', ',') }}</td>
+                <td class="product-article-number">{{ product.articleNumber }}</td>
                 <td class="product-name">{{ product.name }}</td>
                 <td class="product-category schnellverkauf-category">DIVERS</td>
+                <td class="product-order-ids">{{ product.orders.join(', ') }}</td>
+                <td class="product-customers">
+                  <div class="customer-list">
+                    <span *ngFor="let customer of product.customers; let last = last">
+                      {{ customer.customerNumber }}({{ customer.quantity % 1 === 0 ? customer.quantity : customer.quantity.toFixed(2).replace('.', ',') }})<span *ngIf="!last">, </span>
+                    </span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- FRISCHE HÄHNCHEN – eigene Kategorie (nicht in OBST/GEMÜSE/DIVERS) -->
+      <div class="product-category frische-haehnchen-section">
+        <div class="section-header">
+          <h2>FRISCHE HÄHNCHEN</h2>
+          <button class="export-button small" type="button" (click)="exportToPDF('FRISCHE_HAEHNCHEN')">
+            FRISCHE HÄHNCHEN PDF
+          </button>
+        </div>
+        <div class="category-table-container">
+          <p class="no-products-hint" *ngIf="reportData.frischeHaehnchenProductList.length === 0">
+            Keine Produkte in dieser Kategorie für das gewählte Datum.
+          </p>
+          <table class="category-table" *ngIf="reportData.frischeHaehnchenProductList.length > 0">
+            <thead>
+              <tr>
+                <th>Menge</th>
+                <th>Artikelnummer</th>
+                <th>Produktname</th>
+                <th>Kategorie</th>
+                <th>Bestellnummern</th>
+                <th>Kunden</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let product of reportData.frischeHaehnchenProductList" class="frische-haehnchen-row">
                 <td class="product-quantity">{{ product.quantity % 1 === 0 ? product.quantity : product.quantity.toFixed(2).replace('.', ',') }}</td>
+                <td class="product-article-number">{{ product.articleNumber }}</td>
+                <td class="product-name">{{ product.name }}</td>
+                <td class="product-category frische-haehnchen-category">FRISCHE HÄHNCHEN</td>
                 <td class="product-order-ids">{{ product.orders.join(', ') }}</td>
                 <td class="product-customers">
                   <div class="customer-list">

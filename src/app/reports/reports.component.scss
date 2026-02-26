@@ -681,6 +681,31 @@
   font-weight: bold;
 }
 
+.frische-haehnchen-row {
+  background-color: #fef3c7; /* Hellbernstein für FRISCHE HÄHNCHEN */
+  border-left: 4px solid #d97706; /* Amber Rand links */
+  transition: all 0.2s ease;
+}
+
+.frische-haehnchen-row:hover {
+  background-color: #fde68a;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.2);
+  border-left-width: 6px;
+}
+
+.frische-haehnchen-category {
+  color: #b45309; /* Dunkelamber für FRISCHE HÄHNCHEN Text */
+  font-weight: bold;
+}
+
+.no-products-hint {
+  padding: 1rem 0;
+  color: #6b7280;
+  font-size: 0.95rem;
+  margin: 0;
+}
+
 /* Tabellen-Styling verbessern */
 .category-table {
   border-collapse: collapse;

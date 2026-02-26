@@ -61,7 +61,20 @@ export class ReportsComponent implements OnInit {
   
   // Kunden-Daten für die Zusammenfassung
   customers: any[] = [];
-  
+
+  /** Artikelnummern, die immer in "FRISCHE HÄHNCHEN" erscheinen (unabhängig von Kategorie/Name). Hier eintragen. */
+  readonly frischeHaehnchenArticleNumbers: string[] = [
+    'hähn900geh.',
+    'hähn950geh.',
+    'hähn950gest.',
+    'hähn1000geh.',
+    'hähn1000gest.',
+    'hähn1050gest.',
+    'hähn1100gest.',
+    'hähnkeule',
+    'putkeule'
+  ];
+
   // Report-Daten
   reportData: {
     totalOrders: number;
@@ -72,19 +85,30 @@ export class ReportsComponent implements OnInit {
     gemueseTotal: number;
     obstTotal: number;
     schnellverkaufTotal: number;
+    frischeHaehnchenTotal: number;
     gemueseProductList: Array<{ 
+      articleNumber: string;
       name: string; 
       quantity: number; 
       orders: number[];
       customers: Array<{ name: string; customerNumber: string; quantity: number; orderId: number }>;
     }>;
     obstProductList: Array<{ 
+      articleNumber: string;
       name: string; 
       quantity: number; 
       orders: number[];
       customers: Array<{ name: string; customerNumber: string; quantity: number; orderId: number }>;
     }>;
     schnellverkaufProductList: Array<{ 
+      articleNumber: string;
+      name: string; 
+      quantity: number; 
+      orders: number[];
+      customers: Array<{ name: string; customerNumber: string; quantity: number; orderId: number }>;
+    }>;
+    frischeHaehnchenProductList: Array<{ 
+      articleNumber: string;
       name: string; 
       quantity: number; 
       orders: number[];
@@ -97,6 +121,7 @@ export class ReportsComponent implements OnInit {
       gemueseTotal: number;
       obstTotal: number;
       schnellverkaufTotal: number;
+      frischeHaehnchenTotal: number;
       totalProducts: number;
       orders: number[];
     }>;
@@ -109,9 +134,11 @@ export class ReportsComponent implements OnInit {
     gemueseTotal: 0,
     obstTotal: 0,
     schnellverkaufTotal: 0,
+    frischeHaehnchenTotal: 0,
     gemueseProductList: [],
     obstProductList: [],
     schnellverkaufProductList: [],
+    frischeHaehnchenProductList: [],
     customerSummary: []
   };
 
@@ -131,19 +158,15 @@ export class ReportsComponent implements OnInit {
   }
 
   loadArtikels() {
-    // Lade alle Artikel für die Kategorie-Erkennung
     this.http.get<any[]>(`${environment.apiUrl}/api/products`)
       .subscribe({
         next: (response) => {
           this.globalArtikels = response || [];
-          // Wenn Bestellungen bereits geladen sind, generiere den Report
-          if (this.orders.length > 0) {
-            this.generateReport();
-          }
+          const categories = [...new Set((this.globalArtikels as any[]).map((a: any) => a.category).filter(Boolean))].sort();
+          console.log('[Reports] Kategorien vom Backend (exakt):', categories);
+          if (this.orders.length > 0) this.generateReport();
         },
-        error: (error) => {
-          console.error('Fehler beim Laden der Artikel:', error);
-        }
+        error: (error) => console.error('Fehler beim Laden der Artikel:', error)
       });
   }
 
@@ -163,6 +186,31 @@ export class ReportsComponent implements OnInit {
   getTodayDate(): string {
     const today = new Date();
     return today.toISOString().split('T')[0];
+  }
+
+  /** Kategorie-String normalisieren für Vergleiche (Umlaute, Leerzeichen, Unicode). */
+  private normalizeCategoryForCompare(cat: string): string {
+    if (!cat) return '';
+    return cat
+      .normalize('NFC')
+      .trim()
+      .toUpperCase()
+      .replace(/\u00C4/g, 'AE')
+      .replace(/\u00E4/g, 'AE');
+  }
+
+  /** Prüft, ob die Kategorie „FRISCHE HÄHNCHEN“ ist (alle Schreibweisen inkl. „Chicken“). */
+  private isCategoryFrischeHaehnchen(category: string): boolean {
+    const n = this.normalizeCategoryForCompare(category);
+    return n === 'FRISCHE HAENCHEN' || n.includes('CHICKEN') ||
+      (n.includes('FRISCHE') && n.includes('HAENCHEN'));
+  }
+
+  /** Prüft, ob der Produktname auf „Frische Hähnchen“ hindeutet (z. B. bei fehlender/inaktiver Stammdaten). */
+  private productNameSuggestsFrischeHaehnchen(name: string | null | undefined): boolean {
+    if (!name || typeof name !== 'string') return false;
+    const n = name.trim().toUpperCase().replace(/\u00C4/g, 'AE').replace(/\u00E4/g, 'AE');
+    return n.includes('HAENCHEN') || n.includes('HAHNCHEN') || n.includes('CHICKEN');
   }
 
   checkUserRole() {
@@ -245,29 +293,54 @@ export class ReportsComponent implements OnInit {
       customerName: string;
       customerNumber: string;
       company: string;
+      articleNumber: string;
     }> = [];
     
     this.filteredOrders.forEach(order => {
       if (order.items && Array.isArray(order.items)) {
         order.items.forEach((item: OrderItem) => {
-          // Hole die echte Kategorie aus globalArtikels anstatt sie zu erraten
-          const artikel = this.globalArtikels.find(
-            a => a.article_number === item.product_article_number
+          const artNr = (item.product_article_number != null) ? String(item.product_article_number).trim() : '';
+          let added = false;
+
+          // 1) Harte Zuordnung per Artikelnummer: nur diese Artikel gehören zu FRISCHE HÄHNCHEN
+          const isInFrischeHaehnchenList = artNr !== '' && this.frischeHaehnchenArticleNumbers.some(
+            num => (num != null ? String(num).trim() : '') === artNr
           );
-          
-          if (artikel && artikel.category) {
-            // Nur Artikel mit den gewünschten Kategorien hinzufügen
-            if (artikel.category === 'GEMÜSE' || artikel.category === 'OBST' || 
-                artikel.category === 'SCHNELLVERKAUF') {
-              allProducts.push({
-                name: item.product_name,
-                quantity: item.quantity,
-                orderId: order.order_id,
-                category: artikel.category, // Echte Kategorie verwenden
-                customerName: order.name,
-                customerNumber: order.customer_number,
-                company: order.company
-              });
+          if (isInFrischeHaehnchenList) {
+            allProducts.push({
+              name: item.product_name,
+              quantity: item.quantity,
+              orderId: order.order_id,
+              category: 'FRISCHE HÄHNCHEN',
+              customerName: order.name,
+              customerNumber: order.customer_number,
+              company: order.company,
+              articleNumber: artNr
+            });
+            added = true;
+          }
+
+          // 2) Sonst normale Kategorie-Zuordnung (ohne weitere FRISCHE-HÄHNCHEN-Erkennung)
+          if (!added) {
+            const artikel = this.globalArtikels.find(
+              a => (a.article_number != null ? String(a.article_number).trim() : '') === artNr
+            );
+
+            if (artikel && artikel.category) {
+              const cat = (artikel.category || '').toString().trim();
+              if (cat === 'GEMÜSE' || cat === 'OBST' || cat === 'SCHNELLVERKAUF') {
+                allProducts.push({
+                  name: item.product_name,
+                  quantity: item.quantity,
+                  orderId: order.order_id,
+                  category: cat,
+                  customerName: order.name,
+                  customerNumber: order.customer_number,
+                  company: order.company,
+                  articleNumber: artNr
+                });
+                added = true;
+              }
             }
           }
         });
@@ -292,11 +365,17 @@ export class ReportsComponent implements OnInit {
       orders: number[];
       customers: Array<{ name: string; customerNumber: string; quantity: number; orderId: number }>;
     }>();
+    const frischeHaehnchenMap = new Map<string, { 
+      quantity: number; 
+      orders: number[];
+      customers: Array<{ name: string; customerNumber: string; quantity: number; orderId: number }>;
+    }>();
 
     allProducts.forEach(product => {
+      const key = `${product.articleNumber || ''}::${product.name}`;
       if (product.category === 'GEMÜSE') {
-        if (gemueseMap.has(product.name)) {
-          const existing = gemueseMap.get(product.name)!;
+        if (gemueseMap.has(key)) {
+          const existing = gemueseMap.get(key)!;
           existing.quantity += product.quantity;
           if (!existing.orders.includes(product.orderId)) {
             existing.orders.push(product.orderId);
@@ -308,7 +387,7 @@ export class ReportsComponent implements OnInit {
             orderId: product.orderId
           });
         } else {
-          gemueseMap.set(product.name, { 
+          gemueseMap.set(key, { 
             quantity: product.quantity, 
             orders: [product.orderId],
             customers: [{
@@ -320,8 +399,8 @@ export class ReportsComponent implements OnInit {
           });
         }
       } else if (product.category === 'OBST') {
-        if (obstMap.has(product.name)) {
-          const existing = obstMap.get(product.name)!;
+        if (obstMap.has(key)) {
+          const existing = obstMap.get(key)!;
           existing.quantity += product.quantity;
           if (!existing.orders.includes(product.orderId)) {
             existing.orders.push(product.orderId);
@@ -333,7 +412,7 @@ export class ReportsComponent implements OnInit {
             orderId: product.orderId
           });
         } else {
-          obstMap.set(product.name, { 
+          obstMap.set(key, { 
             quantity: product.quantity, 
             orders: [product.orderId],
             customers: [{
@@ -345,8 +424,8 @@ export class ReportsComponent implements OnInit {
           });
         }
       } else if (product.category === 'SCHNELLVERKAUF') {
-        if (schnellverkaufMap.has(product.name)) {
-          const existing = schnellverkaufMap.get(product.name)!;
+        if (schnellverkaufMap.has(key)) {
+          const existing = schnellverkaufMap.get(key)!;
           existing.quantity += product.quantity;
           if (!existing.orders.includes(product.orderId)) {
             existing.orders.push(product.orderId);
@@ -358,7 +437,32 @@ export class ReportsComponent implements OnInit {
             orderId: product.orderId
           });
         } else {
-          schnellverkaufMap.set(product.name, { 
+          schnellverkaufMap.set(key, { 
+            quantity: product.quantity, 
+            orders: [product.orderId],
+            customers: [{
+              name: product.customerName,
+              customerNumber: product.customerNumber,
+              quantity: product.quantity,
+              orderId: product.orderId
+            }]
+          });
+        }
+      } else if (product.category === 'FRISCHE HÄHNCHEN') {
+        if (frischeHaehnchenMap.has(key)) {
+          const existing = frischeHaehnchenMap.get(key)!;
+          existing.quantity += product.quantity;
+          if (!existing.orders.includes(product.orderId)) {
+            existing.orders.push(product.orderId);
+          }
+          existing.customers.push({
+            name: product.customerName,
+            customerNumber: product.customerNumber,
+            quantity: product.quantity,
+            orderId: product.orderId
+          });
+        } else {
+          frischeHaehnchenMap.set(key, { 
             quantity: product.quantity, 
             orders: [product.orderId],
             customers: [{
@@ -372,27 +476,18 @@ export class ReportsComponent implements OnInit {
       }
     });
 
-    // Maps zu Arrays konvertieren
-    this.reportData.gemueseProductList = Array.from(gemueseMap.entries()).map(([name, data]) => ({
-      name,
-      quantity: data.quantity,
-      orders: data.orders,
-      customers: data.customers
-    }));
+    // Maps zu Arrays konvertieren (Key = "articleNumber::name" → articleNumber und name getrennt)
+    const mapEntryToProduct = ([key, data]: [string, { quantity: number; orders: number[]; customers: any[] }]) => {
+      const idx = key.indexOf('::');
+      const articleNumber = idx >= 0 ? key.slice(0, idx) : '';
+      const name = idx >= 0 ? key.slice(idx + 2) : key;
+      return { articleNumber, name, quantity: data.quantity, orders: data.orders, customers: data.customers };
+    };
 
-    this.reportData.obstProductList = Array.from(obstMap.entries()).map(([name, data]) => ({
-      name,
-      quantity: data.quantity,
-      orders: data.orders,
-      customers: data.customers
-    }));
-
-    this.reportData.schnellverkaufProductList = Array.from(schnellverkaufMap.entries()).map(([name, data]) => ({
-      name,
-      quantity: data.quantity,
-      orders: data.orders,
-      customers: data.customers
-    }));
+    this.reportData.gemueseProductList = Array.from(gemueseMap.entries()).map(mapEntryToProduct);
+    this.reportData.obstProductList = Array.from(obstMap.entries()).map(mapEntryToProduct);
+    this.reportData.schnellverkaufProductList = Array.from(schnellverkaufMap.entries()).map(mapEntryToProduct);
+    this.reportData.frischeHaehnchenProductList = Array.from(frischeHaehnchenMap.entries()).map(mapEntryToProduct);
 
     // Gesamtmengen berechnen
     this.reportData.gemueseTotal = this.reportData.gemueseProductList.reduce(
@@ -408,6 +503,11 @@ export class ReportsComponent implements OnInit {
       (sum, product) => sum + product.quantity, 0
     );
 
+    // FRISCHE HÄHNCHEN Gesamt berechnen
+    this.reportData.frischeHaehnchenTotal = this.reportData.frischeHaehnchenProductList.reduce(
+      (sum, product) => sum + product.quantity, 0
+    );
+
     // Kunden-Zusammenfassung erstellen
     this.createCustomerSummary();
   }
@@ -420,13 +520,14 @@ export class ReportsComponent implements OnInit {
       gemueseTotal: number;
       obstTotal: number;
       schnellverkaufTotal: number;
+      frischeHaehnchenTotal: number;
       totalProducts: number;
       orders: number[];
     }>();
 
     // Alle Produkte durchgehen und Kunden-Statistiken sammeln
     [...this.reportData.gemueseProductList, ...this.reportData.obstProductList, 
-     ...this.reportData.schnellverkaufProductList].forEach(product => {
+     ...this.reportData.schnellverkaufProductList, ...this.reportData.frischeHaehnchenProductList].forEach(product => {
       product.customers.forEach(customer => {
         const key = `${customer.customerNumber}-${customer.name}`;
         
@@ -444,6 +545,7 @@ export class ReportsComponent implements OnInit {
             gemueseTotal: 0,
             obstTotal: 0,
             schnellverkaufTotal: 0,
+            frischeHaehnchenTotal: 0,
             totalProducts: customer.quantity,
             orders: [customer.orderId]
           });
@@ -451,12 +553,14 @@ export class ReportsComponent implements OnInit {
 
         // Kategorie-spezifische Mengen aktualisieren
         const customerData = customerMap.get(key)!;
-        if (this.reportData.gemueseProductList.some(p => p.name === product.name)) {
+        if (this.reportData.gemueseProductList.some(p => p.articleNumber === product.articleNumber && p.name === product.name)) {
           customerData.gemueseTotal += customer.quantity;
-        } else if (this.reportData.obstProductList.some(p => p.name === product.name)) {
+        } else if (this.reportData.obstProductList.some(p => p.articleNumber === product.articleNumber && p.name === product.name)) {
           customerData.obstTotal += customer.quantity;
-        } else if (this.reportData.schnellverkaufProductList.some(p => p.name === product.name)) {
+        } else if (this.reportData.schnellverkaufProductList.some(p => p.articleNumber === product.articleNumber && p.name === product.name)) {
           customerData.schnellverkaufTotal += customer.quantity;
+        } else if (this.reportData.frischeHaehnchenProductList.some(p => p.articleNumber === product.articleNumber && p.name === product.name)) {
+          customerData.frischeHaehnchenTotal += customer.quantity;
         }
       });
     });
@@ -480,86 +584,106 @@ export class ReportsComponent implements OnInit {
       gemueseTotal: 0,
       obstTotal: 0,
       schnellverkaufTotal: 0,
+      frischeHaehnchenTotal: 0,
       gemueseProductList: [],
       obstProductList: [],
       schnellverkaufProductList: [],
+      frischeHaehnchenProductList: [],
       customerSummary: []
     };
   }
 
-  exportToPDF() {
+  exportToPDF(category: 'ALL' | 'GEMUESE' | 'OBST' | 'DIVERS' | 'FRISCHE_HAEHNCHEN') {
     if (!this.filteredOrders.length) return;
 
     // Import jsPDF dynamically
     import('jspdf').then(({ default: jsPDF }) => {
       import('jspdf-autotable').then(({ default: autoTable }) => {
-        this.generatePDF(jsPDF, autoTable);
+        this.generatePDF(jsPDF, autoTable, category);
       });
     });
   }
 
-  private generatePDF(jsPDF: any, autoTable: any) {
+  private generatePDF(jsPDF: any, autoTable: any, category: 'ALL' | 'GEMUESE' | 'OBST' | 'DIVERS' | 'FRISCHE_HAEHNCHEN') {
     const doc = new jsPDF();
     
     // Header
     const date = new Date(this.selectedDate).toLocaleDateString('de-DE');
-    doc.setFontSize(20);
-    doc.text('Gemüse & Obst', 20, 30);
-    doc.setFontSize(14);
+    const categoryLabelMap: Record<string, string> = {
+      ALL: 'Alle Kategorien',
+      GEMUESE: 'GEMÜSE',
+      OBST: 'OBST',
+      DIVERS: 'DIVERS',
+      FRISCHE_HAEHNCHEN: 'FRISCHE HÄHNCHEN'
+    };
+    const categoryLabel = categoryLabelMap[category] || categoryLabelMap['ALL'];
+
+    doc.setFontSize(16);
+    doc.text('Produkt-Report', 20, 30);
+    doc.setFontSize(10);
     doc.text(`Datum: ${date}`, 20, 45);
+    doc.text(`Kategorie: ${categoryLabel}`, 20, 52);
     
     // Produktdaten für Tabelle vorbereiten
     const tableData: any[] = [];
     
-    // GEMÜSE Produkte
-    this.reportData.gemueseProductList.forEach(product => {
-      tableData.push([
-        product.name,
-        product.quantity.toString().replace('.', ',')
-      ]);
-    });
+    const addProductsToTable = (products: Array<{ articleNumber: string; name: string; quantity: number }>) => {
+      products.forEach(product => {
+        tableData.push([
+          product.quantity.toString().replace('.', ','),
+          product.articleNumber,
+          product.name
+        ]);
+      });
+    };
+
+    // Nach ausgewählter Kategorie filtern
+    if (category === 'ALL' || category === 'GEMUESE') {
+      addProductsToTable(this.reportData.gemueseProductList);
+    }
+
+    if (category === 'ALL' || category === 'OBST') {
+      addProductsToTable(this.reportData.obstProductList);
+    }
+
+    if (category === 'ALL' || category === 'DIVERS') {
+      addProductsToTable(this.reportData.schnellverkaufProductList);
+    }
+
+    if (category === 'ALL' || category === 'FRISCHE_HAEHNCHEN') {
+      addProductsToTable(this.reportData.frischeHaehnchenProductList);
+    }
     
-    // OBST Produkte
-    this.reportData.obstProductList.forEach(product => {
-      tableData.push([
-        product.name,
-        product.quantity.toString().replace('.', ',')
-      ]);
-    });
-    
-    // DIVERS Produkte
-    this.reportData.schnellverkaufProductList.forEach(product => {
-      tableData.push([
-        product.name,
-        product.quantity.toString().replace('.', ',')
-      ]);
-    });
-    
-    // Tabelle erstellen
+    // Tabelle erstellen (kleinere Schrift, damit Inhalt in eine Zeile passt)
     autoTable(doc, {
-      head: [['Produktname', 'Menge']],
+      head: [['Menge', 'Artikelnummer', 'Produktname']],
       body: tableData,
       startY: 60,
       styles: {
-        fontSize: 12,
-        cellPadding: 5
+        fontSize: 8,
+        cellPadding: 3
       },
       headStyles: {
         fillColor: [59, 130, 246],
         textColor: 255,
-        fontStyle: 'bold'
+        fontStyle: 'bold',
+        fontSize: 9
       },
       alternateRowStyles: {
         fillColor: [248, 250, 252]
       },
       columnStyles: {
-        0: { cellWidth: 120 }, // Produktname (breiter ohne Kategorie)
-        1: { cellWidth: 40 }   // Menge
+        0: { cellWidth: 22 },
+        1: { cellWidth: 28 },
+        2: { cellWidth: 130 }
       }
     });
     
-    // PDF speichern
-    doc.save(`produkt-report_${this.selectedDate}.pdf`);
+    // PDF in neuem Tab öffnen (Druckansicht/Drucken vom Tab aus möglich)
+    const blob = doc.output('blob');
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
   }
 
   toggleCustomerSummary() {
