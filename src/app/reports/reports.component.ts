@@ -653,7 +653,10 @@ export class ReportsComponent implements OnInit {
     if (category === 'ALL' || category === 'FRISCHE_HAEHNCHEN') {
       addProductsToTable(this.reportData.frischeHaehnchenProductList);
     }
-    
+
+    // Nach Artikelnummer sortieren
+    tableData.sort((a, b) => (a[1] || '').localeCompare(b[1] || '', undefined, { numeric: true }));
+
     // Tabelle erstellen (kleinere Schrift, damit Inhalt in eine Zeile passt)
     autoTable(doc, {
       head: [['Menge', 'Artikelnummer', 'Produktname']],
