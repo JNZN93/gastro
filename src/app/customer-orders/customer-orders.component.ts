@@ -4247,12 +4247,10 @@ filteredArtikelData() {
     const customer = this.globalService.selectedCustomerForOrders;
     const doc = new jsPDF();
     
-    // Konstanten für das Layout - DIN A4 Portrait optimiert
-    // Verfügbarer Platz: A4 = 297mm hoch, Header braucht ~35mm, Footer ~20mm
-    // Rest für Tabelle: ~240mm. Bei durchschnittlich 18mm pro Zeile (inkl. lange Namen)
-    // 12 Artikel + Tabellen-Header = 13 Zeilen à 18mm = 234mm + Sicherheitspuffer
-    const itemsPerPage = 12; // Optimiert für A4 Format mit Platz für lange Artikelnamen
-    const totalPages = Math.ceil(prices.length / itemsPerPage);
+    // Konstanten für das Layout - DIN A4 Portrait, sehr kompakt wie Excel-Liste
+    // Zwei Artikelblöcke nebeneinander, viele Zeilen pro Seite,
+    // dabei so ausgelegt, dass alles sicher auf eine DIN A4 Seite passt.
+    const rowsPerPage = 26; // 26 Tabellenzeilen pro Seite, jede Zeile enthält bis zu 2 Artikel
 
     // Funktion zum Hinzufügen der Kundendaten auf jeder Seite
     const addCustomerHeader = async (pageNumber: number, totalPages: number) => {
@@ -4277,17 +4275,34 @@ filteredArtikelData() {
       doc.line(14, 42, 196, 42);
     };
 
-    // Daten für die Tabelle vorbereiten (ohne Preis-Spalte)
-    const tableData = prices.map((p: any) => [
-      p.article_text || '-',
-      p.article_number || p.product_id || '-',
-      '' // Leere Menge zum Ausfüllen
-    ]);
+    // Daten für die Tabelle vorbereiten:
+    // Zwei Artikel "nebeneinander" pro Zeile, mit optischem Abstand dazwischen:
+    // [Artikel 1, Art.-Nr. 1, Menge 1, (Leer-Spalte), Artikel 2, Art.-Nr. 2, Menge 2]
+    const tableData: any[] = [];
+    for (let i = 0; i < prices.length; i += 2) {
+      const p1 = prices[i];
+      const p2 = prices[i + 1];
 
-    // Füge 10 leere Zeilen am Ende hinzu für handschriftliche Einträge
-    for (let i = 0; i < 10; i++) {
-      tableData.push(['', '', '']); // Leere Artikel, leere Artikelnummer, leere Menge
+      const row = [
+        p1 ? (p1.article_text || '-') : '',
+        p1 ? (p1.article_number || p1.product_id || '-') : '',
+        '',  // Menge 1 (zum Ausfüllen)
+        '',  // Leer-Spalte als Abstand zwischen Block 1 und 2
+        p2 ? (p2.article_text || '-') : '',
+        p2 ? (p2.article_number || p2.product_id || '-') : '',
+        ''   // Menge 2 (zum Ausfüllen)
+      ];
+
+      tableData.push(row);
     }
+
+    // Einige zusätzliche leere Zeilen am Ende für handschriftliche Einträge
+    for (let i = 0; i < 6; i++) {
+      tableData.push(['', '', '', '', '', '', '']);
+    }
+
+    // Gesamtseitenzahl anhand der tatsächlichen Tabellenzeilen berechnen
+    const totalPages = Math.ceil(tableData.length / rowsPerPage);
 
     // Excel-ähnliche Tabelle mit jsPDF-AutoTable
     import('jspdf-autotable').then(({ default: autoTable }) => {
@@ -4300,39 +4315,66 @@ filteredArtikelData() {
         // Header auf jede Seite setzen
         addCustomerHeader(page + 1, totalPages);
         
-        // Artikel für diese Seite
-        const startIndex = page * itemsPerPage;
-        const endIndex = Math.min(startIndex + itemsPerPage, tableData.length);
+        // Zeilen (mit bis zu 2 Artikeln) für diese Seite
+        const startIndex = page * rowsPerPage;
+        const endIndex = Math.min(startIndex + rowsPerPage, tableData.length);
         const pageData = tableData.slice(startIndex, endIndex);
         
         // Tabelle auf diese Seite zeichnen - WICHTIG: pageBreak deaktivieren
         // startY nach Header positioniert (Header endet bei Y=42, +8px Abstand = 50)
         autoTable(doc, {
-          startY: 50,
-          head: [['Artikel', 'Art.-Nr.', 'Menge']],
+          startY: 48,
+          // Kürzere Überschriften, damit alles in einer Zeile bleibt
+          head: [['Artikel 1', 'Nr. 1', 'Menge', '', 'Artikel 2', 'Nr. 2', 'Menge']],
           body: pageData,
           theme: 'grid',
           pageBreak: 'avoid', // Verhindert automatische Seitenumbrüche
-          tableWidth: 'wrap',
+          tableWidth: 'auto',
           styles: {
-            fontSize: 11, // Größere Schrift für bessere OCR-Erkennung der Tabellendaten
-            cellPadding: 5,
-            lineWidth: 0.3, // Dickere Linien für bessere OCR-Erkennung
-            lineColor: [100, 100, 100], // Dunkleres Grau für besseren Kontrast (OCR-optimal)
-            fillColor: [255, 255, 255] // Weißer Hintergrund für alle Zeilen
+            fontSize: 8,           // kleine, aber gut lesbare Schrift
+            cellPadding: 1.2,      // kompakte Zeilenhöhe
+            lineWidth: 0.2,
+            lineColor: [100, 100, 100],
+            fillColor: [255, 255, 255]
           },
           headStyles: {
-            fillColor: [0, 0, 0], // Schwarzer Hintergrund für maximalen Kontrast (OCR-optimal)
-            textColor: [255, 255, 255], // Weißer Text für maximalen Kontrast
+            fillColor: [0, 0, 0],
+            textColor: [255, 255, 255],
             fontStyle: 'bold',
-            fontSize: 12 // Größere Schrift für bessere OCR-Erkennung
+            fontSize: 8 // etwas kleinere Schrift, um Umbrüche im Header zu vermeiden
           },
           columnStyles: {
-            0: { cellWidth: 90, halign: 'left' }, // Artikel (schmaler für mehr Platz)
-            1: { cellWidth: 60, halign: 'left' }, // Art.-Nr. (breiter für mehr Platz)
-            2: { cellWidth: 30, halign: 'center' } // Menge (bleibt gleich)
+            0: { cellWidth: 50, halign: 'left' },   // Artikel 1
+            1: { cellWidth: 22, halign: 'left' },   // Art.-Nr. 1
+            2: { cellWidth: 12, halign: 'center' }, // Menge 1
+            3: { cellWidth: 6,  halign: 'center' }, // Leer-Spalte (optischer Abstand, ohne Linien)
+            4: { cellWidth: 50, halign: 'left' },   // Artikel 2
+            5: { cellWidth: 22, halign: 'left' },   // Art.-Nr. 2
+            6: { cellWidth: 12, halign: 'center' }  // Menge 2
           },
-          margin: { left: 15, right: 35 }, // Tabelle weiter links, rechter Rand größer
+          margin: { left: 10, right: 10 },
+          // Zell-Stile anpassen, damit der Abstand ohne Tabellenlinien dargestellt wird
+          didParseCell: (data: any) => {
+            const colIndex = data.column.index;
+
+            // Mittlere Leer-Spalte komplett ohne Rahmen und ohne Hintergrund zeichnen
+            if (colIndex === 3) {
+              data.cell.styles.lineWidth = 0;
+              data.cell.styles.fillColor = [255, 255, 255];
+              // Im Header auch den schwarzen Balken entfernen
+              if (data.section === 'head') {
+                data.cell.text = [''];
+              }
+            }
+
+            // Rechte Linie von Block 1 und linke Linie von Block 2 im Bereich des Abstands entfernen
+            if (colIndex === 2) {
+              (data.cell.styles as any).lineWidthRight = 0;
+            }
+            if (colIndex === 4) {
+              (data.cell.styles as any).lineWidthLeft = 0;
+            }
+          },
           // Callback um sicherzustellen, dass nicht automatisch eine neue Seite erstellt wird
           didDrawPage: (data: any) => {
             // Nichts tun - wir kontrollieren Seiten manuell
