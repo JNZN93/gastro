@@ -211,6 +211,71 @@
   }
 }
 
+// Give quick action icons distinct colors instead of one shared style.
+.actions-grid .action-card:nth-child(1) .action-icon {
+  background: linear-gradient(135deg, #4f83dd 0%, #3f6fc9 100%);
+}
+
+.actions-grid .action-card:nth-child(2) .action-icon {
+  background: linear-gradient(135deg, #36a2cf 0%, #2a83b0 100%);
+}
+
+.actions-grid .action-card:nth-child(3) .action-icon {
+  background: linear-gradient(135deg, #37b0a3 0%, #2c9187 100%);
+}
+
+.actions-grid .action-card:nth-child(4) .action-icon {
+  background: linear-gradient(135deg, #47ba6f 0%, #3a9d5e 100%);
+}
+
+.actions-grid .action-card:nth-child(5) .action-icon {
+  background: linear-gradient(135deg, #8fbc3e 0%, #739a34 100%);
+}
+
+.actions-grid .action-card:nth-child(6) .action-icon {
+  background: linear-gradient(135deg, #d8a54a 0%, #bd8840 100%);
+}
+
+.actions-grid .action-card:nth-child(7) .action-icon {
+  background: linear-gradient(135deg, #dc9a64 0%, #c17d45 100%);
+}
+
+.actions-grid .action-card:nth-child(8) .action-icon {
+  background: linear-gradient(135deg, #d88a4a 0%, #bc703d 100%);
+}
+
+.actions-grid .action-card:nth-child(9) .action-icon {
+  background: linear-gradient(135deg, #d16969 0%, #b95555 100%);
+}
+
+.actions-grid .action-card:nth-child(10) .action-icon {
+  background: linear-gradient(135deg, #d4677d 0%, #bc526b 100%);
+}
+
+.actions-grid .action-card:nth-child(11) .action-icon {
+  background: linear-gradient(135deg, #9d66cf 0%, #8652b6 100%);
+}
+
+.actions-grid .action-card:nth-child(12) .action-icon {
+  background: linear-gradient(135deg, #858dd7 0%, #6d72c5 100%);
+}
+
+.actions-grid .action-card:nth-child(13) .action-icon {
+  background: linear-gradient(135deg, #95a0ad 0%, #75818f 100%);
+}
+
+.actions-grid .action-card:nth-child(14) .action-icon {
+  background: linear-gradient(135deg, #6e7c8d 0%, #566372 100%);
+}
+
+.actions-grid .action-card:nth-child(15) .action-icon {
+  background: linear-gradient(135deg, #3da9bd 0%, #348a9d 100%);
+}
+
+.actions-grid .action-card:nth-child(16) .action-icon {
+  background: linear-gradient(135deg, #72a6df 0%, #578ac8 100%);
+}
+
 // Orders Section
 .orders-section {
   background: rgba(255, 255, 255, 0.95);
