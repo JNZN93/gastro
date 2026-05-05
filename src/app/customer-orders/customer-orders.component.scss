@@ -990,7 +990,7 @@
   }
 
   .order-row {
-    transition: background-color 0.3s ease;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
     height: 24px !important;
     min-height: 24px !important;
     max-height: 24px !important;
@@ -998,7 +998,8 @@
     cursor: grab;
 
     &:hover {
-      background-color: #f8f9fa;
+      background-color: #dbeafe;
+      box-shadow: inset 4px 0 0 #2563eb;
     }
     
     // Angebotsartikel dezent hervorheben
@@ -1007,7 +1008,7 @@
       border-left: 3px solid #f59e0b; // Orange Akzent
       
       &:hover {
-        background-color: #fde68a; // Etwas dunkleres Gelb beim Hover
+        background-color: #fcd34d; // Deutlich sichtbarer Hover für Angebotsartikel
       }
     }
     
