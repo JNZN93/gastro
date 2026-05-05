@@ -1795,18 +1795,21 @@ filteredArtikelData() {
 
   if (this.searchTerm) {
     const trimmedTerm = this.searchTerm.trim();
+    const normalizedTerm = this.normalizeEanValue(trimmedTerm);
 
     // Mindestlänge prüfen (außer bei EAN)
-    const isEanSearch = /^\d{8}$|^\d{13}$/.test(trimmedTerm);
+    const isEanSearch = normalizedTerm.length === 8 || normalizedTerm.length === 12 || normalizedTerm.length === 13;
     if (!isEanSearch && trimmedTerm.length < 3) {
       this.selectedIndex = -1;
       return; // Suche abbrechen
     }
 
     if (isEanSearch) {
+      const eanCandidates = this.buildEanSearchCandidates(normalizedTerm);
+
       // EAN-Suche: Zuerst in lokalen Artikeln suchen
       const localEanResults = this.globalArtikels.filter(artikel =>
-        artikel.ean?.toLowerCase() === trimmedTerm.toLowerCase()
+        eanCandidates.includes(this.normalizeEanValue(artikel.ean))
       );
 
       if (localEanResults.length > 0) {
@@ -1817,18 +1820,21 @@ filteredArtikelData() {
         console.log('🔍 [EAN-LOCAL] EAN in lokalen Artikeln gefunden:', this.filteredArtikels.length);
       } else {
         // EAN nicht gefunden → API-Suche
-        this.searchEanInApi(trimmedTerm);
+        this.searchEanInApi(eanCandidates, normalizedTerm);
         return;
       }
     } else {
       // Normale Text-Suche
       const terms = trimmedTerm.toLowerCase().split(/\s+/);
+      const normalizedSearchTerm = normalizedTerm;
 
       const filtered = this.globalArtikels.filter((artikel) =>
         terms.every((term) =>
           artikel.article_text.toLowerCase().includes(term) ||
           artikel.article_number?.toLowerCase().includes(term) ||
-          artikel.ean?.toLowerCase().includes(term)
+          artikel.ean?.toLowerCase().includes(term) ||
+          (normalizedSearchTerm.length > 0 &&
+            this.normalizeEanValue(artikel.ean).includes(normalizedSearchTerm))
         )
       );
 
@@ -1903,7 +1909,15 @@ filteredArtikelData() {
     return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
   }
 
-  private searchEanInApi(eanCode: string): void {
+  private searchEanInApi(eanCandidates: string[], originalInput: string, candidateIndex: number = 0): void {
+    if (candidateIndex >= eanCandidates.length) {
+      this.filteredArtikels = [];
+      this.showDropdown = false;
+      console.log('🔍 [EAN-API] Keine Treffer für Eingabe:', originalInput);
+      return;
+    }
+
+    const eanCode = eanCandidates[candidateIndex];
     const token = localStorage.getItem('token');
     
     this.http.get(`${environment.apiUrl}/api/product-eans/ean/${eanCode}`, {
@@ -1929,26 +1943,45 @@ filteredArtikelData() {
             
             console.log('🔍 [EAN-API] EAN gefunden und Artikel in globalArtikels vorhanden:', existingProduct.article_text);
           } else {
-            // Artikel existiert nicht in globalArtikels - keine Ergebnisse
-            this.filteredArtikels = [];
-            this.showDropdown = false;
-            
+            // Artikel existiert nicht in globalArtikels - probiere nächsten Kandidaten
             console.log('🔍 [EAN-API] EAN gefunden aber Artikel nicht in globalArtikels:', foundArticleNumber);
+            this.searchEanInApi(eanCandidates, originalInput, candidateIndex + 1);
           }
         } else {
-          // EAN nicht in products_ean Tabelle gefunden
-          this.filteredArtikels = [];
-          this.showDropdown = false;
-          
+          // EAN nicht in products_ean Tabelle gefunden - nächsten Kandidaten probieren
           console.log('🔍 [EAN-API] EAN nicht in products_ean Tabelle gefunden:', eanCode);
+          this.searchEanInApi(eanCandidates, originalInput, candidateIndex + 1);
         }
       },
       error: (error: any) => {
         console.error('Error searching EAN in API:', error);
-        // Bei Fehler: normale lokale Suche durchführen
-        this.performLocalSearch();
+        // Bei Fehler: nächsten Kandidaten probieren, sonst lokale Suche
+        if (candidateIndex + 1 < eanCandidates.length) {
+          this.searchEanInApi(eanCandidates, originalInput, candidateIndex + 1);
+        } else {
+          this.performLocalSearch();
+        }
       }
     });
+  }
+
+  private normalizeEanValue(value: string | undefined | null): string {
+    return (value || '').toString().replace(/[^0-9]/g, '');
+  }
+
+  private buildEanSearchCandidates(normalizedEan: string): string[] {
+    const uniqueCandidates = new Set<string>();
+
+    if (normalizedEan) {
+      uniqueCandidates.add(normalizedEan);
+    }
+
+    // UPC-A (12) als häufige Variante von EAN-13 mit führender 0 behandeln
+    if (normalizedEan.length === 12) {
+      uniqueCandidates.add(`0${normalizedEan}`);
+    }
+
+    return Array.from(uniqueCandidates);
   }
 
   private performLocalSearch(): void {
