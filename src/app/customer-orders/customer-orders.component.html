@@ -453,6 +453,7 @@
               <input type="date" 
                      id="orderDate" 
                      [(ngModel)]="orderDate" 
+                     (click)="openNativeDatePicker($event)"
                      class="date-input">
             </div>
             <div class="date-field">
@@ -460,6 +461,7 @@
               <input type="date" 
                      id="deliveryDate" 
                      [(ngModel)]="deliveryDate" 
+                     (click)="openNativeDatePicker($event)"
                      class="date-input">
             </div>
           </div>
@@ -899,6 +901,7 @@
                   <input type="date" 
                          id="mobileOrderDate" 
                          [(ngModel)]="orderDate" 
+                         (click)="openNativeDatePicker($event)"
                          class="mobile-date-input">
                 </div>
                 <div class="mobile-date-field">
@@ -906,6 +909,7 @@
                   <input type="date" 
                          id="mobileDeliveryDate" 
                          [(ngModel)]="deliveryDate" 
+                         (click)="openNativeDatePicker($event)"
                          class="mobile-date-input">
                 </div>
               </div>

@@ -143,6 +143,22 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       .replace(/&#39;/g, "'")
       .trim();
   }
+
+  openNativeDatePicker(event: Event): void {
+    const input = event.target as HTMLInputElement | null;
+    if (!input || input.type !== 'date') {
+      return;
+    }
+
+    const pickerInput = input as HTMLInputElement & { showPicker?: () => void };
+    if (typeof pickerInput.showPicker === 'function') {
+      try {
+        pickerInput.showPicker();
+      } catch {
+        // showPicker kann ohne gültige User-Geste fehlschlagen; dann still weiterlaufen.
+      }
+    }
+  }
   
   // Mobile Tab properties
   activeTab: 'search' | 'order' | 'prices' = 'search';
