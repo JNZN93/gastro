@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, ViewChild, inject, OnDestroy, ChangeDetectorRef, HostListener } from '@angular/core';
+import { Component, OnInit, ViewChild, inject, OnDestroy, ChangeDetectorRef, HostListener, ElementRef } from '@angular/core';
 import { ArtikelDataService } from '../artikel-data.service';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../authentication.service';
@@ -31,6 +31,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   @ViewChild(ZXingScannerComponent) scanner!: ZXingScannerComponent;
   @ViewChild('searchInput') searchInput!: any;
   @ViewChild('mobileSearchInput') mobileSearchInput!: any;
+  @ViewChild('customerSearchInput') customerSearchInput?: ElementRef<HTMLInputElement>;
   @ViewChild('articlesDropdown') articlesDropdown!: any;
   @ViewChild('orderTableContainer') orderTableContainer!: any;
   @ViewChild('eanCodeInput') eanCodeInput!: any;
@@ -3767,6 +3768,11 @@ filteredArtikelData() {
     this.isCustomerModalOpen = true;
     this.filteredCustomers = this.customers;
     this.customerSearchTerm = '';
+
+    // Wait until the modal input is rendered (*ngIf) before focusing it.
+    setTimeout(() => {
+      this.customerSearchInput?.nativeElement?.focus();
+    }, 0);
   }
 
   closeCustomerModal() {
