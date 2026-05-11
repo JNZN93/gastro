@@ -2078,3 +2078,188 @@
   }
 }
 
+// Palettenschein-Abfrage Modal
+.palettenschein-modal-content {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 560px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: slideIn 0.3s ease-out;
+
+  .palettenschein-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 24px 16px 24px;
+    border-bottom: 1px solid #e5e7eb;
+    margin-bottom: 20px;
+
+    h2 {
+      font-size: 20px;
+      font-weight: 600;
+      color: #1f2937;
+      margin: 0;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 8px;
+      color: #6b7280;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: #f3f4f6;
+        color: #374151;
+      }
+
+      svg {
+        width: 20px;
+        height: 20px;
+      }
+    }
+  }
+
+  .palettenschein-modal-body {
+    padding: 0 24px 16px 24px;
+    text-align: center;
+
+    .palettenschein-icon {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 16px;
+
+      svg {
+        width: 48px;
+        height: 48px;
+        color: #2563eb;
+      }
+    }
+
+    h3 {
+      font-size: 17px;
+      font-weight: 600;
+      color: #1f2937;
+      margin: 0 0 12px 0;
+    }
+
+    p {
+      font-size: 14px;
+      color: #6b7280;
+      line-height: 1.5;
+      margin: 0 0 16px 0;
+    }
+
+    .palettenschein-preview {
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-top: 8px;
+      text-align: left;
+
+      .preview-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        padding: 4px 0;
+
+        & + .preview-row {
+          border-top: 1px dashed #e5e7eb;
+        }
+
+        .preview-label {
+          font-size: 13px;
+          font-weight: 500;
+          color: #6b7280;
+        }
+
+        .preview-value {
+          font-size: 13px;
+          font-weight: 600;
+          color: #1f2937;
+          text-align: right;
+        }
+      }
+    }
+  }
+
+  .palettenschein-modal-footer {
+    padding: 16px 24px 24px 24px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+
+    .btn-secondary {
+      background: #f3f4f6;
+      color: #374151;
+      border: 1px solid #e5e7eb;
+      padding: 12px 18px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: #e5e7eb;
+        transform: translateY(-1px);
+      }
+
+      &:active {
+        transform: translateY(0);
+      }
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #2563eb, #3b82f6);
+      color: white;
+      border: none;
+      padding: 12px 18px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 6px 16px rgba(37, 99, 235, 0.25);
+
+      svg {
+        width: 18px;
+        height: 18px;
+      }
+
+      &:hover {
+        background: linear-gradient(135deg, #1d4ed8, #2563eb);
+        transform: translateY(-1px);
+        box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
+      }
+
+      &:active {
+        transform: translateY(0);
+      }
+    }
+  }
+
+  @media (max-width: 540px) {
+    .palettenschein-modal-footer {
+      flex-direction: column-reverse;
+
+      .btn-secondary,
+      .btn-primary {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  }
+}
+

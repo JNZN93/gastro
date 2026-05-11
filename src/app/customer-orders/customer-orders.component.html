@@ -1636,3 +1636,57 @@
     </button>
   </div>
 </div>
+
+<!-- Palettenschein-Abfrage Modal (vor dem Drucken) -->
+@if (showPalettenscheinModal) {
+  <div class="modal-overlay palettenschein-modal-overlay" (click)="cancelPalettenscheinPrompt()">
+    <div class="palettenschein-modal-content" (click)="$event.stopPropagation()">
+      <div class="palettenschein-modal-header">
+        <h2>Palettenschein drucken?</h2>
+        <button class="close-btn" (click)="cancelPalettenscheinPrompt()" aria-label="Schließen">
+          <span class="material-icons">close</span>
+        </button>
+      </div>
+
+      <div class="palettenschein-modal-body">
+        <div class="palettenschein-icon">
+          <span class="material-icons">inventory_2</span>
+        </div>
+
+        <h3>Soll zusätzlich ein Palettenschein gedruckt werden?</h3>
+        <p>Der Palettenschein wird als zusätzliche Seite an den Kommissionierungsschein angehängt und enthält Kundenname, Adresse, Lieferdaten sowie eine Checkliste mit Tiefkühl- &amp; Kühlware zum Abhaken.</p>
+
+        @if (globalService.selectedCustomerForOrders) {
+          <div class="palettenschein-preview">
+            <div class="preview-row">
+              <span class="preview-label">Kunde:</span>
+              <span class="preview-value">{{ differentCompanyName || globalService.selectedCustomerForOrders.last_name_company || globalService.selectedCustomerForOrders.customer_number }}</span>
+            </div>
+            @if (globalService.selectedCustomerForOrders.customer_number) {
+              <div class="preview-row">
+                <span class="preview-label">Kundennr.:</span>
+                <span class="preview-value">{{ globalService.selectedCustomerForOrders.customer_number }}</span>
+              </div>
+            }
+            @if (deliveryDate) {
+              <div class="preview-row">
+                <span class="preview-label">Lieferung:</span>
+                <span class="preview-value">{{ deliveryDate }}</span>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="palettenschein-modal-footer">
+        <button class="btn-secondary" (click)="confirmPrintWithoutPalettenschein()">
+          Nein, nur Kommissionierungsschein
+        </button>
+        <button class="btn-primary" (click)="confirmPrintWithPalettenschein()">
+          <span class="material-icons">print</span>
+          Ja, mit Palettenschein
+        </button>
+      </div>
+    </div>
+  </div>
+}

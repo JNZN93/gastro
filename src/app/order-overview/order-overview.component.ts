@@ -78,6 +78,10 @@ export class OrderOverviewComponent implements OnInit {
   showProcessingWarning = false;
   processingWarningMessage = '';
   processingOrderId: number | null = null;
+
+  // Palettenschein-Abfrage vor dem Drucken
+  showPalettenscheinModal = false;
+  orderToPrint: Order | null = null;
   
   // Mapping Kundennummer -> Kundenname
   private customerNameByNumber: Record<string, string> = {};
@@ -379,14 +383,44 @@ export class OrderOverviewComponent implements OnInit {
     });
   }
 
-  /** Erst Bestellungen neu laden, dann PDF drucken. */
+  /** Erst Bestellungen neu laden, dann Palettenschein-Abfrage anzeigen. */
   printAfterReload(order: Order): void {
     this.loadOrders().subscribe({
       next: () => {
         const refreshed = this.getOrderAfterReload(order.order_id) ?? order;
-        this.generatePdf(refreshed);
+        this.openPalettenscheinPrompt(refreshed);
       }
     });
+  }
+
+  /** Öffnet die Abfrage, ob zusätzlich ein Palettenschein gedruckt werden soll. */
+  openPalettenscheinPrompt(order: Order): void {
+    this.orderToPrint = order;
+    this.showPalettenscheinModal = true;
+  }
+
+  /** Schließt das Palettenschein-Modal ohne zu drucken. */
+  cancelPalettenscheinPrompt(): void {
+    this.showPalettenscheinModal = false;
+    this.orderToPrint = null;
+  }
+
+  /** Druckt nur den Kommissionierungsschein (ohne Palettenschein). */
+  confirmPrintWithoutPalettenschein(): void {
+    if (!this.orderToPrint) return;
+    const order = this.orderToPrint;
+    this.showPalettenscheinModal = false;
+    this.orderToPrint = null;
+    this.generatePdf(order, false);
+  }
+
+  /** Druckt Kommissionierungsschein + Palettenschein. */
+  confirmPrintWithPalettenschein(): void {
+    if (!this.orderToPrint) return;
+    const order = this.orderToPrint;
+    this.showPalettenscheinModal = false;
+    this.orderToPrint = null;
+    this.generatePdf(order, true);
   }
 
   /** Erst Bestellungen neu laden, dann Bearbeiten ausführen. */
@@ -403,7 +437,7 @@ export class OrderOverviewComponent implements OnInit {
     this.selectedOrder = null;
   }
 
-  generatePdf(order: Order) {
+  generatePdf(order: Order, includePalettenschein: boolean = false) {
     const doc = new jsPDF();
     let pageCount = 1;
     let totalPages = 1; // Wird später berechnet
@@ -789,6 +823,14 @@ export class OrderOverviewComponent implements OnInit {
     
     doc.text('Erstellt am ' + currentDate + ' um ' + currentTime, 15, footerY + 8);
 
+    // Optional: Palettenschein als zusätzliche Seite anhängen
+    if (includePalettenschein) {
+      doc.addPage();
+      pageCount++;
+      const extraPalettenscheinPages = this.drawPalettenschein(doc, order, colors);
+      pageCount += extraPalettenscheinPages;
+    }
+
     // Gesamtseitenzahl berechnen
     totalPages = pageCount;
 
@@ -805,6 +847,448 @@ export class OrderOverviewComponent implements OnInit {
     doc.autoPrint();
     const pdfUrl = doc.output('bloburl');
     window.open(pdfUrl, '_blank');
+  }
+
+  /**
+   * Filtert die Bestellartikel nach kühlpflichtigen Kategorien
+   * (TIEFKÜHL, MILCHPRODUKTE, FLEISCH, FISCH).
+   * Ermittelt die Kategorie über `allArtikels` anhand der Artikelnummer.
+   */
+  private getCoolingItems(order: Order): OrderItem[] {
+    if (!order || !order.items || order.items.length === 0) {
+      return [];
+    }
+
+    const coolCategories = new Set(['TIEFKÜHL', 'MILCHPRODUKTE', 'FLEISCH', 'FISCH']);
+    const normalize = (value: any): string =>
+      String(value ?? '').trim().toUpperCase();
+
+    return order.items.filter((item) => {
+      const articleNumber = item.product_article_number;
+      if (!articleNumber) return false;
+
+      const globalArtikel = this.allArtikels?.find(
+        (a) => a.article_number === articleNumber
+      );
+
+      const category = normalize(globalArtikel?.category);
+      return coolCategories.has(category);
+    });
+  }
+
+  /**
+   * Zeichnet den Palettenschein auf die aktuelle Seite eines bestehenden jsPDF-Dokuments.
+   * Enthält Empfänger (groß), Adresse, Lieferdaten, Anmerkungen und eine Checkliste mit
+   * Tiefkühl- & Kühlware. Bei zu viel Inhalt wird automatisch eine zweite Seite begonnen.
+   * Gibt die Anzahl der zusätzlich erzeugten Seiten zurück.
+   */
+  private drawPalettenschein(doc: jsPDF, order: Order, colors: { [key: string]: number[] }): number {
+    const pageWidth = 210;
+    const pageHeight = 297;
+    const footerReserve = 30; // Mindestabstand zum unteren Seitenrand (für Footer)
+    const pageBottomLimit = pageHeight - footerReserve;
+    let extraPages = 0;
+
+    // Footer am unteren Seitenrand der aktuellen Seite zeichnen
+    const drawFooter = () => {
+      const footerY = pageHeight - 20;
+      doc.setDrawColor(colors['primary'][0], colors['primary'][1], colors['primary'][2]);
+      doc.setLineWidth(1);
+      doc.line(15, footerY, pageWidth - 15, footerY);
+
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(colors['secondary'][0], colors['secondary'][1], colors['secondary'][2]);
+
+      const currentDate = new Date().toLocaleDateString('de-DE');
+      const currentTime = new Date().toLocaleTimeString('de-DE');
+      doc.text('Erstellt am ' + currentDate + ' um ' + currentTime, 15, footerY + 8);
+    };
+
+    // Mini-Header auf Folgeseiten
+    const drawContinuationHeader = () => {
+      doc.setTextColor(colors['secondary'][0], colors['secondary'][1], colors['secondary'][2]);
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Palettenschein – Fortsetzung', 15, 12);
+
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Fortsetzung der Tiefkühl- & Kühlware-Checkliste.', 15, 16.5);
+
+      // Bestellnummer Badge
+      doc.setFillColor(colors['accent'][0], colors['accent'][1], colors['accent'][2]);
+      doc.roundedRect(160, 5, 35, 10, 3, 3, 'F');
+      doc.setTextColor(colors['white'][0], colors['white'][1], colors['white'][2]);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text('#' + order.order_id.toString(), 170, 12);
+    };
+
+    // Stellt sicher, dass `needed` mm Platz vorhanden sind. Falls nicht, wird die Seite
+    // umgebrochen und die neue Start-Y-Position zurückgegeben. Sonst wird `currentY`
+    // unverändert zurückgegeben.
+    const ensureSpace = (currentY: number, needed: number): number => {
+      if (currentY + needed > pageBottomLimit) {
+        drawFooter();
+        doc.addPage();
+        extraPages++;
+        drawContinuationHeader();
+        return 25;
+      }
+      return currentY;
+    };
+
+    // Kopfbereich: Hinweis
+    doc.setTextColor(colors['secondary'][0], colors['secondary'][1], colors['secondary'][2]);
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Palettenschein – Warenübergabe', 15, 12);
+
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Dieses Dokument dient ausschließlich der Bestätigung der Warenübergabe.', 15, 16.5);
+
+    // Bestellnummer Badge
+    doc.setFillColor(colors['accent'][0], colors['accent'][1], colors['accent'][2]);
+    doc.roundedRect(160, 5, 35, 10, 3, 3, 'F');
+    doc.setTextColor(colors['white'][0], colors['white'][1], colors['white'][2]);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text('#' + order.order_id.toString(), 170, 12);
+
+    // Titel
+    doc.setTextColor(colors['dark'][0], colors['dark'][1], colors['dark'][2]);
+    doc.setFontSize(22);
+    doc.setFont('helvetica', 'bold');
+    doc.text('PALETTENSCHEIN', pageWidth / 2, 30, { align: 'center' });
+
+    // Trennlinie unter Titel
+    doc.setDrawColor(colors['primary'][0], colors['primary'][1], colors['primary'][2]);
+    doc.setLineWidth(1.2);
+    doc.line(15, 35, pageWidth - 15, 35);
+
+    let yPos = 45;
+    const leftCardWidth = 90;
+    const rightCardWidth = 90;
+    const cardSpacing = 10;
+
+    // Bestelldaten + Lieferdaten in zwei Karten
+    const hasTime = !!(order.delivery_date && order.delivery_date.includes('T'));
+    const topCardHeight = hasTime ? 30 : 25;
+
+    // Linke Karte: Bestelldetails
+    doc.setFillColor(colors['light'][0], colors['light'][1], colors['light'][2]);
+    doc.roundedRect(15, yPos, leftCardWidth, topCardHeight, 5, 5, 'F');
+    doc.setDrawColor(colors['primary'][0], colors['primary'][1], colors['primary'][2]);
+    doc.setLineWidth(0.5);
+    doc.roundedRect(15, yPos, leftCardWidth, topCardHeight, 5, 5);
+
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(colors['secondary'][0], colors['secondary'][1], colors['secondary'][2]);
+    doc.text('BESTELLDETAILS', 20, yPos + 7);
+
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(colors['dark'][0], colors['dark'][1], colors['dark'][2]);
+    doc.text('Bestellnummer: ' + order.order_id.toString(), 20, yPos + 14);
+    const orderDateFormatted = order.order_date ? new Date(order.order_date).toLocaleDateString('de-DE') : '-';
+    doc.text('Bestelldatum: ' + orderDateFormatted, 20, yPos + 20);
+
+    // Rechte Karte: Lieferdetails
+    doc.setFillColor(colors['light'][0], colors['light'][1], colors['light'][2]);
+    doc.roundedRect(115, yPos, rightCardWidth, topCardHeight, 5, 5, 'F');
+    doc.setDrawColor(colors['primary'][0], colors['primary'][1], colors['primary'][2]);
+    doc.setLineWidth(0.5);
+    doc.roundedRect(115, yPos, rightCardWidth, topCardHeight, 5, 5);
+
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(colors['secondary'][0], colors['secondary'][1], colors['secondary'][2]);
+    doc.text('LIEFERDETAILS', 120, yPos + 7);
+
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(colors['dark'][0], colors['dark'][1], colors['dark'][2]);
+    doc.text('Art: ' + (order.fulfillment_type === 'delivery' ? 'Lieferung' : 'Abholung'), 120, yPos + 14);
+
+    const deliveryDateStr = this.formatDate(order.delivery_date);
+    if (hasTime) {
+      const deliveryDate = new Date(order.delivery_date);
+      const timeStr = deliveryDate.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+      doc.text('Datum: ' + deliveryDateStr, 120, yPos + 20);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Uhrzeit: ' + timeStr + ' Uhr', 120, yPos + 26);
+      doc.setFont('helvetica', 'normal');
+    } else {
+      doc.text('Datum: ' + deliveryDateStr, 120, yPos + 20);
+    }
+
+    yPos += topCardHeight + 10;
+
+    // Kunde / Empfänger Karte
+    const customerName = this.getCustomerDisplayName(order);
+    const customerNumber = order.customer_number || '';
+    const customerKey = String(customerNumber).trim();
+    const fullCustomer = this.customersByNumber[customerKey];
+
+    // Adress-Zeilen (kleinere Schrift, unter dem Namen)
+    const addressLines: string[] = [];
+    if (fullCustomer && fullCustomer.name_addition) {
+      addressLines.push(fullCustomer.name_addition);
+    }
+    if (fullCustomer) {
+      if (fullCustomer.street) {
+        addressLines.push(fullCustomer.street);
+      }
+      if (fullCustomer.postal_code || fullCustomer.city) {
+        const cityLine = `${fullCustomer.postal_code || ''} ${fullCustomer.city || ''}`.trim();
+        if (cityLine) {
+          addressLines.push(cityLine);
+        }
+      }
+    } else if (order.shipping_address) {
+      const fallbackLines = order.shipping_address.split('\n').filter(line => line.trim());
+      addressLines.push(...fallbackLines);
+    }
+
+    const addressFontSize = 14;
+    const addressLineHeight = 7;
+    const customerCardWidth = leftCardWidth + rightCardWidth + cardSpacing;
+
+    // Höhe dynamisch: Header + sehr großer Name (ggf. mehrzeilig) + Kundennummer + Adresszeilen
+    const nameFontSize = 26;
+    const nameLineSpacing = 11; // vertikaler Abstand zwischen mehrzeiligem Namen
+    const customerNumberHeight = customerNumber ? 9 : 0;
+    const addressBlockHeight = addressLines.length * addressLineHeight;
+
+    // Anzahl Zeilen für den Namen vorab berechnen, damit die Karte hoch genug ist
+    doc.setFontSize(nameFontSize);
+    doc.setFont('helvetica', 'bold');
+    const nameLines = doc.splitTextToSize(customerName || '-', customerCardWidth - 10);
+    const nameBlockHeight = Math.max(nameFontSize * 0.5, nameLines.length * nameLineSpacing);
+
+    const customerCardHeight = Math.max(
+      55,
+      14 + nameBlockHeight + 6 + customerNumberHeight + addressBlockHeight + 8
+    );
+
+    doc.setFillColor(colors['light'][0], colors['light'][1], colors['light'][2]);
+    doc.roundedRect(15, yPos, customerCardWidth, customerCardHeight, 5, 5, 'F');
+    doc.setDrawColor(colors['primary'][0], colors['primary'][1], colors['primary'][2]);
+    doc.setLineWidth(0.5);
+    doc.roundedRect(15, yPos, customerCardWidth, customerCardHeight, 5, 5);
+
+    // Überschrift
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(colors['secondary'][0], colors['secondary'][1], colors['secondary'][2]);
+    doc.text('EMPFÄNGER', 20, yPos + 7);
+
+    let textY = yPos + 14 + nameFontSize * 0.45;
+
+    // Empfängername SEHR GROSS
+    doc.setFontSize(nameFontSize);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(colors['dark'][0], colors['dark'][1], colors['dark'][2]);
+    nameLines.forEach((nameLine: string, idx: number) => {
+      doc.text(nameLine, 20, textY);
+      if (idx < nameLines.length - 1) {
+        textY += nameLineSpacing;
+      }
+    });
+    textY += 9;
+
+    // Kundennummer
+    if (customerNumber) {
+      doc.setFontSize(13);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(colors['secondary'][0], colors['secondary'][1], colors['secondary'][2]);
+      doc.text('Kundennr.: ' + customerNumber, 20, textY);
+      textY += addressLineHeight + 2;
+    }
+
+    // Adresse
+    doc.setFontSize(addressFontSize);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(colors['dark'][0], colors['dark'][1], colors['dark'][2]);
+    addressLines.forEach((line) => {
+      if (line && line.trim()) {
+        const splitLines = doc.splitTextToSize(line, customerCardWidth - 10);
+        splitLines.forEach((splitLine: string) => {
+          doc.text(splitLine, 20, textY);
+          textY += addressLineHeight;
+        });
+      }
+    });
+
+    yPos += customerCardHeight + 14;
+
+    // Spaltenbreiten für die Kühlware-Tabelle (auch in Page-Break-Helpern verwendet)
+    const colCheckX = 20;
+    const colCheckSize = 5;
+    const colQtyX = 32;
+    const colNameX = 50;
+    const colArtNrX = 150;
+    const coolRowHeight = 10;
+
+    // Zeichnet den Spaltenkopf der Kühlware-Tabelle an der gegebenen Y-Position
+    const drawCoolTableHeader = (y: number): number => {
+      doc.setFillColor(243, 244, 246);
+      doc.rect(15, y, customerCardWidth, 7, 'F');
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(colors['secondary'][0], colors['secondary'][1], colors['secondary'][2]);
+      doc.text('OK', colCheckX, y + 5);
+      doc.text('Menge', colQtyX, y + 5);
+      doc.text('Artikel', colNameX, y + 5);
+      doc.text('Artikelnr.', colArtNrX, y + 5);
+      return y + 7;
+    };
+
+    // Kühlware-Checkliste (noch zu holende Tiefkühl- & Kühlware)
+    const coolItems = this.getCoolingItems(order);
+
+    // Vor dem Tabellenstart sicherstellen, dass mindestens Header + Hinweis + Spaltenkopf
+    // + 1 Datenzeile auf die aktuelle Seite passen, sonst neue Seite beginnen.
+    yPos = ensureSpace(yPos, 10 + 8 + 7 + coolRowHeight);
+
+    // Header der Kühlware-Sektion
+    doc.setFillColor(colors['primary'][0], colors['primary'][1], colors['primary'][2]);
+    doc.roundedRect(15, yPos, customerCardWidth, 10, 3, 3, 'F');
+    doc.setTextColor(colors['white'][0], colors['white'][1], colors['white'][2]);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text('NOCH ZU HOLENDE TIEFKÜHL- & KÜHLWARE', 20, yPos + 7);
+    yPos += 10;
+
+    // Hinweistext
+    doc.setFillColor(255, 247, 237); // sehr helles Orange
+    doc.rect(15, yPos, customerCardWidth, 8, 'F');
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'italic');
+    doc.setTextColor(180, 83, 9);
+    doc.text('Hinweis: Wegen Kühlkette erst kurz vor Abfahrt holen und abhaken.', 20, yPos + 5.5);
+    yPos += 8;
+
+    // Spaltenkopf der Tabelle
+    yPos = drawCoolTableHeader(yPos);
+
+    // Start-Y des Rahmens für den aktuellen Seitenabschnitt der Tabelle
+    let tableSectionStartY = yPos;
+
+    // Zeichnet den Rahmen um den aktuellen Tabellen-Seitenabschnitt
+    const finalizeTableSection = (endY: number) => {
+      doc.setDrawColor(colors['primary'][0], colors['primary'][1], colors['primary'][2]);
+      doc.setLineWidth(0.5);
+      doc.rect(15, tableSectionStartY, customerCardWidth, endY - tableSectionStartY);
+    };
+
+    // Stellt sicher, dass eine weitere Tabellenzeile passt. Falls nicht, wird der
+    // aktuelle Tabellenrahmen abgeschlossen, eine neue Seite begonnen und der
+    // Spaltenkopf auf der neuen Seite erneut gezeichnet.
+    const ensureRowSpace = (currentY: number): number => {
+      if (currentY + coolRowHeight > pageBottomLimit) {
+        finalizeTableSection(currentY);
+        drawFooter();
+        doc.addPage();
+        extraPages++;
+        drawContinuationHeader();
+        let newY = 25;
+        newY = drawCoolTableHeader(newY);
+        tableSectionStartY = newY;
+        return newY;
+      }
+      return currentY;
+    };
+
+    if (coolItems.length > 0) {
+      // Datenzeilen
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(colors['dark'][0], colors['dark'][1], colors['dark'][2]);
+
+      coolItems.forEach((item, index) => {
+        yPos = ensureRowSpace(yPos);
+
+        // Zebra-Streifen
+        if (index % 2 === 0) {
+          doc.setFillColor(248, 249, 250);
+          doc.rect(15, yPos, customerCardWidth, coolRowHeight, 'F');
+        }
+
+        // Checkbox
+        doc.setDrawColor(colors['secondary'][0], colors['secondary'][1], colors['secondary'][2]);
+        doc.setLineWidth(0.5);
+        doc.rect(colCheckX, yPos + 2.5, colCheckSize, colCheckSize);
+
+        // Menge
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(colors['dark'][0], colors['dark'][1], colors['dark'][2]);
+        doc.text(String(item.quantity) + ' x', colQtyX, yPos + 7);
+
+        // Artikelname (mit Umbruch falls zu lang)
+        doc.setFont('helvetica', 'normal');
+        const nameMaxWidth = colArtNrX - colNameX - 2;
+        const splitName = doc.splitTextToSize(item.product_name || '-', nameMaxWidth);
+        doc.text(splitName[0] || '-', colNameX, yPos + 7);
+
+        // Artikelnummer
+        doc.setFontSize(9);
+        doc.setTextColor(colors['secondary'][0], colors['secondary'][1], colors['secondary'][2]);
+        doc.text(item.product_article_number || '-', colArtNrX, yPos + 7);
+        doc.setFontSize(10);
+        doc.setTextColor(colors['dark'][0], colors['dark'][1], colors['dark'][2]);
+
+        // Trennlinie
+        doc.setDrawColor(220, 220, 220);
+        doc.setLineWidth(0.3);
+        doc.line(15, yPos + coolRowHeight, 15 + customerCardWidth, yPos + coolRowHeight);
+
+        yPos += coolRowHeight;
+      });
+    } else {
+      // Keine kühlpflichtigen Artikel automatisch erkannt – leere Zeilen zum manuellen Eintragen
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'italic');
+      doc.setTextColor(colors['secondary'][0], colors['secondary'][1], colors['secondary'][2]);
+      doc.text('Keine kühlpflichtigen Artikel automatisch erkannt – bitte ggf. manuell eintragen:', 20, yPos + 5);
+      yPos += 8;
+
+      const emptyRows = 6;
+      for (let i = 0; i < emptyRows; i++) {
+        yPos = ensureRowSpace(yPos);
+
+        if (i % 2 === 0) {
+          doc.setFillColor(248, 249, 250);
+          doc.rect(15, yPos, customerCardWidth, coolRowHeight, 'F');
+        }
+        // Checkbox
+        doc.setDrawColor(colors['secondary'][0], colors['secondary'][1], colors['secondary'][2]);
+        doc.setLineWidth(0.5);
+        doc.rect(colCheckX, yPos + 2.5, colCheckSize, colCheckSize);
+
+        // Ausfülllinie
+        doc.setDrawColor(180, 180, 180);
+        doc.setLineWidth(0.3);
+        doc.line(colQtyX, yPos + 8, 15 + customerCardWidth - 5, yPos + 8);
+
+        // Untere Trennlinie
+        doc.setDrawColor(220, 220, 220);
+        doc.line(15, yPos + coolRowHeight, 15 + customerCardWidth, yPos + coolRowHeight);
+
+        yPos += coolRowHeight;
+      }
+    }
+
+    // Abschließenden Tabellenrahmen für den letzten Seitenabschnitt zeichnen
+    finalizeTableSection(yPos);
+
+    // Footer auf der letzten Seite
+    drawFooter();
+
+    return extraPages;
   }
 
   formatDate(dateString: string): string {

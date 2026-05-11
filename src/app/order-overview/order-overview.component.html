@@ -623,6 +623,64 @@
     </div>
   }
 
+  <!-- Palettenschein Frage Modal -->
+  @if (showPalettenscheinModal) {
+    <div class="modal-overlay" (click)="cancelPalettenscheinPrompt()">
+      <div class="palettenschein-modal-content" (click)="$event.stopPropagation()">
+        <div class="palettenschein-modal-header">
+          <h2>Palettenschein drucken?</h2>
+          <button class="close-btn" (click)="cancelPalettenscheinPrompt()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="palettenschein-modal-body">
+          <div class="palettenschein-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+            </svg>
+          </div>
+
+          <h3>Soll zusätzlich ein Palettenschein gedruckt werden?</h3>
+          <p>Der Palettenschein wird als zusätzliche Seite an den Kommissionierungsschein angehängt und enthält Kundenname, Adresse, Lieferdaten sowie Felder für die Warenübergabe.</p>
+
+          @if (orderToPrint) {
+            <div class="palettenschein-preview">
+              <div class="preview-row">
+                <span class="preview-label">Bestellung:</span>
+                <span class="preview-value">#{{ orderToPrint.order_id }}</span>
+              </div>
+              <div class="preview-row">
+                <span class="preview-label">Kunde:</span>
+                <span class="preview-value">{{ getCustomerDisplayName(orderToPrint) }}</span>
+              </div>
+              @if (orderToPrint.customer_number) {
+                <div class="preview-row">
+                  <span class="preview-label">Kundennr.:</span>
+                  <span class="preview-value">{{ orderToPrint.customer_number }}</span>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="palettenschein-modal-footer">
+          <button class="btn-secondary" (click)="confirmPrintWithoutPalettenschein()">
+            Nein, nur Kommissionierungsschein
+          </button>
+          <button class="btn-primary" (click)="confirmPrintWithPalettenschein()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+            </svg>
+            Ja, mit Palettenschein
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
   <!-- Processing Warning Modal -->
   @if (showProcessingWarning) {
     <div class="modal-overlay" (click)="closeProcessingWarning()">
