@@ -1,0 +1,64 @@
+<h2 mat-dialog-title>{{ isEditMode ? 'Mitarbeiter bearbeiten' : 'Mitarbeiter anlegen' }}</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form" class="employee-form">
+    <mat-form-field appearance="outline">
+      <mat-label>Vorname</mat-label>
+      <input matInput formControlName="firstName" autocomplete="given-name" />
+      @if (form.get('firstName')?.hasError('required') && form.get('firstName')?.touched) {
+        <mat-error>Vorname ist erforderlich</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Nachname</mat-label>
+      <input matInput formControlName="lastName" autocomplete="family-name" />
+      @if (form.get('lastName')?.hasError('required') && form.get('lastName')?.touched) {
+        <mat-error>Nachname ist erforderlich</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Monatsstunden (Soll)</mat-label>
+      <input matInput type="number" formControlName="monthlyHours" min="0" step="0.25" />
+      @if (form.get('monthlyHours')?.hasError('required') && form.get('monthlyHours')?.touched) {
+        <mat-error>Monatsstunden sind erforderlich</mat-error>
+      }
+      @if (form.get('monthlyHours')?.hasError('min') && form.get('monthlyHours')?.touched) {
+        <mat-error>Mindestens 0 Stunden</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Bezahlte Urlaubstage pro Jahr</mat-label>
+      <input matInput type="number" formControlName="annualVacationDays" min="0" step="1" />
+      <mat-hint>Maximale Anzahl bezahlter Urlaubstage pro Kalenderjahr</mat-hint>
+      @if (form.get('annualVacationDays')?.hasError('required') && form.get('annualVacationDays')?.touched) {
+        <mat-error>Urlaubstage sind erforderlich</mat-error>
+      }
+      @if (form.get('annualVacationDays')?.hasError('min') && form.get('annualVacationDays')?.touched) {
+        <mat-error>Mindestens 0 Tage</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Standard-Arbeitsbeginn</mat-label>
+      <input matInput type="time" formControlName="defaultStartTime" />
+      <mat-hint>Für die Berechnung von Arbeitsende und Pausen</mat-hint>
+      @if (form.get('defaultStartTime')?.hasError('pattern') && form.get('defaultStartTime')?.touched) {
+        <mat-error>Format HH:mm verwenden</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-slide-toggle formControlName="active" color="primary">
+      {{ form.get('active')?.value ? 'Aktiv' : 'Inaktiv' }}
+    </mat-slide-toggle>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="cancel()">Abbrechen</button>
+  <button mat-flat-button color="primary" type="button" (click)="submit()" [disabled]="form.invalid">
+    {{ isEditMode ? 'Speichern' : 'Anlegen' }}
+  </button>
+</mat-dialog-actions>

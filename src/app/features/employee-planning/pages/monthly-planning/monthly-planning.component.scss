@@ -1,0 +1,166 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+.page-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  padding-top: calc(70px + 1.5rem);
+  padding-bottom: 3rem;
+}
+
+.header-card {
+  margin-bottom: 1.5rem;
+}
+
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 180px;
+  flex: 1;
+}
+
+.filter-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.filter-select {
+  width: 100%;
+  min-height: 44px;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  color: #1e293b;
+  font-size: 1rem;
+  font-family: inherit;
+  cursor: pointer;
+  appearance: auto;
+  pointer-events: auto;
+  position: relative;
+  z-index: 1;
+
+  &:focus {
+    outline: none;
+    border-color: #2e5c8a;
+    box-shadow: 0 0 0 3px rgba(46, 92, 138, 0.15);
+  }
+}
+
+.action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.action-row button mat-icon {
+  margin-right: 0.35rem;
+}
+
+.section-title {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 1rem;
+}
+
+.overview-card {
+  margin-bottom: 1.5rem;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.overview-table {
+  width: 100%;
+  min-width: 560px;
+}
+
+.overview-table th.mat-mdc-header-cell {
+  background: #f8fafc;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.clickable-row {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.clickable-row:hover {
+  background: #f1f5f9;
+}
+
+.selected-row {
+  background: #e3f2fd !important;
+}
+
+.selected-row:hover {
+  background: #dbeafe !important;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.status-badge.planned {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-badge.pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.detail-section {
+  margin-top: 0.5rem;
+}
+
+.detail-section .section-title {
+  margin-top: 0;
+}
+
+.empty-state {
+  text-align: center;
+  color: #64748b;
+  padding: 2rem 1rem;
+  margin: 0;
+}
+
+@media (max-width: 600px) {
+  .page-container {
+    padding: 1rem;
+    padding-top: calc(70px + 1rem);
+    padding-bottom: 2.5rem;
+  }
+
+  .action-row {
+    flex-direction: column;
+  }
+
+  .action-row button {
+    width: 100%;
+  }
+}

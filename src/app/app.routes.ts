@@ -58,6 +58,14 @@ export const routes: Routes = [
     { path: 'offers/:id/flyer', component: OfferFlyerComponent, canActivate: [AuthGuard] },
     { path: 'customer-price-overview', component: CustomerPriceOverviewComponent, canActivate: [AdminAuthGuard] },
     { path: 'device-tracking', component: DeviceTrackingComponent, canActivate: [AuthGuard] },
+    {
+        path: 'mitarbeiterplanung',
+        loadChildren: () =>
+            import('./features/employee-planning/employee-planning.routes').then(
+                (m) => m.EMPLOYEE_PLANNING_ROUTES
+            ),
+        canActivate: [AuthGuard],
+    },
     { path: 'category/:categoryName', component: CategoryDetailComponent },
     // Neue Route für kundenspezifische Bestellungen (öffentlich zugänglich)
     { 

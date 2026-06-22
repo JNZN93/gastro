@@ -1,0 +1,82 @@
+<mat-card class="planning-card">
+  <mat-card-header>
+    <mat-card-title>{{ employee.firstName }} {{ employee.lastName }}</mat-card-title>
+    <mat-card-subtitle>
+      Sollstunden: {{ employee.monthlyHours | number: '1.0-2' : 'de' }} h · Beginn: {{ employee.defaultStartTime }} Uhr
+    </mat-card-subtitle>
+  </mat-card-header>
+
+  <mat-card-content>
+    <div class="stats-row">
+      <span class="stat-chip">Gesamt: <strong>{{ formatHours(stats.totalHours) }} h</strong></span>
+      <span class="stat-chip">Arbeitstage: <strong>{{ stats.workDayCount }}</strong></span>
+      <span class="stat-chip">Feiertage: <strong>{{ stats.holidayCount }}</strong></span>
+      <span class="stat-chip">Urlaubstage: <strong>{{ stats.vacationCount }}</strong></span>
+      <span class="stat-chip">Arbeitsfrei: <strong>{{ stats.unpaidDayOffCount }}</strong></span>
+      <span class="stat-chip">Sonntage: <strong>{{ stats.sundayCount }}</strong></span>
+    </div>
+
+    @if (schedule && schedule.workDays.length > 0) {
+      <div class="table-wrapper">
+        <table mat-table [dataSource]="schedule.workDays" class="planning-table">
+          <ng-container matColumnDef="date">
+            <th mat-header-cell *matHeaderCellDef>Datum</th>
+            <td mat-cell *matCellDef="let day">{{ formatDate(day.date) }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="weekday">
+            <th mat-header-cell *matHeaderCellDef>Wochentag</th>
+            <td mat-cell *matCellDef="let day">{{ formatWeekday(day.date) }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="holiday">
+            <th mat-header-cell *matHeaderCellDef>Abwesenheit</th>
+            <td mat-cell *matCellDef="let day" [class.non-work]="day.isSunday || day.isHoliday || day.isVacation || day.isUnpaidDayOff">
+              {{ formatHolidayLabel(day.isSunday, day.isHoliday, day.isVacation, day.isUnpaidDayOff, day.holidayName) }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="start">
+            <th mat-header-cell *matHeaderCellDef>Beginn</th>
+            <td mat-cell *matCellDef="let day" [class.non-work]="day.isSunday || day.isHoliday || day.isVacation || day.isUnpaidDayOff || day.plannedHours <= 0">
+              {{ formatTime(day.startTime) }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="end">
+            <th mat-header-cell *matHeaderCellDef>Ende</th>
+            <td mat-cell *matCellDef="let day" [class.non-work]="day.isSunday || day.isHoliday || day.isVacation || day.isUnpaidDayOff || day.plannedHours <= 0">
+              {{ formatTime(day.endTime) }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="break">
+            <th mat-header-cell *matHeaderCellDef>Pause</th>
+            <td mat-cell *matCellDef="let day" [class.non-work]="day.isSunday || day.isHoliday || day.isVacation || day.isUnpaidDayOff">
+              {{ formatBreak(day.breakMinutes) }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="hours">
+            <th mat-header-cell *matHeaderCellDef>Netto</th>
+            <td mat-cell *matCellDef="let day" [class.non-work]="day.isSunday || day.isHoliday || day.isUnpaidDayOff">
+              {{ formatNetDuration(day.plannedHours) }}
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr
+            mat-row
+            *matRowDef="let row; columns: displayedColumns"
+            [class.weekend-row]="row.isSunday"
+            [class.holiday-row]="row.isHoliday && !row.isSunday && !row.isVacation && !row.isUnpaidDayOff"
+            [class.vacation-row]="row.isVacation"
+            [class.unpaid-row]="row.isUnpaidDayOff"
+          ></tr>
+        </table>
+      </div>
+    } @else {
+      <p class="empty-hint">Noch keine Planung vorhanden. Klicken Sie auf „Stunden automatisch verteilen“.</p>
+    }
+  </mat-card-content>
+</mat-card>

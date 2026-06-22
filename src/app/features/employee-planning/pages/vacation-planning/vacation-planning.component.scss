@@ -1,0 +1,280 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+.page-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  padding-top: calc(70px + 1.5rem);
+  padding-bottom: 3rem;
+}
+
+.header-card,
+.overview-card,
+.calendar-card {
+  margin-bottom: 1.5rem;
+}
+
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 180px;
+  flex: 1;
+}
+
+.filter-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.filter-select {
+  width: 100%;
+  min-height: 44px;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  color: #1e293b;
+  font-size: 1rem;
+  font-family: inherit;
+  cursor: pointer;
+  appearance: auto;
+
+  &:focus {
+    outline: none;
+    border-color: #2e5c8a;
+    box-shadow: 0 0 0 3px rgba(46, 92, 138, 0.15);
+  }
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.overview-table {
+  width: 100%;
+  min-width: 360px;
+}
+
+.overview-table th.mat-mdc-header-cell {
+  background: #f8fafc;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.clickable-row {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.clickable-row:hover {
+  background: #f1f5f9;
+}
+
+.selected-row {
+  background: #e3f2fd !important;
+}
+
+.selected-row:hover {
+  background: #dbeafe !important;
+}
+
+.remaining-hint {
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+.mode-selector {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.mode-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.quota-warning {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 0.9rem;
+}
+
+.calendar-actions {
+  margin-bottom: 1rem;
+}
+
+.calendar-actions button mat-icon {
+  margin-right: 0.35rem;
+}
+
+.calendar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.85rem;
+  color: #475569;
+
+  &::before {
+    content: '';
+    width: 1rem;
+    height: 1rem;
+    border-radius: 4px;
+    margin-right: 0.4rem;
+    border: 1px solid #cbd5e1;
+  }
+
+  &.vacation::before {
+    background: #dbeafe;
+    border-color: #3b82f6;
+  }
+
+  &.unpaid::before {
+    background: #f3e8ff;
+    border-color: #a855f7;
+  }
+
+  &.holiday::before {
+    background: #fffbeb;
+    border-color: #f59e0b;
+  }
+
+  &.sunday::before {
+    background: #fef2f2;
+    border-color: #f87171;
+  }
+}
+
+.calendar-grid {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.weekday-header,
+.calendar-week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.weekday-header {
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.weekday-label {
+  padding: 0.6rem 0.25rem;
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.calendar-week:not(:last-child) {
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.calendar-day {
+  min-height: 3.5rem;
+  border: none;
+  border-right: 1px solid #e2e8f0;
+  background: #fff;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  padding: 0.35rem;
+  font-family: inherit;
+  transition: background-color 0.15s ease;
+
+  &:last-child {
+    border-right: none;
+  }
+
+  &:hover:not(.empty) {
+    background: #f1f5f9;
+  }
+
+  &.empty {
+    cursor: default;
+    background: #f8fafc;
+  }
+
+  &.sunday {
+    background: #fef2f2;
+  }
+
+  &.holiday {
+    background: #fffbeb;
+  }
+
+  &.vacation {
+    background: #dbeafe;
+    color: #1d4ed8;
+    font-weight: 600;
+  }
+
+  &.unpaid {
+    background: #f3e8ff;
+    color: #7e22ce;
+    font-weight: 600;
+  }
+}
+
+.day-number {
+  font-size: 0.95rem;
+}
+
+.day-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.empty-state {
+  text-align: center;
+  color: #64748b;
+  padding: 2rem 1rem;
+  margin: 0;
+}
+
+@media (max-width: 600px) {
+  .page-container {
+    padding: 1rem;
+    padding-top: calc(70px + 1rem);
+    padding-bottom: 2.5rem;
+  }
+
+  .calendar-day {
+    min-height: 2.75rem;
+  }
+}

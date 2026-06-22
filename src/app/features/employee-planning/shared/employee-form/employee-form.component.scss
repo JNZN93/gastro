@@ -1,0 +1,15 @@
+.employee-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: min(100%, 360px);
+  padding-top: 0.5rem;
+}
+
+mat-form-field {
+  width: 100%;
+}
+
+mat-slide-toggle {
+  margin: 0.5rem 0 1rem;
+}

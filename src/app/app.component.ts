@@ -39,7 +39,8 @@ export class AppComponent implements OnInit, OnDestroy {
                            this.router.url.includes('/reports') ||
                            this.router.url.includes('/offers') ||
                            this.router.url.includes('/customer-order/') ||
-                           this.router.url.includes('/customer-price-overview');
+                           this.router.url.includes('/customer-price-overview') ||
+                           this.router.url.includes('/mitarbeiterplanung');
     this.updateHeaderVisibility();
 
     this.routerSubscription = this.router.events
@@ -59,7 +60,8 @@ export class AppComponent implements OnInit, OnDestroy {
                                 event.url.includes('/reports') ||
                                 event.url.includes('/offers') ||
                                 event.url.includes('/customer-order/') ||
-                                event.url.includes('/customer-price-overview');
+                                event.url.includes('/customer-price-overview') ||
+                                event.url.includes('/mitarbeiterplanung');
 
         // Header auf Employees-Route nur auf Mobile/Tablet ausblenden
         this.isEmployeesRoute = event.url.includes('/employees');

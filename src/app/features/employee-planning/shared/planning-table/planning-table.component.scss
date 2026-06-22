@@ -1,0 +1,70 @@
+.planning-card {
+  margin-bottom: 1.5rem;
+}
+
+.stats-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.stat-chip {
+  background: #f0f4f8;
+  border-radius: 999px;
+  padding: 0.35rem 0.85rem;
+  font-size: 0.875rem;
+  color: #334155;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.planning-table {
+  width: 100%;
+  min-width: 760px;
+}
+
+th.mat-mdc-header-cell {
+  background: #f8fafc;
+  font-weight: 600;
+  color: #1e293b;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.non-work {
+  color: #94a3b8;
+}
+
+.weekend-row {
+  background: #fef2f2;
+}
+
+.holiday-row {
+  background: #fffbeb;
+}
+
+.vacation-row {
+  background: #dbeafe;
+}
+
+.unpaid-row {
+  background: #f3e8ff;
+}
+
+.empty-hint {
+  color: #64748b;
+  font-style: italic;
+  margin: 0;
+}
+
+@media (max-width: 600px) {
+  .stats-row {
+    flex-direction: column;
+  }
+}

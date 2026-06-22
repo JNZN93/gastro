@@ -1,0 +1,189 @@
+<div class="page-container">
+  <app-employee-planning-nav />
+
+  <mat-card class="header-card">
+    <mat-card-header>
+      <mat-card-title>Urlaubsplanung</mat-card-title>
+      <mat-card-subtitle>
+        Bezahlten Urlaub und unbezahltes Arbeitsfrei planen. Bezahlter Urlaub wird gegen das Jahreskontingent des Mitarbeiters geprüft.
+      </mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <form [formGroup]="filterForm" class="filter-row">
+        <label class="filter-field">
+          <span class="filter-label">Monat</span>
+          <select formControlName="month" class="filter-select">
+            @for (name of monthNames; track name; let i = $index) {
+              <option [ngValue]="i + 1">{{ name }}</option>
+            }
+          </select>
+        </label>
+
+        <label class="filter-field">
+          <span class="filter-label">Jahr</span>
+          <select formControlName="year" class="filter-select">
+            @for (year of years; track year) {
+              <option [ngValue]="year">{{ year }}</option>
+            }
+          </select>
+        </label>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  @if (activeEmployees.length > 0) {
+    <section class="planning-section">
+      <mat-card class="overview-card">
+        <mat-card-header>
+          <mat-card-title>
+            Übersicht – {{ monthNames[selectedMonth - 1] }} {{ selectedYear }}
+          </mat-card-title>
+          <mat-card-subtitle>
+            {{ activeEmployees.length }} aktive Mitarbeiter · Zeile anklicken für Kalender
+          </mat-card-subtitle>
+        </mat-card-header>
+
+        <mat-card-content>
+          <div class="table-wrapper">
+            <table mat-table [dataSource]="employeeOverviews" class="overview-table">
+              <ng-container matColumnDef="name">
+                <th mat-header-cell *matHeaderCellDef>Mitarbeiter</th>
+                <td mat-cell *matCellDef="let row">
+                  {{ row.employee.firstName }} {{ row.employee.lastName }}
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="paidVacationMonth">
+                <th mat-header-cell *matHeaderCellDef>Urlaub (Monat)</th>
+                <td mat-cell *matCellDef="let row">{{ row.paidVacationMonth }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="unpaidMonth">
+                <th mat-header-cell *matHeaderCellDef>Arbeitsfrei</th>
+                <td mat-cell *matCellDef="let row">{{ row.unpaidMonth }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="vacationYear">
+                <th mat-header-cell *matHeaderCellDef>Urlaub {{ selectedYear }}</th>
+                <td mat-cell *matCellDef="let row">
+                  {{ row.usedPaidVacationYear }} / {{ row.employee.annualVacationDays }}
+                  <span class="remaining-hint">({{ row.remainingPaidVacationYear }} übrig)</span>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="overviewColumns"></tr>
+              <tr
+                mat-row
+                *matRowDef="let row; columns: overviewColumns"
+                class="clickable-row"
+                [class.selected-row]="isSelected(row.employee.id)"
+                (click)="selectEmployee(row.employee.id)"
+              ></tr>
+            </table>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      @if (selectedEmployee) {
+        <mat-card class="calendar-card">
+          <mat-card-header>
+            <mat-card-title>
+              {{ selectedEmployee.firstName }} {{ selectedEmployee.lastName }}
+            </mat-card-title>
+            <mat-card-subtitle>
+              {{ selectedPaidVacationMonthCount }} Urlaubstag(e) · {{ selectedUnpaidMonthCount }} Arbeitsfrei in
+              {{ monthNames[selectedMonth - 1] }} {{ selectedYear }} ·
+              Jahreskontingent: {{ selectedUsedPaidVacationYear }} / {{ selectedEmployee.annualVacationDays }}
+              ({{ selectedRemainingPaidVacationYear }} übrig)
+            </mat-card-subtitle>
+          </mat-card-header>
+
+          <mat-card-content>
+            <div class="mode-selector">
+              <span class="mode-label">Eintragsart:</span>
+              <mat-button-toggle-group
+                [value]="selectedAbsenceType"
+                (change)="setAbsenceType($event.value)"
+                aria-label="Eintragsart wählen"
+              >
+                <mat-button-toggle value="paid">Bezahlter Urlaub</mat-button-toggle>
+                <mat-button-toggle value="unpaid">Arbeitsfrei</mat-button-toggle>
+              </mat-button-toggle-group>
+            </div>
+
+            @if (selectedAbsenceType === 'paid' && !canAddMorePaidVacation) {
+              <p class="quota-warning">
+                Das Jahreskontingent für bezahlten Urlaub ist erreicht. Es können keine weiteren Urlaubstage eingetragen werden.
+              </p>
+            }
+
+            <div class="calendar-actions">
+              <button
+                mat-stroked-button
+                color="warn"
+                (click)="clearMonthAbsences()"
+                [disabled]="selectedPaidVacationMonthCount === 0 && selectedUnpaidMonthCount === 0"
+              >
+                <mat-icon>clear_all</mat-icon>
+                Monat leeren
+              </button>
+            </div>
+
+            <div class="calendar-legend">
+              <span class="legend-item vacation">Bezahlter Urlaub</span>
+              <span class="legend-item unpaid">Arbeitsfrei</span>
+              <span class="legend-item holiday">Feiertag</span>
+              <span class="legend-item sunday">Sonntag</span>
+            </div>
+
+            <div class="calendar-grid">
+              <div class="weekday-header">
+                @for (label of weekdayLabels; track label) {
+                  <span class="weekday-label">{{ label }}</span>
+                }
+              </div>
+
+              @for (week of calendarWeeks; track $index) {
+                <div class="calendar-week">
+                  @for (day of week; track $index) {
+                    @if (day) {
+                      <button
+                        type="button"
+                        class="calendar-day"
+                        [class.vacation]="day.absenceType === 'paid'"
+                        [class.unpaid]="day.absenceType === 'unpaid'"
+                        [class.holiday]="day.isHoliday && !day.absenceType"
+                        [class.sunday]="day.isSunday && !day.absenceType"
+                        [title]="dayTooltip(day)"
+                        (click)="toggleDay(day)"
+                      >
+                        <span class="day-number">{{ day.dayNumber }}</span>
+                        @if (day.absenceType === 'paid') {
+                          <span class="day-badge">U</span>
+                        }
+                        @if (day.absenceType === 'unpaid') {
+                          <span class="day-badge">F</span>
+                        }
+                      </button>
+                    } @else {
+                      <span class="calendar-day empty"></span>
+                    }
+                  }
+                </div>
+              }
+            </div>
+          </mat-card-content>
+        </mat-card>
+      }
+    </section>
+  } @else {
+    <mat-card>
+      <mat-card-content>
+        <p class="empty-state">
+          Keine aktiven Mitarbeiter vorhanden. Bitte legen Sie zuerst Mitarbeiter an und setzen Sie sie auf „Aktiv“.
+        </p>
+      </mat-card-content>
+    </mat-card>
+  }
+</div>
