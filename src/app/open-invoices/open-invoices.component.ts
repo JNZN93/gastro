@@ -36,6 +36,18 @@ interface AuditLogEntry {
   created_at: string;
 }
 
+interface HiDriveWarning {
+  operation: string;
+  message: string;
+}
+
+interface InvoiceUpdateResponse {
+  success: boolean;
+  data?: Invoice;
+  message?: string;
+  hidriveWarning?: HiDriveWarning;
+}
+
 @Component({
   selector: 'app-open-invoices',
   imports: [CommonModule, FormsModule],
@@ -71,6 +83,11 @@ export class OpenInvoicesComponent implements OnInit {
   pendingPaidInvoice: Invoice | null = null;
   paidDate: string = '';
   isConfirmingPaid: boolean = false;
+
+  // HiDrive warning modal (e.g. move failed after marking as paid)
+  showHiDriveWarningModal: boolean = false;
+  hiDriveWarningMessage: string = '';
+  hiDriveWarningInvoiceLabel: string = '';
 
   // Audit info modal
   showAuditModal: boolean = false;
@@ -1451,11 +1468,23 @@ export class OpenInvoicesComponent implements OnInit {
 
   // Update invoice via API
   private updateInvoice(id: string, updateData: Partial<Invoice>) {
-    return this.http.put<{success: boolean, data: Invoice, message?: string}>(
+    return this.http.put<InvoiceUpdateResponse>(
       `${environment.apiUrl}/api/incoming-invoices/${id}`,
       updateData,
       { headers: this.getAuthHeaders() }
     );
+  }
+
+  private showHiDriveMoveWarning(invoice: Invoice, warning: HiDriveWarning): void {
+    this.hiDriveWarningInvoiceLabel = `${invoice.supplier_name} · ${invoice.invoice_number}`;
+    this.hiDriveWarningMessage = warning.message;
+    this.showHiDriveWarningModal = true;
+  }
+
+  closeHiDriveWarningModal(): void {
+    this.showHiDriveWarningModal = false;
+    this.hiDriveWarningMessage = '';
+    this.hiDriveWarningInvoiceLabel = '';
   }
 
   // Paid status modal methods
@@ -1490,8 +1519,11 @@ export class OpenInvoicesComponent implements OnInit {
             // Update filtered invoices cache after status change
             this.updateFilteredInvoices();
           }
-          // Close modal
+          const savedInvoice = this.pendingPaidInvoice!;
           this.closePaidStatusModal();
+          if (response.hidriveWarning) {
+            this.showHiDriveMoveWarning(savedInvoice, response.hidriveWarning);
+          }
         } else {
           this.errorMessage = response.message || 'Failed to update invoice';
           // Reload data to revert local changes

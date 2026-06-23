@@ -905,6 +905,36 @@
     </div>
   </div>
 
+  <!-- HiDrive Move Warning Modal -->
+  <div class="modal-overlay" [class.active]="showHiDriveWarningModal" (click)="closeHiDriveWarningModal()"></div>
+  <div class="duplicate-modal hidrive-warning-modal" [class.active]="showHiDriveWarningModal">
+    <div class="modal-header">
+      <h2>HiDrive-Warnung</h2>
+      <button class="close-btn" (click)="closeHiDriveWarningModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-content">
+      <p class="warning-text">
+        Die Rechnung <strong>{{ hiDriveWarningInvoiceLabel }}</strong> wurde als bezahlt gespeichert,
+        aber die Datei konnte <strong>nicht in HiDrive verschoben</strong> werden.
+      </p>
+      <div class="hidrive-error-detail" *ngIf="hiDriveWarningMessage">
+        {{ hiDriveWarningMessage }}
+      </div>
+      <p class="warning-hint">
+        Der Fehler wurde in der Rechnungshistorie protokolliert. Bitte prüfen Sie den Dateipfad in HiDrive manuell.
+      </p>
+      <div class="modal-actions">
+        <button class="confirm-btn" (click)="closeHiDriveWarningModal()">
+          Verstanden
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Audit Info Modal -->
   <div class="modal-overlay" [class.active]="showAuditModal" (click)="closeAuditModal()"></div>
   <div class="audit-modal" [class.active]="showAuditModal" *ngIf="auditInvoice">

@@ -2543,6 +2543,42 @@
   }
 }
 
+.hidrive-warning-modal {
+  max-width: 560px;
+
+  .modal-header {
+    border-bottom-color: #fdba74;
+    background: linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%);
+
+    h2 {
+      color: #c2410c;
+    }
+  }
+
+  .hidrive-error-detail {
+    margin: 1rem 0;
+    padding: 0.75rem 1rem;
+    background: #fff7ed;
+    border: 1px solid #fdba74;
+    border-radius: 8px;
+    color: #9a3412;
+    font-size: 0.875rem;
+    word-break: break-word;
+  }
+
+  .warning-hint {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+
+  .modal-actions {
+    margin-top: 1.5rem;
+    justify-content: flex-end;
+  }
+}
+
 // Audit Info Modal
 .audit-modal {
   position: fixed;
