@@ -2752,9 +2752,6 @@ export class EmployeesComponent implements OnInit, OnDestroy {
         if (customerPrice.article_number) {
           customerPriceMap.set(customerPrice.article_number, customerPrice);
         }
-        if (customerPrice.id) {
-          customerPriceMap.set(customerPrice.id.toString(), customerPrice);
-        }
         if (customerPrice.ean) {
           customerPriceMap.set(customerPrice.ean, customerPrice);
         }
@@ -2774,10 +2771,6 @@ export class EmployeesComponent implements OnInit, OnDestroy {
         
         if (!customerPrice && artikel.product_id) {
           customerPrice = customerPriceMap.get(artikel.product_id);
-        }
-        
-        if (!customerPrice && artikel.id) {
-          customerPrice = customerPriceMap.get(artikel.id.toString());
         }
         
         if (!customerPrice && artikel.ean) {
@@ -2867,10 +2860,6 @@ export class EmployeesComponent implements OnInit, OnDestroy {
       
       if (!customerPrice && orderItem.product_id) {
         customerPrice = customerPriceMap.get(orderItem.product_id);
-      }
-      
-      if (!customerPrice && orderItem.id) {
-        customerPrice = customerPriceMap.get(orderItem.id.toString());
       }
       
       if (!customerPrice && orderItem.ean) {
