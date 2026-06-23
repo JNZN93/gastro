@@ -920,7 +920,21 @@
       <p class="audit-invoice-ref">
         <strong>{{ auditInvoice.supplier_name }}</strong> · {{ auditInvoice.invoice_number }}
       </p>
-      <div class="audit-info-list">
+
+      <div class="audit-tabs">
+        <button class="audit-tab"
+                [class.active]="auditModalTab === 'overview'"
+                (click)="switchAuditTab('overview')">
+          Übersicht
+        </button>
+        <button class="audit-tab"
+                [class.active]="auditModalTab === 'history'"
+                (click)="switchAuditTab('history')">
+          Historie
+        </button>
+      </div>
+
+      <div *ngIf="auditModalTab === 'overview'" class="audit-info-list">
         <div class="info-row">
           <span class="label">Erstellt am:</span>
           <span class="value">{{ formatDateTime(auditInvoice.created_at) }}</span>
@@ -938,6 +952,42 @@
           <span class="value">{{ getAuditUserName(auditInvoice.updated_by_name) }}</span>
         </div>
       </div>
+
+      <div *ngIf="auditModalTab === 'history'" class="audit-history">
+        <div *ngIf="isLoadingAuditLog" class="audit-history-state">
+          Historie wird geladen...
+        </div>
+
+        <div *ngIf="!isLoadingAuditLog && auditLogError" class="audit-history-state error">
+          {{ auditLogError }}
+        </div>
+
+        <div *ngIf="!isLoadingAuditLog && !auditLogError && auditLogEntries.length === 0" class="audit-history-state">
+          Noch keine Historie vorhanden.
+        </div>
+
+        <div *ngIf="!isLoadingAuditLog && !auditLogError && auditLogEntries.length > 0" class="audit-timeline">
+          <div *ngFor="let entry of auditLogEntries" class="audit-timeline-item">
+            <div class="audit-timeline-marker"></div>
+            <div class="audit-timeline-content">
+              <div class="audit-timeline-header">
+                <span class="audit-action">{{ getAuditActionLabel(entry) }}</span>
+                <span class="audit-time">{{ formatDateTime(entry.created_at) }}</span>
+              </div>
+              <div class="audit-actor">{{ getAuditActorName(entry) }}</div>
+              <div *ngIf="entry.old_value && entry.new_value && entry.action !== 'created'" class="audit-change">
+                <span class="old-value">{{ entry.old_value }}</span>
+                <span class="arrow">→</span>
+                <span class="new-value">{{ entry.new_value }}</span>
+              </div>
+              <div *ngIf="entry.action === 'created' && entry.new_value" class="audit-change single">
+                {{ entry.new_value }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="modal-actions">
         <button class="cancel-btn" (click)="closeAuditModal()">
           Schließen

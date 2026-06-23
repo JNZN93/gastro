@@ -25,6 +25,17 @@ interface Invoice {
   updated_by_name?: string;
 }
 
+interface AuditLogEntry {
+  id: number;
+  action: string;
+  field_name?: string;
+  old_value?: string;
+  new_value?: string;
+  source: 'user' | 'system';
+  user_name?: string;
+  created_at: string;
+}
+
 @Component({
   selector: 'app-open-invoices',
   imports: [CommonModule, FormsModule],
@@ -64,6 +75,10 @@ export class OpenInvoicesComponent implements OnInit {
   // Audit info modal
   showAuditModal: boolean = false;
   auditInvoice: Invoice | null = null;
+  auditModalTab: 'overview' | 'history' = 'overview';
+  auditLogEntries: AuditLogEntry[] = [];
+  isLoadingAuditLog: boolean = false;
+  auditLogError: string = '';
 
   // Tab navigation
   activeTab: 'all' | 'open' | 'paid' | 'overdue' | 'sepa' = 'all';
@@ -1651,14 +1666,95 @@ export class OpenInvoicesComponent implements OnInit {
     return name?.trim() || 'Unbekannt';
   }
 
+  switchAuditTab(tab: 'overview' | 'history'): void {
+    this.auditModalTab = tab;
+    if (tab === 'history' && this.auditInvoice && this.auditLogEntries.length === 0 && !this.isLoadingAuditLog) {
+      this.loadAuditLog(this.auditInvoice.id);
+    }
+  }
+
+  loadAuditLog(invoiceId: string): void {
+    this.isLoadingAuditLog = true;
+    this.auditLogError = '';
+
+    this.http.get<{ success: boolean; data: AuditLogEntry[]; error?: string }>(
+      `${environment.apiUrl}/api/incoming-invoices/${invoiceId}/audit-log`,
+      { headers: this.getAuthHeaders() }
+    ).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          this.auditLogEntries = response.data;
+        } else {
+          this.auditLogError = response.error || 'Historie konnte nicht geladen werden';
+        }
+        this.isLoadingAuditLog = false;
+      },
+      error: () => {
+        this.auditLogError = 'Historie konnte nicht geladen werden';
+        this.isLoadingAuditLog = false;
+      }
+    });
+  }
+
+  getAuditFieldLabel(fieldName?: string): string {
+    const labels: Record<string, string> = {
+      invoice_number: 'Rechnungsnummer',
+      supplier_name: 'Lieferant',
+      date: 'Rechnungsdatum',
+      due_date: 'Fälligkeitsdatum',
+      amount: 'Betrag',
+      status: 'Status',
+      paid_date: 'Bezahldatum',
+      file_name: 'Anhang',
+      notes: 'Notizen',
+      hidrive_path: 'HiDrive-Pfad'
+    };
+
+    return fieldName ? (labels[fieldName] || fieldName) : '';
+  }
+
+  getAuditActionLabel(entry: AuditLogEntry): string {
+    switch (entry.action) {
+      case 'created':
+        return 'Rechnung angelegt';
+      case 'updated':
+        return `${this.getAuditFieldLabel(entry.field_name)} geändert`;
+      case 'status_changed':
+        return 'Status geändert';
+      case 'file_uploaded':
+        return 'Datei hochgeladen';
+      case 'file_replaced':
+        return 'Datei ersetzt';
+      case 'deleted':
+        return 'Rechnung gelöscht';
+      default:
+        return entry.action;
+    }
+  }
+
+  getAuditActorName(entry: AuditLogEntry): string {
+    if (entry.source === 'system') {
+      return 'System';
+    }
+    return this.getAuditUserName(entry.user_name);
+  }
+
   showInvoiceAuditInfo(invoice: Invoice): void {
     this.auditInvoice = invoice;
+    this.auditModalTab = 'overview';
+    this.auditLogEntries = [];
+    this.auditLogError = '';
+    this.isLoadingAuditLog = false;
     this.showAuditModal = true;
   }
 
   closeAuditModal(): void {
     this.showAuditModal = false;
     this.auditInvoice = null;
+    this.auditModalTab = 'overview';
+    this.auditLogEntries = [];
+    this.auditLogError = '';
+    this.isLoadingAuditLog = false;
   }
 
   exportToPDF(all: boolean) {
