@@ -19,6 +19,10 @@ interface Invoice {
   hidrive_path?: string;
   company?: string;
   paid_date?: string;
+  created_at?: string;
+  updated_at?: string;
+  created_by_name?: string;
+  updated_by_name?: string;
 }
 
 @Component({
@@ -56,6 +60,10 @@ export class OpenInvoicesComponent implements OnInit {
   pendingPaidInvoice: Invoice | null = null;
   paidDate: string = '';
   isConfirmingPaid: boolean = false;
+
+  // Audit info modal
+  showAuditModal: boolean = false;
+  auditInvoice: Invoice | null = null;
 
   // Tab navigation
   activeTab: 'all' | 'open' | 'paid' | 'overdue' | 'sepa' = 'all';
@@ -1622,6 +1630,35 @@ export class OpenInvoicesComponent implements OnInit {
     const day = String(date.getUTCDate()).padStart(2, '0');
     // Strict TT.MM.JJJJ
     return `${day}.${month}.${year}`;
+  }
+
+  formatDateTime(dateString?: string): string {
+    if (!dateString) return '—';
+
+    const parsed = new Date(dateString);
+    if (isNaN(parsed.getTime())) return '—';
+
+    const day = String(parsed.getDate()).padStart(2, '0');
+    const month = String(parsed.getMonth() + 1).padStart(2, '0');
+    const year = parsed.getFullYear();
+    const hours = String(parsed.getHours()).padStart(2, '0');
+    const minutes = String(parsed.getMinutes()).padStart(2, '0');
+
+    return `${day}.${month}.${year}, ${hours}:${minutes}`;
+  }
+
+  getAuditUserName(name?: string): string {
+    return name?.trim() || 'Unbekannt';
+  }
+
+  showInvoiceAuditInfo(invoice: Invoice): void {
+    this.auditInvoice = invoice;
+    this.showAuditModal = true;
+  }
+
+  closeAuditModal(): void {
+    this.showAuditModal = false;
+    this.auditInvoice = null;
   }
 
   exportToPDF(all: boolean) {
