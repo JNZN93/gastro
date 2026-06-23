@@ -233,7 +233,7 @@ export class MonthlyPlanningComponent implements OnInit, OnDestroy {
       const schedule = this.schedulesByEmployee.get(employee.id);
       const stats = schedule
         ? this.planningService.calculateStats(schedule)
-        : { totalHours: 0, workDayCount: 0, holidayCount: 0, sundayCount: 0, vacationCount: 0, unpaidDayOffCount: 0 };
+        : { totalHours: 0, workDayCount: 0, holidayCount: 0, sundayCount: 0, vacationCount: 0, unpaidDayOffCount: 0, sickDayCount: 0 };
       const isPlanned = schedule?.workDays.some((day) => day.plannedHours > 0) ?? false;
 
       return { employee, stats, isPlanned };

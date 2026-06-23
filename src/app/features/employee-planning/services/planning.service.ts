@@ -8,6 +8,7 @@ import {
   StoredWorkDay,
   WorkDay,
 } from '../models/schedule.model';
+import { AbsenceDayResult, AbsenceType } from '../models/vacation.model';
 import { HolidayService } from './holiday.service';
 import { TimeCalculationService } from './time-calculation.service';
 import { EmployeeService } from './employee.service';
@@ -68,6 +69,7 @@ export class PlanningService {
         holidayName: holidayInfo?.name,
         isVacation: absenceType === 'paid',
         isUnpaidDayOff: absenceType === 'unpaid',
+        isSick: absenceType === 'sick',
       });
     }
 
@@ -186,6 +188,7 @@ export class PlanningService {
     let sundayCount = 0;
     let vacationCount = 0;
     let unpaidDayOffCount = 0;
+    let sickDayCount = 0;
 
     for (const day of schedule.workDays) {
       totalHours += day.plannedHours;
@@ -201,7 +204,10 @@ export class PlanningService {
       if (day.isUnpaidDayOff) {
         unpaidDayOffCount++;
       }
-      if (!day.isSunday && !day.isHoliday && !day.isVacation && !day.isUnpaidDayOff) {
+      if (day.isSick) {
+        sickDayCount++;
+      }
+      if (!day.isSunday && !day.isHoliday && !day.isVacation && !day.isUnpaidDayOff && !day.isSick) {
         workDayCount++;
       }
     }
@@ -213,6 +219,7 @@ export class PlanningService {
       sundayCount,
       vacationCount,
       unpaidDayOffCount,
+      sickDayCount,
     };
   }
 
@@ -226,9 +233,144 @@ export class PlanningService {
           ...day,
           isVacation: absenceType === 'paid',
           isUnpaidDayOff: absenceType === 'unpaid',
+          isSick: absenceType === 'sick',
         };
       }),
     };
+  }
+
+  /** Ändert die Abwesenheit eines Tages und verteilt die Monatsstunden neu. */
+  updateDayAbsence(
+    employee: Employee,
+    schedule: EmployeeSchedule,
+    date: Date,
+    absenceType: AbsenceType | null
+  ): { schedule: EmployeeSchedule; result: AbsenceDayResult } {
+    const result = this.vacationService.setAbsenceForDay(
+      employee.id,
+      date,
+      absenceType,
+      employee.annualVacationDays
+    );
+
+    if (result.action === 'blocked' || result.action === 'unchanged') {
+      return { schedule, result };
+    }
+
+    const synced = this.applyVacationToSchedule(schedule);
+    const hasPlannedHours = synced.workDays.some((day) => day.plannedHours > 0);
+
+    if (!hasPlannedHours) {
+      const updated = this.saveSchedule(synced);
+      return { schedule: updated, result };
+    }
+
+    const redistributed = this.distributeHours(employee.monthlyHours, synced.workDays);
+    const enriched = redistributed.map((day) =>
+      this.timeCalculation.enrichWorkDay(day, employee.defaultStartTime)
+    );
+    const updated = this.saveSchedule({ ...schedule, workDays: enriched });
+    return { schedule: updated, result };
+  }
+
+  /** Passt die geplanten Netto-Stunden eines einzelnen Tages an. */
+  updateDayPlannedHours(
+    employee: Employee,
+    schedule: EmployeeSchedule,
+    date: Date,
+    plannedHours: number
+  ): EmployeeSchedule {
+    const rounded = this.roundToQuarter(Math.max(0, plannedHours));
+    const workDays = schedule.workDays.map((day) => {
+      if (!this.isSameDate(day.date, date)) {
+        return day;
+      }
+      if (day.isSunday || day.isHoliday || day.isUnpaidDayOff) {
+        return day;
+      }
+
+      const updated = { ...day, plannedHours: rounded };
+      return this.timeCalculation.recalculateWorkDay(updated, employee.defaultStartTime);
+    });
+
+    return this.saveSchedule({ ...schedule, workDays });
+  }
+
+  /** Passt den Arbeitsbeginn eines Tages an. */
+  updateDayStartTime(
+    employee: Employee,
+    schedule: EmployeeSchedule,
+    date: Date,
+    startTime: string
+  ): EmployeeSchedule | null {
+    return this.updateEditableWorkDay(schedule, date, (day) =>
+      this.timeCalculation.applyStartTime(day, startTime, employee.defaultStartTime)
+    );
+  }
+
+  /** Passt das Arbeitsende eines Tages an. */
+  updateDayEndTime(
+    employee: Employee,
+    schedule: EmployeeSchedule,
+    date: Date,
+    endTime: string
+  ): EmployeeSchedule | null {
+    return this.updateEditableWorkDay(schedule, date, (day) =>
+      this.timeCalculation.applyEndTime(day, endTime, employee.defaultStartTime)
+    );
+  }
+
+  /** Passt die Pause eines Tages an. */
+  updateDayBreakMinutes(
+    employee: Employee,
+    schedule: EmployeeSchedule,
+    date: Date,
+    breakMinutes: number
+  ): EmployeeSchedule | null {
+    return this.updateEditableWorkDay(schedule, date, (day) =>
+      this.timeCalculation.applyBreakMinutes(day, breakMinutes, employee.defaultStartTime)
+    );
+  }
+
+  private updateEditableWorkDay(
+    schedule: EmployeeSchedule,
+    date: Date,
+    transform: (day: WorkDay) => WorkDay | null
+  ): EmployeeSchedule | null {
+    let updatedDay: WorkDay | null = null;
+
+    const workDays = schedule.workDays.map((day) => {
+      if (!this.isSameDate(day.date, date) || !this.isEditableWorkDay(day)) {
+        return day;
+      }
+
+      updatedDay = transform(day);
+      return updatedDay ?? day;
+    });
+
+    if (!updatedDay) {
+      return null;
+    }
+
+    return this.saveSchedule({ ...schedule, workDays });
+  }
+
+  private isEditableWorkDay(day: WorkDay): boolean {
+    return (
+      !day.isSunday &&
+      !day.isHoliday &&
+      !day.isUnpaidDayOff &&
+      !day.isVacation &&
+      !day.isSick
+    );
+  }
+
+  private isSameDate(a: Date, b: Date): boolean {
+    return (
+      a.getFullYear() === b.getFullYear() &&
+      a.getMonth() === b.getMonth() &&
+      a.getDate() === b.getDate()
+    );
   }
 
   private roundToQuarter(hours: number): number {
@@ -304,6 +446,7 @@ export class PlanningService {
       holidayName: day.holidayName,
       isVacation: day.isVacation,
       isUnpaidDayOff: day.isUnpaidDayOff,
+      isSick: day.isSick,
     };
   }
 
@@ -320,6 +463,7 @@ export class PlanningService {
       holidayName: stored.holidayName,
       isVacation: stored.isVacation ?? false,
       isUnpaidDayOff: stored.isUnpaidDayOff ?? false,
+      isSick: stored.isSick ?? false,
     };
   }
 }

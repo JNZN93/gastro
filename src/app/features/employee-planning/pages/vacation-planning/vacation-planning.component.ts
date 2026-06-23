@@ -30,6 +30,7 @@ interface CalendarDay {
 interface EmployeeVacationOverview {
   employee: Employee;
   paidVacationMonth: number;
+  sickMonth: number;
   unpaidMonth: number;
   usedPaidVacationYear: number;
   remainingPaidVacationYear: number;
@@ -44,7 +45,7 @@ const WEEKDAY_LABELS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 
 const PAGE_SCROLL_CLASS = 'employee-planning-page';
 
-/** Seite zur Urlaubs- und Arbeitsfrei-Planung pro Mitarbeiter und Monat. */
+/** Seite zur Abwesenheitsplanung (Urlaub, Krankheit, Arbeitsfrei) pro Mitarbeiter und Monat. */
 @Component({
   selector: 'app-vacation-planning',
   standalone: true,
@@ -72,7 +73,7 @@ export class VacationPlanningComponent implements OnInit, OnDestroy {
   employeeOverviews: EmployeeVacationOverview[] = [];
   selectedEmployeeId: string | null = null;
   selectedAbsenceType: AbsenceType = 'paid';
-  overviewColumns = ['name', 'paidVacationMonth', 'unpaidMonth', 'vacationYear'];
+  overviewColumns = ['name', 'paidVacationMonth', 'sickMonth', 'unpaidMonth', 'vacationYear'];
   calendarWeeks: (CalendarDay | null)[][] = [];
 
   private vacationSubscription?: Subscription;
@@ -157,6 +158,18 @@ export class VacationPlanningComponent implements OnInit, OnDestroy {
       this.selectedYear,
       this.selectedMonth,
       'unpaid'
+    );
+  }
+
+  get selectedSickMonthCount(): number {
+    if (!this.selectedEmployeeId) {
+      return 0;
+    }
+    return this.vacationService.getAbsenceCountForMonth(
+      this.selectedEmployeeId,
+      this.selectedYear,
+      this.selectedMonth,
+      'sick'
     );
   }
 
@@ -252,6 +265,9 @@ export class VacationPlanningComponent implements OnInit, OnDestroy {
     if (day.absenceType === 'paid') {
       return 'Bezahlter Urlaub – Klicken zum Entfernen oder Ändern';
     }
+    if (day.absenceType === 'sick') {
+      return 'Krank – Klicken zum Entfernen oder Ändern';
+    }
     if (day.absenceType === 'unpaid') {
       return 'Arbeitsfrei (unbezahlt) – Klicken zum Entfernen oder Ändern';
     }
@@ -266,19 +282,27 @@ export class VacationPlanningComponent implements OnInit, OnDestroy {
     }
     return this.selectedAbsenceType === 'paid'
       ? 'Klicken für bezahlten Urlaub'
-      : 'Klicken für Arbeitsfrei';
+      : this.selectedAbsenceType === 'sick'
+        ? 'Klicken für Krankheit'
+        : 'Klicken für Arbeitsfrei';
   }
 
   private messageForResult(result: { action: string; type?: AbsenceType }): string {
     switch (result.action) {
       case 'added':
-        return result.type === 'paid' ? 'Bezahlter Urlaub eingetragen.' : 'Arbeitsfrei eingetragen.';
+        return result.type === 'paid'
+          ? 'Bezahlter Urlaub eingetragen.'
+          : result.type === 'sick'
+            ? 'Krankheit eingetragen.'
+            : 'Arbeitsfrei eingetragen.';
       case 'removed':
         return 'Eintrag entfernt.';
       case 'changed':
         return result.type === 'paid'
           ? 'Auf bezahlten Urlaub geändert.'
-          : 'Auf Arbeitsfrei geändert.';
+          : result.type === 'sick'
+            ? 'Auf Krankheit geändert.'
+            : 'Auf Arbeitsfrei geändert.';
       default:
         return '';
     }
@@ -299,6 +323,12 @@ export class VacationPlanningComponent implements OnInit, OnDestroy {
         this.selectedYear,
         this.selectedMonth,
         'paid'
+      ),
+      sickMonth: this.vacationService.getAbsenceCountForMonth(
+        employee.id,
+        this.selectedYear,
+        this.selectedMonth,
+        'sick'
       ),
       unpaidMonth: this.vacationService.getAbsenceCountForMonth(
         employee.id,

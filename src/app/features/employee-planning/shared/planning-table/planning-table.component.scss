@@ -15,6 +15,16 @@
   padding: 0.35rem 0.85rem;
   font-size: 0.875rem;
   color: #334155;
+
+  &.over-target {
+    background: #fef2f2;
+    border: 1px solid #fca5a5;
+    color: #b91c1c;
+
+    strong {
+      color: #b91c1c;
+    }
+  }
 }
 
 .table-wrapper {
@@ -41,6 +51,46 @@ th.mat-mdc-header-cell {
   color: #94a3b8;
 }
 
+.cell-select,
+.cell-input {
+  width: 100%;
+  min-width: 7rem;
+  max-width: 11rem;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #fff;
+  color: #1e293b;
+  font-size: 0.875rem;
+  font-family: inherit;
+
+  &:focus {
+    outline: none;
+    border-color: #2e5c8a;
+    box-shadow: 0 0 0 2px rgba(46, 92, 138, 0.15);
+  }
+}
+
+.cell-input {
+  max-width: 5.5rem;
+  text-align: right;
+}
+
+.cell-input-time {
+  max-width: 7rem;
+  text-align: center;
+}
+
+.cell-input-break {
+  max-width: 4rem;
+}
+
+.input-suffix {
+  margin-left: 0.25rem;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
 .weekend-row {
   background: #fef2f2;
 }
@@ -51,6 +101,10 @@ th.mat-mdc-header-cell {
 
 .vacation-row {
   background: #dbeafe;
+}
+
+.sick-row {
+  background: #fecdd3;
 }
 
 .unpaid-row {

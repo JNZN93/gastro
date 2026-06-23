@@ -36,6 +36,7 @@ const COLORS = {
   holidayBg: 'FFFFF7ED',
   vacationBg: 'FFDBEAFE',
   unpaidBg: 'FFF3E8FF',
+  sickBg: 'FFFECDD3',
   altRow: 'FFF8FAFC',
   weeklyTotal: 'FFE0ECFF',
 };
@@ -223,6 +224,21 @@ export class ExcelExportService {
       row.getCell(3).alignment = { horizontal: 'center' };
       row.getCell(4).alignment = { horizontal: 'center' };
       row.getCell(3).font = { color: { argb: 'FF1D4ED8' } };
+      row.getCell(4).font = { color: { argb: 'FF94A3B8' } };
+      if (workDay.plannedHours > 0) {
+        this.setDurationCell(row.getCell(6), workDay.plannedHours);
+      }
+      this.applyDataBorders(row);
+      return;
+    }
+
+    if (workDay.isSick) {
+      row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLORS.sickBg } };
+      row.getCell(3).value = 'Krank';
+      row.getCell(4).value = '--';
+      row.getCell(3).alignment = { horizontal: 'center' };
+      row.getCell(4).alignment = { horizontal: 'center' };
+      row.getCell(3).font = { color: { argb: 'FFB91C1C' } };
       row.getCell(4).font = { color: { argb: 'FF94A3B8' } };
       if (workDay.plannedHours > 0) {
         this.setDurationCell(row.getCell(6), workDay.plannedHours);

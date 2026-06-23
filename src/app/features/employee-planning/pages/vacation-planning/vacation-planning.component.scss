@@ -156,6 +156,11 @@
     border-color: #3b82f6;
   }
 
+  &.sick::before {
+    background: #fecdd3;
+    border-color: #f87171;
+  }
+
   &.unpaid::before {
     background: #f3e8ff;
     border-color: #a855f7;
@@ -240,6 +245,12 @@
   &.vacation {
     background: #dbeafe;
     color: #1d4ed8;
+    font-weight: 600;
+  }
+
+  &.sick {
+    background: #fecdd3;
+    color: #b91c1c;
     font-weight: 600;
   }
 

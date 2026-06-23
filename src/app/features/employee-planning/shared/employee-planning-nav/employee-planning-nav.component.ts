@@ -18,9 +18,9 @@ import { MatIconModule } from '@angular/material/icon';
         <mat-icon>calendar_month</mat-icon>
         Monatsplanung
       </a>
-      <a mat-stroked-button routerLink="/mitarbeiterplanung/urlaubsplanung" routerLinkActive="active-link">
-        <mat-icon>beach_access</mat-icon>
-        Urlaubsplanung
+      <a mat-stroked-button routerLink="/mitarbeiterplanung/abwesenheit" routerLinkActive="active-link">
+        <mat-icon>event_busy</mat-icon>
+        Abwesenheit
       </a>
       <a mat-stroked-button routerLink="/admin">
         <mat-icon>arrow_back</mat-icon>

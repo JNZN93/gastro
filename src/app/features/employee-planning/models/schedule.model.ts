@@ -10,6 +10,7 @@ export interface WorkDay {
   holidayName?: string;
   isVacation: boolean;
   isUnpaidDayOff: boolean;
+  isSick: boolean;
 }
 
 /** Monatsplan für einen Mitarbeiter. */
@@ -33,6 +34,7 @@ export interface StoredWorkDay {
   holidayName?: string;
   isVacation?: boolean;
   isUnpaidDayOff?: boolean;
+  isSick?: boolean;
 }
 
 /** Serialisierte Schedule-Struktur für LocalStorage. */
@@ -51,4 +53,5 @@ export interface ScheduleStats {
   sundayCount: number;
   vacationCount: number;
   unpaidDayOffCount: number;
+  sickDayCount: number;
 }

@@ -32,6 +32,10 @@ export class VacationService {
     return this.getAbsenceType(employeeId, date) === 'unpaid';
   }
 
+  isSickDay(employeeId: string, date: Date): boolean {
+    return this.getAbsenceType(employeeId, date) === 'sick';
+  }
+
   /** @deprecated Verwende isPaidVacationDay */
   isVacationDay(employeeId: string, date: Date): boolean {
     return this.isPaidVacationDay(employeeId, date);
@@ -108,6 +112,50 @@ export class VacationService {
     vacations.push({ employeeId, date: key, type: selectedType });
     this.persist(vacations);
     return { action: 'added', type: selectedType };
+  }
+
+  /** Setzt oder entfernt die Abwesenheit an einem Tag (ohne Toggle-Verhalten). */
+  setAbsenceForDay(
+    employeeId: string,
+    date: Date,
+    type: AbsenceType | null,
+    annualAllowance: number
+  ): AbsenceDayResult {
+    const key = this.formatDateKey(date);
+    const year = date.getFullYear();
+    const current = this.getAbsenceType(employeeId, date);
+
+    if (type === current) {
+      return { action: 'unchanged' };
+    }
+
+    const vacations = [...this.vacationsSubject.value];
+    const index = vacations.findIndex(
+      (entry) => entry.employeeId === employeeId && entry.date === key
+    );
+
+    if (type === null) {
+      if (index < 0) {
+        return { action: 'unchanged' };
+      }
+      vacations.splice(index, 1);
+      this.persist(vacations);
+      return { action: 'removed' };
+    }
+
+    if (type === 'paid' && current !== 'paid' && !this.canAddPaidVacation(employeeId, year, annualAllowance)) {
+      return { action: 'blocked', reason: 'quota_exceeded' };
+    }
+
+    if (index >= 0) {
+      vacations[index] = { ...vacations[index], type };
+      this.persist(vacations);
+      return { action: 'changed', type };
+    }
+
+    vacations.push({ employeeId, date: key, type });
+    this.persist(vacations);
+    return { action: 'added', type };
   }
 
   clearAbsenceDaysForMonth(employeeId: string, year: number, month: number): void {

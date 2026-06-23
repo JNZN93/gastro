@@ -18,10 +18,11 @@ export const EMPLOYEE_PLANNING_ROUTES: Routes = [
       ),
   },
   {
-    path: 'urlaubsplanung',
+    path: 'abwesenheit',
     loadComponent: () =>
       import('./pages/vacation-planning/vacation-planning.component').then(
         (m) => m.VacationPlanningComponent
       ),
   },
+  { path: 'urlaubsplanung', redirectTo: 'abwesenheit', pathMatch: 'full' },
 ];
