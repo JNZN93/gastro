@@ -1727,6 +1727,8 @@ export class OpenInvoicesComponent implements OnInit {
         return 'Datei ersetzt';
       case 'deleted':
         return 'Rechnung gelöscht';
+      case 'hidrive_error':
+        return 'HiDrive-Fehler';
       default:
         return entry.action;
     }

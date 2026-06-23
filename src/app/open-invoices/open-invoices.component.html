@@ -967,7 +967,7 @@
         </div>
 
         <div *ngIf="!isLoadingAuditLog && !auditLogError && auditLogEntries.length > 0" class="audit-timeline">
-          <div *ngFor="let entry of auditLogEntries" class="audit-timeline-item">
+          <div *ngFor="let entry of auditLogEntries" class="audit-timeline-item" [class.hidrive-error]="entry.action === 'hidrive_error'">
             <div class="audit-timeline-marker"></div>
             <div class="audit-timeline-content">
               <div class="audit-timeline-header">
@@ -975,12 +975,12 @@
                 <span class="audit-time">{{ formatDateTime(entry.created_at) }}</span>
               </div>
               <div class="audit-actor">{{ getAuditActorName(entry) }}</div>
-              <div *ngIf="entry.old_value && entry.new_value && entry.action !== 'created'" class="audit-change">
+              <div *ngIf="entry.old_value && entry.new_value && entry.action !== 'created' && entry.action !== 'hidrive_error'" class="audit-change">
                 <span class="old-value">{{ entry.old_value }}</span>
                 <span class="arrow">→</span>
                 <span class="new-value">{{ entry.new_value }}</span>
               </div>
-              <div *ngIf="entry.action === 'created' && entry.new_value" class="audit-change single">
+              <div *ngIf="(entry.action === 'created' || entry.action === 'hidrive_error') && entry.new_value" class="audit-change single" [class.error]="entry.action === 'hidrive_error'">
                 {{ entry.new_value }}
               </div>
             </div>

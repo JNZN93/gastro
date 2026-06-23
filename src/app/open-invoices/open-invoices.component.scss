@@ -2709,6 +2709,26 @@
       position: relative;
       padding-bottom: 1rem;
 
+      &.hidrive-error {
+        .audit-timeline-marker {
+          background: #ea580c;
+          border-color: #fed7aa;
+        }
+
+        .audit-timeline-content {
+          background: #fff7ed;
+          border-color: #fdba74;
+        }
+
+        .audit-action {
+          color: #c2410c;
+        }
+
+        .audit-change.error {
+          color: #9a3412;
+        }
+      }
+
       &:not(:last-child)::before {
         content: '';
         position: absolute;
