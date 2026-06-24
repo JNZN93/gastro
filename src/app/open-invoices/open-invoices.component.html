@@ -265,7 +265,7 @@
           </tr>
 
           <!-- Existing Invoice Rows -->
-          <tr *ngFor="let invoice of filteredInvoices; let i = index; trackBy: trackByInvoiceId"
+          <tr *ngFor="let invoice of paginatedInvoices; let i = index; trackBy: trackByInvoiceId"
               class="invoice-row" [class]="getRowClass(invoice)">
             <!-- Supplier Name -->
             <td class="invoice-cell">
@@ -546,7 +546,7 @@
       </div>
 
       <!-- Existing Invoice Cards -->
-      <div *ngFor="let invoice of filteredInvoices; let i = index; trackBy: trackByInvoiceId"
+      <div *ngFor="let invoice of paginatedInvoices; let i = index; trackBy: trackByInvoiceId"
            class="invoice-card" [class]="getRowClass(invoice)">
         <div class="card-header">
           <div class="card-title">
@@ -719,6 +719,36 @@
             </div>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div *ngIf="filteredInvoices.length > 0" class="pagination-bar">
+      <span class="pagination-info">
+        {{ paginationRangeStart }}–{{ paginationRangeEnd }} von {{ filteredInvoices.length }} Rechnungen
+      </span>
+      <div *ngIf="totalPages > 1" class="pagination-controls">
+        <button class="pagination-btn" (click)="previousPage()" [disabled]="currentPage <= 1" title="Vorherige Seite">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+          </svg>
+        </button>
+        <div class="page-numbers">
+          <ng-container *ngFor="let page of getVisiblePages()">
+            <span *ngIf="page === '...'" class="page-ellipsis">...</span>
+            <button *ngIf="page !== '...'"
+                    class="page-number-btn"
+                    [class.active]="page === currentPage"
+                    (click)="goToPage(page)">
+              {{ page }}
+            </button>
+          </ng-container>
+        </div>
+        <button class="pagination-btn" (click)="nextPage()" [disabled]="currentPage >= totalPages" title="Nächste Seite">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+          </svg>
+        </button>
       </div>
     </div>
 

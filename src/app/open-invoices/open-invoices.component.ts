@@ -105,6 +105,11 @@ export class OpenInvoicesComponent implements OnInit {
 
   // Filtered invoices cache for better performance
   private _filteredInvoices: Invoice[] = [];
+  private _paginatedInvoices: Invoice[] = [];
+
+  // Pagination
+  currentPage = 1;
+  readonly pageSize = 50;
 
   // Search term with setter for automatic filtering
   private _searchTerm: string = '';
@@ -116,7 +121,7 @@ export class OpenInvoicesComponent implements OnInit {
 
   set searchTerm(value: string) {
     this._searchTerm = value;
-    this.updateFilteredInvoices();
+    this.updateFilteredInvoices(true);
   }
 
   // Store original values for cancellation
@@ -964,11 +969,11 @@ export class OpenInvoicesComponent implements OnInit {
   // Method to switch tabs
   switchTab(tab: 'all' | 'open' | 'paid' | 'overdue' | 'sepa') {
     this.activeTab = tab;
-    this.updateFilteredInvoices();
+    this.updateFilteredInvoices(true);
   }
 
   // Method to update filtered invoices cache
-  private updateFilteredInvoices() {
+  private updateFilteredInvoices(resetPage = false) {
     // Filter out the temporary new invoice row from search results
     let filtered = this.invoices.filter(inv => !this.newInvoiceRow || inv.id !== this.newInvoiceRow.id);
 
@@ -1064,16 +1069,121 @@ export class OpenInvoicesComponent implements OnInit {
     }
 
     this._filteredInvoices = this.sortInvoices(filtered);
+
+    if (resetPage) {
+      this.currentPage = 1;
+    } else if (this.totalPages > 0 && this.currentPage > this.totalPages) {
+      this.currentPage = this.totalPages;
+    } else if (this.totalPages === 0) {
+      this.currentPage = 1;
+    }
+
+    this.updatePagination();
   }
 
   // Toggle paid invoices visibility
   togglePaidInvoices() {
     this.showPaidInvoices = !this.showPaidInvoices;
-    this.updateFilteredInvoices();
+    this.updateFilteredInvoices(true);
   }
 
   get filteredInvoices() {
     return this._filteredInvoices;
+  }
+
+  get paginatedInvoices() {
+    return this._paginatedInvoices;
+  }
+
+  get totalPages(): number {
+    return Math.ceil(this._filteredInvoices.length / this.pageSize);
+  }
+
+  get paginationRangeStart(): number {
+    if (this._filteredInvoices.length === 0) {
+      return 0;
+    }
+    return (this.currentPage - 1) * this.pageSize + 1;
+  }
+
+  get paginationRangeEnd(): number {
+    return Math.min(this.currentPage * this.pageSize, this._filteredInvoices.length);
+  }
+
+  private updatePagination(): void {
+    const startIndex = (this.currentPage - 1) * this.pageSize;
+    const endIndex = startIndex + this.pageSize;
+    this._paginatedInvoices = this._filteredInvoices.slice(startIndex, endIndex);
+  }
+
+  previousPage(): void {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+      this.updatePagination();
+      this.scrollToInvoiceListTop();
+    }
+  }
+
+  nextPage(): void {
+    if (this.currentPage < this.totalPages) {
+      this.currentPage++;
+      this.updatePagination();
+      this.scrollToInvoiceListTop();
+    }
+  }
+
+  goToPage(page: number | string): void {
+    const pageNumber = typeof page === 'string' ? parseInt(page, 10) : page;
+    if (pageNumber >= 1 && pageNumber <= this.totalPages && pageNumber !== this.currentPage) {
+      this.currentPage = pageNumber;
+      this.updatePagination();
+      this.scrollToInvoiceListTop();
+    }
+  }
+
+  getVisiblePages(): (number | string)[] {
+    const totalPages = this.totalPages;
+    const currentPage = this.currentPage;
+    const pages: (number | string)[] = [];
+
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      pages.push(1);
+
+      if (currentPage <= 4) {
+        for (let i = 2; i <= 5; i++) {
+          pages.push(i);
+        }
+        pages.push('...');
+        pages.push(totalPages);
+      } else if (currentPage >= totalPages - 3) {
+        pages.push('...');
+        for (let i = totalPages - 4; i <= totalPages; i++) {
+          pages.push(i);
+        }
+      } else {
+        pages.push('...');
+        pages.push(currentPage - 1);
+        pages.push(currentPage);
+        pages.push(currentPage + 1);
+        pages.push('...');
+        pages.push(totalPages);
+      }
+    }
+
+    return pages;
+  }
+
+  private scrollToInvoiceListTop(): void {
+    const container = document.querySelector('.open-invoices-dashboard');
+    const section = document.querySelector('.invoices-section');
+    if (container && section) {
+      const top = (section as HTMLElement).offsetTop - 20;
+      container.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+    }
   }
 
   private sortInvoices(invoices: Invoice[]): Invoice[] {
