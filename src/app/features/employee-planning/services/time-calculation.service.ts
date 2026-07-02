@@ -259,6 +259,55 @@ export class TimeCalculationService {
     return this.formatTime(endHours, endMinutes);
   }
 
+  /** Formatiert Ziffern beim Tippen zu einer Uhrzeit (ohne Doppelpunkt nötig). */
+  formatTimeDigitsWhileTyping(digits: string): string {
+    const cleaned = digits.replace(/\D/g, '').slice(0, 4);
+    if (cleaned.length <= 2) {
+      return cleaned;
+    }
+    if (cleaned.length === 3) {
+      return `${cleaned[0]}:${cleaned.slice(1)}`;
+    }
+    return `${cleaned.slice(0, 2)}:${cleaned.slice(2)}`;
+  }
+
+  /** Wandelt flexible Eingaben (z. B. 900, 0930, 9:30) in HH:MM um. */
+  normalizeFlexibleTimeInput(input: string): string | null {
+    const trimmed = input.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    if (this.isValidTime(trimmed)) {
+      return this.normalizeTime(trimmed);
+    }
+
+    const digits = trimmed.replace(/\D/g, '');
+    if (!digits) {
+      return null;
+    }
+
+    let hours: number;
+    let minutes: number;
+
+    if (digits.length <= 2) {
+      hours = Number(digits);
+      minutes = 0;
+    } else if (digits.length === 3) {
+      hours = Number(digits[0]);
+      minutes = Number(digits.slice(1));
+    } else {
+      hours = Number(digits.slice(0, 2));
+      minutes = Number(digits.slice(2, 4));
+    }
+
+    if (Number.isNaN(hours) || Number.isNaN(minutes) || hours > 23 || minutes > 59) {
+      return null;
+    }
+
+    return this.formatTime(hours, minutes);
+  }
+
   parseTime(time: string): [number, number] {
     const [hours, minutes] = time.split(':').map(Number);
     return [hours, minutes];

@@ -125,13 +125,6 @@ th.mat-mdc-header-cell {
   margin: 0;
 }
 
-.clickable-day-row {
-  cursor: pointer;
-}
-
-.clickable-day-row:hover {
-  filter: brightness(0.97);
-}
 
 .week-grid {
   display: grid;
@@ -147,14 +140,7 @@ th.mat-mdc-header-cell {
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   background: #fff;
-  cursor: pointer;
   text-align: left;
-  font-family: inherit;
-  transition: background 0.15s ease;
-
-  &:hover {
-    background: #f1f5f9;
-  }
 }
 
 .week-day-date {

@@ -4,7 +4,7 @@
     <mat-card-subtitle>
       Sollstunden: {{ employee.monthlyHours | number: '1.0-2' : 'de' }} h · Beginn: {{ employee.defaultStartTime }} Uhr
       @if (editable) {
-        · Tage direkt in der Tabelle bearbeiten
+        · Tage direkt in der Tabelle bearbeiten · TAB zum nächsten Feld
       }
     </mat-card-subtitle>
   </mat-card-header>
@@ -22,42 +22,45 @@
       <span class="stat-chip">Sonntage: <strong>{{ stats.sundayCount }}</strong></span>
     </div>
 
-    @if (schedule && displayDays.length > 0) {
+    @if (viewSchedule && displayDayRows.length > 0) {
       @if (viewMode === 'week') {
         <div class="week-grid">
           @for (day of displayDays; track day.date) {
-            <button type="button" class="week-day-card" (click)="onDayRowClick(day)">
+            <div class="week-day-card">
               <span class="week-day-date">{{ formatDate(day.date) }}</span>
               <span class="week-day-weekday">{{ formatWeekday(day.date) }}</span>
               <span class="week-day-hours">{{ formatNetDuration(day.plannedHours) }}</span>
               <span class="week-day-absence">
                 {{ formatHolidayLabel(day.isSunday, day.isHoliday, day.isVacation, day.isUnpaidDayOff, day.isSick, day.holidayName) }}
               </span>
-            </button>
+            </div>
           }
         </div>
       } @else {
       <div class="table-wrapper">
-        <table mat-table [dataSource]="displayDays" class="planning-table">
+        <table mat-table [dataSource]="displayDayRows" [trackBy]="trackRow" class="planning-table">
           <ng-container matColumnDef="date">
             <th mat-header-cell *matHeaderCellDef>Datum</th>
-            <td mat-cell *matCellDef="let day">{{ formatDate(day.date) }}</td>
+            <td mat-cell *matCellDef="let row">{{ formatDate(row.day.date) }}</td>
           </ng-container>
 
           <ng-container matColumnDef="weekday">
             <th mat-header-cell *matHeaderCellDef>Wochentag</th>
-            <td mat-cell *matCellDef="let day">{{ formatWeekday(day.date) }}</td>
+            <td mat-cell *matCellDef="let row">{{ formatWeekday(row.day.date) }}</td>
           </ng-container>
 
           <ng-container matColumnDef="holiday">
             <th mat-header-cell *matHeaderCellDef>Abwesenheit</th>
-            <td mat-cell *matCellDef="let day" [class.non-work]="day.isSunday || day.isHoliday">
-              @if (canEditAbsence(day)) {
+            <td mat-cell *matCellDef="let row" [class.non-work]="row.day.isSunday || row.day.isHoliday">
+              @if (canEditAbsence(row.day)) {
                 <select
                   class="cell-select"
-                  [value]="getAbsenceValue(day)"
-                  (change)="onAbsenceChange(day, $event)"
-                  [attr.aria-label]="'Abwesenheit für ' + formatDate(day.date)"
+                  [attr.data-cell-id]="cellId(row.dayIndex, 'absence')"
+                  (focus)="onCellFocus($event, row.dayIndex, 'absence', row.day)"
+                  (input)="onCellInput(row.dayIndex, 'absence', $event)"
+                  (blur)="onCellBlur(row.day, row.dayIndex, 'absence', $event)"
+                  (keydown)="onCellKeydown($event, row.day, row.dayIndex, 'absence')"
+                  [attr.aria-label]="'Abwesenheit für ' + formatDate(row.day.date)"
                 >
                   <option value="">Arbeitstag</option>
                   <option value="paid">Bezahlter Urlaub</option>
@@ -65,8 +68,8 @@
                   <option value="unpaid">Arbeitsfrei</option>
                 </select>
               } @else {
-                <span [class.non-work]="day.isSunday || day.isHoliday">
-                  {{ formatHolidayLabel(day.isSunday, day.isHoliday, day.isVacation, day.isUnpaidDayOff, day.isSick, day.holidayName) }}
+                <span [class.non-work]="row.day.isSunday || row.day.isHoliday">
+                  {{ formatHolidayLabel(row.day.isSunday, row.day.isHoliday, row.day.isVacation, row.day.isUnpaidDayOff, row.day.isSick, row.day.holidayName) }}
                 </span>
               }
             </td>
@@ -74,75 +77,97 @@
 
           <ng-container matColumnDef="start">
             <th mat-header-cell *matHeaderCellDef>Beginn</th>
-            <td mat-cell *matCellDef="let day" [class.non-work]="!canEditTimes(day) && (day.isSunday || day.isHoliday || day.isVacation || day.isUnpaidDayOff || day.isSick)">
-              @if (canEditTimes(day)) {
+            <td mat-cell *matCellDef="let row" [class.non-work]="!canEditTimes(row.day) && (row.day.isSunday || row.day.isHoliday || row.day.isVacation || row.day.isUnpaidDayOff || row.day.isSick)">
+              @if (canEditTimes(row.day)) {
                 <input
-                  type="time"
+                  type="text"
                   class="cell-input cell-input-time"
-                  [value]="getStartTimeValue(day)"
-                  (change)="onStartTimeChange(day, $event)"
-                  [attr.aria-label]="'Arbeitsbeginn für ' + formatDate(day.date)"
+                  inputmode="numeric"
+                  placeholder="09:00"
+                  maxlength="5"
+                  autocomplete="off"
+                  spellcheck="false"
+                  [attr.data-cell-id]="cellId(row.dayIndex, 'start')"
+                  (focus)="onCellFocus($event, row.dayIndex, 'start', row.day)"
+                  (input)="onCellInput(row.dayIndex, 'start', $event)"
+                  (blur)="onCellBlur(row.day, row.dayIndex, 'start', $event)"
+                  (keydown)="onCellKeydown($event, row.day, row.dayIndex, 'start')"
+                  [attr.aria-label]="'Arbeitsbeginn für ' + formatDate(row.day.date)"
                 />
               } @else {
-                {{ formatTime(day.startTime) }}
+                {{ formatTime(row.day.startTime) }}
               }
             </td>
           </ng-container>
 
           <ng-container matColumnDef="end">
             <th mat-header-cell *matHeaderCellDef>Ende</th>
-            <td mat-cell *matCellDef="let day" [class.non-work]="!canEditTimes(day) && (day.isSunday || day.isHoliday || day.isVacation || day.isUnpaidDayOff || day.isSick)">
-              @if (canEditTimes(day)) {
+            <td mat-cell *matCellDef="let row" [class.non-work]="!canEditTimes(row.day) && (row.day.isSunday || row.day.isHoliday || row.day.isVacation || row.day.isUnpaidDayOff || row.day.isSick)">
+              @if (canEditTimes(row.day)) {
                 <input
-                  type="time"
+                  type="text"
                   class="cell-input cell-input-time"
-                  [value]="getEndTimeValue(day)"
-                  (change)="onEndTimeChange(day, $event)"
-                  [attr.aria-label]="'Arbeitsende für ' + formatDate(day.date)"
+                  inputmode="numeric"
+                  placeholder="17:00"
+                  maxlength="5"
+                  autocomplete="off"
+                  spellcheck="false"
+                  [attr.data-cell-id]="cellId(row.dayIndex, 'end')"
+                  (focus)="onCellFocus($event, row.dayIndex, 'end', row.day)"
+                  (input)="onCellInput(row.dayIndex, 'end', $event)"
+                  (blur)="onCellBlur(row.day, row.dayIndex, 'end', $event)"
+                  (keydown)="onCellKeydown($event, row.day, row.dayIndex, 'end')"
+                  [attr.aria-label]="'Arbeitsende für ' + formatDate(row.day.date)"
                 />
               } @else {
-                {{ formatTime(day.endTime) }}
+                {{ formatTime(row.day.endTime) }}
               }
             </td>
           </ng-container>
 
           <ng-container matColumnDef="break">
             <th mat-header-cell *matHeaderCellDef>Pause</th>
-            <td mat-cell *matCellDef="let day" [class.non-work]="!canEditTimes(day) && (day.isSunday || day.isHoliday || day.isVacation || day.isUnpaidDayOff || day.isSick)">
-              @if (canEditTimes(day)) {
+            <td mat-cell *matCellDef="let row" [class.non-work]="!canEditTimes(row.day) && (row.day.isSunday || row.day.isHoliday || row.day.isVacation || row.day.isUnpaidDayOff || row.day.isSick)">
+              @if (canEditTimes(row.day)) {
                 <input
                   type="number"
                   class="cell-input cell-input-break"
-                  [value]="day.breakMinutes"
+                  [attr.data-cell-id]="cellId(row.dayIndex, 'break')"
                   min="0"
                   max="180"
                   step="15"
-                  (change)="onBreakChange(day, $event)"
-                  [attr.aria-label]="'Pause in Minuten für ' + formatDate(day.date)"
+                  (focus)="onCellFocus($event, row.dayIndex, 'break', row.day)"
+                  (input)="onCellInput(row.dayIndex, 'break', $event)"
+                  (blur)="onCellBlur(row.day, row.dayIndex, 'break', $event)"
+                  (keydown)="onCellKeydown($event, row.day, row.dayIndex, 'break')"
+                  [attr.aria-label]="'Pause in Minuten für ' + formatDate(row.day.date)"
                 />
                 <span class="input-suffix">min</span>
               } @else {
-                {{ formatBreak(day.breakMinutes) }}
+                {{ formatBreak(row.day.breakMinutes) }}
               }
             </td>
           </ng-container>
 
           <ng-container matColumnDef="hours">
             <th mat-header-cell *matHeaderCellDef>Netto</th>
-            <td mat-cell *matCellDef="let day" [class.non-work]="day.isSunday || day.isHoliday || day.isUnpaidDayOff">
-              @if (canEditHours(day)) {
+            <td mat-cell *matCellDef="let row" [class.non-work]="row.day.isSunday || row.day.isHoliday || row.day.isUnpaidDayOff">
+              @if (canEditHours(row.day)) {
                 <input
                   type="number"
                   class="cell-input"
-                  [value]="day.plannedHours || ''"
+                  [attr.data-cell-id]="cellId(row.dayIndex, 'hours')"
                   min="0"
                   max="24"
                   step="0.01"
-                  (change)="onHoursChange(day, $event)"
-                  [attr.aria-label]="'Netto-Stunden für ' + formatDate(day.date)"
+                  (focus)="onCellFocus($event, row.dayIndex, 'hours', row.day)"
+                  (input)="onCellInput(row.dayIndex, 'hours', $event)"
+                  (blur)="onCellBlur(row.day, row.dayIndex, 'hours', $event)"
+                  (keydown)="onCellKeydown($event, row.day, row.dayIndex, 'hours')"
+                  [attr.aria-label]="'Netto-Stunden für ' + formatDate(row.day.date)"
                 />
               } @else {
-                {{ formatNetDuration(day.plannedHours) }}
+                {{ formatNetDuration(row.day.plannedHours) }}
               }
             </td>
           </ng-container>
@@ -151,13 +176,12 @@
           <tr
             mat-row
             *matRowDef="let row; columns: displayedColumns"
-            class="clickable-day-row"
-            [class.weekend-row]="row.isSunday"
-            [class.holiday-row]="row.isHoliday && !row.isSunday && !row.isVacation && !row.isUnpaidDayOff && !row.isSick"
-            [class.vacation-row]="row.isVacation"
-            [class.sick-row]="row.isSick"
-            [class.unpaid-row]="row.isUnpaidDayOff"
-            (click)="onDayRowClick(row)"
+            class="day-row"
+            [class.weekend-row]="row.day.isSunday"
+            [class.holiday-row]="row.day.isHoliday && !row.day.isSunday && !row.day.isVacation && !row.day.isUnpaidDayOff && !row.day.isSick"
+            [class.vacation-row]="row.day.isVacation"
+            [class.sick-row]="row.day.isSick"
+            [class.unpaid-row]="row.day.isUnpaidDayOff"
           ></tr>
         </table>
       </div>

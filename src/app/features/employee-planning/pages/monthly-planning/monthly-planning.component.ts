@@ -25,14 +25,9 @@ import { PlanningTableComponent } from '../../shared/planning-table/planning-tab
 import { AbsenceCalendarComponent } from '../../shared/absence-calendar/absence-calendar.component';
 import { EmployeePlanningNavComponent } from '../../shared/employee-planning-nav/employee-planning-nav.component';
 import {
-  DayEditDialogComponent,
-  DayEditDialogData,
-} from '../../shared/day-edit-dialog/day-edit-dialog.component';
-import {
   OvertimeBalanceDialogComponent,
   OvertimeEmployeeSummary,
 } from '../../shared/overtime-balance-dialog/overtime-balance-dialog.component';
-import { WorkDay } from '../../models/schedule.model';
 
 interface EmployeeOverviewRow {
   employee: Employee;
@@ -296,13 +291,6 @@ export class MonthlyPlanningComponent implements OnInit, OnDestroy {
     }
   }
 
-  onTableDayClick(day: WorkDay): void {
-    const employee = this.selectedEmployee;
-    const schedule = this.selectedSchedule;
-    if (!employee || !schedule) return;
-    this.openDayDialog(employee, schedule, day);
-  }
-
   onAbsenceChanged(): void {
     this.refreshView();
   }
@@ -315,18 +303,6 @@ export class MonthlyPlanningComponent implements OnInit, OnDestroy {
     if (diff > 0) return 'diff-over';
     if (diff < 0) return 'diff-under';
     return 'diff-ok';
-  }
-
-  private openDayDialog(employee: Employee, schedule: EmployeeSchedule, day: WorkDay): void {
-    const dialogRef = this.dialog.open(DayEditDialogComponent, {
-      width: '440px',
-      data: { employee, schedule, day } satisfies DayEditDialogData,
-    });
-    dialogRef.afterClosed().subscribe((result) => {
-      if (result?.saved) {
-        this.refreshView();
-      }
-    });
   }
 
   private refreshView(): void {
