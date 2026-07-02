@@ -1,0 +1,45 @@
+<h2 mat-dialog-title>Tag bearbeiten</h2>
+
+<mat-dialog-content>
+  <p class="date-label">{{ dateLabel }}</p>
+
+  <form [formGroup]="form" class="day-form">
+    <mat-form-field appearance="outline">
+      <mat-label>Abwesenheit</mat-label>
+      <mat-select formControlName="absence">
+        <mat-option value="">Arbeitstag</mat-option>
+        <mat-option value="paid">Bezahlter Urlaub</mat-option>
+        <mat-option value="sick">Krank</mat-option>
+        <mat-option value="unpaid">Arbeitsfrei</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Netto-Stunden</mat-label>
+      <input matInput type="number" formControlName="plannedHours" min="0" max="24" step="0.01" />
+    </mat-form-field>
+
+    <div class="time-row">
+      <mat-form-field appearance="outline">
+        <mat-label>Beginn</mat-label>
+        <input matInput type="time" formControlName="startTime" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Ende</mat-label>
+        <input matInput type="time" formControlName="endTime" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Pause (min)</mat-label>
+        <input matInput type="number" formControlName="breakMinutes" min="0" step="15" />
+      </mat-form-field>
+    </div>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="copyToWeekdays()">Auf Wochentage kopieren</button>
+  <button mat-button type="button" (click)="cancel()">Abbrechen</button>
+  <button mat-flat-button color="primary" type="button" (click)="save()">Speichern</button>
+</mat-dialog-actions>

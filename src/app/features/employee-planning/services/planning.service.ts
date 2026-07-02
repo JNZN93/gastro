@@ -79,7 +79,7 @@ export class PlanningService {
   /**
    * Verteilt Monatsstunden gleichmäßig auf Arbeitstage und bezahlte Urlaubstage.
    * Sonntage, Feiertage und unbezahltes Arbeitsfrei erhalten 0 Stunden.
-   * Einzelwerte werden auf 0,25 h gerundet; Rest am letzten verteilten Tag.
+   * Einzelwerte mit 2 Nachkommastellen verteilen; Rest auf die ersten Tage.
    */
   distributeHours(monthlyHours: number, workDays: WorkDay[]): WorkDay[] {
     const result = workDays.map((day) => ({
@@ -101,16 +101,16 @@ export class PlanningService {
       return result;
     }
 
-    // Gleichmäßige Verteilung in Viertelstunden-Schritten über alle Arbeitstage
-    const totalQuarters = Math.round(monthlyHours * 4);
+    // Gleichmäßige Verteilung in 0,01-h-Schritten über alle Arbeitstage
+    const totalHundredths = Math.round(monthlyHours * 100);
     const workDayCount = workingIndices.length;
-    const baseQuarters = Math.floor(totalQuarters / workDayCount);
-    const extraQuarters = totalQuarters % workDayCount;
+    const baseHundredths = Math.floor(totalHundredths / workDayCount);
+    const extraHundredths = totalHundredths % workDayCount;
 
     for (let i = 0; i < workingIndices.length; i++) {
       const index = workingIndices[i];
-      const quarters = baseQuarters + (i < extraQuarters ? 1 : 0);
-      result[index].plannedHours = quarters / 4;
+      const hundredths = baseHundredths + (i < extraHundredths ? 1 : 0);
+      result[index].plannedHours = hundredths / 100;
     }
 
     return result;
@@ -122,10 +122,22 @@ export class PlanningService {
     year: number,
     month: number
   ): EmployeeSchedule[] {
-    const activeEmployees = employees.filter((e) => e.active);
+    const plannable = employees.filter((e) => e.active && !e.archived);
+    return this.distributeForEmployees(plannable, year, month);
+  }
+
+  /** Verteilt Stunden für ausgewählte Mitarbeiter. */
+  distributeForEmployees(
+    employees: Employee[],
+    year: number,
+    month: number
+  ): EmployeeSchedule[] {
     const schedules: EmployeeSchedule[] = [];
 
-    for (const employee of activeEmployees) {
+    for (const employee of employees) {
+      if (!employee.active || employee.archived) {
+        continue;
+      }
       const baseDays = this.buildMonthWorkDays(employee.id, year, month);
       const distributed = this.distributeHours(employee.monthlyHours, baseDays);
       const enriched = distributed.map((day) =>
@@ -141,6 +153,87 @@ export class PlanningService {
     }
 
     return schedules;
+  }
+
+  hasScheduleForEmployee(employeeId: string): boolean {
+    return this.schedulesSubject.value.some((s) => s.employeeId === employeeId);
+  }
+
+  /** Gleicht Überstunden aus, indem Stunden von Tagen mit den meisten Stunden abgezogen werden. */
+  balanceOvertime(schedule: EmployeeSchedule, monthlyHours: number): EmployeeSchedule {
+    const stats = this.calculateStats(schedule);
+    if (stats.totalHours <= monthlyHours) {
+      return schedule;
+    }
+
+    let excessHundredths = Math.round((stats.totalHours - monthlyHours) * 100);
+    const employee = this.employeeService.getEmployeeById(schedule.employeeId);
+    const defaultStartTime = employee?.defaultStartTime ?? '09:00';
+
+    const workDays = schedule.workDays.map((day) => ({ ...day }));
+    const adjustableIndices = workDays
+      .map((day, index) => ({ day, index }))
+      .filter(
+        ({ day }) =>
+          day.plannedHours > 0 &&
+          !day.isSunday &&
+          !day.isHoliday &&
+          !day.isUnpaidDayOff
+      )
+      .sort((a, b) => b.day.plannedHours - a.day.plannedHours);
+
+    for (const { index } of adjustableIndices) {
+      if (excessHundredths <= 0) {
+        break;
+      }
+      const currentHundredths = Math.round(workDays[index].plannedHours * 100);
+      const reduceBy = Math.min(excessHundredths, currentHundredths);
+      const newHundredths = currentHundredths - reduceBy;
+      workDays[index].plannedHours = newHundredths / 100;
+      excessHundredths -= reduceBy;
+    }
+
+    const enriched = workDays.map((day) =>
+      this.timeCalculation.recalculateWorkDay(day, defaultStartTime)
+    );
+
+    return this.saveSchedule({ ...schedule, workDays: enriched });
+  }
+
+  /** Kopiert einen Tag auf alle gleichen Wochentage im Monat. */
+  copyDayToWeekdays(
+    employee: Employee,
+    schedule: EmployeeSchedule,
+    sourceDate: Date
+  ): EmployeeSchedule {
+    const sourceDay = schedule.workDays.find((day) => this.isSameDate(day.date, sourceDate));
+    if (!sourceDay) {
+      return schedule;
+    }
+
+    const weekday = sourceDate.getDay();
+    const workDays = schedule.workDays.map((day) => {
+      if (day.date.getDay() !== weekday || this.isSameDate(day.date, sourceDate)) {
+        return day;
+      }
+      if (day.isSunday || day.isHoliday || day.isUnpaidDayOff) {
+        return day;
+      }
+
+      const copied: WorkDay = {
+        ...day,
+        plannedHours: sourceDay.plannedHours,
+        startTime: sourceDay.startTime,
+        endTime: sourceDay.endTime,
+        breakMinutes: sourceDay.breakMinutes,
+        isVacation: sourceDay.isVacation,
+        isSick: sourceDay.isSick,
+        isUnpaidDayOff: sourceDay.isUnpaidDayOff,
+      };
+      return this.timeCalculation.recalculateWorkDay(copied, employee.defaultStartTime);
+    });
+
+    return this.saveSchedule({ ...schedule, workDays });
   }
 
   saveSchedule(schedule: EmployeeSchedule): EmployeeSchedule {
@@ -213,7 +306,7 @@ export class PlanningService {
     }
 
     return {
-      totalHours: this.roundToQuarter(totalHours),
+      totalHours: this.timeCalculation.roundHours(totalHours),
       workDayCount,
       holidayCount,
       sundayCount,
@@ -239,6 +332,47 @@ export class PlanningService {
     };
   }
 
+  /** Synchronisiert Abwesenheiten aus dem Vacation-Service in die Planung. */
+  syncScheduleAbsences(employee: Employee, schedule: EmployeeSchedule): EmployeeSchedule {
+    const synced = this.applyVacationToSchedule(schedule);
+    const hasPlannedHours = synced.workDays.some((day) => day.plannedHours > 0);
+
+    if (!hasPlannedHours) {
+      return this.saveSchedule(synced);
+    }
+
+    const redistributed = this.distributeHours(employee.monthlyHours, synced.workDays);
+    const enriched = redistributed.map((day) =>
+      this.timeCalculation.enrichWorkDay(day, employee.defaultStartTime)
+    );
+    return this.saveSchedule({ ...schedule, workDays: enriched });
+  }
+
+  /**
+   * Kalender-Klick: gewählte Eintragsart anwenden (Toggle wie in der Urlaubsplanung)
+   * und Planung synchronisieren.
+   */
+  applyDayAbsenceSelection(
+    employee: Employee,
+    schedule: EmployeeSchedule,
+    date: Date,
+    selectedType: AbsenceType
+  ): { schedule: EmployeeSchedule; result: AbsenceDayResult } {
+    const result = this.vacationService.applyDaySelection(
+      employee.id,
+      date,
+      selectedType,
+      employee.annualVacationDays
+    );
+
+    if (result.action === 'blocked' || result.action === 'unchanged') {
+      return { schedule, result };
+    }
+
+    const updated = this.syncScheduleAbsences(employee, schedule);
+    return { schedule: updated, result };
+  }
+
   /** Ändert die Abwesenheit eines Tages und verteilt die Monatsstunden neu. */
   updateDayAbsence(
     employee: Employee,
@@ -257,19 +391,7 @@ export class PlanningService {
       return { schedule, result };
     }
 
-    const synced = this.applyVacationToSchedule(schedule);
-    const hasPlannedHours = synced.workDays.some((day) => day.plannedHours > 0);
-
-    if (!hasPlannedHours) {
-      const updated = this.saveSchedule(synced);
-      return { schedule: updated, result };
-    }
-
-    const redistributed = this.distributeHours(employee.monthlyHours, synced.workDays);
-    const enriched = redistributed.map((day) =>
-      this.timeCalculation.enrichWorkDay(day, employee.defaultStartTime)
-    );
-    const updated = this.saveSchedule({ ...schedule, workDays: enriched });
+    const updated = this.syncScheduleAbsences(employee, schedule);
     return { schedule: updated, result };
   }
 
@@ -280,7 +402,7 @@ export class PlanningService {
     date: Date,
     plannedHours: number
   ): EmployeeSchedule {
-    const rounded = this.roundToQuarter(Math.max(0, plannedHours));
+    const rounded = this.timeCalculation.roundHours(Math.max(0, plannedHours));
     const workDays = schedule.workDays.map((day) => {
       if (!this.isSameDate(day.date, date)) {
         return day;
@@ -371,10 +493,6 @@ export class PlanningService {
       a.getMonth() === b.getMonth() &&
       a.getDate() === b.getDate()
     );
-  }
-
-  private roundToQuarter(hours: number): number {
-    return Math.round(hours * 4) / 4;
   }
 
   private persist(schedules: EmployeeSchedule[]): void {

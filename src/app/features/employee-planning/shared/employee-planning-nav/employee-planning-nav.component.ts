@@ -10,17 +10,13 @@ import { MatIconModule } from '@angular/material/icon';
   imports: [RouterLink, RouterLinkActive, MatButtonModule, MatIconModule],
   template: `
     <nav class="feature-nav">
-      <a mat-stroked-button routerLink="/mitarbeiterplanung/mitarbeiter" routerLinkActive="active-link">
-        <mat-icon>groups</mat-icon>
-        Mitarbeiterverwaltung
-      </a>
       <a mat-stroked-button routerLink="/mitarbeiterplanung/planung" routerLinkActive="active-link">
         <mat-icon>calendar_month</mat-icon>
         Monatsplanung
       </a>
-      <a mat-stroked-button routerLink="/mitarbeiterplanung/abwesenheit" routerLinkActive="active-link">
-        <mat-icon>event_busy</mat-icon>
-        Abwesenheit
+      <a mat-stroked-button routerLink="/mitarbeiterplanung/mitarbeiter" routerLinkActive="active-link">
+        <mat-icon>groups</mat-icon>
+        Mitarbeiterverwaltung
       </a>
       <a mat-stroked-button routerLink="/admin">
         <mat-icon>arrow_back</mat-icon>

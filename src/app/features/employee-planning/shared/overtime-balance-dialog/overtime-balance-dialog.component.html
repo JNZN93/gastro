@@ -1,0 +1,19 @@
+<h2 mat-dialog-title>Überstunden ausgleichen?</h2>
+
+<mat-dialog-content>
+  <p>Folgende Mitarbeiter haben mehr Stunden geplant als ihr Monatssoll:</p>
+  <ul class="overtime-list">
+    @for (item of data.employees; track item.employee.id) {
+      <li>
+        {{ item.employee.firstName }} {{ item.employee.lastName }}:
+        +{{ item.excessHours | number: '1.0-2' : 'de' }} h
+      </li>
+    }
+  </ul>
+  <p>Soll der Überschuss automatisch von den Tagen mit den meisten Stunden abgezogen werden?</p>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="cancel()">Ohne Ausgleich exportieren</button>
+  <button mat-flat-button color="primary" type="button" (click)="confirm()">Ausgleichen & exportieren</button>
+</mat-dialog-actions>

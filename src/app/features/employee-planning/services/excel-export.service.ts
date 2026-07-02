@@ -362,7 +362,7 @@ export class ExcelExportService {
 
   private getTotalHours(workDays: WorkDay[]): number {
     const total = workDays.reduce((sum, day) => sum + day.plannedHours, 0);
-    return Math.round(total * 4) / 4;
+    return Math.round(total * 100) / 100;
   }
 
   private fullBorder(): Partial<ExcelJS.Borders> {
@@ -381,7 +381,7 @@ export class ExcelExportService {
       }
     }
 
-    return Math.round(total * 4) / 4;
+    return Math.round(total * 100) / 100;
   }
 
   private sanitizeSheetName(name: string): string {

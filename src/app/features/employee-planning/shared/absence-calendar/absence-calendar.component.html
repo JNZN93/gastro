@@ -1,0 +1,95 @@
+<div class="absence-calendar" [class.compact]="compact" [class.collapsed]="collapsible && !expanded">
+  <div class="toolbar">
+    <div class="mode-selector">
+      @if (!compact) {
+        <span class="mode-label">Eintragsart:</span>
+      }
+      <mat-button-toggle-group
+        [(value)]="selectedAbsenceType"
+        aria-label="Eintragsart wählen"
+        class="mode-toggles"
+      >
+        <mat-button-toggle value="paid">Urlaub</mat-button-toggle>
+        <mat-button-toggle value="sick">Krank</mat-button-toggle>
+        <mat-button-toggle value="unpaid">Frei</mat-button-toggle>
+      </mat-button-toggle-group>
+    </div>
+
+    <div class="toolbar-actions">
+      @if (compact) {
+        <span class="absence-summary">{{ absenceSummary }}</span>
+      }
+
+      @if (collapsible) {
+        <button
+          mat-stroked-button
+          type="button"
+          class="toggle-btn"
+          (click)="toggleExpanded()"
+          [attr.aria-expanded]="expanded"
+        >
+          <mat-icon>{{ expanded ? 'expand_less' : 'calendar_month' }}</mat-icon>
+          {{ expanded ? 'Kalender ausblenden' : 'Kalender' }}
+        </button>
+      }
+
+      <button
+        mat-icon-button
+        type="button"
+        color="warn"
+        class="clear-btn"
+        title="Abwesenheiten im Monat leeren"
+        [disabled]="!canClearMonth"
+        (click)="clearMonth()"
+      >
+        <mat-icon>clear_all</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  @if (selectedAbsenceType === 'paid' && !canAddMorePaidVacation) {
+    <p class="quota-warning">Jahreskontingent für Urlaub erreicht.</p>
+  }
+
+  @if (!collapsible || expanded) {
+    @if (!compact) {
+      <button mat-stroked-button color="warn" class="clear-btn-full" [disabled]="!canClearMonth" (click)="clearMonth()">
+        <mat-icon>clear_all</mat-icon>
+        Monat leeren
+      </button>
+    }
+
+    <div class="calendar-grid">
+      <div class="weekday-header">
+        @for (label of weekdayLabels; track label) {
+          <span class="weekday-label">{{ label }}</span>
+        }
+      </div>
+      @for (week of calendarWeeks; track $index) {
+        <div class="calendar-week">
+          @for (day of week; track $index) {
+            @if (day) {
+              <button
+                type="button"
+                class="calendar-day"
+                [class.vacation]="day.absenceType === 'paid'"
+                [class.sick]="day.absenceType === 'sick'"
+                [class.unpaid]="day.absenceType === 'unpaid'"
+                [class.holiday]="day.isHoliday && !day.absenceType"
+                [class.sunday]="day.isSunday && !day.absenceType"
+                [class.disabled-day]="day.isSunday || day.isHoliday"
+                [disabled]="day.isSunday || day.isHoliday"
+                [title]="dayTooltip(day)"
+                (click)="onDayClick(day)"
+              >
+                <span class="day-number">{{ day.dayNumber }}</span>
+              </button>
+            } @else {
+              <span class="calendar-day empty"></span>
+            }
+          }
+        </div>
+      }
+    </div>
+  }
+</div>

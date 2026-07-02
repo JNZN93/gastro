@@ -8,6 +8,9 @@
       @if (form.get('firstName')?.hasError('required') && form.get('firstName')?.touched) {
         <mat-error>Vorname ist erforderlich</mat-error>
       }
+      @if (form.get('firstName')?.hasError('maxlength') && form.get('firstName')?.touched) {
+        <mat-error>Maximal 100 Zeichen</mat-error>
+      }
     </mat-form-field>
 
     <mat-form-field appearance="outline">
@@ -16,18 +19,48 @@
       @if (form.get('lastName')?.hasError('required') && form.get('lastName')?.touched) {
         <mat-error>Nachname ist erforderlich</mat-error>
       }
+      @if (form.get('lastName')?.hasError('maxlength') && form.get('lastName')?.touched) {
+        <mat-error>Maximal 100 Zeichen</mat-error>
+      }
     </mat-form-field>
 
     <mat-form-field appearance="outline">
-      <mat-label>Monatsstunden (Soll)</mat-label>
-      <input matInput type="number" formControlName="monthlyHours" min="0" step="0.25" />
-      @if (form.get('monthlyHours')?.hasError('required') && form.get('monthlyHours')?.touched) {
-        <mat-error>Monatsstunden sind erforderlich</mat-error>
+      <mat-label>Wochenstunden (Vertrag)</mat-label>
+      <input matInput type="number" formControlName="weeklyHours" min="0" step="0.01" />
+      <mat-hint>Basis für die Monatsstunden-Berechnung</mat-hint>
+      @if (form.get('weeklyHours')?.hasError('required') && form.get('weeklyHours')?.touched) {
+        <mat-error>Wochenstunden sind erforderlich</mat-error>
       }
-      @if (form.get('monthlyHours')?.hasError('min') && form.get('monthlyHours')?.touched) {
-        <mat-error>Mindestens 0 Stunden</mat-error>
+      @if (form.get('weeklyHours')?.hasError('max') && form.get('weeklyHours')?.touched) {
+        <mat-error>Maximal 168 Stunden</mat-error>
       }
     </mat-form-field>
+
+    <div class="monthly-hours-block">
+      <mat-form-field appearance="outline">
+        <mat-label>Monatsstunden (Soll)</mat-label>
+        <input matInput type="number" formControlName="monthlyHours" min="0" step="0.01" />
+        <mat-hint>
+          Berechnet: {{ suggestedMonthlyHours | number: '1.0-2' : 'de' }} h
+          @if (isManualMonthlyHours) {
+            · manuell überschrieben
+          }
+        </mat-hint>
+        @if (form.get('monthlyHours')?.hasError('required') && form.get('monthlyHours')?.touched) {
+          <mat-error>Monatsstunden sind erforderlich</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-slide-toggle formControlName="monthlyHoursManual" color="primary">
+        Monatsstunden manuell überschreiben
+      </mat-slide-toggle>
+
+      @if (isManualMonthlyHours) {
+        <button type="button" mat-stroked-button (click)="applySuggestedMonthlyHours()">
+          Vorschlag übernehmen ({{ suggestedMonthlyHours | number: '1.0-2' : 'de' }} h)
+        </button>
+      }
+    </div>
 
     <mat-form-field appearance="outline">
       <mat-label>Bezahlte Urlaubstage pro Jahr</mat-label>
@@ -36,8 +69,8 @@
       @if (form.get('annualVacationDays')?.hasError('required') && form.get('annualVacationDays')?.touched) {
         <mat-error>Urlaubstage sind erforderlich</mat-error>
       }
-      @if (form.get('annualVacationDays')?.hasError('min') && form.get('annualVacationDays')?.touched) {
-        <mat-error>Mindestens 0 Tage</mat-error>
+      @if (form.get('annualVacationDays')?.hasError('max') && form.get('annualVacationDays')?.touched) {
+        <mat-error>Maximal 365 Tage</mat-error>
       }
     </mat-form-field>
 

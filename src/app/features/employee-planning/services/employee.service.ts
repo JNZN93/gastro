@@ -19,7 +19,17 @@ export class EmployeeService {
   }
 
   getActiveEmployees(): Employee[] {
-    return this.getEmployees().filter((e) => e.active);
+    return this.getEmployees().filter((e) => e.active && !e.archived);
+  }
+
+  /** Aktive, nicht archivierte Mitarbeiter für Planung und Export. */
+  getPlannableEmployees(): Employee[] {
+    return this.getActiveEmployees();
+  }
+
+  /** Alle nicht archivierten Mitarbeiter für die Planungsübersicht (inkl. inaktive). */
+  getOverviewEmployees(): Employee[] {
+    return this.getEmployees().filter((e) => !e.archived);
   }
 
   getEmployeeById(id: string): Employee | undefined {
@@ -30,6 +40,7 @@ export class EmployeeService {
     const employee: Employee = {
       id: crypto.randomUUID(),
       ...data,
+      archived: false,
     };
     this.persist([...this.getEmployees(), employee]);
     return employee;
@@ -42,20 +53,57 @@ export class EmployeeService {
       return null;
     }
 
-    const updated: Employee = { id, ...data };
+    const existing = employees[index];
+    const updated: Employee = {
+      ...existing,
+      ...data,
+      id,
+    };
     const next = [...employees];
     next[index] = updated;
     this.persist(next);
     return updated;
   }
 
-  deleteEmployee(id: string): boolean {
-    const next = this.getEmployees().filter((e) => e.id !== id);
-    if (next.length === this.getEmployees().length) {
+  archiveEmployee(id: string): boolean {
+    const employees = this.getEmployees();
+    const index = employees.findIndex((e) => e.id === id);
+    if (index === -1 || employees[index].archived) {
       return false;
     }
+
+    const next = [...employees];
+    next[index] = {
+      ...next[index],
+      archived: true,
+      archivedAt: new Date().toISOString(),
+      active: false,
+    };
     this.persist(next);
     return true;
+  }
+
+  reactivateEmployee(id: string): boolean {
+    const employees = this.getEmployees();
+    const index = employees.findIndex((e) => e.id === id);
+    if (index === -1 || !employees[index].archived) {
+      return false;
+    }
+
+    const next = [...employees];
+    next[index] = {
+      ...next[index],
+      archived: false,
+      archivedAt: undefined,
+      active: true,
+    };
+    this.persist(next);
+    return true;
+  }
+
+  /** @deprecated Verwende archiveEmployee */
+  deleteEmployee(id: string): boolean {
+    return this.archiveEmployee(id);
   }
 
   private persist(employees: Employee[]): void {
@@ -70,16 +118,34 @@ export class EmployeeService {
       if (!raw) {
         return [];
       }
-      const parsed = JSON.parse(raw) as StoredEmployee[];
-      return Array.isArray(parsed)
-        ? parsed.map((employee) => ({
-            ...employee,
-            defaultStartTime: employee.defaultStartTime ?? '09:00',
-            annualVacationDays: employee.annualVacationDays ?? 30,
-          }))
-        : [];
+      const parsed = JSON.parse(raw) as Array<Partial<StoredEmployee>>;
+      return Array.isArray(parsed) ? parsed.map((employee) => this.normalizeEmployee(employee)) : [];
     } catch {
       return [];
     }
+  }
+
+  private normalizeEmployee(employee: Partial<StoredEmployee>): Employee {
+    const monthlyHours = employee.monthlyHours ?? 160;
+    const weeklyHours = employee.weeklyHours ?? this.deriveWeeklyHours(monthlyHours);
+
+    return {
+      id: employee.id!,
+      firstName: employee.firstName ?? '',
+      lastName: employee.lastName ?? '',
+      weeklyHours,
+      monthlyHours,
+      monthlyHoursManual: employee.monthlyHoursManual ?? false,
+      annualVacationDays: employee.annualVacationDays ?? 30,
+      defaultStartTime: employee.defaultStartTime ?? '09:00',
+      active: employee.active ?? true,
+      archived: employee.archived ?? false,
+      archivedAt: employee.archivedAt,
+    };
+  }
+
+  /** Schätzt Wochenstunden aus Monatsstunden für Alt-Daten (160 h ≈ 40 h/Woche). */
+  private deriveWeeklyHours(monthlyHours: number): number {
+    return Math.round(monthlyHours * 100) / 100;
   }
 }

@@ -37,7 +37,7 @@ export class TimeCalculationService {
       };
     }
 
-    const netHours = this.roundToQuarter(workDay.plannedHours);
+    const netHours = this.roundHours(workDay.plannedHours);
 
     if (workDay.isVacation || workDay.isSick) {
       return {
@@ -114,7 +114,7 @@ export class TimeCalculationService {
       return null;
     }
 
-    return this.roundToQuarter(netMinutes / 60);
+    return this.roundHours(netMinutes / 60);
   }
 
   /** Passt den Arbeitsbeginn an und berechnet abhängige Werte neu. */
@@ -251,7 +251,7 @@ export class TimeCalculationService {
   /** Berechnet Arbeitsende = Beginn + Nettozeit + Pause. */
   calculateEndTime(startTime: string, netHours: number, breakMinutes: number): string {
     const [startHours, startMinutes] = this.parseTime(startTime);
-    const netMinutes = Math.round(netHours * 4) * 15;
+    const netMinutes = Math.round(this.roundHours(netHours) * 60);
     const totalMinutes = startHours * 60 + startMinutes + netMinutes + breakMinutes;
     const endHours = Math.floor(totalMinutes / 60);
     const endMinutes = totalMinutes % 60;
@@ -272,10 +272,7 @@ export class TimeCalculationService {
     if (hours <= 0) {
       return '—';
     }
-    const totalMinutes = Math.round(hours * 4) * 15;
-    const h = Math.floor(totalMinutes / 60);
-    const m = totalMinutes % 60;
-    return `${h}:${String(m).padStart(2, '0')}`;
+    return this.formatHoursDecimal(hours);
   }
 
   formatBreakMinutes(minutes: number): string {
@@ -285,7 +282,15 @@ export class TimeCalculationService {
     return `${minutes} min`;
   }
 
-  private roundToQuarter(hours: number): number {
-    return Math.round(hours * 4) / 4;
+  formatHoursDecimal(hours: number): string {
+    return this.roundHours(hours).toLocaleString('de-DE', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  }
+
+  /** Rundet Stunden auf 2 Nachkommastellen. */
+  roundHours(hours: number): number {
+    return Math.round(Math.max(0, hours) * 100) / 100;
   }
 }

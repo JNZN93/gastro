@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatTableModule } from '@angular/material/table';
 import { MatCardModule } from '@angular/material/card';
@@ -21,8 +21,12 @@ export class PlanningTableComponent implements OnChanges {
   @Input({ required: true }) employee!: Employee;
   @Input() schedule: EmployeeSchedule | null = null;
   @Input() editable = true;
+  @Input() viewMode: 'month' | 'week' = 'month';
+  @Output() dayClick = new EventEmitter<WorkDay>();
 
   displayedColumns = ['date', 'weekday', 'holiday', 'start', 'end', 'break', 'hours'];
+  displayDays: WorkDay[] = [];
+  weekGroups: WorkDay[][] = [];
   stats: ScheduleStats = {
     totalHours: 0,
     workDayCount: 0,
@@ -46,9 +50,10 @@ export class PlanningTableComponent implements OnChanges {
     private readonly snackBar: MatSnackBar
   ) {}
 
-  ngOnChanges(): void {
+  ngOnChanges(changes: SimpleChanges): void {
     if (this.schedule) {
       this.stats = this.planningService.calculateStats(this.schedule);
+      this.updateDisplayDays();
     } else {
       this.stats = {
         totalHours: 0,
@@ -59,7 +64,64 @@ export class PlanningTableComponent implements OnChanges {
         unpaidDayOffCount: 0,
         sickDayCount: 0,
       };
+      this.displayDays = [];
+      this.weekGroups = [];
     }
+
+    if (changes['viewMode'] && this.schedule) {
+      this.updateDisplayDays();
+    }
+  }
+
+  onDayRowClick(day: WorkDay): void {
+    this.dayClick.emit(day);
+  }
+
+  private updateDisplayDays(): void {
+    if (!this.schedule) {
+      return;
+    }
+
+    if (this.viewMode === 'month') {
+      this.displayDays = this.schedule.workDays;
+      this.weekGroups = [];
+      return;
+    }
+
+    const today = new Date();
+    const refDate =
+      today.getFullYear() === this.schedule.year && today.getMonth() + 1 === this.schedule.month
+        ? today
+        : this.schedule.workDays[0]?.date ?? today;
+
+    const startOfWeek = this.getMonday(refDate);
+    const weekDays: WorkDay[] = [];
+
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(startOfWeek);
+      date.setDate(startOfWeek.getDate() + i);
+      const match = this.schedule.workDays.find(
+        (d) =>
+          d.date.getFullYear() === date.getFullYear() &&
+          d.date.getMonth() === date.getMonth() &&
+          d.date.getDate() === date.getDate()
+      );
+      if (match) {
+        weekDays.push(match);
+      }
+    }
+
+    this.displayDays = weekDays;
+    this.weekGroups = [weekDays];
+  }
+
+  private getMonday(date: Date): Date {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    d.setDate(d.getDate() + diff);
+    d.setHours(12, 0, 0, 0);
+    return d;
   }
 
   get isOverMonthlyTarget(): boolean {
@@ -184,8 +246,8 @@ export class PlanningTableComponent implements OnChanges {
       return;
     }
 
-    const rounded = Math.round(Math.max(0, parsed) * 4) / 4;
-    input.value = String(rounded);
+    const rounded = this.timeCalculation.roundHours(parsed);
+    input.value = rounded.toFixed(2);
     this.planningService.updateDayPlannedHours(this.employee, this.schedule, day.date, rounded);
   }
 
@@ -256,7 +318,7 @@ export class PlanningTableComponent implements OnChanges {
   }
 
   formatHours(hours: number): string {
-    return hours.toLocaleString('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    return this.timeCalculation.formatHoursDecimal(hours);
   }
 
   formatTime(time: string | undefined): string {
@@ -271,7 +333,7 @@ export class PlanningTableComponent implements OnChanges {
     if (hours <= 0) {
       return '—';
     }
-    return this.timeCalculation.formatDurationHours(hours);
+    return this.timeCalculation.formatHoursDecimal(hours);
   }
 
   private messageForAbsenceResult(result: { action: string; type?: AbsenceType }): string {

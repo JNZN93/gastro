@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, Inject, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -6,24 +6,42 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
-import { Subscription, startWith } from 'rxjs';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { Subscription, firstValueFrom, startWith } from 'rxjs';
 import { Employee } from '../../models/employee.model';
-import { EmployeeSchedule, ScheduleStats } from '../../models/schedule.model';
-import { EmployeeService } from '../../services/employee.service';
-import { PlanningService } from '../../services/planning.service';
-import { VacationService } from '../../services/vacation.service';
+import { EmployeeSchedule } from '../../models/schedule.model';
+import { EMPLOYEE_REPOSITORY, EmployeeRepository } from '../../repositories/employee.repository';
+import { SCHEDULE_REPOSITORY, ScheduleRepository } from '../../repositories/schedule.repository';
+import { ABSENCE_REPOSITORY, AbsenceRepository } from '../../repositories/absence.repository';
 import { ExcelExportService } from '../../services/excel-export.service';
+import { MonthlyHoursCalculatorService } from '../../services/monthly-hours-calculator.service';
+import {
+  PlanningOverviewStatus,
+  PlanningStatusService,
+} from '../../services/planning-status.service';
 import { PlanningTableComponent } from '../../shared/planning-table/planning-table.component';
+import { AbsenceCalendarComponent } from '../../shared/absence-calendar/absence-calendar.component';
 import { EmployeePlanningNavComponent } from '../../shared/employee-planning-nav/employee-planning-nav.component';
+import {
+  DayEditDialogComponent,
+  DayEditDialogData,
+} from '../../shared/day-edit-dialog/day-edit-dialog.component';
+import {
+  OvertimeBalanceDialogComponent,
+  OvertimeEmployeeSummary,
+} from '../../shared/overtime-balance-dialog/overtime-balance-dialog.component';
+import { WorkDay } from '../../models/schedule.model';
 
-/** Kompakte Zeile in der Mitarbeiter-Übersicht. */
-interface EmployeeOverview {
+interface EmployeeOverviewRow {
   employee: Employee;
-  stats: ScheduleStats;
-  isPlanned: boolean;
+  schedule: EmployeeSchedule;
+  overview: PlanningOverviewStatus;
+  totalPlanned: number;
+  selected: boolean;
 }
 
-/** Monatsnamen für die Auswahl (Index 0 = Januar). */
 const MONTH_NAMES = [
   'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
   'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember',
@@ -31,7 +49,7 @@ const MONTH_NAMES = [
 
 const PAGE_SCROLL_CLASS = 'employee-planning-page';
 
-/** Seite zur Monatsplanung mit automatischer Stundenverteilung. */
+/** Hauptseite: Monatsplanung mit Master-Detail und integrierter Abwesenheit. */
 @Component({
   selector: 'app-monthly-planning',
   standalone: true,
@@ -43,7 +61,11 @@ const PAGE_SCROLL_CLASS = 'employee-planning-page';
     MatIconModule,
     MatSnackBarModule,
     MatTableModule,
+    MatCheckboxModule,
+    MatButtonToggleModule,
+    MatDialogModule,
     PlanningTableComponent,
+    AbsenceCalendarComponent,
     EmployeePlanningNavComponent,
   ],
   templateUrl: './monthly-planning.component.html',
@@ -54,30 +76,31 @@ export class MonthlyPlanningComponent implements OnInit, OnDestroy {
   readonly years: number[];
 
   filterForm: FormGroup;
-  activeEmployees: Employee[] = [];
-  employeeOverviews: EmployeeOverview[] = [];
+  overviewRows: EmployeeOverviewRow[] = [];
   selectedEmployeeId: string | null = null;
-  overviewColumns = ['name', 'targetHours', 'plannedHours', 'workDays', 'status'];
-  schedulesByEmployee = new Map<string, EmployeeSchedule>();
+  selectedForDistribute = new Set<string>();
+  detailViewMode: 'month' | 'week' = 'month';
+  overviewColumns = ['select', 'name', 'targetHours', 'plannedHours', 'diff', 'absence', 'status', 'flags'];
   isDistributing = false;
 
-  private allSchedules: EmployeeSchedule[] = [];
   private employeeSubscription?: Subscription;
   private scheduleSubscription?: Subscription;
-  private vacationSubscription?: Subscription;
+  private absenceSubscription?: Subscription;
   private filterSubscription?: Subscription;
 
   constructor(
     private readonly fb: FormBuilder,
-    private readonly employeeService: EmployeeService,
-    private readonly planningService: PlanningService,
-    private readonly vacationService: VacationService,
+    @Inject(EMPLOYEE_REPOSITORY) private readonly employeeRepo: EmployeeRepository,
+    @Inject(SCHEDULE_REPOSITORY) private readonly scheduleRepo: ScheduleRepository,
+    @Inject(ABSENCE_REPOSITORY) private readonly absenceRepo: AbsenceRepository,
     private readonly excelExportService: ExcelExportService,
+    private readonly monthlyCalculator: MonthlyHoursCalculatorService,
+    private readonly planningStatus: PlanningStatusService,
+    private readonly dialog: MatDialog,
     private readonly snackBar: MatSnackBar
   ) {
     const currentYear = new Date().getFullYear();
     this.years = Array.from({ length: 7 }, (_, i) => currentYear - 3 + i);
-
     const now = new Date();
     this.filterForm = this.fb.group({
       month: [now.getMonth() + 1],
@@ -87,32 +110,19 @@ export class MonthlyPlanningComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.enablePageScroll();
-
-    this.employeeSubscription = this.employeeService.employees$.subscribe(() => {
-      this.refreshView();
-    });
-
-    this.scheduleSubscription = this.planningService.schedules$.subscribe((schedules) => {
-      this.allSchedules = schedules;
-      this.refreshView();
-    });
-
-    this.vacationSubscription = this.vacationService.vacations$.subscribe(() => {
-      this.refreshView();
-    });
-
+    this.employeeSubscription = this.employeeRepo.employees$.subscribe(() => this.refreshView());
+    this.scheduleSubscription = this.scheduleRepo.schedules$.subscribe(() => this.refreshView());
+    this.absenceSubscription = this.absenceRepo.vacations$.subscribe(() => this.refreshView());
     this.filterSubscription = this.filterForm.valueChanges
       .pipe(startWith(this.filterForm.value))
-      .subscribe(() => {
-        this.refreshView();
-      });
+      .subscribe(() => this.refreshView());
   }
 
   ngOnDestroy(): void {
     this.disablePageScroll();
     this.employeeSubscription?.unsubscribe();
     this.scheduleSubscription?.unsubscribe();
-    this.vacationSubscription?.unsubscribe();
+    this.absenceSubscription?.unsubscribe();
     this.filterSubscription?.unsubscribe();
   }
 
@@ -125,14 +135,25 @@ export class MonthlyPlanningComponent implements OnInit, OnDestroy {
   }
 
   get selectedEmployee(): Employee | null {
-    if (!this.selectedEmployeeId) {
-      return null;
-    }
-    return this.activeEmployees.find((e) => e.id === this.selectedEmployeeId) ?? null;
+    if (!this.selectedEmployeeId) return null;
+    return this.employeeRepo.getEmployeeById(this.selectedEmployeeId) ?? null;
   }
 
-  getScheduleForEmployee(employeeId: string): EmployeeSchedule | null {
-    return this.schedulesByEmployee.get(employeeId) ?? null;
+  get selectedSchedule(): EmployeeSchedule | null {
+    if (!this.selectedEmployeeId) return null;
+    return this.scheduleRepo.getOrCreateEmptySchedule(
+      this.selectedEmployeeId,
+      this.selectedYear,
+      this.selectedMonth
+    );
+  }
+
+  get hasPlannableEmployees(): boolean {
+    return this.employeeRepo.getPlannableEmployees().length > 0;
+  }
+
+  get hasOverviewEmployees(): boolean {
+    return this.employeeRepo.getOverviewEmployees().length > 0;
   }
 
   selectEmployee(employeeId: string): void {
@@ -143,114 +164,209 @@ export class MonthlyPlanningComponent implements OnInit, OnDestroy {
     return this.selectedEmployeeId === employeeId;
   }
 
-  onPeriodChanged(): void {
-    this.refreshView();
+  toggleDistributeSelection(employeeId: string, checked: boolean): void {
+    if (checked) {
+      this.selectedForDistribute.add(employeeId);
+    } else {
+      this.selectedForDistribute.delete(employeeId);
+    }
+  }
+
+  isSelectedForDistribute(employeeId: string): boolean {
+    return this.selectedForDistribute.has(employeeId);
+  }
+
+  toggleSelectAll(checked: boolean): void {
+    this.selectedForDistribute.clear();
+    if (checked) {
+      this.overviewRows.forEach((row) => this.selectedForDistribute.add(row.employee.id));
+    }
+  }
+
+  updateMonthlyTargetsFromWeekly(): void {
+    const employees = this.employeeRepo.getPlannableEmployees();
+    let updated = 0;
+    for (const employee of employees) {
+      if (employee.monthlyHoursManual) continue;
+      const suggested = this.monthlyCalculator.calculateSuggestedMonthlyHours(
+        employee.weeklyHours,
+        this.selectedYear,
+        this.selectedMonth
+      );
+      if (Math.abs(suggested - employee.monthlyHours) > 0.01) {
+        this.employeeRepo.updateEmployee(employee.id, {
+          ...employee,
+          monthlyHours: suggested,
+          monthlyHoursManual: false,
+        });
+        updated++;
+      }
+    }
+    this.showMessage(
+      updated > 0
+        ? `Monatssoll für ${updated} Mitarbeiter aus Wochenstunden aktualisiert.`
+        : 'Alle Monatssoll-Werte sind bereits aktuell.'
+    );
   }
 
   distributeHours(): void {
-    if (this.activeEmployees.length === 0) {
-      this.showMessage('Keine aktiven Mitarbeiter vorhanden.');
+    const ids =
+      this.selectedForDistribute.size > 0
+        ? [...this.selectedForDistribute]
+        : this.overviewRows.map((r) => r.employee.id);
+
+    const employees = ids
+      .map((id) => this.employeeRepo.getEmployeeById(id))
+      .filter((e): e is Employee => !!e && e.active && !e.archived);
+
+    if (employees.length === 0) {
+      this.showMessage('Keine Mitarbeiter zum Verteilen ausgewählt.');
       return;
     }
 
     this.isDistributing = true;
     try {
-      this.planningService.distributeForActiveEmployees(
-        this.employeeService.getEmployees(),
-        this.selectedYear,
-        this.selectedMonth
-      );
-      this.showMessage('Stunden wurden erfolgreich verteilt.');
+      this.scheduleRepo.distributeForEmployees(employees, this.selectedYear, this.selectedMonth);
+      this.showMessage(`Stunden für ${employees.length} Mitarbeiter verteilt.`);
     } finally {
       this.isDistributing = false;
     }
   }
 
   async exportExcel(): Promise<void> {
-    if (this.activeEmployees.length === 0) {
+    const employees = this.employeeRepo.getPlannableEmployees();
+    if (employees.length === 0) {
       this.showMessage('Keine aktiven Mitarbeiter zum Exportieren.');
       return;
     }
 
-    const schedules = this.activeEmployees
-      .map((e) => this.getScheduleForEmployee(e.id))
-      .filter((s): s is EmployeeSchedule => s !== null);
+    const overtimeSummaries: OvertimeEmployeeSummary[] = [];
+    const schedules: EmployeeSchedule[] = [];
+
+    for (const employee of employees) {
+      const schedule = this.scheduleRepo.getSchedule(employee.id, this.selectedYear, this.selectedMonth);
+      if (!schedule) continue;
+      schedules.push(schedule);
+      const stats = this.scheduleRepo.calculateStats(schedule);
+      if (stats.totalHours > employee.monthlyHours) {
+        overtimeSummaries.push({
+          employee,
+          schedule,
+          excessHours: stats.totalHours - employee.monthlyHours,
+        });
+      }
+    }
 
     if (schedules.length === 0) {
       this.showMessage('Bitte zuerst Stunden verteilen.');
       return;
     }
 
+    let balanceBeforeExport = false;
+    if (overtimeSummaries.length > 0) {
+      const dialogRef = this.dialog.open(OvertimeBalanceDialogComponent, {
+        width: '480px',
+        data: { employees: overtimeSummaries },
+      });
+      const result = await firstValueFrom(dialogRef.afterClosed());
+      balanceBeforeExport = result?.confirmed ?? false;
+
+      if (balanceBeforeExport) {
+        for (const item of overtimeSummaries) {
+          this.scheduleRepo.balanceOvertime(item.schedule, item.employee.monthlyHours);
+        }
+        this.refreshView();
+      }
+    }
+
+    const finalSchedules = employees
+      .map((e) => this.scheduleRepo.getSchedule(e.id, this.selectedYear, this.selectedMonth))
+      .filter((s): s is EmployeeSchedule => s !== null);
+
     try {
       await this.excelExportService.exportMonthlyPlan(
-        this.activeEmployees,
-        schedules,
+        employees,
+        finalSchedules,
         this.selectedYear,
         this.selectedMonth
       );
       this.showMessage('Zeiterfassung wurde exportiert.');
     } catch {
-      this.showMessage('Export fehlgeschlagen. Bitte erneut versuchen.');
+      this.showMessage('Export fehlgeschlagen.');
     }
   }
 
-  private refreshView(): void {
-    this.activeEmployees = this.employeeService.getEmployees().filter((e) => e.active);
-    this.loadSchedulesForPeriod(this.allSchedules, this.selectedYear, this.selectedMonth);
+  onTableDayClick(day: WorkDay): void {
+    const employee = this.selectedEmployee;
+    const schedule = this.selectedSchedule;
+    if (!employee || !schedule) return;
+    this.openDayDialog(employee, schedule, day);
   }
 
-  private loadSchedulesForPeriod(
-    allSchedules: EmployeeSchedule[],
-    year: number,
-    month: number
-  ): void {
-    if (!year || !month) {
-      return;
-    }
-
-    this.schedulesByEmployee.clear();
-
-    for (const employee of this.activeEmployees) {
-      const schedule =
-        allSchedules.find(
-          (s) => s.employeeId === employee.id && s.year === year && s.month === month
-        ) ?? null;
-
-      const resolved =
-        schedule !== null
-          ? this.planningService.getSchedule(employee.id, year, month)!
-          : this.planningService.getOrCreateEmptySchedule(employee.id, year, month);
-
-      this.schedulesByEmployee.set(employee.id, resolved);
-    }
-
-    this.updateEmployeeOverviews();
-    this.syncSelectedEmployee();
+  onAbsenceChanged(): void {
+    this.refreshView();
   }
 
-  private updateEmployeeOverviews(): void {
-    this.employeeOverviews = this.activeEmployees.map((employee) => {
-      const schedule = this.schedulesByEmployee.get(employee.id);
-      const stats = schedule
-        ? this.planningService.calculateStats(schedule)
-        : { totalHours: 0, workDayCount: 0, holidayCount: 0, sundayCount: 0, vacationCount: 0, unpaidDayOffCount: 0, sickDayCount: 0 };
-      const isPlanned = schedule?.workDays.some((day) => day.plannedHours > 0) ?? false;
+  setDetailViewMode(mode: 'month' | 'week'): void {
+    this.detailViewMode = mode;
+  }
 
-      return { employee, stats, isPlanned };
+  diffClass(diff: number): string {
+    if (diff > 0) return 'diff-over';
+    if (diff < 0) return 'diff-under';
+    return 'diff-ok';
+  }
+
+  private openDayDialog(employee: Employee, schedule: EmployeeSchedule, day: WorkDay): void {
+    const dialogRef = this.dialog.open(DayEditDialogComponent, {
+      width: '440px',
+      data: { employee, schedule, day } satisfies DayEditDialogData,
+    });
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result?.saved) {
+        this.refreshView();
+      }
     });
   }
 
-  private syncSelectedEmployee(): void {
-    if (this.activeEmployees.length === 0) {
+  private refreshView(): void {
+    const overviewEmployees = this.employeeRepo.getOverviewEmployees();
+    this.overviewRows = overviewEmployees.map((employee) => {
+      const schedule = this.scheduleRepo.getOrCreateEmptySchedule(
+        employee.id,
+        this.selectedYear,
+        this.selectedMonth
+      );
+      const overview = this.planningStatus.getOverviewStatus(
+        employee,
+        schedule,
+        this.selectedYear,
+        this.selectedMonth
+      );
+      const stats = this.scheduleRepo.calculateStats(schedule);
+      return {
+        employee,
+        schedule,
+        overview,
+        totalPlanned: stats.totalHours,
+        selected: this.selectedForDistribute.has(employee.id),
+      };
+    });
+
+    if (overviewEmployees.length === 0) {
       this.selectedEmployeeId = null;
       return;
     }
 
-    const isCurrentSelectionValid = this.activeEmployees.some(
-      (employee) => employee.id === this.selectedEmployeeId
-    );
-    if (!isCurrentSelectionValid) {
-      this.selectedEmployeeId = this.activeEmployees[0].id;
+    if (this.selectedForDistribute.size === 0) {
+      this.employeeRepo
+        .getPlannableEmployees()
+        .forEach((e) => this.selectedForDistribute.add(e.id));
+    }
+
+    const valid = overviewEmployees.some((e) => e.id === this.selectedEmployeeId);
+    if (!valid) {
+      this.selectedEmployeeId = overviewEmployees[0].id;
     }
   }
 
@@ -258,7 +374,6 @@ export class MonthlyPlanningComponent implements OnInit, OnDestroy {
     document.documentElement.classList.add(PAGE_SCROLL_CLASS);
     document.body.classList.add(PAGE_SCROLL_CLASS);
     document.body.style.overflowY = 'auto';
-    document.body.style.overflowX = 'hidden';
     document.documentElement.style.overflowY = 'auto';
   }
 
@@ -266,7 +381,6 @@ export class MonthlyPlanningComponent implements OnInit, OnDestroy {
     document.documentElement.classList.remove(PAGE_SCROLL_CLASS);
     document.body.classList.remove(PAGE_SCROLL_CLASS);
     document.body.style.overflowY = '';
-    document.body.style.overflowX = '';
     document.documentElement.style.overflowY = '';
   }
 

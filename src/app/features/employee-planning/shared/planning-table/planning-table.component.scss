@@ -1,3 +1,9 @@
+:host {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
 .planning-card {
   margin-bottom: 1.5rem;
 }
@@ -29,8 +35,10 @@
 
 .table-wrapper {
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   border-radius: 8px;
   border: 1px solid #e2e8f0;
+  max-width: 100%;
 }
 
 .planning-table {
@@ -115,6 +123,59 @@ th.mat-mdc-header-cell {
   color: #64748b;
   font-style: italic;
   margin: 0;
+}
+
+.clickable-day-row {
+  cursor: pointer;
+}
+
+.clickable-day-row:hover {
+  filter: brightness(0.97);
+}
+
+.week-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 0.75rem;
+}
+
+.week-day-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: #f1f5f9;
+  }
+}
+
+.week-day-date {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 0.9rem;
+}
+
+.week-day-weekday {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.week-day-hours {
+  font-size: 0.85rem;
+  color: #334155;
+}
+
+.week-day-absence {
+  font-size: 0.75rem;
+  color: #94a3b8;
 }
 
 @media (max-width: 600px) {

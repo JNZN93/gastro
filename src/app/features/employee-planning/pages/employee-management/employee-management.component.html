@@ -5,7 +5,7 @@
     <mat-card-header>
       <mat-card-title>Mitarbeiterverwaltung</mat-card-title>
       <mat-card-subtitle>
-        Mitarbeiter anlegen, bearbeiten und verwalten. Daten werden lokal im Browser gespeichert.
+        Mitarbeiter anlegen, bearbeiten und archivieren. Daten werden lokal im Browser gespeichert.
       </mat-card-subtitle>
     </mat-card-header>
     <mat-card-actions align="end">
@@ -18,57 +18,153 @@
 
   <mat-card>
     <mat-card-content>
-      @if (employees.length > 0) {
+      <form [formGroup]="filterForm" class="filter-row">
+        <mat-form-field appearance="outline" class="search-field">
+          <mat-label>Suche</mat-label>
+          <input matInput formControlName="search" placeholder="Name eingeben…" />
+          <mat-icon matPrefix>search</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="status-field">
+          <mat-label>Status</mat-label>
+          <mat-select formControlName="status">
+            <mat-option value="all">Alle</mat-option>
+            <mat-option value="active">Aktiv</mat-option>
+            <mat-option value="inactive">Inaktiv</mat-option>
+            <mat-option value="archived">Archiviert</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </form>
+
+      @if (filteredRows.length > 0) {
         <div class="table-wrapper">
-          <table mat-table [dataSource]="employees" class="employee-table">
+          <table mat-table [dataSource]="filteredRows" class="employee-table" multiTemplateDataRows>
+            <ng-container matColumnDef="expand">
+              <th mat-header-cell *matHeaderCellDef></th>
+              <td mat-cell *matCellDef="let row">
+                <button
+                  mat-icon-button
+                  (click)="toggleExpand(row.employee.id)"
+                  [attr.aria-label]="isExpanded(row.employee.id) ? 'Details einklappen' : 'Details ausklappen'"
+                >
+                  <mat-icon>{{ isExpanded(row.employee.id) ? 'expand_less' : 'expand_more' }}</mat-icon>
+                </button>
+              </td>
+            </ng-container>
+
             <ng-container matColumnDef="name">
               <th mat-header-cell *matHeaderCellDef>Name</th>
-              <td mat-cell *matCellDef="let employee">
-                {{ employee.firstName }} {{ employee.lastName }}
+              <td mat-cell *matCellDef="let row">
+                {{ row.employee.firstName }} {{ row.employee.lastName }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="weeklyHours">
+              <th mat-header-cell *matHeaderCellDef>Wochenstunden</th>
+              <td mat-cell *matCellDef="let row">
+                {{ row.employee.weeklyHours | number: '1.0-2' : 'de' }} h
               </td>
             </ng-container>
 
             <ng-container matColumnDef="monthlyHours">
               <th mat-header-cell *matHeaderCellDef>Monatsstunden</th>
-              <td mat-cell *matCellDef="let employee">
-                {{ employee.monthlyHours | number: '1.0-2' : 'de' }} h
+              <td mat-cell *matCellDef="let row">
+                {{ row.employee.monthlyHours | number: '1.0-2' : 'de' }} h
+                @if (row.employee.monthlyHoursManual) {
+                  <span class="manual-hint">manuell</span>
+                }
               </td>
             </ng-container>
 
             <ng-container matColumnDef="annualVacationDays">
               <th mat-header-cell *matHeaderCellDef>Urlaub/Jahr</th>
-              <td mat-cell *matCellDef="let employee">
-                {{ employee.annualVacationDays }} Tage
-              </td>
+              <td mat-cell *matCellDef="let row">{{ row.employee.annualVacationDays }} Tage</td>
             </ng-container>
 
             <ng-container matColumnDef="status">
               <th mat-header-cell *matHeaderCellDef>Status</th>
-              <td mat-cell *matCellDef="let employee">
-                <span class="status-badge" [class.active]="employee.active" [class.inactive]="!employee.active">
-                  {{ employee.active ? 'Aktiv' : 'Inaktiv' }}
+              <td mat-cell *matCellDef="let row">
+                <span
+                  class="status-badge"
+                  [class.active]="row.employee.active && !row.employee.archived"
+                  [class.inactive]="!row.employee.active && !row.employee.archived"
+                  [class.archived]="row.employee.archived"
+                >
+                  {{ statusLabel(row.employee) }}
                 </span>
               </td>
             </ng-container>
 
             <ng-container matColumnDef="actions">
               <th mat-header-cell *matHeaderCellDef>Aktionen</th>
-              <td mat-cell *matCellDef="let employee">
-                <button mat-icon-button color="primary" (click)="openEditDialog(employee)" aria-label="Bearbeiten">
+              <td mat-cell *matCellDef="let row">
+                <button
+                  mat-icon-button
+                  color="primary"
+                  (click)="openEditDialog(row.employee)"
+                  aria-label="Bearbeiten"
+                >
                   <mat-icon>edit</mat-icon>
                 </button>
-                <button mat-icon-button color="warn" (click)="confirmDelete(employee)" aria-label="Löschen">
-                  <mat-icon>delete</mat-icon>
-                </button>
+                @if (!row.employee.archived) {
+                  <button
+                    mat-icon-button
+                    color="warn"
+                    (click)="confirmArchive(row.employee)"
+                    aria-label="Archivieren"
+                  >
+                    <mat-icon>archive</mat-icon>
+                  </button>
+                } @else {
+                  <button
+                    mat-icon-button
+                    color="accent"
+                    (click)="reactivate(row.employee)"
+                    aria-label="Reaktivieren"
+                  >
+                    <mat-icon>unarchive</mat-icon>
+                  </button>
+                }
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="expandedDetail">
+              <td mat-cell *matCellDef="let row" [attr.colspan]="displayedColumns.length">
+                @if (row.expanded) {
+                  <div class="expanded-detail">
+                    <span><strong>Standard-Beginn:</strong> {{ row.employee.defaultStartTime }} Uhr</span>
+                    <span><strong>Wochenstunden:</strong> {{ row.employee.weeklyHours | number: '1.0-2' : 'de' }} h</span>
+                    <span>
+                      <strong>Monatsstunden:</strong>
+                      {{ row.employee.monthlyHours | number: '1.0-2' : 'de' }} h
+                      @if (row.employee.monthlyHoursManual) {
+                        (manuell)
+                      } @else {
+                        (berechnet)
+                      }
+                    </span>
+                    <span><strong>Urlaub/Jahr:</strong> {{ row.employee.annualVacationDays }} Tage</span>
+                  </div>
+                }
               </td>
             </ng-container>
 
             <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-            <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+            <tr
+              mat-row
+              *matRowDef="let row; columns: displayedColumns"
+              [class]="rowClass(row.employee)"
+            ></tr>
+            <tr
+              mat-row
+              *matRowDef="let row; columns: ['expandedDetail']"
+              class="detail-row"
+              [class.hidden-detail]="!row.expanded"
+            ></tr>
           </table>
         </div>
       } @else {
-        <p class="empty-state">Noch keine Mitarbeiter vorhanden. Legen Sie den ersten Mitarbeiter an.</p>
+        <p class="empty-state">Keine Mitarbeiter gefunden.</p>
       }
     </mat-card-content>
   </mat-card>

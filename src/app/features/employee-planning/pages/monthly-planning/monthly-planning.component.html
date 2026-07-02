@@ -1,137 +1,210 @@
 <div class="page-container">
   <app-employee-planning-nav />
 
-  <mat-card class="header-card">
-    <mat-card-header>
-      <mat-card-title>Monatsplanung</mat-card-title>
-      <mat-card-subtitle>
-        Sollstunden auf Arbeitstage und bezahlten Urlaub verteilen (ohne Sonntage, Feiertage und unbezahltes Arbeitsfrei).
-      </mat-card-subtitle>
-    </mat-card-header>
+  @if (hasOverviewEmployees) {
+    <mat-card class="overview-card">
+      <mat-card-header>
+        <mat-card-title>Übersicht – {{ monthNames[selectedMonth - 1] }} {{ selectedYear }}</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="table-wrapper">
+          <table mat-table [dataSource]="overviewRows" class="overview-table">
+            <ng-container matColumnDef="select">
+              <th mat-header-cell *matHeaderCellDef>
+                <mat-checkbox
+                  [checked]="selectedForDistribute.size === overviewRows.length && overviewRows.length > 0"
+                  (change)="toggleSelectAll($event.checked)"
+                />
+              </th>
+              <td mat-cell *matCellDef="let row" (click)="$event.stopPropagation()">
+                <mat-checkbox
+                  [checked]="isSelectedForDistribute(row.employee.id)"
+                  (change)="toggleDistributeSelection(row.employee.id, $event.checked)"
+                />
+              </td>
+            </ng-container>
 
-    <mat-card-content>
-      <form [formGroup]="filterForm" class="filter-row">
-        <label class="filter-field">
-          <span class="filter-label">Monat</span>
-          <select formControlName="month" class="filter-select" (change)="onPeriodChanged()">
-            @for (name of monthNames; track name; let i = $index) {
-              <option [ngValue]="i + 1">{{ name }}</option>
-            }
-          </select>
-        </label>
+            <ng-container matColumnDef="name">
+              <th mat-header-cell *matHeaderCellDef>Mitarbeiter</th>
+              <td mat-cell *matCellDef="let row">
+                {{ row.employee.firstName }} {{ row.employee.lastName }}
+              </td>
+            </ng-container>
 
-        <label class="filter-field">
-          <span class="filter-label">Jahr</span>
-          <select formControlName="year" class="filter-select" (change)="onPeriodChanged()">
-            @for (year of years; track year) {
-              <option [ngValue]="year">{{ year }}</option>
-            }
-          </select>
-        </label>
-      </form>
+            <ng-container matColumnDef="targetHours">
+              <th mat-header-cell *matHeaderCellDef>Soll</th>
+              <td mat-cell *matCellDef="let row">{{ row.employee.monthlyHours | number: '1.0-2' : 'de' }} h</td>
+            </ng-container>
 
-      <div class="action-row">
-        <button
-          mat-flat-button
-          color="primary"
-          (click)="distributeHours()"
-          [disabled]="isDistributing || activeEmployees.length === 0"
-        >
-          <mat-icon>auto_fix_high</mat-icon>
-          Stunden automatisch verteilen
-        </button>
+            <ng-container matColumnDef="plannedHours">
+              <th mat-header-cell *matHeaderCellDef>Geplant</th>
+              <td mat-cell *matCellDef="let row">
+                {{ row.totalPlanned | number: '1.0-2' : 'de' }} h
+              </td>
+            </ng-container>
 
-        <button
-          mat-stroked-button
-          color="accent"
-          (click)="exportExcel()"
-          [disabled]="activeEmployees.length === 0"
-        >
-          <mat-icon>download</mat-icon>
-          Zeiterfassung exportieren
-        </button>
-      </div>
-    </mat-card-content>
-  </mat-card>
+            <ng-container matColumnDef="diff">
+              <th mat-header-cell *matHeaderCellDef>Diff</th>
+              <td mat-cell *matCellDef="let row" [class]="diffClass(row.overview.hoursDiff)">
+                {{ row.overview.hoursDiff > 0 ? '+' : '' }}{{ row.overview.hoursDiff | number: '1.0-2' : 'de' }} h
+              </td>
+            </ng-container>
 
-  @if (activeEmployees.length > 0) {
-    <section class="planning-section">
-      <mat-card class="overview-card">
+            <ng-container matColumnDef="absence">
+              <th mat-header-cell *matHeaderCellDef>Abwesenheit</th>
+              <td mat-cell *matCellDef="let row">{{ row.overview.absenceSummary }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="status">
+              <th mat-header-cell *matHeaderCellDef>Status</th>
+              <td mat-cell *matCellDef="let row">
+                <span class="status-badge" [class]="'status-' + row.overview.status">
+                  {{ row.overview.label }}
+                </span>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="flags">
+              <th mat-header-cell *matHeaderCellDef>⚠</th>
+              <td mat-cell *matCellDef="let row">
+                @if (row.overview.isOverTarget) {
+                  <mat-icon class="flag-icon over" title="Überstunden">warning</mat-icon>
+                }
+                @if (row.overview.hasWarnings && !row.overview.isOverTarget) {
+                  <mat-icon class="flag-icon warn" title="Warnung">info</mat-icon>
+                }
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="overviewColumns"></tr>
+            <tr
+              mat-row
+              *matRowDef="let row; columns: overviewColumns"
+              class="clickable-row"
+              [class.selected-row]="isSelected(row.employee.id)"
+              [class.inactive-row]="!row.employee.active"
+              (click)="selectEmployee(row.employee.id)"
+            ></tr>
+          </table>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  }
+
+  <mat-card class="top-panel">
+    <div class="top-panel-grid">
+      <section class="controls-section">
         <mat-card-header>
-          <mat-card-title>
-            Übersicht – {{ monthNames[selectedMonth - 1] }} {{ selectedYear }}
-          </mat-card-title>
+          <mat-card-title>Monatsplanung</mat-card-title>
           <mat-card-subtitle>
-            {{ activeEmployees.length }} aktive Mitarbeiter · Zeile anklicken für bearbeitbare Tagesansicht
+            Monat wählen und Stunden verteilen – Abwesenheit rechts für den ausgewählten Mitarbeiter.
           </mat-card-subtitle>
         </mat-card-header>
 
         <mat-card-content>
-          <div class="table-wrapper">
-            <table mat-table [dataSource]="employeeOverviews" class="overview-table">
-              <ng-container matColumnDef="name">
-                <th mat-header-cell *matHeaderCellDef>Mitarbeiter</th>
-                <td mat-cell *matCellDef="let row">
-                  {{ row.employee.firstName }} {{ row.employee.lastName }}
-                </td>
-              </ng-container>
+          <form [formGroup]="filterForm" class="filter-row">
+            <label class="filter-field">
+              <span class="filter-label">Monat</span>
+              <select formControlName="month" class="filter-select">
+                @for (name of monthNames; track name; let i = $index) {
+                  <option [ngValue]="i + 1">{{ name }}</option>
+                }
+              </select>
+            </label>
+            <label class="filter-field">
+              <span class="filter-label">Jahr</span>
+              <select formControlName="year" class="filter-select">
+                @for (year of years; track year) {
+                  <option [ngValue]="year">{{ year }}</option>
+                }
+              </select>
+            </label>
+          </form>
 
-              <ng-container matColumnDef="targetHours">
-                <th mat-header-cell *matHeaderCellDef>Soll</th>
-                <td mat-cell *matCellDef="let row">
-                  {{ row.employee.monthlyHours | number: '1.0-2' : 'de' }} h
-                </td>
-              </ng-container>
-
-              <ng-container matColumnDef="plannedHours">
-                <th mat-header-cell *matHeaderCellDef>Geplant</th>
-                <td mat-cell *matCellDef="let row">
-                  {{ row.stats.totalHours | number: '1.0-2' : 'de' }} h
-                </td>
-              </ng-container>
-
-              <ng-container matColumnDef="workDays">
-                <th mat-header-cell *matHeaderCellDef>Arbeitstage</th>
-                <td mat-cell *matCellDef="let row">{{ row.stats.workDayCount }}</td>
-              </ng-container>
-
-              <ng-container matColumnDef="status">
-                <th mat-header-cell *matHeaderCellDef>Status</th>
-                <td mat-cell *matCellDef="let row">
-                  <span class="status-badge" [class.planned]="row.isPlanned" [class.pending]="!row.isPlanned">
-                    {{ row.isPlanned ? 'Geplant' : 'Offen' }}
-                  </span>
-                </td>
-              </ng-container>
-
-              <tr mat-header-row *matHeaderRowDef="overviewColumns"></tr>
-              <tr
-                mat-row
-                *matRowDef="let row; columns: overviewColumns"
-                class="clickable-row"
-                [class.selected-row]="isSelected(row.employee.id)"
-                (click)="selectEmployee(row.employee.id)"
-              ></tr>
-            </table>
+          <div class="action-row">
+            <button mat-stroked-button (click)="updateMonthlyTargetsFromWeekly()" [disabled]="!hasPlannableEmployees">
+              <mat-icon>sync</mat-icon>
+              Monatssoll aus Wochenstunden
+            </button>
+            <button
+              mat-flat-button
+              color="primary"
+              (click)="distributeHours()"
+              [disabled]="isDistributing || !hasPlannableEmployees"
+            >
+              <mat-icon>auto_fix_high</mat-icon>
+              Stunden verteilen
+            </button>
+            <button mat-stroked-button color="accent" (click)="exportExcel()" [disabled]="!hasPlannableEmployees">
+              <mat-icon>download</mat-icon>
+              Exportieren
+            </button>
           </div>
         </mat-card-content>
-      </mat-card>
+      </section>
 
-      @if (selectedEmployee) {
-        <div class="detail-section">
-          <h2 class="section-title">Tagesansicht</h2>
+      @if (hasOverviewEmployees && selectedEmployee && selectedSchedule) {
+        <section class="calendar-section">
+          <div class="calendar-section-header">
+            <h3 class="calendar-employee-name">
+              {{ selectedEmployee.firstName }} {{ selectedEmployee.lastName }}
+            </h3>
+            <span class="calendar-employee-meta">
+              {{ selectedEmployee.weeklyHours | number: '1.0-2' : 'de' }} h/Woche ·
+              {{ selectedEmployee.monthlyHours | number: '1.0-2' : 'de' }} h Soll
+            </span>
+          </div>
+          <app-absence-calendar
+            class="panel-calendar"
+            [employee]="selectedEmployee"
+            [year]="selectedYear"
+            [month]="selectedMonth"
+            [schedule]="selectedSchedule"
+            [compact]="false"
+            [collapsible]="false"
+            (absenceChanged)="onAbsenceChanged()"
+          />
+        </section>
+      } @else if (hasOverviewEmployees) {
+        <section class="calendar-section calendar-placeholder">
+          <mat-icon>touch_app</mat-icon>
+          <p>Mitarbeiter in der Übersicht wählen, um Abwesenheiten einzutragen.</p>
+        </section>
+      }
+    </div>
+  </mat-card>
+
+  @if (hasOverviewEmployees && selectedEmployee && selectedSchedule) {
+    <mat-card class="detail-card">
+      <mat-card-content>
+        <section class="table-section">
+          <div class="table-section-header">
+            <h3 class="section-heading">
+              Zeiten – {{ selectedEmployee.firstName }} {{ selectedEmployee.lastName }}
+            </h3>
+            <mat-button-toggle-group
+              [value]="detailViewMode"
+              (change)="setDetailViewMode($event.value)"
+            >
+              <mat-button-toggle value="month">Monat</mat-button-toggle>
+              <mat-button-toggle value="week">Woche</mat-button-toggle>
+            </mat-button-toggle-group>
+          </div>
+
           <app-planning-table
             [employee]="selectedEmployee"
-            [schedule]="getScheduleForEmployee(selectedEmployee.id)"
+            [schedule]="selectedSchedule"
+            [viewMode]="detailViewMode"
+            (dayClick)="onTableDayClick($event)"
           />
-        </div>
-      }
-    </section>
-  } @else {
+        </section>
+      </mat-card-content>
+    </mat-card>
+  } @else if (!hasOverviewEmployees) {
     <mat-card>
       <mat-card-content>
         <p class="empty-state">
-          Keine aktiven Mitarbeiter vorhanden. Bitte legen Sie zuerst Mitarbeiter an und setzen Sie sie auf „Aktiv“.
+          Keine Mitarbeiter vorhanden. Legen Sie Mitarbeiter an oder reaktivieren Sie archivierte Einträge.
         </p>
       </mat-card-content>
     </mat-card>
