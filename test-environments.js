@@ -1,24 +1,13 @@
-// Test-Skript für verschiedene Umgebungen
-const { exec } = require('child_process');
+// Hinweis zur API-URL-Konfiguration (Proxy / Vercel Rewrite)
+console.log('🚀 Frontend API routing');
+console.log('========================\n');
 
-console.log('🚀 Frontend Environment Test');
-console.log('============================\n');
+console.log('📝 Lokal (ng serve)');
+console.log('   apiUrl = "" → Requests an /api/*');
+console.log('   proxy.conf.json → http://localhost:10000\n');
 
-// Test 1: Lokale Entwicklung
-console.log('📝 Test 1: Lokale Entwicklung (localhost:10000)');
-console.log('   ng serve --configuration=development');
-console.log('   → Verwendet: http://localhost:10000\n');
+console.log('🌐 Produktion (Vercel)');
+console.log('   apiUrl = "" → Requests an /api/*');
+console.log('   vercel.json rewrite → https://multi-mandant-ecommerce.onrender.com\n');
 
-// Test 2: Produktion
-console.log('🌐 Test 2: Produktion (multi-mandant-ecommerce.onrender.com)');
-console.log('   ng serve --configuration=production');
-console.log('   → Verwendet: https://multi-mandant-ecommerce.onrender.com\n');
-
-// Test 3: Build für Produktion
-console.log('📦 Test 3: Produktions-Build');
-console.log('   ng build --configuration=production');
-console.log('   → Erstellt optimierte Dateien mit Produktions-URLs\n');
-
-console.log('✅ Environment-Konfiguration erfolgreich implementiert!');
-console.log('   Alle Services verwenden jetzt environment.apiUrl');
-console.log('   Automatische Umschaltung basierend auf Build-Konfiguration');
+console.log('✅ Kein manuelles Umschalten der API-URL nötig.');

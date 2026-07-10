@@ -1,4 +1,5 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://multi-mandant-ecommerce.onrender.com'
+  // Relative /api — Vercel rewrites /api/* → Render backend
+  apiUrl: ''
 };
