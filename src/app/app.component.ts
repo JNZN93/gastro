@@ -1,22 +1,12 @@
 import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
 import { HeaderComponent } from './header/header.component';
 import { LoginComponent } from "./login/login.component";
 import { GlobalService } from './global.service';
 import { FooterComponent } from "./footer/footer.component";
 import { ProductCatalogComponent } from "./product-catalog/product-catalog.component";
-import { environment } from '../environments/environment';
 import { filter, Subscription } from 'rxjs';
-
-interface HealthResponse {
-  status: string;
-  env: 'development' | 'production' | string;
-  dbHost?: string;
-  dbName?: string;
-  dbPort?: string;
-}
 
 @Component({
   selector: 'app-root',
@@ -29,20 +19,12 @@ export class AppComponent implements OnInit, OnDestroy {
   isCategoryDetailRoute = false;
   shouldHideFooter = false;
   shouldHideHeader = false;
-  showDevBanner = false;
-  devBannerText = '';
   private isEmployeesRoute = false;
   private routerSubscription?: Subscription;
 
-  constructor(
-    public globalService: GlobalService,
-    private router: Router,
-    private http: HttpClient
-  ) {}
+  constructor(public globalService: GlobalService, private router: Router) {}
 
   ngOnInit() {
-    this.loadDevEnvironmentBanner();
-
     // Initial state on load
     this.isEmployeesRoute = this.router.url.includes('/employees');
     this.shouldHideFooter = this.router.url.includes('/category/') || 
@@ -111,24 +93,5 @@ export class AppComponent implements OnInit, OnDestroy {
     if (this.routerSubscription) {
       this.routerSubscription.unsubscribe();
     }
-  }
-
-  private loadDevEnvironmentBanner() {
-    this.http.get<HealthResponse>(`${environment.apiUrl}/api/health`).subscribe({
-      next: (health) => {
-        if (health?.env !== 'development') {
-          this.showDevBanner = false;
-          return;
-        }
-        const dbBits = [health.dbName, health.dbHost].filter(Boolean).join(' @ ');
-        this.devBannerText = dbBits
-          ? `DEV — lokales Backend / ${dbBits}`
-          : 'DEV — lokales Backend';
-        this.showDevBanner = true;
-      },
-      error: () => {
-        this.showDevBanner = false;
-      }
-    });
   }
 }
