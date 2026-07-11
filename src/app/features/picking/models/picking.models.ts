@@ -21,6 +21,7 @@ export interface PickingOrder {
   order_date?: string;
   created_at?: string;
   delivery_date?: string;
+  shipping_address?: string;
   status: string;
   customer_notes?: string;
   picker_user_id?: number | null;

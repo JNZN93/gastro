@@ -10,6 +10,7 @@ import { environment } from '../../../../../environments/environment';
 import { OrderService } from '../../../../order.service';
 import { GlobalService } from '../../../../global.service';
 import { PickingStateService } from '../../services/picking-state.service';
+import { PickingPdfService } from '../../services/picking-pdf.service';
 import {
   PickItemState,
   PickingOrder,
@@ -50,6 +51,7 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
   isScanning = false;
   showItemModal = false;
   showStartWarning = false;
+  showPrintModal = false;
   selectedItem: PickItemState | null = null;
   modalPickedQuantity = 0;
   modalNote = '';
@@ -84,6 +86,7 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     private readonly orderService: OrderService,
     private readonly globalService: GlobalService,
     private readonly pickingState: PickingStateService,
+    private readonly pickingPdf: PickingPdfService,
     private readonly ngZone: NgZone,
   ) {}
 
@@ -640,6 +643,65 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
       return '';
     }
     return this.order.company || this.order.name || this.order.customer_number || `Bestellung #${this.order.order_id}`;
+  }
+
+  getFulfillmentLabel(type?: string): string {
+    if (type === 'delivery') {
+      return 'Lieferung';
+    }
+    if (type === 'pickup') {
+      return 'Abholung';
+    }
+    return type || '—';
+  }
+
+  getDeliveryLabel(): string {
+    const value = this.order?.delivery_date || this.order?.order_date;
+    if (!value) {
+      return 'Kein Datum';
+    }
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return value;
+    }
+    const datePart = date.toLocaleDateString('de-DE');
+    if (value.includes('T')) {
+      const timePart = date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+      return `${datePart} · ${timePart}`;
+    }
+    return datePart;
+  }
+
+  getCustomerNotes(): string {
+    return (this.order?.customer_notes || '').trim();
+  }
+
+  openPrintModal(): void {
+    if (!this.order || !this.stateItems.length) {
+      return;
+    }
+    this.showPrintModal = true;
+  }
+
+  closePrintModal(): void {
+    this.showPrintModal = false;
+  }
+
+  printSheet(includePalettenschein: boolean): void {
+    if (!this.order) {
+      return;
+    }
+    this.pickingPdf.generateKommissionierungsschein(this.order, this.stateItems, {
+      customerLabel: this.getCustomerLabel(),
+      includePalettenschein,
+    });
+    this.showPrintModal = false;
+    this.setFeedback(
+      'success',
+      includePalettenschein
+        ? 'PDF mit Palettenschein erstellt.'
+        : 'Kommissionierungsschein erstellt.'
+    );
   }
 
   getItemStatusLabel(status: PickItemState['status']): string {

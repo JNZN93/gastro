@@ -16,9 +16,45 @@
             <h1>Kommissionierung</h1>
           }
         </div>
+        @if (order && !isLoading && !errorMessage) {
+          <button
+            type="button"
+            class="icon-btn print-btn"
+            (click)="openPrintModal()"
+            title="Kommissionierungsschein drucken"
+            aria-label="Kommissionierungsschein drucken"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 9V4h12v5M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v6H6v-6z"
+              />
+            </svg>
+          </button>
+        }
       </div>
 
       @if (order && !isLoading && !errorMessage) {
+        <div class="order-meta">
+          <span
+            class="meta-chip"
+            [class.delivery]="order.fulfillment_type === 'delivery'"
+            [class.pickup]="order.fulfillment_type === 'pickup'"
+          >
+            {{ getFulfillmentLabel(order.fulfillment_type) }}
+          </span>
+          <span class="meta-chip">{{ getDeliveryLabel() }}</span>
+        </div>
+
+        @if (getCustomerNotes()) {
+          <div class="order-notes">
+            <strong>Hinweis</strong>
+            <span>{{ getCustomerNotes() }}</span>
+          </div>
+        }
+
         <div class="progress-inline">
           <div class="progress-top">
             <strong>{{ progress.done }}/{{ progress.total }}</strong>
@@ -200,6 +236,24 @@
       <div class="modal-actions">
         <button type="button" class="secondary-btn" (click)="closeItemModal()">Abbrechen</button>
         <button type="button" class="primary-btn" (click)="saveItemModal()" [disabled]="isSaving">Speichern</button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (showPrintModal) {
+  <div class="modal-overlay" (click)="closePrintModal()">
+    <div class="modal-card print-modal" (click)="$event.stopPropagation()">
+      <h2>PDF drucken?</h2>
+      <p class="modal-sub">Kommissionierungsschein mit aktuellem Pick-Stand.</p>
+      <div class="modal-actions stacked">
+        <button type="button" class="primary-btn" (click)="printSheet(true)">
+          Mit Palettenschein
+        </button>
+        <button type="button" class="secondary-btn" (click)="printSheet(false)">
+          Nur Kommissionierungsschein
+        </button>
+        <button type="button" class="link-btn" (click)="closePrintModal()">Abbrechen</button>
       </div>
     </div>
   </div>
