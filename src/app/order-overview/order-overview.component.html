@@ -186,7 +186,11 @@
             @for (order of filteredOrders; track order.order_id) {
               <tr class="order-row" (click)="openDetailsAfterReload(order)">
                 <td class="order-id">{{ order.order_id }}</td>
-                <td class="order-date">{{ order.order_date | date: 'dd.MM.yyyy' }}</td>
+                <td class="order-date"
+                    [class.has-edit-info]="!!getOrderEditTooltip(order)"
+                    [title]="getOrderEditTooltip(order)">
+                  {{ order.order_date | date: 'dd.MM.yyyy' }}
+                </td>
                 <td class="customer-number">{{ order.customer_number || '-' }}</td>
                 <td class="employee-name">{{ getEmployeeDisplayName(order) }}</td>
                 <td class="customer-name" [title]="getCustomerDisplayName(order)">{{ getCustomerDisplayName(order) }}</td>
@@ -197,6 +201,9 @@
                   <span class="status-badge" [class]="getStatusClass(order.status)">
                     {{ getStatusText(order.status) }}
                   </span>
+                  @if (order.picker_user_name) {
+                    <span class="picker-name">{{ order.picker_user_name }}</span>
+                  }
                 </td>
                 <td class="total-price">{{ getOrderTotalGross(order) | currency:'EUR':'symbol':'1.2-2' }}</td>
                 <td class="actions-cell">
@@ -243,7 +250,11 @@
           <div class="card-header">
             <div class="order-info">
               <h3 class="order-id">#{{ order.order_id }}</h3>
-              <span class="order-date">{{ order.order_date | date: 'dd.MM.yyyy' }}</span>
+              <span class="order-date"
+                    [class.has-edit-info]="!!getOrderEditTooltip(order)"
+                    [title]="getOrderEditTooltip(order)">
+                {{ order.order_date | date: 'dd.MM.yyyy' }}
+              </span>
             </div>
             <span class="status-badge" [class]="getStatusClass(order.status)">
               {{ getStatusText(order.status) }}
@@ -251,6 +262,12 @@
           </div>
           
           <div class="card-body">
+            @if (order.picker_user_name) {
+              <div class="info-row">
+                <span class="info-label">Kommissioniert von:</span>
+                <span class="info-value">{{ order.picker_user_name }}</span>
+              </div>
+            }
             <div class="info-row">
               <span class="info-label">Kundennummer:</span>
               <span class="info-value">{{ order.customer_number || '-' }}</span>
@@ -504,7 +521,11 @@
               </div>
               <div class="detail-item">
                 <span class="detail-label">Erstellt am:</span>
-                <span class="detail-value">{{ selectedOrder.created_at | date: 'dd.MM.yyyy HH:mm' }}</span>
+                <span class="detail-value"
+                      [class.has-edit-info]="!!getOrderEditTooltip(selectedOrder)"
+                      [title]="getOrderEditTooltip(selectedOrder)">
+                  {{ selectedOrder.created_at | date: 'dd.MM.yyyy HH:mm' }}
+                </span>
               </div>
               <div class="detail-item">
                 <span class="detail-label">Lieferart:</span>
@@ -520,6 +541,9 @@
                   <span class="status-badge" [class]="getStatusClass(selectedOrder.status)">
                     {{ getStatusText(selectedOrder.status) }}
                   </span>
+                  @if (selectedOrder.picker_user_name) {
+                    <span class="picker-name">{{ selectedOrder.picker_user_name }}</span>
+                  }
                 </span>
               </div>
               <div class="detail-item">

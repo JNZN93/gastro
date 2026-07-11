@@ -14,6 +14,7 @@ export class GlobalService {
   public isAdmin: boolean = false;
   public userRole: string = '';
   public userName: string = '';
+  public userId: number | null = null;
   public isUserLoggedIn: boolean = false;
   
   // Separate Variablen für verschiedene Komponenten
@@ -45,6 +46,7 @@ export class GlobalService {
           this.isUserLoggedIn = true;
           this.userRole = response.user.role;
           this.userName = response.user.name || response.user.email || 'Benutzer';
+          this.userId = response.user.id != null ? Number(response.user.id) : null;
           console.log('🔄 [GLOBAL-VALIDATE] Login-Status gesetzt:', this.isUserLoggedIn, 'Rolle:', this.userRole, 'Name:', this.userName);
           
           // Favoriten beim Token-Validierung laden
@@ -66,6 +68,7 @@ export class GlobalService {
     this.isUserLoggedIn = false;
     this.userRole = '';
     this.userName = '';
+    this.userId = null;
     localStorage.removeItem('token');
     console.log('🔄 [GLOBAL-CLEAR] Login-Daten gelöscht');
   }
@@ -102,6 +105,14 @@ export class GlobalService {
   // Methode zum Abrufen des Benutzernamens
   getUserName(): string {
     return this.userName;
+  }
+
+  getUserId(): number | null {
+    return this.userId;
+  }
+
+  setUserId(id: number | null) {
+    this.userId = id;
   }
 
   // Methode zum Prüfen, ob Benutzer SCHNELLVERKAUF-Artikel sehen darf

@@ -1,9 +1,22 @@
+.reports-page {
+  min-height: calc(100dvh - 70px);
+  margin-top: 70px;
+  padding: 1.25rem 1rem 2rem;
+  background: #dadada;
+  box-sizing: border-box;
+}
+
 .reports-container {
   max-width: 1200px;
   margin: 0 auto;
-  margin-top: 80px; // Add top margin to push content below header
-  padding: 20px;
+  padding: 1.5rem 1.75rem 2rem;
   font-family: 'Poppins', sans-serif;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  overflow: hidden;
 }
 
 .reports-header {
@@ -733,8 +746,7 @@
 // Responsive Design
 @media (max-width: 1024px) {
   .reports-container {
-    padding: 15px;
-    margin-top: 60px;
+    padding: 1.25rem 1.15rem 1.5rem;
   }
 
   .summary-grid {
@@ -764,9 +776,13 @@
 }
 
 @media (max-width: 768px) {
+  .reports-page {
+    padding: 0.85rem 0.75rem 1.5rem;
+  }
+
   .reports-container {
-    padding: 15px;
-    margin-top: 60px;
+    padding: 1.15rem 1rem 1.5rem;
+    border-radius: 14px;
   }
 
   .reports-header {
@@ -919,9 +935,13 @@
 }
 
 @media (max-width: 480px) {
+  .reports-page {
+    padding: 0.65rem 0.55rem 1.25rem;
+  }
+
   .reports-container {
-    padding: 10px;
-    margin-top: 50px;
+    padding: 1rem 0.85rem 1.25rem;
+    border-radius: 12px;
   }
 
   .reports-header {
@@ -1064,8 +1084,7 @@
 
 @media (max-width: 360px) {
   .reports-container {
-    padding: 8px;
-    margin-top: 45px;
+    padding: 0.85rem 0.7rem 1rem;
   }
 
   .reports-header {
@@ -1158,8 +1177,8 @@
 
 // Landscape-Orientierung für mobile Geräte
 @media (max-height: 500px) and (orientation: landscape) {
-  .reports-container {
-    margin-top: 40px;
+  .reports-page {
+    padding: 0.65rem 0.75rem 1rem;
   }
 
   .reports-header {

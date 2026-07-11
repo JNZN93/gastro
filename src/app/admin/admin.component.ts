@@ -196,7 +196,53 @@ export class AdminComponent implements OnInit {
   hasActiveOrders(): boolean {
     const openOrders = this.getOrdersByStatus('open').length;
     const inProgressOrders = this.getOrdersByStatus('in_progress').length;
-    return openOrders > 0 || inProgressOrders > 0;
+    const pickingOrders = this.getOrdersByStatus('picking').length;
+    return openOrders > 0 || inProgressOrders > 0 || pickingOrders > 0;
+  }
+
+  /** True if order was edited after creation (status change, items, etc.). */
+  wasOrderUpdated(order: any): boolean {
+    if (!order?.updated_at || !order?.created_at) {
+      return false;
+    }
+    return new Date(order.updated_at).getTime() - new Date(order.created_at).getTime() > 60_000;
+  }
+
+  /** Last editor name for hover tooltip (explicit editor, else picker as fallback). */
+  getOrderEditorName(order: any): string {
+    const editor = String(order?.updated_by_name || '').trim();
+    if (editor) {
+      return editor;
+    }
+    const picker = String(order?.picker_user_name || '').trim();
+    if (picker) {
+      return picker;
+    }
+    return '';
+  }
+
+  /** Hover-only audit info for last edit — only when we know who. */
+  getOrderEditTooltip(order: any): string {
+    const who = this.getOrderEditorName(order);
+    if (!who) {
+      return '';
+    }
+    if (!this.wasOrderUpdated(order) && !order?.updated_by_name) {
+      // Picker gesetzt, aber noch kein Edit-Zeitstempel-Diff: trotzdem nachvollziehbar
+      return `Zuletzt bearbeitet von ${who}`;
+    }
+    const when = order?.updated_at ? new Date(order.updated_at) : null;
+    if (when && !Number.isNaN(when.getTime())) {
+      const datePart = when.toLocaleString('de-DE', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+      return `Zuletzt bearbeitet von ${who} · ${datePart}`;
+    }
+    return `Zuletzt bearbeitet von ${who}`;
   }
 
   checkUserRole() {
@@ -209,6 +255,7 @@ export class AdminComponent implements OnInit {
         // Benutzerrolle im GlobalService setzen
         this.globalService.setUserRole(response.user.role);
         this.globalService.setUserName(response.user.name || response.user.email || 'Benutzer');
+        this.globalService.setUserId(response.user.id != null ? Number(response.user.id) : null);
         this.globalService.setUserLoggedIn(true);
       },
       error: (error) => {
@@ -522,20 +569,29 @@ formatDate(dateString: string): string {
 
   onStatusChange(event: Event, order: any) {
     const newStatus = (event.target as HTMLSelectElement).value;
+    if (newStatus === 'picking') {
+      alert('Status „Wird kommissioniert“ nur über die Kommissionierung setzen.');
+      this.loadOrders();
+      return;
+    }
     if (newStatus == 'open') {
       this.selectedOrder = order;
       this.newStatus = newStatus;
       this.updateOrderStatus(this.selectedOrder, newStatus)
       return;
     }
-    // Wenn der Status auf "In Bearbeitung" geändert wird
     if (newStatus == 'in_progress') {
       this.selectedOrder = order;
       this.newStatus = newStatus;
       this.updateOrderStatus(this.selectedOrder, newStatus)
       return;
     }
-    // Wenn der Status auf "Fertig" geändert wird, öffne das Modal
+    if (newStatus === 'picked') {
+      this.selectedOrder = order;
+      this.newStatus = newStatus;
+      this.updateOrderStatus(this.selectedOrder, newStatus);
+      return;
+    }
     if (newStatus === 'completed') {
       this.selectedOrder = order;
       this.newStatus = newStatus;

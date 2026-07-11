@@ -338,6 +338,10 @@
   overflow-x: auto;
 }
 
+.orders-cards {
+  display: none;
+}
+
 .orders-table {
   width: 100%;
   border-collapse: collapse;
@@ -383,6 +387,11 @@
 
 .order-date {
   color: #6b7280;
+
+  &.has-edit-info {
+    cursor: help;
+    border-bottom: 1px dotted #c4c4c4;
+  }
 }
 
 .customer-name {
@@ -396,6 +405,13 @@
 
 .status-cell {
   min-width: 140px;
+}
+
+.picker-hint {
+  margin-top: 0.35rem;
+  font-size: 0.75rem;
+  color: #c2410c;
+  font-weight: 600;
 }
 
 .status-select {
@@ -420,6 +436,16 @@
   &.status-in_progress {
     border-color: #3b82f6;
     background: #dbeafe;
+  }
+
+  &.status-picking {
+    border-color: #f97316;
+    background: #ffedd5;
+  }
+
+  &.status-picked {
+    border-color: #22c55e;
+    background: #dcfce7;
   }
 
   &.status-completed {
@@ -866,6 +892,83 @@
     width: 100%;
   }
 
+  .table-container {
+    display: none;
+  }
+
+  .orders-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1rem;
+  }
+
+  .order-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+
+    &.completed {
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+    }
+  }
+
+  .order-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .order-card-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+  }
+
+  .order-card .status-cell {
+    flex: 0 0 auto;
+    min-width: 0;
+    max-width: 55%;
+  }
+
+  .order-card .status-select {
+    font-size: 0.8125rem;
+    padding: 0.4rem 0.5rem;
+  }
+
+  .order-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
+
+    .customer-name,
+    .company-name {
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+  }
+
+  .order-card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+
+    .view-btn,
+    .load-order-btn {
+      flex: 1 1 auto;
+      justify-content: center;
+      min-height: 40px;
+    }
+  }
+
   .side-modal {
     width: 100%;
     right: -100%;
@@ -897,16 +1000,6 @@
 
   .action-card {
     padding: 1rem;
-  }
-
-  .orders-table {
-    min-width: 600px;
-  }
-
-  .orders-table th,
-  .orders-table td {
-    padding: 0.75rem 0.5rem;
-    font-size: 0.75rem;
   }
 
   .side-modal {

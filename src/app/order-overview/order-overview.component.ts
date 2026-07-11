@@ -33,12 +33,17 @@ interface Order {
   fulfillment_type: string;
   order_date: string;
   created_at: string;
+  updated_at?: string;
+  updated_by?: number | null;
+  updated_by_name?: string | null;
   shipping_address: string;
   payment_status: string;
   delivery_date: string;
   status: string;
   role?: string; // Neues role-Attribut
   customer_notes?: string; // Kundenanmerkungen
+  picker_user_id?: number | null;
+  picker_user_name?: string | null;
   items: OrderItem[];
 }
 
@@ -1306,6 +1311,8 @@ export class OrderOverviewComponent implements OnInit {
     switch (status) {
       case 'open': return 'status-open';
       case 'in_progress': return 'status-progress';
+      case 'picking': return 'status-picking';
+      case 'picked': return 'status-picked';
       case 'completed': return 'status-completed';
       case 'archived': return 'status-archived';
       default: return 'status-default';
@@ -1316,6 +1323,8 @@ export class OrderOverviewComponent implements OnInit {
     switch (status) {
       case 'open': return 'Offen';
       case 'in_progress': return 'In Bearbeitung';
+      case 'picking': return 'Wird kommissioniert';
+      case 'picked': return 'Fertig kommissioniert';
       case 'completed': return 'Abgeschlossen';
       case 'archived': return 'Archiviert';
       default: return 'Unbekannt';
@@ -1419,6 +1428,46 @@ export class OrderOverviewComponent implements OnInit {
     return '-'; // Keine Anzeige für normale Kunden in der Sachbearbeiter-Spalte
   }
 
+  /** Last editor name for hover tooltip (explicit editor, else picker as fallback). */
+  getOrderEditorName(order: Order): string {
+    const editor = String(order?.updated_by_name || '').trim();
+    if (editor) {
+      return editor;
+    }
+    const picker = String(order?.picker_user_name || '').trim();
+    if (picker) {
+      return picker;
+    }
+    return '';
+  }
+
+  wasOrderUpdated(order: Order): boolean {
+    if (!order?.updated_at || !order?.created_at) {
+      return false;
+    }
+    return new Date(order.updated_at).getTime() - new Date(order.created_at).getTime() > 60_000;
+  }
+
+  /** Hover-only audit info — only when we know who. */
+  getOrderEditTooltip(order: Order): string {
+    const who = this.getOrderEditorName(order);
+    if (!who) {
+      return '';
+    }
+    const when = order?.updated_at ? new Date(order.updated_at) : null;
+    if (when && !Number.isNaN(when.getTime()) && this.wasOrderUpdated(order)) {
+      const datePart = when.toLocaleString('de-DE', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+      return `Zuletzt bearbeitet von ${who} · ${datePart}`;
+    }
+    return `Zuletzt bearbeitet von ${who}`;
+  }
+
   deleteOrder(order: Order) {
     this.orderToDelete = order;
     this.showDeleteModal = true;
@@ -1519,6 +1568,15 @@ export class OrderOverviewComponent implements OnInit {
   // Neue Methode zum Laden einer Bestellung in die Customer Orders Komponente
   loadOrderToCustomerOrders(order: Order): void {
     console.log('🔄 [LOAD-ORDER] Lade Bestellung in Customer Orders:', order);
+
+    if (order.status === 'picking') {
+      alert(
+        order.picker_user_name
+          ? `Diese Bestellung wird gerade von ${order.picker_user_name} kommissioniert und kann nicht bearbeitet werden.`
+          : 'Diese Bestellung wird gerade kommissioniert und kann nicht bearbeitet werden.'
+      );
+      return;
+    }
     
     // Speichere den ursprünglichen Status vor der Bearbeitung
     const originalStatus = order.status;
@@ -1779,12 +1837,26 @@ export class OrderOverviewComponent implements OnInit {
 
   // Hilfsmethode um zu prüfen, ob eine Bestellung bearbeitbar ist
   isOrderEditable(order: Order): boolean {
-    return order.status === 'open' || order.status === 'in_progress' || order.status === 'completed';
+    return (
+      order.status === 'open' ||
+      order.status === 'in_progress' ||
+      order.status === 'picked' ||
+      order.status === 'completed'
+    );
   }
 
   // Methode zum Bearbeiten einer offenen Bestellung
   editOrder(order: Order): void {
     console.log('✏️ [EDIT-ORDER] Bearbeite offene Bestellung:', order);
+
+    if (order.status === 'picking') {
+      alert(
+        order.picker_user_name
+          ? `Diese Bestellung wird gerade von ${order.picker_user_name} kommissioniert und kann nicht bearbeitet werden.`
+          : 'Diese Bestellung wird gerade kommissioniert und kann nicht bearbeitet werden.'
+      );
+      return;
+    }
     
     // Prüfe, ob die Bestellung bearbeitbar ist
     if (!this.isOrderEditable(order)) {

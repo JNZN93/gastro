@@ -24,6 +24,7 @@ export class LoadingScreenComponent implements OnInit {
           // Benutzerrolle und Name im GlobalService setzen
           this.globalService.setUserRole(response.user.role);
           this.globalService.setUserName(response.user.name || response.user.email || 'Benutzer');
+          this.globalService.setUserId(response.user.id != null ? Number(response.user.id) : null);
           
           // selectedCustomer bei Navigation löschen
           this.globalService.clearSelectedCustomer();

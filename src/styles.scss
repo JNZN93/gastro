@@ -7,6 +7,10 @@ body, html{
     overflow-x: hidden; // Verhindert horizontale Scrollbars
 }
 
+html:has(body.picking-mode) {
+  overflow-x: clip;
+}
+
 // Globale box-sizing Regel für alle Elemente
 * {
     box-sizing: border-box;
@@ -17,6 +21,15 @@ body {
     min-height: calc(100vh - 100px);
     overflow-x: hidden; // Verhindert horizontale Scrollbars
     margin-top: 70px; // Account for fixed header
+
+    &.picking-mode {
+      margin-top: 0;
+      min-height: 100dvh;
+      background-color: #dadada;
+      // clip avoids creating a scroll container that breaks sticky/fixed
+      overflow-x: clip;
+      overflow-y: auto;
+    }
 }
 
 // Sicherstellen, dass Angular Material Overlays immer über Header/Warenkorb liegen
@@ -39,6 +52,13 @@ body {
     * {
         -webkit-transform: translateZ(0);
         transform: translateZ(0);
+    }
+
+    // picking needs real fixed positioning; global translateZ creates containing blocks
+    body.picking-mode,
+    body.picking-mode * {
+        -webkit-transform: none !important;
+        transform: none !important;
     }
 }
 
