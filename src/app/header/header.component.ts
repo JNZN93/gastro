@@ -1,4 +1,4 @@
-import { Component, NgZone } from '@angular/core';
+import { Component, NgZone, OnInit } from '@angular/core';
 import { ToggleCartService } from '../toggle-cart.service';
 import { Router, RouterModule } from '@angular/router';
 import { GlobalService } from '../global.service';
@@ -7,7 +7,9 @@ import { AuthService } from '../authentication.service';
 import { MatDialog } from '@angular/material/dialog';
 import { MyDialogComponent } from '../my-dialog/my-dialog.component';
 import { CommonModule } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
 import { WarenkorbComponent } from '../warenkorb/warenkorb.component';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-header',
@@ -15,12 +17,15 @@ import { WarenkorbComponent } from '../warenkorb/warenkorb.component';
   templateUrl: './header.component.html',
   styleUrl: './header.component.scss'
 })
-export class HeaderComponent {
+export class HeaderComponent implements OnInit {
   showModal = false;
   showLoginModal = false;
   showSideModal = false;
   isLoginMode = true;
   errorMessage: string | null = null;
+  showDevBadge = false;
+  devBadgeLabel = 'DEV';
+  devBadgeTitle = 'DEV — lokales Backend';
   
   // Form properties
   loginForm: FormGroup;
@@ -42,7 +47,8 @@ export class HeaderComponent {
     private fb: FormBuilder,
     private authService: AuthService,
     private dialog: MatDialog,
-    private ngZone: NgZone
+    private ngZone: NgZone,
+    private http: HttpClient
   ) {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
@@ -60,6 +66,33 @@ export class HeaderComponent {
     // Event Listener für Login-Modal von anderen Komponenten
     window.addEventListener('openLoginModal', () => {
       this.ngZone.run(() => this.openLoginModal());
+    });
+  }
+
+  ngOnInit() {
+    this.http.get<{
+      env?: string;
+      port?: string;
+      dbName?: string;
+      dbHost?: string;
+      dbPort?: string;
+    }>(`${environment.apiUrl}/api/health`).subscribe({
+      next: (health) => {
+        if (health?.env !== 'development') {
+          this.showDevBadge = false;
+          return;
+        }
+        const apiPort = health.port || '?';
+        const host = health.dbHost || '?';
+        const db = health.dbName || '?';
+        const dbPort = health.dbPort ? `:${health.dbPort}` : '';
+        this.devBadgeLabel = `DEV · API localhost:${apiPort} · ${db} @ ${host}${dbPort}`;
+        this.devBadgeTitle = `Lokales Backend localhost:${apiPort} — DB ${db} auf ${host}${dbPort}`;
+        this.showDevBadge = true;
+      },
+      error: () => {
+        this.showDevBadge = false;
+      }
     });
   }
 

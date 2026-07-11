@@ -28,6 +28,7 @@ header {
   .logo-container {
     display: flex;
     align-items: center;
+    gap: 0.6rem;
     flex-shrink: 0;
     cursor: pointer;
     transition: transform 0.2s ease;
@@ -42,6 +43,25 @@ header {
       max-width: 200px;
       object-fit: contain;
       filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.1));
+    }
+
+    .dev-badge {
+      flex-shrink: 1;
+      max-width: min(55vw, 360px);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      padding: 0.25rem 0.65rem;
+      border-radius: 6px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      line-height: 1.2;
+      color: #1a1a1a;
+      background: #f5c542;
+      border: 1px solid #d4a017;
+      cursor: default;
+      user-select: none;
     }
   }
 

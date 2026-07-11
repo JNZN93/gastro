@@ -2,6 +2,9 @@
     <!-- Logo on the left side -->
     <div class="logo-container">
         <img src="logo.webp" alt="Logo" class="header-logo" (click)="navigateToHome()">
+        @if (showDevBadge) {
+            <span class="dev-badge" [attr.title]="devBadgeTitle">{{ devBadgeLabel }}</span>
+        }
     </div>
 
     <!-- Für nicht eingeloggte Benutzer -->
