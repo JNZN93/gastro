@@ -59,12 +59,6 @@ export const routes: Routes = [
     { path: 'customer-price-overview', component: CustomerPriceOverviewComponent, canActivate: [AdminAuthGuard] },
     { path: 'device-tracking', component: DeviceTrackingComponent, canActivate: [AuthGuard] },
     {
-        path: 'picking',
-        loadChildren: () =>
-            import('./features/picking/picking.routes').then((m) => m.PICKING_ROUTES),
-        canActivate: [AuthGuard],
-    },
-    {
         path: 'mitarbeiterplanung',
         loadChildren: () =>
             import('./features/employee-planning/employee-planning.routes').then(

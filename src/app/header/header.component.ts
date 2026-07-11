@@ -250,9 +250,7 @@ export class HeaderComponent implements OnInit {
 
   shouldHideElementAdmin(): boolean {
     return (
-      this.router.url === '/admin' ||
-      this.router.url.startsWith('/mitarbeiterplanung') ||
-      this.router.url.startsWith('/picking')
+      this.router.url === '/admin' || this.router.url.startsWith('/mitarbeiterplanung')
     );
   }
 
