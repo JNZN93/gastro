@@ -23,6 +23,8 @@ export interface PickingOrder {
   delivery_date?: string;
   status: string;
   customer_notes?: string;
+  picker_user_id?: number | null;
+  picker_user_name?: string | null;
   items: PickingOrderItem[];
 }
 
@@ -35,6 +37,8 @@ export interface PickItemState {
   pickedQuantity: number;
   status: PickItemStatus;
   note?: string;
+  price?: number;
+  differentPrice?: number | null;
   replacementArticleNumber?: string;
   replacementArticleName?: string;
 }
@@ -57,4 +61,15 @@ export interface PickingProgress {
 export interface ScanResultFeedback {
   type: 'success' | 'error' | 'warning';
   message: string;
+}
+
+export interface PickingSyncItem {
+  product_id: number;
+  quantity: number;
+  price?: number;
+  different_price?: number | null;
+  description?: string;
+  remove?: boolean;
+  replacement_article_number?: string;
+  replacement_article_name?: string;
 }

@@ -1264,6 +1264,11 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   // Lade die Bestelldaten in die Customer Orders Komponente
   private async loadOrderData(orderData: any): Promise<void> {
     console.log('🔄 [LOAD-ORDER-DATA] Lade Bestelldaten:', orderData);
+
+    if (orderData.originalStatus === 'picking' || orderData.status === 'picking') {
+      alert('Diese Bestellung wird gerade kommissioniert und kann nicht bearbeitet werden.');
+      return;
+    }
     
     // Prüfe, ob wir im Bearbeitungsmodus sind
     if (orderData.editMode === true) {

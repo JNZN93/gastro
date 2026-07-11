@@ -63,7 +63,12 @@ export class PickingStateService {
         productName: item.product_name,
         targetQuantity: Number(item.quantity),
         pickedQuantity: 0,
-        status: 'pending',
+        status: 'pending' as const,
+        price: item.price != null ? Number(item.price) : 0,
+        differentPrice:
+          item.different_price != null && item.different_price !== ''
+            ? Number(item.different_price)
+            : null,
       })),
     };
   }

@@ -197,6 +197,9 @@
                   <span class="status-badge" [class]="getStatusClass(order.status)">
                     {{ getStatusText(order.status) }}
                   </span>
+                  @if (order.picker_user_name) {
+                    <span class="picker-name">{{ order.picker_user_name }}</span>
+                  }
                 </td>
                 <td class="total-price">{{ getOrderTotalGross(order) | currency:'EUR':'symbol':'1.2-2' }}</td>
                 <td class="actions-cell">
@@ -251,6 +254,12 @@
           </div>
           
           <div class="card-body">
+            @if (order.picker_user_name) {
+              <div class="info-row">
+                <span class="info-label">Kommissioniert von:</span>
+                <span class="info-value">{{ order.picker_user_name }}</span>
+              </div>
+            }
             <div class="info-row">
               <span class="info-label">Kundennummer:</span>
               <span class="info-value">{{ order.customer_number || '-' }}</span>
@@ -520,6 +529,9 @@
                   <span class="status-badge" [class]="getStatusClass(selectedOrder.status)">
                     {{ getStatusText(selectedOrder.status) }}
                   </span>
+                  @if (selectedOrder.picker_user_name) {
+                    <span class="picker-name">{{ selectedOrder.picker_user_name }}</span>
+                  }
                 </span>
               </div>
               <div class="detail-item">

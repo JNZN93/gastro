@@ -268,11 +268,17 @@
             <td class="company-name">{{ getCustomerDisplayName(order) }}</td>
             <td class="status-cell">
               <select [(ngModel)]="order.status" (change)="onStatusChange($event, order)" 
-                      class="status-select" [class]="'status-' + order.status">
+                      class="status-select" [class]="'status-' + order.status"
+                      [disabled]="order.status === 'picking'">
                 <option value="open">Offen</option>
                 <option value="in_progress">In Bearbeitung</option>
+                <option value="picking" disabled>Wird kommissioniert</option>
+                <option value="picked">Fertig kommissioniert</option>
                 <option value="completed">Fertig</option>
               </select>
+              @if (order.picker_user_name) {
+                <div class="picker-hint">{{ order.picker_user_name }}</div>
+              }
             </td>
             <td class="actions-cell">
               <button class="view-btn" (click)="generatePdf(order.company, order.shipping_address, order.payment_status, order.order_date, order.created_at, order.fulfillment_type, order.name, order.email, order.order_id, order.total_price, order.delivery_date, order.items)">

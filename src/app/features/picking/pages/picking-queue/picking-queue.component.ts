@@ -33,7 +33,7 @@ export class PickingQueueComponent implements OnInit {
   errorMessage = '';
   searchTerm = '';
   dateFilter: 'all' | 'today' | 'tomorrow' = 'all';
-  statusFilter: 'pickable' | 'in_progress' | 'all' = 'pickable';
+  statusFilter: 'pickable' | 'picking' | 'all' = 'pickable';
 
   orders: PickingOrder[] = [];
   localStates = new Map<number, PickingState>();
@@ -73,7 +73,7 @@ export class PickingQueueComponent implements OnInit {
       );
 
       this.orders = (response?.orders ?? []).filter(
-        (order) => order.status === 'open' || order.status === 'in_progress'
+        (order) => order.status === 'open' || order.status === 'picking'
       );
 
       await this.loadCustomerNames(headers);
@@ -117,10 +117,10 @@ export class PickingQueueComponent implements OnInit {
     if (this.statusFilter === 'all') {
       return true;
     }
-    if (this.statusFilter === 'in_progress') {
-      return order.status === 'in_progress';
+    if (this.statusFilter === 'picking') {
+      return order.status === 'picking';
     }
-    return order.status === 'open' || order.status === 'in_progress';
+    return order.status === 'open' || order.status === 'picking';
   }
 
   private matchesDateFilter(order: PickingOrder): boolean {
@@ -146,6 +146,7 @@ export class PickingQueueComponent implements OnInit {
       order.company,
       order.customer_number,
       order.email,
+      order.picker_user_name,
       this.getCustomerNameFromMasterData(order.customer_number),
     ]
       .filter(Boolean)
@@ -156,7 +157,7 @@ export class PickingQueueComponent implements OnInit {
   }
 
   private compareQueueEntries(a: QueueEntry, b: QueueEntry): number {
-    const statusWeight = (status: string) => (status === 'in_progress' ? 0 : 1);
+    const statusWeight = (status: string) => (status === 'picking' ? 0 : 1);
     const statusDiff = statusWeight(a.order.status) - statusWeight(b.order.status);
     if (statusDiff !== 0) {
       return statusDiff;
@@ -199,6 +200,10 @@ export class PickingQueueComponent implements OnInit {
     switch (status) {
       case 'open':
         return 'Offen';
+      case 'picking':
+        return 'Wird kommissioniert';
+      case 'picked':
+        return 'Fertig kommissioniert';
       case 'in_progress':
         return 'In Bearbeitung';
       default:

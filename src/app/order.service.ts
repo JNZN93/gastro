@@ -40,13 +40,40 @@ export class OrderService {
     return this.http.put(this.apiUrlOrder + '/' + orderId, {status}, { headers });
   }
 
-  updateOrderStatusOnly(orderId: any, status: string, token: string | null): Observable<any> {
+  updateOrderStatusOnly(
+    orderId: any,
+    status: string,
+    token: string | null,
+    extra: { picker_user_name?: string } = {}
+  ): Observable<any> {
     const headers = new HttpHeaders({
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'
     });
 
-    return this.http.put(this.apiUrlOrder + '/' + orderId + '/status', {status}, { headers });
+    return this.http.put(
+      this.apiUrlOrder + '/' + orderId + '/status',
+      { status, ...extra },
+      { headers }
+    );
+  }
+
+  applyPickingItems(
+    orderId: number,
+    items: any[],
+    token: string | null,
+    complete = false
+  ): Observable<any> {
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    });
+
+    return this.http.put(
+      this.apiUrlOrder + '/' + orderId + '/picking',
+      { items, complete },
+      { headers }
+    );
   }
 
   deleteOrder(orderId: number, token: string | null): Observable<any> {

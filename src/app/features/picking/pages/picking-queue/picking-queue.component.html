@@ -1,26 +1,21 @@
 <div class="picking-page">
   <header class="page-header">
     <button type="button" class="back-btn" routerLink="/admin">← Dashboard</button>
-    <div>
+    <div class="header-text">
       <h1>Kommissionierung</h1>
-      <p class="subtitle">Pick-Fortschritt wird nur auf diesem Gerät gespeichert.</p>
+      <p class="subtitle">Aufträge am Handy abhaken, Mengen ändern und abschließen.</p>
     </div>
     <button type="button" class="refresh-btn" (click)="loadQueue()" [disabled]="isLoading">
       Aktualisieren
     </button>
   </header>
 
-  <div class="info-banner">
-    <strong>Hinweis:</strong> Der Fortschritt pro Position liegt lokal im Browser. Statusänderungen
-    (offen → in Bearbeitung → abgeschlossen) werden im System gespeichert.
-  </div>
-
   <section class="filters">
     <input
       type="search"
       [(ngModel)]="searchTerm"
       (ngModelChange)="onFiltersChanged()"
-      placeholder="Kunde, Nummer, Name suchen…"
+      placeholder="Kunde, Nummer, Picker suchen…"
     />
 
     <select [(ngModel)]="dateFilter" (ngModelChange)="onFiltersChanged()">
@@ -30,8 +25,8 @@
     </select>
 
     <select [(ngModel)]="statusFilter" (ngModelChange)="onFiltersChanged()">
-      <option value="pickable">Offen + In Bearbeitung</option>
-      <option value="in_progress">Nur In Bearbeitung</option>
+      <option value="pickable">Offen + Wird kommissioniert</option>
+      <option value="picking">Nur wird kommissioniert</option>
       <option value="all">Alle anzeigen</option>
     </select>
   </section>
@@ -48,7 +43,11 @@
         <article class="queue-card" (click)="openOrder(entry.order.order_id)">
           <div class="card-top">
             <span class="order-id">#{{ entry.order.order_id }}</span>
-            <span class="status-badge" [class.in-progress]="entry.order.status === 'in_progress'">
+            <span
+              class="status-badge"
+              [class.picking]="entry.order.status === 'picking'"
+              [class.open]="entry.order.status === 'open'"
+            >
               {{ getStatusLabel(entry.order.status) }}
             </span>
           </div>
@@ -63,6 +62,16 @@
             <span>{{ entry.order.items.length || 0 }} Positionen</span>
           </div>
 
+          @if (entry.order.picker_user_name) {
+            <p class="picker-hint">
+              @if (entry.order.status === 'picking') {
+                Wird kommissioniert von {{ entry.order.picker_user_name }}
+              } @else {
+                Kommissioniert von {{ entry.order.picker_user_name }}
+              }
+            </p>
+          }
+
           <div class="progress-row">
             <div class="progress-bar">
               <div class="progress-fill" [style.width.%]="entry.progress.percent"></div>
@@ -75,10 +84,6 @@
               }
             </span>
           </div>
-
-          @if (entry.localState) {
-            <p class="local-hint">Lokaler Fortschritt auf diesem Gerät</p>
-          }
         </article>
       }
     </div>

@@ -4,7 +4,12 @@
     <div class="header-main">
       @if (order) {
         <h1>{{ getCustomerLabel() }}</h1>
-        <p>#{{ order.order_id }} · {{ order.items.length }} Positionen</p>
+        <p>
+          #{{ order.order_id }} · {{ order.items.length }} Positionen
+          @if (order.picker_user_name) {
+            · {{ order.picker_user_name }}
+          }
+        </p>
       } @else {
         <h1>Kommissionierung</h1>
       }
@@ -30,11 +35,14 @@
   @if (showStartWarning) {
     <div class="warning-box">
       <p>
-        Diese Bestellung ist bereits <strong>in Bearbeitung</strong>, aber auf diesem Gerät gibt es
-        keinen gespeicherten Fortschritt. Möchten Sie hier neu starten?
+        Diese Bestellung wird bereits kommissioniert
+        @if (order.picker_user_name) {
+          ({{ order.picker_user_name }})
+        }
+        , aber auf diesem Gerät gibt es keinen gespeicherten Fortschritt. Möchten Sie hier fortsetzen?
       </p>
       <div class="warning-actions">
-        <button type="button" class="primary-btn" (click)="startPicking(false)" [disabled]="isSaving">
+        <button type="button" class="primary-btn" (click)="startPicking(true)" [disabled]="isSaving">
           Hier fortsetzen
         </button>
         <button type="button" class="secondary-btn" routerLink="/picking">Abbrechen</button>
@@ -56,9 +64,10 @@
         placeholder="EAN scannen oder eingeben…"
         autocomplete="off"
         inputmode="numeric"
+        enterkeyhint="done"
       />
       <button type="submit" class="primary-btn">OK</button>
-      <button type="button" class="icon-btn" (click)="openScanner()" title="Kamera-Scanner">
+      <button type="button" class="icon-btn" (click)="openScanner()" title="Kamera-Scanner" aria-label="Kamera-Scanner">
         📷
       </button>
     </form>
@@ -79,6 +88,9 @@
             <span class="replacement-label">
               Ersatz: {{ item.replacementArticleNumber }}{{ item.replacementArticleName ? ' - ' + item.replacementArticleName : '' }}
             </span>
+          }
+          @if (item.note) {
+            <span class="note-label">{{ item.note }}</span>
           }
         </div>
         <div class="item-side">
@@ -112,15 +124,19 @@
       <p class="modal-sub">{{ selectedItem.articleNumber }}</p>
 
       <label class="field">
-        <span>Gepickte Menge</span>
-        <input
-          type="number"
-          [(ngModel)]="modalPickedQuantity"
-          [disabled]="modalUnavailable"
-          min="0"
-          [max]="selectedItem.targetQuantity"
-          step="0.001"
-        />
+        <span>Menge / Gewicht</span>
+        <div class="qty-stepper">
+          <button type="button" class="stepper-btn" (click)="adjustModalQuantity(-1)" [disabled]="modalUnavailable">−</button>
+          <input
+            type="number"
+            [(ngModel)]="modalPickedQuantity"
+            [disabled]="modalUnavailable"
+            min="0"
+            step="0.001"
+            inputmode="decimal"
+          />
+          <button type="button" class="stepper-btn" (click)="adjustModalQuantity(1)" [disabled]="modalUnavailable">+</button>
+        </div>
         <small class="field-hint">Soll: {{ selectedItem.targetQuantity }}</small>
       </label>
 
@@ -158,12 +174,12 @@
       </label>
 
       <button type="button" class="danger-btn" (click)="markSelectedUnavailable()">
-        Als nicht verfügbar markieren
+        Nicht verfügbar / Position löschen
       </button>
 
       <div class="modal-actions">
         <button type="button" class="secondary-btn" (click)="closeItemModal()">Abbrechen</button>
-        <button type="button" class="primary-btn" (click)="saveItemModal()">Speichern</button>
+        <button type="button" class="primary-btn" (click)="saveItemModal()" [disabled]="isSaving">Speichern</button>
       </div>
     </div>
   </div>

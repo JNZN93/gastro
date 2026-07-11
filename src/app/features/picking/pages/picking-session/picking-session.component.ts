@@ -14,6 +14,7 @@ import {
   PickItemState,
   PickingOrder,
   PickingProgress,
+  PickingSyncItem,
   ScanResultFeedback,
 } from '../../models/picking.models';
 
@@ -129,8 +130,19 @@ export class PickingSessionComponent implements OnInit, OnDestroy {
         return;
       }
 
-      if (order.status !== 'open' && order.status !== 'in_progress') {
+      if (order.status !== 'open' && order.status !== 'picking') {
         this.errorMessage = 'Diese Bestellung ist nicht mehr offen zur Kommissionierung.';
+        this.order = order;
+        return;
+      }
+
+      if (
+        order.status === 'picking' &&
+        order.picker_user_id &&
+        this.globalService.getUserId() &&
+        Number(order.picker_user_id) !== Number(this.globalService.getUserId())
+      ) {
+        this.errorMessage = `Diese Bestellung wird gerade von ${order.picker_user_name || 'jemand anderem'} kommissioniert.`;
         this.order = order;
         return;
       }
@@ -170,7 +182,7 @@ export class PickingSessionComponent implements OnInit, OnDestroy {
       return;
     }
 
-    if (order.status === 'in_progress') {
+    if (order.status === 'picking') {
       this.showStartWarning = true;
       this.stateItems = this.pickingState.createInitialState(order, this.getStartedBy()).items;
       return;
@@ -194,11 +206,15 @@ export class PickingSessionComponent implements OnInit, OnDestroy {
     this.showStartWarning = false;
 
     try {
-      if (updateRemoteStatus && this.order.status === 'open') {
+      if (updateRemoteStatus && (this.order.status === 'open' || this.order.status === 'picking')) {
         await lastValueFrom(
-          this.orderService.updateOrderStatusOnly(this.order.order_id, 'in_progress', token)
+          this.orderService.updateOrderStatusOnly(this.order.order_id, 'picking', token, {
+            picker_user_name: this.getStartedBy(),
+          })
         );
-        this.order.status = 'in_progress';
+        this.order.status = 'picking';
+        this.order.picker_user_name = this.getStartedBy();
+        this.order.picker_user_id = this.globalService.getUserId();
       }
 
       if (!preserveItems) {
@@ -213,8 +229,10 @@ export class PickingSessionComponent implements OnInit, OnDestroy {
       }
 
       this.setFeedback('success', 'Kommissionierung gestartet.');
-    } catch {
-      this.setFeedback('error', 'Status konnte nicht gesetzt werden.');
+    } catch (error: any) {
+      const message = error?.error?.error || 'Status konnte nicht gesetzt werden.';
+      this.setFeedback('error', message);
+      this.errorMessage = message;
     } finally {
       this.isSaving = false;
       this.refreshProgress();
@@ -322,6 +340,14 @@ export class PickingSessionComponent implements OnInit, OnDestroy {
     this.focusEanInput();
   }
 
+  adjustModalQuantity(delta: number): void {
+    if (this.modalUnavailable) {
+      return;
+    }
+    const next = Math.max(0, Number(this.modalPickedQuantity || 0) + delta);
+    this.modalPickedQuantity = Math.round(next * 1000) / 1000;
+  }
+
   async saveItemModal(): Promise<void> {
     if (!this.selectedItem) {
       return;
@@ -341,6 +367,7 @@ export class PickingSessionComponent implements OnInit, OnDestroy {
     this.selectedItem.replacementArticleName = this.modalReplacementArticleName || undefined;
 
     await this.persistState();
+    await this.syncOrderToServer(false);
     this.closeItemModal();
   }
 
@@ -409,22 +436,15 @@ export class PickingSessionComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const token = localStorage.getItem('token');
-    if (!token) {
-      return;
-    }
-
     this.isSaving = true;
 
     try {
-      await lastValueFrom(
-        this.orderService.updateOrderStatusOnly(this.order.order_id, 'completed', token)
-      );
+      await this.syncOrderToServer(true);
       state.completedAt = new Date().toISOString();
       await this.pickingState.saveState(state);
       this.router.navigate(['/picking']);
-    } catch {
-      this.setFeedback('error', 'Abschluss fehlgeschlagen.');
+    } catch (error: any) {
+      this.setFeedback('error', error?.error?.error || 'Abschluss fehlgeschlagen.');
     } finally {
       this.isSaving = false;
     }
@@ -443,7 +463,7 @@ export class PickingSessionComponent implements OnInit, OnDestroy {
     this.isSaving = true;
 
     try {
-      if (this.order.status === 'in_progress') {
+      if (this.order.status === 'picking') {
         await lastValueFrom(
           this.orderService.updateOrderStatusOnly(this.order.order_id, 'open', token)
         );
@@ -455,6 +475,78 @@ export class PickingSessionComponent implements OnInit, OnDestroy {
     } finally {
       this.isSaving = false;
     }
+  }
+
+  private buildSyncItems(): PickingSyncItem[] {
+    return this.stateItems.map((item) => {
+      if (item.status === 'unavailable') {
+        return {
+          product_id: item.productId,
+          quantity: 0,
+          price: item.price,
+          different_price: item.differentPrice ?? null,
+          description: item.productName,
+          remove: true,
+        };
+      }
+
+      const quantity =
+        item.pickedQuantity > 0 ? item.pickedQuantity : item.targetQuantity;
+
+      return {
+        product_id: item.productId,
+        quantity,
+        price: item.price,
+        different_price: item.differentPrice ?? null,
+        description: item.replacementArticleName || item.productName,
+        replacement_article_number: item.replacementArticleNumber,
+        replacement_article_name: item.replacementArticleName,
+      };
+    });
+  }
+
+  private async syncOrderToServer(complete: boolean): Promise<void> {
+    if (!this.order) {
+      return;
+    }
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('Nicht angemeldet');
+    }
+
+    await lastValueFrom(
+      this.orderService.applyPickingItems(
+        this.order.order_id,
+        this.buildSyncItems(),
+        token,
+        complete
+      )
+    );
+
+    if (complete) {
+      this.order.status = 'picked';
+    } else {
+      this.rebuildOrderFromState();
+      await this.persistState();
+    }
+  }
+
+  private rebuildOrderFromState(): void {
+    if (!this.order) {
+      return;
+    }
+
+    this.order.items = this.stateItems
+      .filter((item) => item.status !== 'unavailable')
+      .map((item) => ({
+        product_id: item.productId,
+        quantity: item.pickedQuantity > 0 ? item.pickedQuantity : item.targetQuantity,
+        price: item.price != null ? String(item.price) : '0',
+        different_price: item.differentPrice != null ? String(item.differentPrice) : null,
+        product_name: item.replacementArticleName || item.productName,
+        product_article_number: item.replacementArticleNumber || item.articleNumber,
+      }));
   }
 
   private async persistState(): Promise<void> {

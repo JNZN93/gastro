@@ -398,6 +398,13 @@
   min-width: 140px;
 }
 
+.picker-hint {
+  margin-top: 0.35rem;
+  font-size: 0.75rem;
+  color: #c2410c;
+  font-weight: 600;
+}
+
 .status-select {
   width: 100%;
   padding: 0.5rem;
@@ -420,6 +427,16 @@
   &.status-in_progress {
     border-color: #3b82f6;
     background: #dbeafe;
+  }
+
+  &.status-picking {
+    border-color: #f97316;
+    background: #ffedd5;
+  }
+
+  &.status-picked {
+    border-color: #22c55e;
+    background: #dcfce7;
   }
 
   &.status-completed {
