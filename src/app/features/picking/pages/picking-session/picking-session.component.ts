@@ -1,4 +1,4 @@
-import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -30,14 +30,16 @@ interface ReplacementArticle {
   templateUrl: './picking-session.component.html',
   styleUrl: './picking-session.component.scss',
 })
-export class PickingSessionComponent implements OnInit, OnDestroy {
+export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild(ZXingScannerComponent) scanner?: ZXingScannerComponent;
   @ViewChild('eanInput') eanInput?: ElementRef<HTMLInputElement>;
+  @ViewChild('stickyBar') stickyBar?: ElementRef<HTMLElement>;
 
   orderId = 0;
   order: PickingOrder | null = null;
   stateItems: PickItemState[] = [];
   progress: PickingProgress = { done: 0, total: 0, percent: 0 };
+  stickyBarHeight = 120;
 
   isLoading = true;
   isSaving = false;
@@ -73,6 +75,7 @@ export class PickingSessionComponent implements OnInit, OnDestroy {
   };
 
   private feedbackTimer: ReturnType<typeof setTimeout> | null = null;
+  private stickyResizeObserver: ResizeObserver | null = null;
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -80,7 +83,8 @@ export class PickingSessionComponent implements OnInit, OnDestroy {
     private readonly http: HttpClient,
     private readonly orderService: OrderService,
     private readonly globalService: GlobalService,
-    private readonly pickingState: PickingStateService
+    private readonly pickingState: PickingStateService,
+    private readonly ngZone: NgZone,
   ) {}
 
   ngOnInit(): void {
@@ -95,10 +99,38 @@ export class PickingSessionComponent implements OnInit, OnDestroy {
     });
   }
 
+  ngAfterViewInit(): void {
+    this.observeStickyBar();
+  }
+
   ngOnDestroy(): void {
     if (this.feedbackTimer) {
       clearTimeout(this.feedbackTimer);
     }
+    this.stickyResizeObserver?.disconnect();
+    this.stickyResizeObserver = null;
+  }
+
+  private observeStickyBar(): void {
+    const el = this.stickyBar?.nativeElement;
+    if (!el || typeof ResizeObserver === 'undefined') {
+      return;
+    }
+
+    this.stickyResizeObserver?.disconnect();
+    this.stickyResizeObserver = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (!entry) {
+        return;
+      }
+      const height =
+        entry.borderBoxSize?.[0]?.blockSize ??
+        entry.contentRect.height;
+      this.ngZone.run(() => {
+        this.stickyBarHeight = Math.ceil(height);
+      });
+    });
+    this.stickyResizeObserver.observe(el);
   }
 
   async loadSession(): Promise<void> {

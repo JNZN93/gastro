@@ -1,20 +1,69 @@
 <div class="session-page">
-  <header class="session-header">
-    <button type="button" class="back-btn" routerLink="/picking">← Queue</button>
-    <div class="header-main">
-      @if (order) {
-        <h1>{{ getCustomerLabel() }}</h1>
-        <p>
-          #{{ order.order_id }} · {{ order.items.length }} Positionen
-          @if (order.picker_user_name) {
-            · {{ order.picker_user_name }}
+  <div class="session-sticky" #stickyBar>
+    <header class="session-header">
+      <div class="header-row">
+        <button type="button" class="back-btn" routerLink="/picking">← Queue</button>
+        <div class="header-main">
+          @if (order) {
+            <h1>{{ getCustomerLabel() }}</h1>
+            <p>
+              #{{ order.order_id }} · {{ order.items.length }} Pos.
+              @if (order.picker_user_name) {
+                · {{ order.picker_user_name }}
+              }
+            </p>
+          } @else {
+            <h1>Kommissionierung</h1>
           }
-        </p>
-      } @else {
-        <h1>Kommissionierung</h1>
+        </div>
+      </div>
+
+      @if (order && !isLoading && !errorMessage) {
+        <div class="progress-inline">
+          <div class="progress-top">
+            <strong>{{ progress.done }}/{{ progress.total }}</strong>
+            <span>{{ progress.percent }}%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" [style.width.%]="progress.percent"></div>
+          </div>
+        </div>
       }
-    </div>
-  </header>
+    </header>
+
+    @if (order && !isLoading && !errorMessage) {
+      <form (ngSubmit)="onEanSubmit()" class="scan-form">
+        <input
+          #eanInput
+          type="text"
+          [(ngModel)]="eanInputValue"
+          name="eanInput"
+          placeholder="EAN scannen…"
+          autocomplete="off"
+          inputmode="numeric"
+          enterkeyhint="done"
+        />
+        <button type="submit" class="primary-btn">OK</button>
+        <button type="button" class="icon-btn" (click)="openScanner()" title="Kamera-Scanner" aria-label="Kamera-Scanner">
+          <svg class="icon-camera" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
+            />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
+            />
+          </svg>
+        </button>
+      </form>
+    }
+  </div>
+  <div class="session-sticky-spacer" [style.height.px]="stickyBarHeight" aria-hidden="true"></div>
 
   @if (isLoading) {
     <div class="state-box">Bestellung wird geladen…</div>
@@ -22,16 +71,6 @@
     <div class="state-box error">{{ errorMessage }}</div>
     <button type="button" class="secondary-btn" routerLink="/picking">Zurück zur Queue</button>
   } @else if (order) {
-  <div class="progress-card">
-    <div class="progress-top">
-      <strong>{{ progress.done }}/{{ progress.total }} Positionen bearbeitet</strong>
-      <span>{{ progress.percent }}%</span>
-    </div>
-    <div class="progress-bar">
-      <div class="progress-fill" [style.width.%]="progress.percent"></div>
-    </div>
-  </div>
-
   @if (showStartWarning) {
     <div class="warning-box">
       <p>
@@ -53,25 +92,6 @@
   @if (scanFeedback) {
     <div class="scan-feedback" [class]="scanFeedback.type">{{ scanFeedback.message }}</div>
   }
-
-  <section class="scan-section">
-    <form (ngSubmit)="onEanSubmit()" class="scan-form">
-      <input
-        #eanInput
-        type="text"
-        [(ngModel)]="eanInputValue"
-        name="eanInput"
-        placeholder="EAN scannen oder eingeben…"
-        autocomplete="off"
-        inputmode="numeric"
-        enterkeyhint="done"
-      />
-      <button type="submit" class="primary-btn">OK</button>
-      <button type="button" class="icon-btn" (click)="openScanner()" title="Kamera-Scanner" aria-label="Kamera-Scanner">
-        📷
-      </button>
-    </form>
-  </section>
 
   <section class="items-list">
     @for (item of stateItems; track item.key) {
