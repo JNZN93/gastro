@@ -33,6 +33,9 @@ interface Order {
   fulfillment_type: string;
   order_date: string;
   created_at: string;
+  updated_at?: string;
+  updated_by?: number | null;
+  updated_by_name?: string | null;
   shipping_address: string;
   payment_status: string;
   delivery_date: string;
@@ -1423,6 +1426,46 @@ export class OrderOverviewComponent implements OnInit {
       return order.name;
     }
     return '-'; // Keine Anzeige für normale Kunden in der Sachbearbeiter-Spalte
+  }
+
+  /** Last editor name for hover tooltip (explicit editor, else picker as fallback). */
+  getOrderEditorName(order: Order): string {
+    const editor = String(order?.updated_by_name || '').trim();
+    if (editor) {
+      return editor;
+    }
+    const picker = String(order?.picker_user_name || '').trim();
+    if (picker) {
+      return picker;
+    }
+    return '';
+  }
+
+  wasOrderUpdated(order: Order): boolean {
+    if (!order?.updated_at || !order?.created_at) {
+      return false;
+    }
+    return new Date(order.updated_at).getTime() - new Date(order.created_at).getTime() > 60_000;
+  }
+
+  /** Hover-only audit info — only when we know who. */
+  getOrderEditTooltip(order: Order): string {
+    const who = this.getOrderEditorName(order);
+    if (!who) {
+      return '';
+    }
+    const when = order?.updated_at ? new Date(order.updated_at) : null;
+    if (when && !Number.isNaN(when.getTime()) && this.wasOrderUpdated(order)) {
+      const datePart = when.toLocaleString('de-DE', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+      return `Zuletzt bearbeitet von ${who} · ${datePart}`;
+    }
+    return `Zuletzt bearbeitet von ${who}`;
   }
 
   deleteOrder(order: Order) {

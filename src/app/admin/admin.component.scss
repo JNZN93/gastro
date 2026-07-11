@@ -387,6 +387,11 @@
 
 .order-date {
   color: #6b7280;
+
+  &.has-edit-info {
+    cursor: help;
+    border-bottom: 1px dotted #c4c4c4;
+  }
 }
 
 .customer-name {

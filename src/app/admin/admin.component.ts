@@ -200,6 +200,51 @@ export class AdminComponent implements OnInit {
     return openOrders > 0 || inProgressOrders > 0 || pickingOrders > 0;
   }
 
+  /** True if order was edited after creation (status change, items, etc.). */
+  wasOrderUpdated(order: any): boolean {
+    if (!order?.updated_at || !order?.created_at) {
+      return false;
+    }
+    return new Date(order.updated_at).getTime() - new Date(order.created_at).getTime() > 60_000;
+  }
+
+  /** Last editor name for hover tooltip (explicit editor, else picker as fallback). */
+  getOrderEditorName(order: any): string {
+    const editor = String(order?.updated_by_name || '').trim();
+    if (editor) {
+      return editor;
+    }
+    const picker = String(order?.picker_user_name || '').trim();
+    if (picker) {
+      return picker;
+    }
+    return '';
+  }
+
+  /** Hover-only audit info for last edit — only when we know who. */
+  getOrderEditTooltip(order: any): string {
+    const who = this.getOrderEditorName(order);
+    if (!who) {
+      return '';
+    }
+    if (!this.wasOrderUpdated(order) && !order?.updated_by_name) {
+      // Picker gesetzt, aber noch kein Edit-Zeitstempel-Diff: trotzdem nachvollziehbar
+      return `Zuletzt bearbeitet von ${who}`;
+    }
+    const when = order?.updated_at ? new Date(order.updated_at) : null;
+    if (when && !Number.isNaN(when.getTime())) {
+      const datePart = when.toLocaleString('de-DE', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+      return `Zuletzt bearbeitet von ${who} · ${datePart}`;
+    }
+    return `Zuletzt bearbeitet von ${who}`;
+  }
+
   checkUserRole() {
     this.authService.checkToken(localStorage.getItem('token')).subscribe({
       next: (response) => {

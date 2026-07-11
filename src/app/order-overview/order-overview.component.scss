@@ -564,6 +564,11 @@
       font-size: 12px;
       width: 12%;
       max-width: 120px;
+
+      &.has-edit-info {
+        cursor: help;
+        border-bottom: 1px dotted #c4c4c4;
+      }
     }
 
     .customer-name {
@@ -1446,6 +1451,16 @@
 .order-info .order-date {
   font-size: 0.875rem;
   color: #6b7280;
+
+  &.has-edit-info {
+    cursor: help;
+    border-bottom: 1px dotted #c4c4c4;
+  }
+}
+
+.detail-value.has-edit-info {
+  cursor: help;
+  border-bottom: 1px dotted #c4c4c4;
 }
 
 .card-body {
