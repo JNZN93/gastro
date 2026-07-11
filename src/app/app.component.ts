@@ -27,52 +27,20 @@ export class AppComponent implements OnInit, OnDestroy {
   ngOnInit() {
     // Initial state on load
     this.isEmployeesRoute = this.router.url.includes('/employees');
-    this.shouldHideFooter = this.router.url.includes('/category/') || 
-                           this.router.url.includes('/guest-link') || 
-                           this.router.url.includes('/admin') ||
-                           this.router.url.includes('/product-management') ||
-                           this.router.url.includes('/employees') ||
-                           this.router.url.includes('/label-management') ||
-                           this.router.url.includes('/order-overview') ||
-                           this.router.url.includes('/user-management') ||
-                           this.router.url.includes('/route-planning') ||
-                           this.router.url.includes('/reports') ||
-                           this.router.url.includes('/offers') ||
-                           this.router.url.includes('/customer-order/') ||
-                           this.router.url.includes('/customer-price-overview') ||
-                           this.router.url.includes('/mitarbeiterplanung');
+    this.shouldHideFooter = this.isFooterHiddenForUrl(this.router.url);
     this.updateHeaderVisibility();
+    this.updatePickingBodyClass(this.router.url);
 
     this.routerSubscription = this.router.events
       .pipe(filter(event => event instanceof NavigationEnd))
       .subscribe((event: NavigationEnd) => {
         this.isCategoryDetailRoute = event.url.includes('/category/');
-        // Footer auf Gast-Link-Route, Admin-Routen (außer Kundenansicht), Category-Routen und Customer-Order-Route ausblenden
-        this.shouldHideFooter = event.url.includes('/category/') || 
-                                event.url.includes('/guest-link') || 
-                                event.url.includes('/admin') ||
-                                event.url.includes('/product-management') ||
-                                event.url.includes('/employees') ||
-                                event.url.includes('/label-management') ||
-                                event.url.includes('/order-overview') ||
-                                event.url.includes('/user-management') ||
-                                event.url.includes('/route-planning') ||
-                                event.url.includes('/reports') ||
-                                event.url.includes('/offers') ||
-                                event.url.includes('/customer-order/') ||
-                                event.url.includes('/customer-price-overview') ||
-                                event.url.includes('/mitarbeiterplanung');
+        this.shouldHideFooter = this.isFooterHiddenForUrl(event.url);
 
         // Header auf Employees-Route nur auf Mobile/Tablet ausblenden
         this.isEmployeesRoute = event.url.includes('/employees');
-        
-        // Header auf bestimmten Routen ausblenden
-        const isPublicOrderReview = event.url.includes('/customer-order/') && event.url.includes('/review');
-        const isOfferFlyer = event.url.includes('/offers/') && event.url.includes('/flyer');
-        const isMobileOrTablet = typeof window !== 'undefined' ? window.innerWidth <= 1023 : false;
-        this.shouldHideHeader = (this.isEmployeesRoute && isMobileOrTablet) || isPublicOrderReview || isOfferFlyer;
-        
         this.updateHeaderVisibility();
+        this.updatePickingBodyClass(event.url);
       });
   }
 
@@ -81,17 +49,46 @@ export class AppComponent implements OnInit, OnDestroy {
     this.updateHeaderVisibility();
   }
 
+  private isFooterHiddenForUrl(url: string): boolean {
+    return (
+      url.includes('/category/') ||
+      url.includes('/guest-link') ||
+      url.includes('/admin') ||
+      url.includes('/product-management') ||
+      url.includes('/employees') ||
+      url.includes('/label-management') ||
+      url.includes('/order-overview') ||
+      url.includes('/user-management') ||
+      url.includes('/route-planning') ||
+      url.includes('/reports') ||
+      url.includes('/offers') ||
+      url.includes('/customer-order/') ||
+      url.includes('/customer-price-overview') ||
+      url.includes('/mitarbeiterplanung') ||
+      url.startsWith('/picking')
+    );
+  }
+
   private updateHeaderVisibility() {
     const isMobileOrTablet = typeof window !== 'undefined' ? window.innerWidth <= 1023 : false;
     const isPublicOrderReview = this.router.url.includes('/customer-order/') && this.router.url.includes('/review');
     const isOfferFlyer = this.router.url.includes('/offers/') && this.router.url.includes('/flyer');
+    const isPicking = this.router.url.startsWith('/picking');
 
-    this.shouldHideHeader = (this.isEmployeesRoute && isMobileOrTablet) || isPublicOrderReview || isOfferFlyer;
+    this.shouldHideHeader = (this.isEmployeesRoute && isMobileOrTablet) || isPublicOrderReview || isOfferFlyer || isPicking;
+  }
+
+  private updatePickingBodyClass(url: string): void {
+    if (typeof document === 'undefined') {
+      return;
+    }
+    document.body.classList.toggle('picking-mode', url.startsWith('/picking'));
   }
 
   ngOnDestroy() {
     if (this.routerSubscription) {
       this.routerSubscription.unsubscribe();
     }
+    this.updatePickingBodyClass('');
   }
 }

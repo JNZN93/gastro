@@ -17,6 +17,14 @@ body {
     min-height: calc(100vh - 100px);
     overflow-x: hidden; // Verhindert horizontale Scrollbars
     margin-top: 70px; // Account for fixed header
+
+    &.picking-mode {
+      margin-top: 0;
+      min-height: 100dvh;
+      background-color: #dadada;
+      overflow-x: hidden;
+      overflow-y: auto;
+    }
 }
 
 // Sicherstellen, dass Angular Material Overlays immer über Header/Warenkorb liegen

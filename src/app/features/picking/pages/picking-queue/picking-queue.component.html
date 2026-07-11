@@ -1,91 +1,98 @@
 <div class="picking-page">
-  <header class="page-header">
-    <button type="button" class="back-btn" routerLink="/admin">← Dashboard</button>
-    <div class="header-text">
-      <h1>Kommissionierung</h1>
-      <p class="subtitle">Aufträge am Handy abhaken, Mengen ändern und abschließen.</p>
-    </div>
-    <button type="button" class="refresh-btn" (click)="loadQueue()" [disabled]="isLoading">
-      Aktualisieren
-    </button>
-  </header>
+  <div class="picking-shell">
+    <header class="page-header">
+      <button type="button" class="back-btn" routerLink="/admin">← Dashboard</button>
+      <div class="header-text">
+        <h1>Kommissionierung</h1>
+        <p class="subtitle">Aufträge scannen, Mengen anpassen und direkt abschließen.</p>
+      </div>
+      <button type="button" class="refresh-btn" (click)="loadQueue()" [disabled]="isLoading">
+        Aktualisieren
+      </button>
+    </header>
 
-  <section class="filters">
-    <input
-      type="search"
-      [(ngModel)]="searchTerm"
-      (ngModelChange)="onFiltersChanged()"
-      placeholder="Kunde, Nummer, Picker suchen…"
-    />
+    <section class="filters">
+      <input
+        type="search"
+        [(ngModel)]="searchTerm"
+        (ngModelChange)="onFiltersChanged()"
+        placeholder="Kunde, Nummer, Picker suchen…"
+      />
 
-    <select [(ngModel)]="dateFilter" (ngModelChange)="onFiltersChanged()">
-      <option value="all">Alle Termine</option>
-      <option value="today">Heute</option>
-      <option value="tomorrow">Morgen</option>
-    </select>
+      <select [(ngModel)]="dateFilter" (ngModelChange)="onFiltersChanged()">
+        <option value="all">Alle Termine</option>
+        <option value="today">Heute</option>
+        <option value="tomorrow">Morgen</option>
+      </select>
 
-    <select [(ngModel)]="statusFilter" (ngModelChange)="onFiltersChanged()">
-      <option value="pickable">Offen + Wird kommissioniert</option>
-      <option value="picking">Nur wird kommissioniert</option>
-      <option value="all">Alle anzeigen</option>
-    </select>
-  </section>
+      <select [(ngModel)]="statusFilter" (ngModelChange)="onFiltersChanged()">
+        <option value="pickable">Offen + Wird kommissioniert</option>
+        <option value="picking">Nur wird kommissioniert</option>
+        <option value="all">Alle anzeigen</option>
+      </select>
+    </section>
 
-  @if (isLoading) {
-    <div class="state-box">Bestellungen werden geladen…</div>
-  } @else if (errorMessage) {
-    <div class="state-box error">{{ errorMessage }}</div>
-  } @else if (queueEntries.length === 0) {
-    <div class="state-box">Keine Bestellungen für die aktuelle Filterung.</div>
-  } @else {
-    <div class="queue-grid">
-      @for (entry of queueEntries; track entry.order.order_id) {
-        <article class="queue-card" (click)="openOrder(entry.order.order_id)">
-          <div class="card-top">
-            <span class="order-id">#{{ entry.order.order_id }}</span>
-            <span
-              class="status-badge"
-              [class.picking]="entry.order.status === 'picking'"
-              [class.open]="entry.order.status === 'open'"
-            >
-              {{ getStatusLabel(entry.order.status) }}
-            </span>
-          </div>
-
-          <h2>{{ getCustomerLabel(entry.order) }}</h2>
-
-          <div class="meta">
-            <span>{{ getFulfillmentLabel(entry.order.fulfillment_type) }}</span>
-            <span>
-              {{ entry.order.delivery_date || entry.order.order_date || 'Kein Datum' }}
-            </span>
-            <span>{{ entry.order.items.length || 0 }} Positionen</span>
-          </div>
-
-          @if (entry.order.picker_user_name) {
-            <p class="picker-hint">
-              @if (entry.order.status === 'picking') {
-                Wird kommissioniert von {{ entry.order.picker_user_name }}
-              } @else {
-                Kommissioniert von {{ entry.order.picker_user_name }}
-              }
-            </p>
-          }
-
-          <div class="progress-row">
-            <div class="progress-bar">
-              <div class="progress-fill" [style.width.%]="entry.progress.percent"></div>
+    @if (isLoading) {
+      <div class="state-box">Bestellungen werden geladen…</div>
+    } @else if (errorMessage) {
+      <div class="state-box error">{{ errorMessage }}</div>
+    } @else if (queueEntries.length === 0) {
+      <div class="state-box">Keine Bestellungen für die aktuelle Filterung.</div>
+    } @else {
+      <div class="queue-grid">
+        @for (entry of queueEntries; track entry.order.order_id) {
+          <article
+            class="queue-card"
+            [class.is-open]="entry.order.status === 'open'"
+            [class.is-picking]="entry.order.status === 'picking'"
+            (click)="openOrder(entry.order.order_id)"
+          >
+            <div class="card-top">
+              <span class="order-id">#{{ entry.order.order_id }}</span>
+              <span
+                class="status-badge"
+                [class.picking]="entry.order.status === 'picking'"
+                [class.open]="entry.order.status === 'open'"
+              >
+                {{ getStatusLabel(entry.order.status) }}
+              </span>
             </div>
-            <span class="progress-text">
-              @if (entry.progress.total > 0) {
-                {{ entry.progress.done }}/{{ entry.progress.total }}
-              } @else {
-                0%
-              }
-            </span>
-          </div>
-        </article>
-      }
-    </div>
-  }
+
+            <h2>{{ getCustomerLabel(entry.order) }}</h2>
+
+            <div class="meta">
+              <span>{{ getFulfillmentLabel(entry.order.fulfillment_type) }}</span>
+              <span>
+                {{ entry.order.delivery_date || entry.order.order_date || 'Kein Datum' }}
+              </span>
+              <span>{{ entry.order.items.length || 0 }} Positionen</span>
+            </div>
+
+            @if (entry.order.picker_user_name) {
+              <p class="picker-hint">
+                @if (entry.order.status === 'picking') {
+                  Wird kommissioniert von {{ entry.order.picker_user_name }}
+                } @else {
+                  Kommissioniert von {{ entry.order.picker_user_name }}
+                }
+              </p>
+            }
+
+            <div class="progress-row">
+              <div class="progress-bar">
+                <div class="progress-fill" [style.width.%]="entry.progress.percent"></div>
+              </div>
+              <span class="progress-text">
+                @if (entry.progress.total > 0) {
+                  {{ entry.progress.done }}/{{ entry.progress.total }}
+                } @else {
+                  —
+                }
+              </span>
+            </div>
+          </article>
+        }
+      </div>
+    }
+  </div>
 </div>
