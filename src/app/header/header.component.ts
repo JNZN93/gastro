@@ -217,7 +217,9 @@ export class HeaderComponent {
 
   shouldHideElementAdmin(): boolean {
     return (
-      this.router.url === '/admin' || this.router.url.startsWith('/mitarbeiterplanung')
+      this.router.url === '/admin' ||
+      this.router.url.startsWith('/mitarbeiterplanung') ||
+      this.router.url.startsWith('/picking')
     );
   }
 
