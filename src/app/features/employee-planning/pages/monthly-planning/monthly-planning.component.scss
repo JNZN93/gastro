@@ -2,6 +2,9 @@
   display: block;
   width: 100%;
   min-width: 0;
+  min-height: calc(100dvh - 70px);
+  margin-top: 70px;
+  background: #dadada;
   box-sizing: border-box;
 }
 
@@ -9,9 +12,7 @@
   width: 100%;
   max-width: 1400px;
   margin: 0 auto;
-  padding: 1.5rem;
-  padding-top: calc(70px + 1.5rem);
-  padding-bottom: 3rem;
+  padding: 1.5rem 1rem 3rem;
   box-sizing: border-box;
 }
 
@@ -331,7 +332,6 @@
 @media (max-width: 600px) {
   .page-container {
     padding: 1rem;
-    padding-top: calc(70px + 1rem);
   }
 
   .action-row {

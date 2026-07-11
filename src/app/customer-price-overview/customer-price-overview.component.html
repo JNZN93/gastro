@@ -1,4 +1,5 @@
-<div class="customer-price-overview-container">
+<div class="customer-price-overview-page">
+  <div class="customer-price-overview-panel">
   <div class="header">
     <h1>Kundenpreise Übersicht</h1>
     <p>Preise gruppiert nach Artikel</p>
@@ -7,10 +8,11 @@
   <!-- Filter und Suche -->
   <div class="filters">
     <div class="search-container">
+      <i class="bi bi-search search-icon"></i>
       <input 
         type="text" 
         [(ngModel)]="searchTerm" 
-        placeholder="Suchbegriff eingeben (min. 3 Zeichen) - Artikel-ID, Beschreibung, Kunde oder Preis..." 
+        placeholder="Artikel-ID, Beschreibung, Kunde oder Preis (min. 3 Zeichen)…" 
         class="search-input"
       />
       <button *ngIf="searchTerm" (click)="searchTerm = ''" class="clear-search-btn" title="Suche löschen">
@@ -19,7 +21,7 @@
     </div>
     
 
-    <button (click)="refreshData()" class="refresh-btn" [disabled]="loading">
+    <button (click)="refreshData()" class="refresh-btn" [disabled]="loading" title="Aktualisieren">
       <i class="bi bi-arrow-clockwise"></i>
     </button>
   </div>
@@ -53,7 +55,7 @@
   <div *ngIf="!isSearching && !loading && !error && productOverviews.length > 0" class="search-hint">
     <span class="hint-info">
       <i class="bi bi-info-circle"></i>
-      {{ productOverviews.length }} Artikel verfügbar - geben Sie einen Suchbegriff ein, um Ergebnisse zu sehen
+      {{ productOverviews.length }} Artikel verfügbar — Suchbegriff eingeben, um Ergebnisse zu sehen
     </span>
   </div>
 
@@ -152,9 +154,10 @@
       Keine Artikel entsprechen Ihren Suchkriterien.
     </p>
     <p *ngIf="!searchTerm">
-      Geben Sie einen Suchbegriff ein, um Kundenpreise zu finden.<br>
-      Sie können nach Artikel-ID, Beschreibung, Kundennummer oder Preis suchen.
+      Suchbegriff eingeben, um Kundenpreise zu finden.<br>
+      Artikel-ID, Beschreibung, Kundennummer oder Preis.
     </p>
+  </div>
   </div>
 </div>
 
