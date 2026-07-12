@@ -1313,6 +1313,7 @@ export class OrderOverviewComponent implements OnInit {
       case 'in_progress': return 'status-progress';
       case 'picking': return 'status-picking';
       case 'picked': return 'status-picked';
+      case 'delivered': return 'status-delivered';
       case 'completed': return 'status-completed';
       case 'archived': return 'status-archived';
       default: return 'status-default';
@@ -1325,6 +1326,7 @@ export class OrderOverviewComponent implements OnInit {
       case 'in_progress': return 'In Bearbeitung';
       case 'picking': return 'Wird kommissioniert';
       case 'picked': return 'Fertig kommissioniert';
+      case 'delivered': return 'Ausgeliefert';
       case 'completed': return 'Abgeschlossen';
       case 'archived': return 'Archiviert';
       default: return 'Unbekannt';

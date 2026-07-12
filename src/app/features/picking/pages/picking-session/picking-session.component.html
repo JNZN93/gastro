@@ -140,6 +140,9 @@
         <div class="item-main">
           <strong>{{ item.productName }}</strong>
           <span class="article-number">{{ item.articleNumber }}</span>
+          @if (item.isPfandLine) {
+            <span class="pfand-label">Pfand</span>
+          }
           @if (item.replacementArticleNumber) {
             <span class="replacement-label">
               Ersatz: {{ item.replacementArticleNumber }}{{ item.replacementArticleName ? ' - ' + item.replacementArticleName : '' }}
@@ -223,6 +226,42 @@
           <button type="button" class="link-btn" (click)="clearReplacementArticle()">Ersatzartikel entfernen</button>
         }
       </label>
+
+      @if (canShowPfandOption()) {
+        <div class="field pfand-field">
+          <span>Pfand (Kategorie PFAND)</span>
+          @if (getSuggestedPfandForItem(selectedItem!); as suggestedPfand) {
+            <label class="checkbox-row">
+              <input type="checkbox" [(ngModel)]="modalAddPfand" (ngModelChange)="modalSelectedPfand = suggestedPfand" />
+              <span>Pfand hinzufügen: {{ suggestedPfand.article_text }} ({{ suggestedPfand.article_number }})</span>
+            </label>
+          } @else {
+            <input
+              type="text"
+              [(ngModel)]="modalPfandSearch"
+              (ngModelChange)="searchPfandArticles()"
+              placeholder="PFAND-Artikel suchen…"
+            />
+            @if (modalPfandResults.length > 0) {
+              <div class="replacement-results">
+                @for (pfand of modalPfandResults; track pfand.article_number) {
+                  <button type="button" (click)="selectPfandArticle(pfand)">
+                    {{ pfand.article_number }} - {{ pfand.article_text }}
+                  </button>
+                }
+              </div>
+            }
+            @if (modalSelectedPfand) {
+              <label class="checkbox-row">
+                <input type="checkbox" [(ngModel)]="modalAddPfand" />
+                <span>Pfand hinzufügen: {{ modalSelectedPfand.article_text }}</span>
+              </label>
+              <button type="button" class="link-btn" (click)="clearSelectedPfand()">Pfand-Auswahl entfernen</button>
+            }
+          }
+          <small class="field-hint">Menge entspricht der kommissionierten Menge des Artikels.</small>
+        </div>
+      }
 
       <label class="field">
         <span>Notiz (optional)</span>

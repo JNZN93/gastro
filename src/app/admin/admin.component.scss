@@ -448,6 +448,11 @@
     background: #dcfce7;
   }
 
+  &.status-delivered {
+    border-color: #6366f1;
+    background: #e0e7ff;
+  }
+
   &.status-completed {
     border-color: #10b981;
     background: #d1fae5;

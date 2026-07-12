@@ -42,6 +42,10 @@ export interface PickItemState {
   differentPrice?: number | null;
   replacementArticleNumber?: string;
   replacementArticleName?: string;
+  category?: string;
+  customField1?: string;
+  isPfandLine?: boolean;
+  parentItemKey?: string;
 }
 
 export interface PickingState {

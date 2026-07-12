@@ -204,6 +204,8 @@ export class PickingQueueComponent implements OnInit {
         return 'Wird kommissioniert';
       case 'picked':
         return 'Fertig kommissioniert';
+      case 'delivered':
+        return 'Ausgeliefert';
       case 'in_progress':
         return 'In Bearbeitung';
       default:

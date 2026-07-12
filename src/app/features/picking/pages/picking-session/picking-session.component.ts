@@ -9,6 +9,7 @@ import { lastValueFrom } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import { OrderService } from '../../../../order.service';
 import { GlobalService } from '../../../../global.service';
+import { ArtikelDataService } from '../../../../artikel-data.service';
 import { PickingStateService } from '../../services/picking-state.service';
 import { PickingPdfService } from '../../services/picking-pdf.service';
 import {
@@ -22,6 +23,14 @@ import {
 interface ReplacementArticle {
   article_number: string;
   article_text: string;
+}
+
+interface PfandProduct {
+  id: number;
+  article_number: string;
+  article_text: string;
+  sale_price?: string | number;
+  category: string;
 }
 
 @Component({
@@ -61,6 +70,12 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
   modalReplacementArticleNumber = '';
   modalReplacementArticleName = '';
   isSearchingReplacement = false;
+  modalAddPfand = false;
+  modalPfandSearch = '';
+  modalPfandResults: PfandProduct[] = [];
+  modalSelectedPfand: PfandProduct | null = null;
+
+  private productById = new Map<number, PfandProduct & { custom_field_1?: string }>();
 
   formatsEnabled: BarcodeFormat[] = [
     BarcodeFormat.EAN_13,
@@ -85,6 +100,7 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     private readonly http: HttpClient,
     private readonly orderService: OrderService,
     private readonly globalService: GlobalService,
+    private readonly artikelData: ArtikelDataService,
     private readonly pickingState: PickingStateService,
     private readonly pickingPdf: PickingPdfService,
     private readonly ngZone: NgZone,
@@ -189,7 +205,9 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
       }
 
       this.order = order;
+      await this.loadProductCatalog();
       await this.ensurePickingState(order);
+      this.enrichStateItemsWithProductMetadata();
       this.refreshProgress();
     } catch {
       this.errorMessage = 'Bestellung konnte nicht geladen werden.';
@@ -255,7 +273,8 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
       if (!preserveItems) {
         const state = this.pickingState.createInitialState(this.order, this.getStartedBy());
         this.stateItems = state.items;
-        await this.pickingState.saveState(state);
+        this.enrichStateItemsWithProductMetadata();
+        await this.pickingState.saveState({ ...state, items: this.stateItems });
       } else {
         const existing = await this.pickingState.getState(this.order.order_id);
         if (existing) {
@@ -362,6 +381,22 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     this.modalReplacementResults = [];
     this.modalReplacementArticleNumber = item.replacementArticleNumber || '';
     this.modalReplacementArticleName = item.replacementArticleName || '';
+    this.modalPfandSearch = '';
+    this.modalPfandResults = [];
+    this.modalSelectedPfand = null;
+
+    const existingPfand = this.getPfandLineForParent(item.key);
+    if (existingPfand) {
+      this.modalAddPfand = true;
+      this.modalSelectedPfand = this.toPfandProduct(existingPfand);
+    } else {
+      this.modalAddPfand = false;
+      const suggested = this.getSuggestedPfandForItem(item);
+      if (suggested) {
+        this.modalSelectedPfand = suggested;
+      }
+    }
+
     this.showItemModal = true;
   }
 
@@ -372,6 +407,10 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     this.modalReplacementResults = [];
     this.modalReplacementArticleNumber = '';
     this.modalReplacementArticleName = '';
+    this.modalAddPfand = false;
+    this.modalPfandSearch = '';
+    this.modalPfandResults = [];
+    this.modalSelectedPfand = null;
     this.focusEanInput();
   }
 
@@ -401,6 +440,20 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     this.selectedItem.replacementArticleNumber = this.modalReplacementArticleNumber || undefined;
     this.selectedItem.replacementArticleName = this.modalReplacementArticleName || undefined;
 
+    if (this.modalUnavailable) {
+      this.removePfandLine(this.selectedItem.key);
+    } else if (this.modalAddPfand && !this.selectedItem.isPfandLine) {
+      const pfandProduct =
+        this.modalSelectedPfand || this.getSuggestedPfandForItem(this.selectedItem);
+      if (pfandProduct) {
+        const pfandQuantity =
+          Math.max(0, Number(this.modalPickedQuantity) || 0) || this.selectedItem.targetQuantity;
+        this.upsertPfandLine(this.selectedItem, pfandProduct, pfandQuantity);
+      }
+    } else if (!this.modalAddPfand) {
+      this.removePfandLine(this.selectedItem.key);
+    }
+
     await this.persistState();
     await this.syncOrderToServer(false);
     this.closeItemModal();
@@ -409,6 +462,193 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
   markSelectedUnavailable(): void {
     this.modalUnavailable = true;
     this.modalPickedQuantity = 0;
+    this.modalAddPfand = false;
+  }
+
+  getSuggestedPfandForItem(item: PickItemState): PfandProduct | null {
+    if (item.isPfandLine || item.category === 'PFAND') {
+      return null;
+    }
+
+    const articleNumberForPfand = item.replacementArticleNumber || item.articleNumber;
+    const product =
+      [...this.productById.values()].find((entry) => entry.article_number === articleNumberForPfand) ||
+      this.productById.get(item.productId);
+    const customField1 = product?.custom_field_1 || item.customField1;
+    if (!customField1) {
+      return null;
+    }
+
+    const matching = this.globalService.getPfandArtikels().find(
+      (pfand) => pfand.article_number === customField1
+    );
+    return matching ? this.toPfandProduct(matching) : null;
+  }
+
+  canShowPfandOption(): boolean {
+    return !!(
+      this.selectedItem &&
+      !this.selectedItem.isPfandLine &&
+      this.selectedItem.category !== 'PFAND' &&
+      !this.modalUnavailable
+    );
+  }
+
+  searchPfandArticles(): void {
+    const query = this.modalPfandSearch.trim().toLowerCase();
+    if (query.length < 1) {
+      this.modalPfandResults = [];
+      return;
+    }
+
+    this.modalPfandResults = this.globalService
+      .getPfandArtikels()
+      .filter(
+        (pfand) =>
+          (pfand.article_number || '').toLowerCase().includes(query) ||
+          (pfand.article_text || '').toLowerCase().includes(query)
+      )
+      .slice(0, 12)
+      .map((pfand) => this.toPfandProduct(pfand));
+  }
+
+  selectPfandArticle(pfand: PfandProduct): void {
+    this.modalSelectedPfand = pfand;
+    this.modalAddPfand = true;
+    this.modalPfandSearch = `${pfand.article_number} - ${pfand.article_text}`;
+    this.modalPfandResults = [];
+  }
+
+  clearSelectedPfand(): void {
+    this.modalSelectedPfand = null;
+    this.modalAddPfand = false;
+    this.modalPfandSearch = '';
+    this.modalPfandResults = [];
+  }
+
+  private async loadProductCatalog(): Promise<void> {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      return;
+    }
+
+    try {
+      const products = await lastValueFrom(this.artikelData.getData());
+      const list = Array.isArray(products) ? products : [];
+      this.globalService.setPfandArtikels(list);
+      this.productById.clear();
+      for (const product of list) {
+        if (product?.id != null) {
+          this.productById.set(Number(product.id), product);
+        }
+      }
+    } catch {
+      // PFAND kann weiterhin manuell gesucht werden, falls Katalog fehlschlägt
+    }
+  }
+
+  private enrichStateItemsWithProductMetadata(): void {
+    for (const item of this.stateItems) {
+      const product = this.productById.get(item.productId);
+      if (!product) {
+        continue;
+      }
+      item.category = product.category;
+      item.customField1 = product.custom_field_1;
+      if (product.category === 'PFAND') {
+        item.isPfandLine = true;
+      }
+    }
+    this.linkExistingPfandLines();
+  }
+
+  private linkExistingPfandLines(): void {
+    for (let index = 0; index < this.stateItems.length; index++) {
+      const item = this.stateItems[index];
+      if (item.isPfandLine || item.parentItemKey) {
+        continue;
+      }
+
+      const customField1 = item.customField1 || this.productById.get(item.productId)?.custom_field_1;
+      if (!customField1) {
+        continue;
+      }
+
+      const nextItem = this.stateItems[index + 1];
+      if (
+        nextItem &&
+        (nextItem.isPfandLine || nextItem.category === 'PFAND') &&
+        nextItem.articleNumber === customField1 &&
+        !nextItem.parentItemKey
+      ) {
+        nextItem.parentItemKey = item.key;
+        nextItem.isPfandLine = true;
+      }
+    }
+  }
+
+  private getPfandLineForParent(parentKey: string): PickItemState | null {
+    return (
+      this.stateItems.find(
+        (item) => item.isPfandLine && item.parentItemKey === parentKey && item.status !== 'unavailable'
+      ) ?? null
+    );
+  }
+
+  private upsertPfandLine(parentItem: PickItemState, pfandProduct: PfandProduct, quantity: number): void {
+    const existingIndex = this.stateItems.findIndex(
+      (item) => item.isPfandLine && item.parentItemKey === parentItem.key
+    );
+    const parentIndex = this.stateItems.findIndex((item) => item.key === parentItem.key);
+    const effectiveQuantity = quantity > 0 ? quantity : parentItem.targetQuantity;
+
+    const pfandState: PickItemState = {
+      key:
+        existingIndex >= 0
+          ? this.stateItems[existingIndex].key
+          : `pfand:${parentItem.key}:${pfandProduct.id}`,
+      productId: pfandProduct.id,
+      articleNumber: pfandProduct.article_number,
+      productName: pfandProduct.article_text,
+      targetQuantity: effectiveQuantity,
+      pickedQuantity: effectiveQuantity,
+      status: 'picked',
+      price: pfandProduct.sale_price != null ? Number(pfandProduct.sale_price) : 0,
+      differentPrice: null,
+      category: 'PFAND',
+      isPfandLine: true,
+      parentItemKey: parentItem.key,
+    };
+
+    pfandState.status = this.pickingState.updateItemStatus(pfandState);
+
+    if (existingIndex >= 0) {
+      this.stateItems[existingIndex] = {
+        ...this.stateItems[existingIndex],
+        ...pfandState,
+      };
+      return;
+    }
+
+    if (parentIndex >= 0) {
+      this.stateItems.splice(parentIndex + 1, 0, pfandState);
+    }
+  }
+
+  private removePfandLine(parentKey: string): void {
+    this.stateItems = this.stateItems.filter(
+      (item) => !(item.isPfandLine && item.parentItemKey === parentKey)
+    );
+  }
+
+  private toPfandProduct(source: any): PfandProduct {
+    return {
+      id: Number(source.id),
+      article_number: source.article_number,
+      article_text: source.article_text || source.article_name || source.productName,
+      sale_price: source.sale_price,
+      category: 'PFAND',
+    };
   }
 
   async searchReplacementArticles(): Promise<void> {
@@ -451,6 +691,16 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     this.modalReplacementArticleName = article.article_text;
     this.modalReplacementSearch = `${article.article_number} - ${article.article_text}`;
     this.modalReplacementResults = [];
+
+    if (this.selectedItem) {
+      const suggested = this.getSuggestedPfandForItem({
+        ...this.selectedItem,
+        replacementArticleNumber: article.article_number,
+      });
+      if (suggested) {
+        this.modalSelectedPfand = suggested;
+      }
+    }
   }
 
   clearReplacementArticle(): void {
@@ -590,13 +840,15 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     }
 
     const existing = await this.pickingState.getState(this.order.order_id);
-    const base =
-      existing && this.pickingState.isFingerprintValid(existing, this.order)
-        ? existing
-        : this.pickingState.createInitialState(this.order, this.getStartedBy());
+    this.rebuildOrderFromState();
+    const fingerprint = this.pickingState.computeOrderFingerprint(this.order.items);
 
     await this.pickingState.saveState({
-      ...base,
+      orderId: this.order.order_id,
+      orderFingerprint: fingerprint,
+      startedAt: existing?.startedAt || new Date().toISOString(),
+      startedBy: existing?.startedBy || this.getStartedBy(),
+      completedAt: existing?.completedAt,
       items: this.stateItems,
     });
     this.refreshProgress();

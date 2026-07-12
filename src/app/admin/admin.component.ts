@@ -592,6 +592,12 @@ formatDate(dateString: string): string {
       this.updateOrderStatus(this.selectedOrder, newStatus);
       return;
     }
+    if (newStatus === 'delivered') {
+      this.selectedOrder = order;
+      this.newStatus = newStatus;
+      this.updateOrderStatus(this.selectedOrder, newStatus);
+      return;
+    }
     if (newStatus === 'completed') {
       this.selectedOrder = order;
       this.newStatus = newStatus;
