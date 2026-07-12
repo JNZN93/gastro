@@ -38,6 +38,9 @@
 
       @if (order && !isLoading && !errorMessage) {
         <div class="order-meta">
+          @if (isReadOnlySession) {
+            <span class="meta-chip picked">Fertig kommissioniert</span>
+          }
           <span
             class="meta-chip"
             [class.delivery]="order.fulfillment_type === 'delivery'"
@@ -67,7 +70,7 @@
       }
     </header>
 
-    @if (order && !isLoading && !errorMessage) {
+    @if (order && !isLoading && !errorMessage && !isReadOnlySession) {
       <form (ngSubmit)="onEanSubmit()" class="scan-form">
         <input
           #eanInput
@@ -129,19 +132,91 @@
     <div class="scan-feedback" [class]="scanFeedback.type">{{ scanFeedback.message }}</div>
   }
 
+  @if (!showStartWarning && !isReadOnlySession) {
+    <section class="add-article-section">
+      @if (!selectedArticleToAdd) {
+        <div class="article-search-row">
+          <input
+            type="text"
+            class="article-search-input"
+            [(ngModel)]="articleSearchTerm"
+            (input)="searchArticlesToAdd()"
+            placeholder="Artikel suchen…"
+            autocomplete="off"
+          />
+        </div>
+        @if (showArticleSearchDropdown && articleSearchResults.length > 0) {
+          <div class="article-search-results">
+            @for (article of articleSearchResults; track article.article_number) {
+              <button
+                type="button"
+                class="article-search-result"
+                (click)="selectArticleToAdd(article)"
+              >
+                <span class="result-title">{{ article.article_text }}</span>
+                <span class="result-meta">{{ article.article_number }} · VK €{{ article.sale_price }}</span>
+              </button>
+            }
+          </div>
+        } @else if (showArticleSearchEmpty(articleSearchTerm, showArticleSearchDropdown, articleSearchResults.length)) {
+          <p class="article-search-empty">Keine Artikel für „{{ articleSearchTerm }}“ gefunden.</p>
+        }
+      } @else {
+        <div class="add-article-preview">
+          <div class="preview-info">
+            <strong>{{ selectedArticleToAdd.article_text }}</strong>
+            <span>{{ selectedArticleToAdd.article_number }}</span>
+          </div>
+          <div class="preview-actions">
+            <input
+              type="number"
+              class="article-qty-input"
+              [(ngModel)]="addArticleQuantity"
+              min="0.001"
+              step="0.001"
+              inputmode="decimal"
+              title="Menge"
+            />
+            <button
+              type="button"
+              class="primary-btn preview-add-btn"
+              (click)="confirmAddArticleToOrder()"
+              [disabled]="isSaving"
+            >
+              Hinzufügen
+            </button>
+            <button
+              type="button"
+              class="secondary-btn preview-cancel-btn"
+              (click)="clearSelectedArticleToAdd()"
+              [disabled]="isSaving"
+              title="Auswahl aufheben"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      }
+    </section>
+  }
+
   <section class="items-list">
     @for (item of stateItems; track item.key) {
       <button
         type="button"
         class="item-row"
         [class]="getItemStatusClass(item.status)"
-        (click)="openItemModal(item)"
+        (click)="!isReadOnlySession && openItemModal(item)"
+        [class.read-only]="isReadOnlySession"
       >
         <div class="item-main">
           <strong>{{ item.productName }}</strong>
           <span class="article-number">{{ item.articleNumber }}</span>
           @if (item.isPfandLine) {
             <span class="pfand-label">Pfand</span>
+          }
+          @if (item.isAddedLine) {
+            <span class="added-label">Neu</span>
           }
           @if (item.replacementArticleNumber) {
             <span class="replacement-label">
@@ -161,6 +236,9 @@
   </section>
 
   <footer class="session-footer">
+    @if (isReadOnlySession) {
+      <button type="button" class="secondary-btn full-width" routerLink="/picking">Zurück zur Queue</button>
+    } @else {
     <button type="button" class="secondary-btn" (click)="releasePicking()" [disabled]="isSaving">
       Freigeben
     </button>
@@ -172,6 +250,7 @@
     >
       Abschließen
     </button>
+    }
   </footer>
   }
 </div>
@@ -179,11 +258,23 @@
 @if (showItemModal && selectedItem) {
   <div class="modal-overlay" (click)="closeItemModal()">
     <div class="modal-card" (click)="$event.stopPropagation()">
-      <h2>{{ selectedItem.productName }}</h2>
-      <p class="modal-sub">{{ selectedItem.articleNumber }}</p>
+      <div class="modal-header">
+        <h2 class="modal-title">{{ selectedItem.productName }}</h2>
+        <p class="modal-sub">{{ selectedItem.articleNumber }}</p>
+      </div>
 
       <label class="field">
-        <span>Menge / Gewicht</span>
+        <span class="field-label-row">
+          <span>Menge / Gewicht</span>
+          <button
+            type="button"
+            class="calc-toggle-btn"
+            (click)="toggleModalCalculator()"
+            [disabled]="modalUnavailable"
+          >
+            {{ showModalCalculator ? 'Rechner aus' : 'Rechner' }}
+          </button>
+        </span>
         <div class="qty-stepper">
           <button type="button" class="stepper-btn" (click)="adjustModalQuantity(-1)" [disabled]="modalUnavailable">−</button>
           <input
@@ -197,6 +288,39 @@
           <button type="button" class="stepper-btn" (click)="adjustModalQuantity(1)" [disabled]="modalUnavailable">+</button>
         </div>
         <small class="field-hint">Soll: {{ selectedItem.targetQuantity }}</small>
+        @if (showModalCalculator) {
+          <div class="modal-calculator">
+            <div class="calc-display" [class.calc-display-error]="calcDisplay === 'Fehler'">{{ calcDisplay }}</div>
+            <div class="calc-keys">
+              <button type="button" class="calc-key calc-fn" (click)="calcPress('C')">C</button>
+              <button type="button" class="calc-key calc-fn" (click)="calcPress('back')">⌫</button>
+              <button type="button" class="calc-key calc-op" (click)="calcPress('/')">÷</button>
+              <button type="button" class="calc-key calc-op" (click)="calcPress('*')">×</button>
+              <button type="button" class="calc-key" (click)="calcPress('7')">7</button>
+              <button type="button" class="calc-key" (click)="calcPress('8')">8</button>
+              <button type="button" class="calc-key" (click)="calcPress('9')">9</button>
+              <button type="button" class="calc-key calc-op" (click)="calcPress('-')">−</button>
+              <button type="button" class="calc-key" (click)="calcPress('4')">4</button>
+              <button type="button" class="calc-key" (click)="calcPress('5')">5</button>
+              <button type="button" class="calc-key" (click)="calcPress('6')">6</button>
+              <button type="button" class="calc-key calc-op" (click)="calcPress('+')">+</button>
+              <button type="button" class="calc-key" (click)="calcPress('1')">1</button>
+              <button type="button" class="calc-key" (click)="calcPress('2')">2</button>
+              <button type="button" class="calc-key" (click)="calcPress('3')">3</button>
+              <button type="button" class="calc-key calc-eq" (click)="calcPress('=')">=</button>
+              <button type="button" class="calc-key calc-zero" (click)="calcPress('0')">0</button>
+              <button type="button" class="calc-key" (click)="calcPress('.')">,</button>
+            </div>
+            <button
+              type="button"
+              class="calc-apply-btn"
+              (click)="applyCalcToQuantity()"
+              [disabled]="modalUnavailable || calcDisplay === 'Fehler'"
+            >
+              In Menge übernehmen
+            </button>
+          </div>
+        }
       </label>
 
       <label class="field replacement-field">
@@ -204,20 +328,21 @@
         <input
           type="text"
           [(ngModel)]="modalReplacementSearch"
-          (ngModelChange)="searchReplacementArticles()"
-          placeholder="Artikelnummer oder Name suchen…"
+          (input)="searchReplacementArticles()"
+          placeholder="Artikel suchen…"
           [disabled]="modalUnavailable"
         />
-        @if (isSearchingReplacement) {
-          <small class="field-hint">Suche läuft…</small>
-        } @else if (modalReplacementResults.length > 0) {
-          <div class="replacement-results">
+        @if (showReplacementSearchDropdown && modalReplacementResults.length > 0) {
+          <div class="article-search-results">
             @for (article of modalReplacementResults; track article.article_number) {
-              <button type="button" (click)="selectReplacementArticle(article)">
-                {{ article.article_number }} - {{ article.article_text }}
+              <button type="button" class="article-search-result" (click)="selectReplacementArticle(article)">
+                <span class="result-title">{{ article.article_text }}</span>
+                <span class="result-meta">{{ article.article_number }} · VK €{{ article.sale_price }}</span>
               </button>
             }
           </div>
+        } @else if (showArticleSearchEmpty(modalReplacementSearch, showReplacementSearchDropdown, modalReplacementResults.length)) {
+          <small class="field-hint">Keine Artikel für „{{ modalReplacementSearch }}“ gefunden.</small>
         }
         @if (modalReplacementArticleNumber) {
           <small class="field-hint">

@@ -1,220 +1,146 @@
-import { Injectable } from '@angular/core';
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
+import { forkJoin, lastValueFrom, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import { environment } from '../../../../environments/environment';
+import { ArtikelDataService } from '../../../artikel-data.service';
+import {
+  KommissionierungPdfItem,
+  KommissionierungPdfOrder,
+  KommissionierungPdfService,
+} from '../../../services/kommissionierung-pdf.service';
 import { PickItemState, PickingOrder } from '../models/picking.models';
 
 @Injectable({ providedIn: 'root' })
 export class PickingPdfService {
+  private customerNameByNumber: Record<string, string> = {};
+  private customersByNumber: Record<string, any> = {};
+  private allArtikels: any[] = [];
+  private dataLoaded = false;
+  private dataLoading: Promise<void> | null = null;
+
+  private readonly kommissionierungPdf = inject(KommissionierungPdfService);
+  private readonly http = inject(HttpClient);
+  private readonly artikelData = inject(ArtikelDataService);
+
   generateKommissionierungsschein(
     order: PickingOrder,
     items: PickItemState[],
     options: { customerLabel: string; includePalettenschein?: boolean } = { customerLabel: '' }
   ): void {
-    const doc = new jsPDF();
-    const fulfillment = this.getFulfillmentLabel(order.fulfillment_type);
-    const deliveryLabel = this.formatDeliveryDateTime(order.delivery_date || order.order_date);
-    const notes = (order.customer_notes || '').trim();
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(14);
-    doc.text('Kommissionierungsschein', 14, 16);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.setTextColor(80);
-    doc.text('Kein Rechnungsdokument – nur für Kommissionierung / Übergabe', 14, 22);
-    doc.setTextColor(0);
-
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`#${order.order_id}`, 196, 16, { align: 'right' });
-
-    let y = 30;
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.text(options.customerLabel || order.company || order.name || 'Kunde', 14, y);
-    y += 6;
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    if (order.customer_number) {
-      doc.text(`Kd.-Nr. ${order.customer_number}`, 14, y);
-      y += 5;
-    }
-    doc.text(`${fulfillment} · ${deliveryLabel}`, 14, y);
-    y += 5;
-    if (order.shipping_address) {
-      const addressLines = doc.splitTextToSize(order.shipping_address.replace(/\n/g, ', '), 180);
-      doc.text(addressLines, 14, y);
-      y += addressLines.length * 4.5 + 1;
-    }
-    if (notes) {
-      doc.setFont('helvetica', 'bold');
-      doc.text('Hinweis:', 14, y);
-      doc.setFont('helvetica', 'normal');
-      const noteLines = doc.splitTextToSize(notes, 160);
-      doc.text(noteLines, 32, y);
-      y += Math.max(5, noteLines.length * 4.5) + 2;
-    }
-
-    const rows = items.map((item) => [
-      item.articleNumber,
-      item.replacementArticleNumber
-        ? `${item.productName}\nErsatz: ${item.replacementArticleNumber}${
-            item.replacementArticleName ? ` – ${item.replacementArticleName}` : ''
-          }`
-        : item.productName,
-      String(item.targetQuantity),
-      item.status === 'unavailable' ? '—' : String(item.pickedQuantity),
-      this.getItemStatusLabel(item.status),
-      item.note || '',
-    ]);
-
-    autoTable(doc, {
-      startY: y + 2,
-      head: [['Art.-Nr.', 'Artikel', 'Soll', 'Ist', 'Status', 'Notiz']],
-      body: rows,
-      styles: { fontSize: 8, cellPadding: 2 },
-      headStyles: { fillColor: [41, 128, 185], textColor: 255 },
-      columnStyles: {
-        0: { cellWidth: 28 },
-        2: { cellWidth: 16, halign: 'right' },
-        3: { cellWidth: 16, halign: 'right' },
-        4: { cellWidth: 24 },
-        5: { cellWidth: 32 },
-      },
-      didParseCell: (data) => {
-        if (data.section !== 'body') {
-          return;
-        }
-        const status = String(rows[data.row.index]?.[4] || '');
-        if (status === 'Nicht verfügbar') {
-          data.cell.styles.textColor = [185, 28, 28];
-        } else if (status === 'Fertig') {
-          data.cell.styles.textColor = [21, 128, 61];
-        }
-      },
+    void this.ensureData().then(() => {
+      const pdfOrder = this.buildPdfOrder(order, items);
+      this.kommissionierungPdf.generate(pdfOrder, !!options.includePalettenschein, {
+        customerNameByNumber: this.customerNameByNumber,
+        customersByNumber: this.customersByNumber,
+        allArtikels: this.allArtikels,
+      });
     });
+  }
 
-    const finalY = (doc as any).lastAutoTable?.finalY ?? y + 10;
-    doc.setFontSize(8);
-    doc.setTextColor(100);
-    doc.text(
-      `Erstellt ${new Date().toLocaleString('de-DE')}${
-        order.picker_user_name ? ` · Kommissioniert von ${order.picker_user_name}` : ''
-      }`,
-      14,
-      Math.min(finalY + 8, 285)
+  private async ensureData(): Promise<void> {
+    if (this.dataLoaded) {
+      return;
+    }
+    if (this.dataLoading) {
+      return this.dataLoading;
+    }
+    this.dataLoading = this.loadData();
+    await this.dataLoading;
+  }
+
+  private async loadData(): Promise<void> {
+    const token = localStorage.getItem('token');
+    const headers = token
+      ? new HttpHeaders({
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        })
+      : undefined;
+
+    try {
+      const { customers, artikels } = await lastValueFrom(
+        forkJoin({
+          customers: headers
+            ? this.http
+                .get<any[]>(`${environment.apiUrl}/api/customers`, { headers })
+                .pipe(catchError(() => of([])))
+            : of([]),
+          artikels: this.artikelData.getData().pipe(catchError(() => of([]))),
+        })
+      );
+
+      const nameMap: Record<string, string> = {};
+      const customersMap: Record<string, any> = {};
+      for (const customer of customers || []) {
+        const numberStr = String(customer?.customer_number ?? '').trim();
+        const nameStr = String(customer?.last_name_company ?? customer?.name ?? '').trim();
+        if (numberStr && nameStr) {
+          nameMap[numberStr] = nameStr;
+          customersMap[numberStr] = customer;
+        }
+      }
+
+      this.customerNameByNumber = nameMap;
+      this.customersByNumber = customersMap;
+      this.allArtikels = artikels || [];
+      this.dataLoaded = true;
+    } finally {
+      this.dataLoading = null;
+    }
+  }
+
+  private buildPdfOrder(order: PickingOrder, items: PickItemState[]): KommissionierungPdfOrder {
+    const orderItemByProductId = new Map(
+      (order.items || []).map((item) => [item.product_id, item])
     );
 
-    if (options.includePalettenschein) {
-      this.addPalettenscheinPage(doc, order, options.customerLabel, fulfillment, deliveryLabel, notes);
-    }
+    const pdfItems: KommissionierungPdfItem[] = items
+      .filter((item) => item.status !== 'unavailable')
+      .map((item) => {
+        const articleNumber = item.replacementArticleNumber || item.articleNumber;
+        const productName = item.replacementArticleName || item.productName;
+        const catalogArtikel = this.allArtikels.find((a) => a.article_number === articleNumber);
+        const orderItem = orderItemByProductId.get(item.productId);
 
-    doc.save(`Kommissionierungsschein_${order.order_id}.pdf`);
-  }
+        const price =
+          orderItem?.price != null
+            ? String(orderItem.price)
+            : item.price != null
+              ? String(item.price)
+              : '0';
 
-  private addPalettenscheinPage(
-    doc: jsPDF,
-    order: PickingOrder,
-    customerLabel: string,
-    fulfillment: string,
-    deliveryLabel: string,
-    notes: string
-  ): void {
-    doc.addPage();
-    doc.setTextColor(0);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(14);
-    doc.text('Palettenschein – Warenübergabe', 14, 18);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.setTextColor(80);
-    doc.text('Bestätigung der Warenübergabe (kein Rechnungsdokument)', 14, 24);
-    doc.setTextColor(0);
+        const differentPrice =
+          orderItem?.different_price != null
+            ? String(orderItem.different_price)
+            : item.differentPrice != null
+              ? String(item.differentPrice)
+              : null;
 
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`#${order.order_id}`, 196, 18, { align: 'right' });
+        return {
+          product_id: item.productId,
+          quantity: item.pickedQuantity > 0 ? item.pickedQuantity : item.targetQuantity,
+          price,
+          different_price: differentPrice,
+          product_name: productName,
+          product_article_number: articleNumber,
+          tax_code: catalogArtikel?.tax_code,
+        };
+      });
 
-    let y = 36;
-    doc.setFontSize(12);
-    doc.text(customerLabel || order.company || order.name || 'Kunde', 14, y);
-    y += 8;
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
-    if (order.customer_number) {
-      doc.text(`Kd.-Nr. ${order.customer_number}`, 14, y);
-      y += 6;
-    }
-    doc.text(`${fulfillment} · ${deliveryLabel}`, 14, y);
-    y += 8;
-    if (order.shipping_address) {
-      const lines = doc.splitTextToSize(order.shipping_address, 180);
-      doc.text(lines, 14, y);
-      y += lines.length * 5 + 4;
-    }
-    if (notes) {
-      doc.setFont('helvetica', 'bold');
-      doc.text('Anmerkung', 14, y);
-      y += 6;
-      doc.setFont('helvetica', 'normal');
-      const noteLines = doc.splitTextToSize(notes, 180);
-      doc.text(noteLines, 14, y);
-      y += noteLines.length * 5 + 8;
-    }
-
-    y = Math.max(y, 90);
-    const boxTop = y;
-    doc.setDrawColor(180);
-    doc.roundedRect(14, boxTop, 182, 70, 3, 3);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.text('Übergabe', 20, boxTop + 10);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.text('Datum: ____________________    Uhrzeit: __________', 20, boxTop + 24);
-    doc.text('Empfänger: ____________________________________________', 20, boxTop + 38);
-    doc.text('Unterschrift: __________________________________________', 20, boxTop + 52);
-    doc.text('Paletten / Kolli: ____________', 20, boxTop + 64);
-  }
-
-  private getFulfillmentLabel(type?: string): string {
-    if (type === 'delivery') {
-      return 'Lieferung';
-    }
-    if (type === 'pickup') {
-      return 'Abholung';
-    }
-    return type || '—';
-  }
-
-  private getItemStatusLabel(status: string): string {
-    switch (status) {
-      case 'picked':
-        return 'Fertig';
-      case 'partial':
-        return 'Teilweise';
-      case 'unavailable':
-        return 'Nicht verfügbar';
-      default:
-        return 'Offen';
-    }
-  }
-
-  private formatDeliveryDateTime(value?: string): string {
-    if (!value) {
-      return 'Kein Datum';
-    }
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) {
-      return value;
-    }
-    const datePart = date.toLocaleDateString('de-DE');
-    if (value.includes('T')) {
-      const timePart = date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
-      return `${datePart} · ${timePart}`;
-    }
-    return datePart;
+    return {
+      order_id: order.order_id,
+      customer_number: order.customer_number,
+      company: order.company,
+      name: order.name,
+      total_price: order.total_price,
+      fulfillment_type: order.fulfillment_type,
+      order_date: order.order_date,
+      created_at: order.created_at,
+      shipping_address: order.shipping_address,
+      customer_notes: order.customer_notes,
+      delivery_date: order.delivery_date,
+      items: pdfItems,
+    };
   }
 }

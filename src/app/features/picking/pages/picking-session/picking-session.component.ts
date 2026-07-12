@@ -10,8 +10,10 @@ import { environment } from '../../../../../environments/environment';
 import { OrderService } from '../../../../order.service';
 import { GlobalService } from '../../../../global.service';
 import { ArtikelDataService } from '../../../../artikel-data.service';
+import { ArticleSearchService } from '../../../../services/article-search.service';
 import { PickingStateService } from '../../services/picking-state.service';
 import { PickingPdfService } from '../../services/picking-pdf.service';
+import { formatPickingDate } from '../../utils/picking-date.util';
 import {
   PickItemState,
   PickingOrder,
@@ -20,9 +22,20 @@ import {
   ScanResultFeedback,
 } from '../../models/picking.models';
 
-interface ReplacementArticle {
+interface CatalogArticle {
+  id: number;
   article_number: string;
   article_text: string;
+  sale_price?: string | number;
+  category?: string;
+  custom_field_1?: string;
+  ean?: string;
+}
+
+interface CustomerSummary {
+  customer_number?: string;
+  last_name_company?: string;
+  first_name?: string;
 }
 
 interface PfandProduct {
@@ -53,6 +66,7 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
 
   isLoading = true;
   isSaving = false;
+  isReadOnlySession = false;
   errorMessage = '';
   scanFeedback: ScanResultFeedback | null = null;
 
@@ -66,16 +80,27 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
   modalNote = '';
   modalUnavailable = false;
   modalReplacementSearch = '';
-  modalReplacementResults: ReplacementArticle[] = [];
+  modalReplacementResults: CatalogArticle[] = [];
+  showReplacementSearchDropdown = false;
   modalReplacementArticleNumber = '';
   modalReplacementArticleName = '';
-  isSearchingReplacement = false;
   modalAddPfand = false;
   modalPfandSearch = '';
   modalPfandResults: PfandProduct[] = [];
   modalSelectedPfand: PfandProduct | null = null;
+  showModalCalculator = false;
+  calcDisplay = '0';
+  private calcHasResult = false;
+  articleSearchTerm = '';
+  articleSearchResults: CatalogArticle[] = [];
+  showArticleSearchDropdown = false;
+  addArticleQuantity = 1;
+  selectedArticleToAdd: CatalogArticle | null = null;
+  searchableArtikels: CatalogArticle[] = [];
 
-  private productById = new Map<number, PfandProduct & { custom_field_1?: string }>();
+  private customerNameByNumber = new Map<string, string>();
+  private productById = new Map<number, CatalogArticle>();
+  private productByArticleNumber = new Map<string, CatalogArticle>();
 
   formatsEnabled: BarcodeFormat[] = [
     BarcodeFormat.EAN_13,
@@ -101,6 +126,7 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     private readonly orderService: OrderService,
     private readonly globalService: GlobalService,
     private readonly artikelData: ArtikelDataService,
+    private readonly articleSearch: ArticleSearchService,
     private readonly pickingState: PickingStateService,
     private readonly pickingPdf: PickingPdfService,
     private readonly ngZone: NgZone,
@@ -168,6 +194,8 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
         'Content-Type': 'application/json',
       });
 
+      await this.loadCustomerNames(headers);
+
       const response = await lastValueFrom(
         this.http.get<{ orders: PickingOrder[] }>(`${environment.apiUrl}/api/orders/all-orders`, {
           headers,
@@ -180,6 +208,18 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
         this.order = null;
         return;
       }
+
+      if (order.status === 'picked') {
+        this.isReadOnlySession = true;
+        this.order = order;
+        await this.loadProductCatalog();
+        this.stateItems = this.createReadOnlyStateItems(order);
+        this.enrichStateItemsWithProductMetadata();
+        this.refreshProgress();
+        return;
+      }
+
+      this.isReadOnlySession = false;
 
       if (order.status !== 'open' && order.status !== 'picking') {
         this.errorMessage = 'Diese Bestellung ist nicht mehr offen zur Kommissionierung.';
@@ -215,6 +255,27 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
       this.isLoading = false;
       setTimeout(() => this.focusEanInput(), 100);
     }
+  }
+
+  private createReadOnlyStateItems(order: PickingOrder): PickItemState[] {
+    return order.items.map((item, index) => {
+      const quantity = Number(item.quantity);
+      const state: PickItemState = {
+        key: this.pickingState.buildItemKey(item, index),
+        productId: item.product_id,
+        articleNumber: item.product_article_number,
+        productName: item.product_name,
+        targetQuantity: quantity,
+        pickedQuantity: quantity,
+        status: 'picked',
+        price: item.price != null ? Number(item.price) : 0,
+        differentPrice:
+          item.different_price != null && item.different_price !== ''
+            ? Number(item.different_price)
+            : null,
+      };
+      return state;
+    });
   }
 
   private async ensurePickingState(order: PickingOrder): Promise<void> {
@@ -379,6 +440,7 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     this.modalUnavailable = item.status === 'unavailable';
     this.modalReplacementSearch = '';
     this.modalReplacementResults = [];
+    this.showReplacementSearchDropdown = false;
     this.modalReplacementArticleNumber = item.replacementArticleNumber || '';
     this.modalReplacementArticleName = item.replacementArticleName || '';
     this.modalPfandSearch = '';
@@ -397,14 +459,19 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
       }
     }
 
+    this.resetCalculator();
+    this.showModalCalculator = false;
     this.showItemModal = true;
   }
 
   closeItemModal(): void {
     this.showItemModal = false;
     this.selectedItem = null;
+    this.showModalCalculator = false;
+    this.resetCalculator();
     this.modalReplacementSearch = '';
     this.modalReplacementResults = [];
+    this.showReplacementSearchDropdown = false;
     this.modalReplacementArticleNumber = '';
     this.modalReplacementArticleName = '';
     this.modalAddPfand = false;
@@ -418,8 +485,137 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     if (this.modalUnavailable) {
       return;
     }
-    const next = Math.max(0, Number(this.modalPickedQuantity || 0) + delta);
-    this.modalPickedQuantity = Math.round(next * 1000) / 1000;
+    this.modalPickedQuantity = this.roundToThreeDecimals(
+      Math.max(0, Number(this.modalPickedQuantity || 0) + delta)
+    );
+  }
+
+  toggleModalCalculator(): void {
+    this.showModalCalculator = !this.showModalCalculator;
+    if (this.showModalCalculator) {
+      this.resetCalculator();
+    }
+  }
+
+  resetCalculator(): void {
+    this.calcDisplay = '0';
+    this.calcHasResult = false;
+  }
+
+  calcPress(key: string): void {
+    if (key === 'C') {
+      this.resetCalculator();
+      return;
+    }
+
+    if (key === 'back') {
+      if (this.calcDisplay.length <= 1 || (this.calcDisplay.length === 2 && this.calcDisplay.startsWith('-'))) {
+        this.calcDisplay = '0';
+      } else {
+        this.calcDisplay = this.calcDisplay.slice(0, -1);
+      }
+      this.calcHasResult = false;
+      return;
+    }
+
+    if (key === '=') {
+      this.calcEquals();
+      return;
+    }
+
+    if (this.calcHasResult && /[\d.]/.test(key)) {
+      this.calcDisplay = key === '.' ? '0.' : key;
+      this.calcHasResult = false;
+      return;
+    }
+
+    if (this.calcHasResult) {
+      this.calcHasResult = false;
+    }
+
+    if (/[+\-*/]/.test(key)) {
+      if (this.calcDisplay === '0' && key === '-') {
+        this.calcDisplay = '-';
+        return;
+      }
+      if (/[+\-*/]$/.test(this.calcDisplay)) {
+        this.calcDisplay = this.calcDisplay.slice(0, -1) + key;
+      } else {
+        this.calcDisplay += key;
+      }
+      return;
+    }
+
+    if (key === '.') {
+      const parts = this.calcDisplay.split(/[+\-*/]/);
+      const current = parts[parts.length - 1] || '';
+      if (current.includes('.')) {
+        return;
+      }
+      this.calcDisplay = this.calcDisplay === '0' ? '0.' : `${this.calcDisplay}.`;
+      return;
+    }
+
+    if (this.calcDisplay === '0') {
+      this.calcDisplay = key;
+    } else {
+      this.calcDisplay += key;
+    }
+  }
+
+  calcEquals(): void {
+    const result = this.evaluateCalcExpression(this.calcDisplay);
+    if (!Number.isFinite(result)) {
+      this.calcDisplay = 'Fehler';
+      this.calcHasResult = false;
+      return;
+    }
+    this.calcDisplay = this.formatCalcValue(result);
+    this.calcHasResult = true;
+  }
+
+  applyCalcToQuantity(): void {
+    if (this.modalUnavailable) {
+      return;
+    }
+
+    let value: number;
+    if (this.calcDisplay === 'Fehler') {
+      return;
+    }
+    if (this.calcHasResult || !/[+\-*/]/.test(this.calcDisplay)) {
+      value = Number(this.calcDisplay);
+    } else {
+      value = this.evaluateCalcExpression(this.calcDisplay);
+      if (!Number.isFinite(value)) {
+        return;
+      }
+      this.calcDisplay = this.formatCalcValue(value);
+      this.calcHasResult = true;
+    }
+
+    this.modalPickedQuantity = this.roundToThreeDecimals(Math.max(0, value));
+  }
+
+  private evaluateCalcExpression(expression: string): number {
+    const sanitized = expression.replace(/\s/g, '');
+    if (!sanitized || sanitized === '-' || !/^-?[\d.+\-*/()]+$/.test(sanitized)) {
+      return NaN;
+    }
+    try {
+      return Function(`"use strict"; return (${sanitized})`)() as number;
+    } catch {
+      return NaN;
+    }
+  }
+
+  private formatCalcValue(value: number): string {
+    const rounded = this.roundToThreeDecimals(value);
+    return String(rounded);
+  }
+
+  private roundToThreeDecimals(value: number): number {
+    return Math.round(value * 1000) / 1000;
   }
 
   async saveItemModal(): Promise<void> {
@@ -432,7 +628,9 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
       this.selectedItem.note = this.modalNote.trim() || 'Nicht verfügbar';
       this.selectedItem.pickedQuantity = 0;
     } else {
-      this.selectedItem.pickedQuantity = Math.max(0, Number(this.modalPickedQuantity) || 0);
+      this.selectedItem.pickedQuantity = this.roundToThreeDecimals(
+        Math.max(0, Number(this.modalPickedQuantity) || 0)
+      );
       this.selectedItem.note = this.modalNote.trim() || undefined;
       this.selectedItem.status = this.pickingState.updateItemStatus(this.selectedItem);
     }
@@ -472,17 +670,9 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
 
     const articleNumberForPfand = item.replacementArticleNumber || item.articleNumber;
     const product =
-      [...this.productById.values()].find((entry) => entry.article_number === articleNumberForPfand) ||
+      this.productByArticleNumber.get(articleNumberForPfand) ||
       this.productById.get(item.productId);
-    const customField1 = product?.custom_field_1 || item.customField1;
-    if (!customField1) {
-      return null;
-    }
-
-    const matching = this.globalService.getPfandArtikels().find(
-      (pfand) => pfand.article_number === customField1
-    );
-    return matching ? this.toPfandProduct(matching) : null;
+    return product ? this.getSuggestedPfandForProduct(product) : null;
   }
 
   canShowPfandOption(): boolean {
@@ -526,6 +716,138 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     this.modalPfandResults = [];
   }
 
+  searchArticlesToAdd(): void {
+    if (this.selectedArticleToAdd) {
+      return;
+    }
+    this.articleSearch.filterArticles(this.searchableArtikels, this.articleSearchTerm).subscribe((state) => {
+      this.articleSearchResults = state.results;
+      this.showArticleSearchDropdown = state.showDropdown;
+    });
+  }
+
+  selectArticleToAdd(article: CatalogArticle): void {
+    this.selectedArticleToAdd = article;
+    this.addArticleQuantity = 1;
+    this.showArticleSearchDropdown = false;
+    this.articleSearchResults = [];
+    this.articleSearchTerm = `${article.article_number} - ${article.article_text}`;
+  }
+
+  clearSelectedArticleToAdd(): void {
+    this.selectedArticleToAdd = null;
+    this.articleSearchTerm = '';
+    this.addArticleQuantity = 1;
+    this.articleSearchResults = [];
+    this.showArticleSearchDropdown = false;
+  }
+
+  async confirmAddArticleToOrder(): Promise<void> {
+    if (!this.selectedArticleToAdd) {
+      return;
+    }
+    await this.addArticleToOrder(this.selectedArticleToAdd);
+  }
+
+  async addArticleToOrder(article: CatalogArticle): Promise<void> {
+    if (!this.order || this.showStartWarning || this.isSaving) {
+      return;
+    }
+
+    const product = this.productByArticleNumber.get(article.article_number);
+    if (!product?.id) {
+      this.setFeedback('error', `Artikel ${article.article_number} nicht im Katalog gefunden.`);
+      return;
+    }
+
+    const quantity = Math.max(0.001, Number(this.addArticleQuantity) || 1);
+    const isSpecialCategory = product.category === 'PFAND' || product.category === 'SCHNELLVERKAUF';
+
+    if (!isSpecialCategory) {
+      const existing = this.stateItems.find(
+        (item) =>
+          item.articleNumber === article.article_number &&
+          item.status !== 'unavailable' &&
+          !item.isPfandLine &&
+          !item.replacementArticleNumber
+      );
+
+      if (existing) {
+        existing.targetQuantity = Math.round((existing.targetQuantity + quantity) * 1000) / 1000;
+        existing.pickedQuantity = Math.min(
+          Math.round((existing.pickedQuantity + quantity) * 1000) / 1000,
+          existing.targetQuantity
+        );
+        existing.status = this.pickingState.updateItemStatus(existing);
+
+        const suggestedPfand = this.getSuggestedPfandForProduct(product);
+        if (suggestedPfand) {
+          this.upsertPfandLine(existing, suggestedPfand, existing.targetQuantity);
+        }
+
+        await this.persistAndSyncAfterAdd(article.article_text);
+        return;
+      }
+    }
+
+    const newItem: PickItemState = {
+      key: `added:${product.id}:${Date.now()}`,
+      productId: Number(product.id),
+      articleNumber: product.article_number,
+      productName: product.article_text,
+      targetQuantity: quantity,
+      pickedQuantity: quantity,
+      status: 'picked',
+      price: product.sale_price != null ? Number(product.sale_price) : 0,
+      differentPrice: null,
+      category: product.category,
+      customField1: product.custom_field_1,
+      isAddedLine: true,
+    };
+    newItem.status = this.pickingState.updateItemStatus(newItem);
+    this.stateItems.push(newItem);
+
+    const suggestedPfand = this.getSuggestedPfandForProduct(product);
+    if (suggestedPfand && product.category !== 'PFAND') {
+      this.upsertPfandLine(newItem, suggestedPfand, quantity);
+    }
+
+    await this.persistAndSyncAfterAdd(article.article_text);
+  }
+
+  private getSuggestedPfandForProduct(
+    product: { custom_field_1?: string; category?: string }
+  ): PfandProduct | null {
+    if (!product.custom_field_1 || product.category === 'PFAND') {
+      return null;
+    }
+
+    const matching = this.globalService
+      .getPfandArtikels()
+      .find((pfand) => pfand.article_number === product.custom_field_1);
+    return matching ? this.toPfandProduct(matching) : null;
+  }
+
+  private async persistAndSyncAfterAdd(articleLabel: string): Promise<void> {
+    this.articleSearchTerm = '';
+    this.articleSearchResults = [];
+    this.showArticleSearchDropdown = false;
+    this.selectedArticleToAdd = null;
+    this.addArticleQuantity = 1;
+    this.isSaving = true;
+
+    try {
+      await this.persistState();
+      await this.syncOrderToServer(false);
+      this.setFeedback('success', `${articleLabel} hinzugefügt.`);
+    } catch (error: any) {
+      this.setFeedback('error', error?.error?.error || 'Artikel konnte nicht gespeichert werden.');
+    } finally {
+      this.isSaving = false;
+      this.focusEanInput();
+    }
+  }
+
   private async loadProductCatalog(): Promise<void> {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -535,11 +857,16 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     try {
       const products = await lastValueFrom(this.artikelData.getData());
       const list = Array.isArray(products) ? products : [];
+      this.searchableArtikels = this.globalService.filterSchnellverkaufArticles(list);
       this.globalService.setPfandArtikels(list);
       this.productById.clear();
+      this.productByArticleNumber.clear();
       for (const product of list) {
         if (product?.id != null) {
           this.productById.set(Number(product.id), product);
+        }
+        if (product?.article_number) {
+          this.productByArticleNumber.set(product.article_number, product);
         }
       }
     } catch {
@@ -651,46 +978,19 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     };
   }
 
-  async searchReplacementArticles(): Promise<void> {
-    const token = localStorage.getItem('token');
-    const query = this.modalReplacementSearch.trim();
-
-    if (!token || query.length < 2) {
-      this.modalReplacementResults = [];
-      return;
-    }
-
-    this.isSearchingReplacement = true;
-
-    try {
-      const headers = new HttpHeaders({
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      });
-
-      const response = await lastValueFrom(
-        this.http.get<{ success: boolean; data: ReplacementArticle[] }>(
-          `${environment.apiUrl}/api/product-eans/articles/search`,
-          {
-            headers,
-            params: { q: query },
-          }
-        )
-      );
-
-      this.modalReplacementResults = response?.success ? response.data || [] : [];
-    } catch {
-      this.modalReplacementResults = [];
-    } finally {
-      this.isSearchingReplacement = false;
-    }
+  searchReplacementArticles(): void {
+    this.articleSearch.filterArticles(this.searchableArtikels, this.modalReplacementSearch).subscribe((state) => {
+      this.modalReplacementResults = state.results;
+      this.showReplacementSearchDropdown = state.showDropdown;
+    });
   }
 
-  selectReplacementArticle(article: ReplacementArticle): void {
+  selectReplacementArticle(article: CatalogArticle): void {
     this.modalReplacementArticleNumber = article.article_number;
     this.modalReplacementArticleName = article.article_text;
     this.modalReplacementSearch = `${article.article_number} - ${article.article_text}`;
     this.modalReplacementResults = [];
+    this.showReplacementSearchDropdown = false;
 
     if (this.selectedItem) {
       const suggested = this.getSuggestedPfandForItem({
@@ -708,6 +1008,7 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     this.modalReplacementArticleName = '';
     this.modalReplacementSearch = '';
     this.modalReplacementResults = [];
+    this.showReplacementSearchDropdown = false;
   }
 
   async completePicking(): Promise<void> {
@@ -855,6 +1156,15 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   private refreshProgress(): void {
+    if (this.isReadOnlySession && this.stateItems.length > 0) {
+      this.progress = {
+        done: this.stateItems.length,
+        total: this.stateItems.length,
+        percent: 100,
+      };
+      return;
+    }
+
     this.progress = this.pickingState.getProgress({
       orderId: this.orderId,
       orderFingerprint: '',
@@ -894,7 +1204,48 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     if (!this.order) {
       return '';
     }
-    return this.order.company || this.order.name || this.order.customer_number || `Bestellung #${this.order.order_id}`;
+    return (
+      this.getCustomerNameFromMasterData(this.order.customer_number) ||
+      this.order.company ||
+      this.order.customer_number ||
+      `Bestellung #${this.order.order_id}`
+    );
+  }
+
+  private async loadCustomerNames(headers: HttpHeaders): Promise<void> {
+    this.customerNameByNumber.clear();
+
+    try {
+      const customers = await lastValueFrom(
+        this.http.get<CustomerSummary[]>(`${environment.apiUrl}/api/customers`, { headers })
+      );
+
+      for (const customer of customers ?? []) {
+        const number = (customer.customer_number || '').trim();
+        if (!number) {
+          continue;
+        }
+
+        const normalizedName = [customer.last_name_company, customer.first_name]
+          .map((value) => (value || '').trim())
+          .filter(Boolean)
+          .join(' ')
+          .trim();
+
+        if (normalizedName) {
+          this.customerNameByNumber.set(number, normalizedName);
+        }
+      }
+    } catch {
+      // Fallback auf Bestellungsfelder in getCustomerLabel()
+    }
+  }
+
+  private getCustomerNameFromMasterData(customerNumber?: string): string {
+    if (!customerNumber) {
+      return '';
+    }
+    return this.customerNameByNumber.get(customerNumber.trim()) || '';
   }
 
   getFulfillmentLabel(type?: string): string {
@@ -908,20 +1259,7 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   getDeliveryLabel(): string {
-    const value = this.order?.delivery_date || this.order?.order_date;
-    if (!value) {
-      return 'Kein Datum';
-    }
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) {
-      return value;
-    }
-    const datePart = date.toLocaleDateString('de-DE');
-    if (value.includes('T')) {
-      const timePart = date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
-      return `${datePart} · ${timePart}`;
-    }
-    return datePart;
+    return formatPickingDate(this.order?.delivery_date || this.order?.order_date);
   }
 
   getCustomerNotes(): string {
@@ -971,5 +1309,14 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
 
   getItemStatusClass(status: PickItemState['status']): string {
     return `item-${status}`;
+  }
+
+  isArticleSearchActive(term: string): boolean {
+    const trimmed = term.trim();
+    return trimmed.length >= 3 || /^\d{8}$|^\d{13}$/.test(trimmed);
+  }
+
+  showArticleSearchEmpty(term: string, showDropdown: boolean, resultCount: number): boolean {
+    return this.isArticleSearchActive(term) && !showDropdown && resultCount === 0;
   }
 }

@@ -20,6 +20,7 @@ import { OrderService } from '../order.service';
 import * as QRCode from 'qrcode';
 import { environment } from '../../environments/environment';
 import { firstValueFrom, Subscription } from 'rxjs';
+import { ArticleSearchService } from '../services/article-search.service';
 
 @Component({
   selector: 'app-customer-orders',
@@ -42,6 +43,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   private offersService = inject(OffersService);
   private forceActiveService = inject(ForceActiveService);
   private orderService = inject(OrderService);
+  private articleSearchService = inject(ArticleSearchService);
   private forceActiveSubscription: Subscription | null = null;
   artikelData: any[] = [];
   orderItems: any[] = [];
@@ -1798,191 +1800,13 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   }
 
 filteredArtikelData() {
-  this.filteredArtikels = [];
-  this.showDropdown = false;
-
-  if (this.searchTerm) {
-    const trimmedTerm = this.searchTerm.trim();
-
-    // Mindestlänge prüfen (außer bei EAN)
-    const isEanSearch = /^\d{8}$|^\d{13}$/.test(trimmedTerm);
-    if (!isEanSearch && trimmedTerm.length < 3) {
-      this.selectedIndex = -1;
-      return; // Suche abbrechen
-    }
-
-    if (isEanSearch) {
-      // EAN-Suche: Zuerst in lokalen Artikeln suchen
-      const localEanResults = this.globalArtikels.filter(artikel =>
-        artikel.ean?.toLowerCase() === trimmedTerm.toLowerCase()
-      );
-
-      if (localEanResults.length > 0) {
-        this.filteredArtikels = localEanResults;
-        this.showDropdown = true;
-        this.selectedIndex = -1;
-
-        console.log('🔍 [EAN-LOCAL] EAN in lokalen Artikeln gefunden:', this.filteredArtikels.length);
-      } else {
-        // EAN nicht gefunden → API-Suche
-        this.searchEanInApi(trimmedTerm);
-        return;
-      }
-    } else {
-      // Normale Text-Suche
-      const terms = trimmedTerm.toLowerCase().split(/\s+/);
-
-      const filtered = this.globalArtikels.filter((artikel) =>
-        terms.every((term) =>
-          artikel.article_text.toLowerCase().includes(term) ||
-          artikel.article_number?.toLowerCase().includes(term) ||
-          artikel.ean?.toLowerCase().includes(term)
-        )
-      );
-
-      // Sortierlogik bleibt wie bisher
-      this.filteredArtikels = filtered.sort((a, b) => {
-        const searchTermLower = trimmedTerm.toLowerCase();
-        const aArticleNumberExact = a.article_number?.toLowerCase() === searchTermLower;
-        const bArticleNumberExact = b.article_number?.toLowerCase() === searchTermLower;
-        const aArticleTextExact = a.article_text.toLowerCase() === searchTermLower;
-        const bArticleTextExact = b.article_text.toLowerCase() === searchTermLower;
-        const aEanExact = a.ean?.toLowerCase() === searchTermLower;
-        const bEanExact = b.ean?.toLowerCase() === searchTermLower;
-
-        const aArticleNumberStartsWith = a.article_number?.toLowerCase().startsWith(searchTermLower);
-        const bArticleNumberStartsWith = b.article_number?.toLowerCase().startsWith(searchTermLower);
-        const aArticleTextStartsWith = a.article_text.toLowerCase().startsWith(searchTermLower);
-        const bArticleTextStartsWith = b.article_text.toLowerCase().startsWith(searchTermLower);
-        const aEanStartsWith = a.ean?.toLowerCase().startsWith(searchTermLower);
-        const bEanStartsWith = b.ean?.toLowerCase().startsWith(searchTermLower);
-
-        if (aArticleNumberExact && !bArticleNumberExact) return -1;
-        if (!aArticleNumberExact && bArticleNumberExact) return 1;
-        if (aArticleTextExact && !bArticleTextExact) return -1;
-        if (!aArticleTextExact && bArticleTextExact) return 1;
-        if (aEanExact && !bEanExact) return -1;
-        if (!aEanExact && bEanExact) return 1;
-        if (aArticleNumberStartsWith && !bArticleNumberStartsWith) return -1;
-        if (!aArticleNumberStartsWith && bArticleNumberStartsWith) return 1;
-        if (aArticleTextStartsWith && !bArticleTextStartsWith) return -1;
-        if (!aArticleTextStartsWith && bArticleTextStartsWith) return 1;
-        if (aEanStartsWith && !bEanStartsWith) return -1;
-        if (!aEanStartsWith && bEanStartsWith) return 1;
-
-        const articleNumberComparison = this.compareArticleNumbers(a.article_number, b.article_number);
-        if (articleNumberComparison !== 0) {
-          return articleNumberComparison;
-        }
-        return a.article_text.localeCompare(b.article_text);
-      });
-
-      this.showDropdown = this.filteredArtikels.length > 0;
-      this.selectedIndex = -1;
-    }
-  } else {
+  this.articleSearchService.filterArticles(this.globalArtikels, this.searchTerm).subscribe((state) => {
+    this.filteredArtikels = state.results;
+    this.showDropdown = state.showDropdown;
     this.selectedIndex = -1;
-  }
+  });
 }
 
-
-  /**
-   * Vergleicht zwei Artikelnummern intelligent (numerisch und alphabetisch)
-   * @param a Erste Artikelnummer
-   * @param b Zweite Artikelnummer
-   * @returns -1 wenn a < b, 0 wenn a = b, 1 wenn a > b
-   */
-  private compareArticleNumbers(a: string | undefined, b: string | undefined): number {
-    // Behandle undefined/null Werte
-    if (!a && !b) return 0;
-    if (!a) return 1;
-    if (!b) return -1;
-    
-    // Versuche numerischen Vergleich für reine Zahlen
-    const aNum = parseFloat(a);
-    const bNum = parseFloat(b);
-    
-    // Wenn beide Artikelnummern reine Zahlen sind, vergleiche sie numerisch
-    if (!isNaN(aNum) && !isNaN(bNum) && a.toString() === aNum.toString() && b.toString() === bNum.toString()) {
-      return aNum - bNum;
-    }
-    
-    // Ansonsten alphabetischen Vergleich
-    return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
-  }
-
-  private searchEanInApi(eanCode: string): void {
-    const token = localStorage.getItem('token');
-    
-    this.http.get(`${environment.apiUrl}/api/product-eans/ean/${eanCode}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    }).subscribe({
-      next: (response: any) => {
-        if (response.success && response.data) {
-          // EAN in products_ean Tabelle gefunden
-          const foundArticleNumber = response.data.article_number;
-          
-          // Prüfe ob dieser Artikel bereits in globalArtikels existiert
-          const existingProduct = this.globalArtikels.find(artikel => 
-            artikel.article_number === foundArticleNumber
-          );
-          
-          if (existingProduct) {
-            // Artikel existiert bereits - zeige ihn an
-            this.filteredArtikels = [existingProduct];
-            this.showDropdown = true;
-            this.selectedIndex = -1;
-            
-            console.log('🔍 [EAN-API] EAN gefunden und Artikel in globalArtikels vorhanden:', existingProduct.article_text);
-          } else {
-            // Artikel existiert nicht in globalArtikels - keine Ergebnisse
-            this.filteredArtikels = [];
-            this.showDropdown = false;
-            
-            console.log('🔍 [EAN-API] EAN gefunden aber Artikel nicht in globalArtikels:', foundArticleNumber);
-          }
-        } else {
-          // EAN nicht in products_ean Tabelle gefunden
-          this.filteredArtikels = [];
-          this.showDropdown = false;
-          
-          console.log('🔍 [EAN-API] EAN nicht in products_ean Tabelle gefunden:', eanCode);
-        }
-      },
-      error: (error: any) => {
-        console.error('Error searching EAN in API:', error);
-        // Bei Fehler: normale lokale Suche durchführen
-        this.performLocalSearch();
-      }
-    });
-  }
-
-  private performLocalSearch(): void {
-    if (this.searchTerm) {
-      const terms = this.searchTerm.toLowerCase().split(/\s+/);
-      
-      // Filtere Artikel basierend auf Suchbegriffen
-      const filtered = this.globalArtikels.filter((artikel) =>
-        terms.every((term) =>
-          artikel.article_text.toLowerCase().includes(term) ||
-          artikel.article_number?.toLowerCase().includes(term) ||
-          artikel.ean?.toLowerCase().includes(term)
-        )
-      );
-      
-      this.filteredArtikels = filtered;
-      this.showDropdown = this.filteredArtikels.length > 0;
-      this.selectedIndex = -1;
-      
-      console.log('🔍 [FALLBACK] Lokale Suche durchgeführt:', this.filteredArtikels.length);
-    } else {
-      this.filteredArtikels = [];
-      this.showDropdown = false;
-      this.selectedIndex = -1;
-    }
-  }
 
   clearSearch() {
     console.log('🧹 [CLEAR-SEARCH] Starte clearSearch...');

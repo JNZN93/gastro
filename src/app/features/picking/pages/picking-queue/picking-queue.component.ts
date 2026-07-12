@@ -8,6 +8,7 @@ import { environment } from '../../../../../environments/environment';
 import { PickingOrder } from '../../models/picking.models';
 import { PickingState, PickingProgress } from '../../models/picking.models';
 import { PickingStateService } from '../../services/picking-state.service';
+import { formatPickingDate } from '../../utils/picking-date.util';
 
 interface QueueEntry {
   order: PickingOrder;
@@ -33,7 +34,7 @@ export class PickingQueueComponent implements OnInit {
   errorMessage = '';
   searchTerm = '';
   dateFilter: 'all' | 'today' | 'tomorrow' = 'all';
-  statusFilter: 'pickable' | 'picking' | 'all' = 'pickable';
+  statusFilter: 'pickable' | 'picking' | 'picked' | 'all' = 'all';
 
   orders: PickingOrder[] = [];
   localStates = new Map<number, PickingState>();
@@ -73,7 +74,8 @@ export class PickingQueueComponent implements OnInit {
       );
 
       this.orders = (response?.orders ?? []).filter(
-        (order) => order.status === 'open' || order.status === 'picking'
+        (order) =>
+          order.status === 'open' || order.status === 'picking' || order.status === 'picked'
       );
 
       await this.loadCustomerNames(headers);
@@ -107,7 +109,7 @@ export class PickingQueueComponent implements OnInit {
         return {
           order,
           localState: validState,
-          progress: this.pickingState.getProgress(validState),
+          progress: this.getQueueProgress(order, validState),
         };
       })
       .sort((a, b) => this.compareQueueEntries(a, b));
@@ -120,7 +122,22 @@ export class PickingQueueComponent implements OnInit {
     if (this.statusFilter === 'picking') {
       return order.status === 'picking';
     }
+    if (this.statusFilter === 'picked') {
+      return order.status === 'picked';
+    }
     return order.status === 'open' || order.status === 'picking';
+  }
+
+  private getQueueProgress(order: PickingOrder, localState: PickingState | null): PickingProgress {
+    if (order.status === 'picked') {
+      const total = order.items?.length ?? 0;
+      return {
+        done: total,
+        total,
+        percent: total > 0 ? 100 : 0,
+      };
+    }
+    return this.pickingState.getProgress(localState);
   }
 
   private matchesDateFilter(order: PickingOrder): boolean {
@@ -157,7 +174,12 @@ export class PickingQueueComponent implements OnInit {
   }
 
   private compareQueueEntries(a: QueueEntry, b: QueueEntry): number {
-    const statusWeight = (status: string) => (status === 'picking' ? 0 : 1);
+    const statusWeight = (status: string) => {
+      if (status === 'picking') return 0;
+      if (status === 'open') return 1;
+      if (status === 'picked') return 2;
+      return 3;
+    };
     const statusDiff = statusWeight(a.order.status) - statusWeight(b.order.status);
     if (statusDiff !== 0) {
       return statusDiff;
@@ -184,6 +206,10 @@ export class PickingQueueComponent implements OnInit {
       order.customer_number ||
       `Bestellung #${order.order_id}`
     );
+  }
+
+  getOrderDateLabel(order: PickingOrder): string {
+    return formatPickingDate(order.delivery_date || order.order_date);
   }
 
   getFulfillmentLabel(type?: string): string {

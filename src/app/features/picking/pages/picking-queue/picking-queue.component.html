@@ -26,9 +26,10 @@
       </select>
 
       <select [(ngModel)]="statusFilter" (ngModelChange)="onFiltersChanged()">
+        <option value="all">Alle (inkl. fertig)</option>
         <option value="pickable">Offen + Wird kommissioniert</option>
         <option value="picking">Nur wird kommissioniert</option>
-        <option value="all">Alle anzeigen</option>
+        <option value="picked">Nur fertig kommissioniert</option>
       </select>
     </section>
 
@@ -45,6 +46,7 @@
             class="queue-card"
             [class.is-open]="entry.order.status === 'open'"
             [class.is-picking]="entry.order.status === 'picking'"
+            [class.is-picked]="entry.order.status === 'picked'"
             (click)="openOrder(entry.order.order_id)"
           >
             <div class="card-top">
@@ -53,6 +55,7 @@
                 class="status-badge"
                 [class.picking]="entry.order.status === 'picking'"
                 [class.open]="entry.order.status === 'open'"
+                [class.picked]="entry.order.status === 'picked'"
               >
                 {{ getStatusLabel(entry.order.status) }}
               </span>
@@ -62,9 +65,7 @@
 
             <div class="meta">
               <span>{{ getFulfillmentLabel(entry.order.fulfillment_type) }}</span>
-              <span>
-                {{ entry.order.delivery_date || entry.order.order_date || 'Kein Datum' }}
-              </span>
+              <span>{{ getOrderDateLabel(entry.order) }}</span>
               <span>{{ entry.order.items.length || 0 }} Positionen</span>
             </div>
 
