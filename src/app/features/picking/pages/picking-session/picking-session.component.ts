@@ -447,13 +447,15 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     this.modalPfandResults = [];
     this.modalSelectedPfand = null;
 
-    const existingPfand = this.getPfandLineForParent(item.key);
-    if (existingPfand) {
+    const existingPfand = this.findPfandLineForParent(item);
+    const suggested = this.getSuggestedPfandForItem(item);
+    if (existingPfand || item.pfandEnabled) {
       this.modalAddPfand = true;
-      this.modalSelectedPfand = this.toPfandProduct(existingPfand);
+      this.modalSelectedPfand = existingPfand
+        ? this.toPfandProduct(existingPfand)
+        : suggested;
     } else {
       this.modalAddPfand = false;
-      const suggested = this.getSuggestedPfandForItem(item);
       if (suggested) {
         this.modalSelectedPfand = suggested;
       }
@@ -639,6 +641,7 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     this.selectedItem.replacementArticleName = this.modalReplacementArticleName || undefined;
 
     if (this.modalUnavailable) {
+      this.selectedItem.pfandEnabled = false;
       this.removePfandLine(this.selectedItem.key);
     } else if (this.modalAddPfand && !this.selectedItem.isPfandLine) {
       const pfandProduct =
@@ -646,9 +649,11 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
       if (pfandProduct) {
         const pfandQuantity =
           Math.max(0, Number(this.modalPickedQuantity) || 0) || this.selectedItem.targetQuantity;
+        this.selectedItem.pfandEnabled = true;
         this.upsertPfandLine(this.selectedItem, pfandProduct, pfandQuantity);
       }
-    } else if (!this.modalAddPfand) {
+    } else if (!this.modalAddPfand && (this.selectedItem.pfandEnabled || this.findPfandLineForParent(this.selectedItem))) {
+      this.selectedItem.pfandEnabled = false;
       this.removePfandLine(this.selectedItem.key);
     }
 
@@ -910,22 +915,125 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
       ) {
         nextItem.parentItemKey = item.key;
         nextItem.isPfandLine = true;
+        item.pfandEnabled = true;
       }
     }
   }
 
   private getPfandLineForParent(parentKey: string): PickItemState | null {
+    const parent = this.stateItems.find((item) => item.key === parentKey);
+    return parent ? this.findPfandLineForParent(parent) : null;
+  }
+
+  private findPfandLineForParent(parent: PickItemState): PickItemState | null {
+    const byParentKey = this.stateItems.find(
+      (item) =>
+        item.isPfandLine &&
+        item.parentItemKey === parent.key &&
+        item.status !== 'unavailable'
+    );
+    if (byParentKey) {
+      return byParentKey;
+    }
+
+    const parentIndex = this.stateItems.indexOf(parent);
+    if (parentIndex < 0) {
+      return null;
+    }
+
+    const pfandArticleNumber = this.getPfandArticleNumberForParent(parent);
+    if (!pfandArticleNumber) {
+      return null;
+    }
+
+    const adjacent = this.stateItems[parentIndex + 1];
+    if (
+      adjacent &&
+      adjacent.status !== 'unavailable' &&
+      adjacent.articleNumber === pfandArticleNumber
+    ) {
+      return adjacent;
+    }
+
     return (
       this.stateItems.find(
-        (item) => item.isPfandLine && item.parentItemKey === parentKey && item.status !== 'unavailable'
+        (item) =>
+          item.status !== 'unavailable' &&
+          item.articleNumber === pfandArticleNumber &&
+          (item.isPfandLine || item.category === 'PFAND')
       ) ?? null
     );
   }
 
+  private getPfandArticleNumberForParent(parent: PickItemState): string | null {
+    const articleNumberForPfand = parent.replacementArticleNumber || parent.articleNumber;
+    const product =
+      this.productByArticleNumber.get(articleNumberForPfand) ||
+      this.productById.get(parent.productId);
+    return product?.custom_field_1 || parent.customField1 || null;
+  }
+
+  private ensurePfandLinesForSync(): void {
+    for (const item of this.stateItems) {
+      if (
+        item.isPfandLine ||
+        item.category === 'PFAND' ||
+        item.status === 'unavailable' ||
+        !item.pfandEnabled
+      ) {
+        continue;
+      }
+
+      const existingPfand = this.findPfandLineForParent(item);
+      const pfandProduct = existingPfand
+        ? this.toPfandProduct(existingPfand)
+        : this.getSuggestedPfandForItem(item);
+      if (!pfandProduct) {
+        continue;
+      }
+
+      const quantity = item.pickedQuantity > 0 ? item.pickedQuantity : item.targetQuantity;
+      this.upsertPfandLine(item, pfandProduct, quantity);
+    }
+  }
+
+  private resolveProductId(item: PickItemState): number | null {
+    if (Number.isFinite(item.productId) && item.productId > 0) {
+      return item.productId;
+    }
+
+    const fromCatalog = this.productByArticleNumber.get(item.articleNumber);
+    if (fromCatalog?.id != null && Number(fromCatalog.id) > 0) {
+      return Number(fromCatalog.id);
+    }
+
+    return null;
+  }
+
+  private resolvePfandProductId(pfandProduct: PfandProduct): number | null {
+    if (Number.isFinite(pfandProduct.id) && pfandProduct.id > 0) {
+      return pfandProduct.id;
+    }
+
+    const fromCatalog = this.productByArticleNumber.get(pfandProduct.article_number);
+    if (fromCatalog?.id != null && Number(fromCatalog.id) > 0) {
+      return Number(fromCatalog.id);
+    }
+
+    return null;
+  }
+
   private upsertPfandLine(parentItem: PickItemState, pfandProduct: PfandProduct, quantity: number): void {
-    const existingIndex = this.stateItems.findIndex(
-      (item) => item.isPfandLine && item.parentItemKey === parentItem.key
-    );
+    const resolvedProductId = this.resolvePfandProductId(pfandProduct);
+    if (!resolvedProductId) {
+      return;
+    }
+
+    parentItem.pfandEnabled = true;
+    const existingPfand = this.findPfandLineForParent(parentItem);
+    const existingIndex = existingPfand
+      ? this.stateItems.findIndex((item) => item.key === existingPfand.key)
+      : -1;
     const parentIndex = this.stateItems.findIndex((item) => item.key === parentItem.key);
     const effectiveQuantity = quantity > 0 ? quantity : parentItem.targetQuantity;
 
@@ -933,8 +1041,8 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
       key:
         existingIndex >= 0
           ? this.stateItems[existingIndex].key
-          : `pfand:${parentItem.key}:${pfandProduct.id}`,
-      productId: pfandProduct.id,
+          : `pfand:${parentItem.key}:${resolvedProductId}`,
+      productId: resolvedProductId,
       articleNumber: pfandProduct.article_number,
       productName: pfandProduct.article_text,
       targetQuantity: effectiveQuantity,
@@ -963,14 +1071,22 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   private removePfandLine(parentKey: string): void {
-    this.stateItems = this.stateItems.filter(
-      (item) => !(item.isPfandLine && item.parentItemKey === parentKey)
-    );
+    const parent = this.stateItems.find((item) => item.key === parentKey);
+    if (parent) {
+      parent.pfandEnabled = false;
+    }
+
+    const pfandLine = parent ? this.findPfandLineForParent(parent) : null;
+    if (!pfandLine) {
+      return;
+    }
+
+    this.stateItems = this.stateItems.filter((item) => item.key !== pfandLine.key);
   }
 
   private toPfandProduct(source: any): PfandProduct {
     return {
-      id: Number(source.id),
+      id: Number(source.id ?? source.product_id),
       article_number: source.article_number,
       article_text: source.article_text || source.article_name || source.productName,
       sale_price: source.sale_price,
@@ -1016,8 +1132,17 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
       return;
     }
 
-    const state = await this.pickingState.getState(this.order.order_id);
-    if (!state || !this.pickingState.canComplete(state)) {
+    await this.persistState();
+    const existing = await this.pickingState.getState(this.order.order_id);
+    const stateForComplete = {
+      orderId: this.order.order_id,
+      orderFingerprint: existing?.orderFingerprint || '',
+      startedAt: existing?.startedAt || new Date().toISOString(),
+      startedBy: existing?.startedBy || this.getStartedBy(),
+      items: this.stateItems,
+    };
+
+    if (!this.pickingState.canComplete(stateForComplete)) {
       this.setFeedback('warning', 'Bitte alle Positionen bearbeiten oder als nicht verfügbar markieren.');
       return;
     }
@@ -1026,8 +1151,10 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
 
     try {
       await this.syncOrderToServer(true);
-      state.completedAt = new Date().toISOString();
-      await this.pickingState.saveState(state);
+      await this.pickingState.saveState({
+        ...stateForComplete,
+        completedAt: new Date().toISOString(),
+      });
       this.router.navigate(['/picking']);
     } catch (error: any) {
       this.setFeedback('error', error?.error?.error || 'Abschluss fehlgeschlagen.');
@@ -1064,31 +1191,43 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   private buildSyncItems(): PickingSyncItem[] {
-    return this.stateItems.map((item) => {
+    const items: PickingSyncItem[] = [];
+
+    for (const item of this.stateItems) {
       if (item.status === 'unavailable') {
-        return {
-          product_id: item.productId,
+        const productId = this.resolveProductId(item);
+        if (!productId) {
+          continue;
+        }
+        items.push({
+          product_id: productId,
           quantity: 0,
           price: item.price,
           different_price: item.differentPrice ?? null,
           description: item.productName,
           remove: true,
-        };
+        });
+        continue;
       }
 
-      const quantity =
-        item.pickedQuantity > 0 ? item.pickedQuantity : item.targetQuantity;
+      const productId = this.resolveProductId(item);
+      if (!productId) {
+        continue;
+      }
 
-      return {
-        product_id: item.productId,
+      const quantity = item.pickedQuantity > 0 ? item.pickedQuantity : item.targetQuantity;
+      items.push({
+        product_id: productId,
         quantity,
         price: item.price,
         different_price: item.differentPrice ?? null,
         description: item.replacementArticleName || item.productName,
         replacement_article_number: item.replacementArticleNumber,
         replacement_article_name: item.replacementArticleName,
-      };
-    });
+      });
+    }
+
+    return items;
   }
 
   private async syncOrderToServer(complete: boolean): Promise<void> {
@@ -1100,6 +1239,8 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     if (!token) {
       throw new Error('Nicht angemeldet');
     }
+
+    this.ensurePfandLinesForSync();
 
     await lastValueFrom(
       this.orderService.applyPickingItems(

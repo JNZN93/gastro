@@ -47,6 +47,7 @@ export interface PickItemState {
   isPfandLine?: boolean;
   parentItemKey?: string;
   isAddedLine?: boolean;
+  pfandEnabled?: boolean;
 }
 
 export interface PickingState {
