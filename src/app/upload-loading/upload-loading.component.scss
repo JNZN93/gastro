@@ -26,3 +26,24 @@
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
   }
+
+  .progress-bar {
+    width: min(320px, 80vw);
+    height: 8px;
+    margin-top: 1rem;
+    background: rgba(255, 255, 255, 0.25);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: #ffffff;
+    border-radius: 999px;
+    transition: width 0.3s ease;
+  }
+
+  .progress-text {
+    margin-top: 0.5rem;
+    font-size: 0.95rem;
+  }

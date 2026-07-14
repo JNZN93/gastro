@@ -1,4 +1,4 @@
-import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { OrderService } from '../order.service';
 import { jsPDF } from 'jspdf';
@@ -17,7 +17,7 @@ import { environment } from '../../environments/environment';
   templateUrl: './admin.component.html',
   styleUrl: './admin.component.scss',
 })
-export class AdminComponent implements OnInit {
+export class AdminComponent implements OnInit, OnDestroy {
   @ViewChild('customerFileInput') customerFileInput!: ElementRef;
   @ViewChild('customerArticlePricesFileInput') customerArticlePricesFileInput!: ElementRef;
   @ViewChild('articlesFileInput') articlesFileInput!: ElementRef;
@@ -30,6 +30,9 @@ export class AdminComponent implements OnInit {
   isLoading: boolean = true;
   isVisible: boolean = true;
   isUploading: boolean = false;
+  uploadProgress: number = 0;
+  uploadStatusMessage: string = 'Import wird vorbereitet...';
+  private uploadPollInterval: ReturnType<typeof setInterval> | null = null;
   searchTerm: string = '';
   
   // Properties für ausgewählte Dateien
@@ -530,8 +533,9 @@ formatDate(dateString: string): string {
       formData.append('file', file);
 
       this.isUploading = true;
+      this.uploadProgress = 0;
+      this.uploadStatusMessage = 'Datei wird hochgeladen...';
 
-      // Token aus dem localStorage holen
       const token = localStorage.getItem('token');
       
       if (!token) {
@@ -541,7 +545,7 @@ formatDate(dateString: string): string {
       }
 
       this.http
-        .post(
+        .post<{ jobId: string; status: string; message: string }>(
           `${environment.apiUrl}/api/products/upload`,
           formData,
           {
@@ -552,19 +556,106 @@ formatDate(dateString: string): string {
         )
         .subscribe({
           next: (res) => {
-            alert('Artikeldaten erfolgreich hochgeladen!'),
-              this.isUploading = false; // Upload-Loading ausblenden
-            this.isVisible = false; // Upload-Komponente ausblenden
+            const jobId = res?.jobId;
+            if (!jobId) {
+              console.error('Upload-Antwort ohne jobId:', res);
+              this.stopArticlesUpload(
+                'Unerwartete Server-Antwort. Bitte Backend neu starten (npm start in backend-gastro) und erneut versuchen.'
+              );
+              return;
+            }
+
+            this.uploadStatusMessage = 'Import läuft im Hintergrund...';
+            this.pollArticlesUploadStatus(jobId, token);
           },
           error: (err) => {
-            console.log('Fehler beim Hochladen!', err),
-              this.isUploading = false;
-            alert('Fehler beim Hochladen der Artikeldaten. Bitte versuchen Sie es erneut.');
+            console.log('Fehler beim Hochladen!', err);
+            this.stopArticlesUpload('Fehler beim Starten des Artikel-Imports. Bitte versuchen Sie es erneut.');
           },
         });
     } else {
       alert('Bitte eine gültige XML-Datei hochladen.');
     }
+  }
+
+  private pollArticlesUploadStatus(jobId: string, token: string) {
+    if (!jobId) {
+      return;
+    }
+
+    this.clearUploadPoll();
+    this.fetchArticlesUploadStatus(jobId, token);
+    this.uploadPollInterval = setInterval(() => {
+      this.fetchArticlesUploadStatus(jobId, token);
+    }, 2000);
+  }
+
+  private fetchArticlesUploadStatus(jobId: string, token: string) {
+    this.http
+      .get<{
+        status: string;
+        progress: number;
+        processedItems: number;
+        totalItems: number;
+        result: any;
+        error: string | null;
+      }>(
+        `${environment.apiUrl}/api/products/upload/status/${jobId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      )
+      .subscribe({
+        next: (status) => {
+          this.uploadProgress = status.progress ?? 0;
+
+          if (status.totalItems > 0) {
+            this.uploadStatusMessage = `Import läuft... ${status.processedItems}/${status.totalItems} Artikel`;
+          } else {
+            this.uploadStatusMessage = 'Import wird vorbereitet...';
+          }
+
+          if (status.status === 'completed') {
+            const stats = status.result;
+            const message = stats
+              ? `Artikeldaten erfolgreich importiert.\n\nNeu: ${stats.newProducts}\nAktualisiert: ${stats.updatedProducts}\nUnverändert: ${stats.unchangedProducts}\nDeaktiviert: ${stats.deactivatedProducts}\nFehler: ${stats.errors}`
+              : 'Artikeldaten erfolgreich importiert.';
+            this.stopArticlesUpload(message, true);
+          }
+
+          if (status.status === 'failed') {
+            this.stopArticlesUpload(status.error || 'Fehler beim Import der Artikeldaten.');
+          }
+        },
+        error: (err) => {
+          console.log('Fehler beim Abfragen des Import-Status!', err);
+          this.stopArticlesUpload('Fehler beim Abfragen des Import-Status.');
+        },
+      });
+  }
+
+  private stopArticlesUpload(message: string, isSuccess = false) {
+    this.clearUploadPoll();
+    this.isUploading = false;
+    this.uploadProgress = 0;
+    this.uploadStatusMessage = 'Import wird vorbereitet...';
+    alert(message);
+    if (isSuccess) {
+      this.isVisible = false;
+    }
+  }
+
+  private clearUploadPoll() {
+    if (this.uploadPollInterval) {
+      clearInterval(this.uploadPollInterval);
+      this.uploadPollInterval = null;
+    }
+  }
+
+  ngOnDestroy() {
+    this.clearUploadPoll();
   }
 
   onStatusChange(event: Event, order: any) {

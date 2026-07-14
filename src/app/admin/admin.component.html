@@ -473,6 +473,6 @@
   }
 
   @if (isUploading) {
-    <app-upload-loading></app-upload-loading>
+    <app-upload-loading [progress]="uploadProgress" [statusMessage]="uploadStatusMessage"></app-upload-loading>
   }
 </div>
