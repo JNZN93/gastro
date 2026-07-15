@@ -46,6 +46,8 @@ interface InvoiceUpdateResponse {
   data?: Invoice;
   message?: string;
   hidriveWarning?: HiDriveWarning;
+  pathRepaired?: boolean;
+  resolvedPath?: string;
 }
 
 @Component({
@@ -88,6 +90,8 @@ export class OpenInvoicesComponent implements OnInit {
   showHiDriveWarningModal: boolean = false;
   hiDriveWarningMessage: string = '';
   hiDriveWarningInvoiceLabel: string = '';
+  hiDriveWarningOperation: string = 'move';
+  hiDriveWarningInvoice: Invoice | null = null;
 
   // Audit info modal
   showAuditModal: boolean = false;
@@ -1511,7 +1515,13 @@ export class OpenInvoicesComponent implements OnInit {
     }
 
     // For other statuses, use simple confirmation
-    const confirmed = confirm(`Möchten Sie den Status der Rechnung "${invoice.invoice_number}" wirklich zu "${statusText}" ändern?\n\nDiese Aktion kann nicht rückgängig gemacht werden.`);
+    const revertFromPaid = oldStatus === 'paid' && ['open', 'overdue', 'sepa'].includes(newStatus);
+    let confirmMessage = `Möchten Sie den Status der Rechnung "${invoice.invoice_number}" wirklich zu "${statusText}" ändern?\n\nDiese Aktion kann nicht rückgängig gemacht werden.`;
+    if (revertFromPaid) {
+      confirmMessage += '\n\nDie Datei wird automatisch zurück in den Ordner „offene Rechnungen“ verschoben und das Bezahldatum wird gelöscht.';
+    }
+
+    const confirmed = confirm(confirmMessage);
 
     if (confirmed) {
       // Update locally first for immediate UI feedback
@@ -1533,6 +1543,9 @@ export class OpenInvoicesComponent implements OnInit {
               this.invoices[index] = normalizedInvoice;
               // Update filtered invoices cache after status change
               this.updateFilteredInvoices();
+            }
+            if (response.hidriveWarning) {
+              this.showHiDriveMoveWarning(invoice, response.hidriveWarning);
             }
           } else {
             this.errorMessage = response.message || 'Failed to update invoice';
@@ -1586,15 +1599,51 @@ export class OpenInvoicesComponent implements OnInit {
   }
 
   private showHiDriveMoveWarning(invoice: Invoice, warning: HiDriveWarning): void {
+    this.hiDriveWarningInvoice = invoice;
     this.hiDriveWarningInvoiceLabel = `${invoice.supplier_name} · ${invoice.invoice_number}`;
     this.hiDriveWarningMessage = warning.message;
+    this.hiDriveWarningOperation = warning.operation || 'move';
     this.showHiDriveWarningModal = true;
+  }
+
+  getHiDriveWarningTitle(): string {
+    switch (this.hiDriveWarningOperation) {
+      case 'revert':
+        return 'HiDrive-Warnung (Rückverschiebung)';
+      case 'path_repair':
+        return 'HiDrive-Warnung (Pfad)';
+      default:
+        return 'HiDrive-Warnung';
+    }
+  }
+
+  getHiDriveWarningContext(): string {
+    switch (this.hiDriveWarningOperation) {
+      case 'revert':
+        return 'wurde gespeichert, aber die Datei konnte nicht zurück nach „offene Rechnungen“ verschoben werden';
+      case 'path_repair':
+        return 'wurde gespeichert, aber der HiDrive-Pfad konnte nicht automatisch korrigiert werden';
+      default:
+        return 'wurde als bezahlt gespeichert, aber die Datei konnte nicht in HiDrive verschoben werden';
+    }
+  }
+
+  openHiDriveWarningAuditHistory(): void {
+    const invoice = this.hiDriveWarningInvoice;
+    this.closeHiDriveWarningModal();
+    if (invoice) {
+      this.showInvoiceAuditInfo(invoice);
+      this.auditModalTab = 'history';
+      this.loadAuditLog(invoice.id);
+    }
   }
 
   closeHiDriveWarningModal(): void {
     this.showHiDriveWarningModal = false;
     this.hiDriveWarningMessage = '';
     this.hiDriveWarningInvoiceLabel = '';
+    this.hiDriveWarningOperation = 'move';
+    this.hiDriveWarningInvoice = null;
   }
 
   // Paid status modal methods
@@ -1871,6 +1920,10 @@ export class OpenInvoicesComponent implements OnInit {
         return 'Rechnung gelöscht';
       case 'hidrive_error':
         return 'HiDrive-Fehler';
+      case 'hidrive_moved':
+        return 'HiDrive-Datei verschoben';
+      case 'hidrive_path_repaired':
+        return 'HiDrive-Pfad korrigiert';
       default:
         return entry.action;
     }

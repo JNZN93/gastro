@@ -939,7 +939,7 @@
   <div class="modal-overlay" [class.active]="showHiDriveWarningModal" (click)="closeHiDriveWarningModal()"></div>
   <div class="duplicate-modal hidrive-warning-modal" [class.active]="showHiDriveWarningModal">
     <div class="modal-header">
-      <h2>HiDrive-Warnung</h2>
+      <h2>{{ getHiDriveWarningTitle() }}</h2>
       <button class="close-btn" (click)="closeHiDriveWarningModal()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
@@ -948,16 +948,19 @@
     </div>
     <div class="modal-content">
       <p class="warning-text">
-        Die Rechnung <strong>{{ hiDriveWarningInvoiceLabel }}</strong> wurde als bezahlt gespeichert,
-        aber die Datei konnte <strong>nicht in HiDrive verschoben</strong> werden.
+        Die Rechnung <strong>{{ hiDriveWarningInvoiceLabel }}</strong> {{ getHiDriveWarningContext() }}.
       </p>
       <div class="hidrive-error-detail" *ngIf="hiDriveWarningMessage">
         {{ hiDriveWarningMessage }}
       </div>
       <p class="warning-hint">
-        Der Fehler wurde in der Rechnungshistorie protokolliert. Bitte prüfen Sie den Dateipfad in HiDrive manuell.
+        <strong>Status wurde gespeichert</strong> — bitte prüfen Sie den Dateipfad in HiDrive manuell und korrigieren Sie ihn bei Bedarf.
+        Der Fehler wurde in der Rechnungshistorie protokolliert.
       </p>
       <div class="modal-actions">
+        <button class="cancel-btn" (click)="openHiDriveWarningAuditHistory()" *ngIf="hiDriveWarningInvoice">
+          Historie öffnen
+        </button>
         <button class="confirm-btn" (click)="closeHiDriveWarningModal()">
           Verstanden
         </button>
