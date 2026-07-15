@@ -546,8 +546,8 @@
                 <input #searchInput 
                        type="text" 
                        [(ngModel)]="searchTerm" 
-                       (input)="filteredArtikelData()" 
-                       (keydown)="onKeyDown($event)"
+                       (ngModelChange)="onSearchTermChange($event)" 
+                       (keydown)="onSearchKeyDown($event)"
                        (focus)="onSearchFocus()"
                        [placeholder]="editingItemIndex !== -1 ? 'Neuen Artikel suchen...' : 'Artikel suchen...'"
                        class="search-input">
@@ -679,8 +679,8 @@
                     <input #mobileSearchInput 
                            type="text" 
                            [(ngModel)]="searchTerm" 
-                           (input)="filteredArtikelData()" 
-                           (keydown)="onKeyDown($event)"
+                           (ngModelChange)="onSearchTermChange($event)" 
+                           (keydown)="onSearchKeyDown($event)"
                            (focus)="onSearchFocus()"
                            [placeholder]="editingItemIndex !== -1 ? 'Neuen Artikel suchen...' : 'Artikel suchen...'"
                            class="search-input">

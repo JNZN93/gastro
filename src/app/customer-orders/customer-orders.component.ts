@@ -45,6 +45,9 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   private orderService = inject(OrderService);
   private articleSearchService = inject(ArticleSearchService);
   private forceActiveSubscription: Subscription | null = null;
+  private articleSearchSubscription: Subscription | null = null;
+  private searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+  private readonly searchDebounceMs = 120;
   artikelData: any[] = [];
   orderItems: any[] = [];
   orderItems2: any[] = []; // Zweite Tabelle für Split-Modus
@@ -861,6 +864,16 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     // Footer wieder anzeigen beim Verlassen der Komponente
     this.showFooter();
+
+    if (this.searchDebounceTimer) {
+      clearTimeout(this.searchDebounceTimer);
+      this.searchDebounceTimer = null;
+    }
+
+    if (this.articleSearchSubscription) {
+      this.articleSearchSubscription.unsubscribe();
+      this.articleSearchSubscription = null;
+    }
 
     // Force Active Subscription aufräumen
     if (this.forceActiveSubscription) {
@@ -1799,13 +1812,76 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     this.loadCustomerArticlePrices(customer.customer_number);
   }
 
-filteredArtikelData() {
-  this.articleSearchService.filterArticles(this.globalArtikels, this.searchTerm).subscribe((state) => {
+  onSearchTermChange(term: string): void {
+    if (this.searchDebounceTimer) {
+      clearTimeout(this.searchDebounceTimer);
+      this.searchDebounceTimer = null;
+    }
+
+    if (!term.trim()) {
+      this.applyArticleSearchResults({ results: [], showDropdown: false });
+      return;
+    }
+
+    this.searchDebounceTimer = setTimeout(() => {
+      this.runArticleSearch(term);
+    }, this.searchDebounceMs);
+  }
+
+  filteredArtikelData(): void {
+    this.runArticleSearch();
+  }
+
+  private applyArticleSearchResults(state: { results: any[]; showDropdown: boolean }): void {
     this.filteredArtikels = state.results;
     this.showDropdown = state.showDropdown;
     this.selectedIndex = -1;
-  });
-}
+  }
+
+  private runArticleSearch(
+    term?: string,
+    onComplete?: (state: { results: any[]; showDropdown: boolean }) => void
+  ): void {
+    const query = (term ?? this.searchTerm).trim();
+
+    if (this.articleSearchSubscription) {
+      this.articleSearchSubscription.unsubscribe();
+      this.articleSearchSubscription = null;
+    }
+
+    if (!query.trim()) {
+      const emptyState = { results: [], showDropdown: false };
+      this.applyArticleSearchResults(emptyState);
+      onComplete?.(emptyState);
+      return;
+    }
+
+    this.articleSearchSubscription = this.articleSearchService
+      .filterArticles(this.globalArtikels, query)
+      .subscribe((state) => {
+        this.applyArticleSearchResults(state);
+        onComplete?.(state);
+      });
+  }
+
+  onSearchKeyDown(event: KeyboardEvent): void {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+
+      if (this.searchDebounceTimer) {
+        clearTimeout(this.searchDebounceTimer);
+        this.searchDebounceTimer = null;
+      }
+
+      const input = event.target as HTMLInputElement | null;
+      const currentValue = (input?.value ?? this.searchTerm).trim();
+      this.searchTerm = currentValue;
+      this.runArticleSearch(currentValue);
+      return;
+    }
+
+    this.onKeyDown(event);
+  }
 
 
   clearSearch() {
@@ -2155,8 +2231,8 @@ filteredArtikelData() {
   onCodeResult(result: string) {
     this.playBeep();
     this.stopScanner();
-    this.searchTerm = result;
-    this.filteredArtikelData();
+    this.searchTerm = result.trim();
+    this.runArticleSearch(this.searchTerm);
   }
 
   startScanner() {
