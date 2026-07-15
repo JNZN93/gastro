@@ -570,15 +570,18 @@ export class PlanningService {
 
   private deserializeWorkDay(stored: StoredWorkDay): WorkDay {
     const [year, month, day] = stored.date.split('-').map(Number);
+    const date = this.holidayService.createLocalDate(year, month, day);
+    const holidayInfo = this.holidayService.getHolidayInfo(date);
+
     return {
-      date: this.holidayService.createLocalDate(year, month, day),
+      date,
       plannedHours: stored.plannedHours,
       startTime: stored.startTime,
       endTime: stored.endTime,
       breakMinutes: stored.breakMinutes ?? 0,
-      isSunday: stored.isSunday,
-      isHoliday: stored.isHoliday,
-      holidayName: stored.holidayName,
+      isSunday: date.getDay() === 0,
+      isHoliday: holidayInfo !== null,
+      holidayName: holidayInfo?.name,
       isVacation: stored.isVacation ?? false,
       isUnpaidDayOff: stored.isUnpaidDayOff ?? false,
       isSick: stored.isSick ?? false,
