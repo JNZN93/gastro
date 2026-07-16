@@ -97,6 +97,7 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
   addArticleQuantity = 1;
   selectedArticleToAdd: CatalogArticle | null = null;
   searchableArtikels: CatalogArticle[] = [];
+  modalProductName = '';
 
   private customerNameByNumber = new Map<string, string>();
   private productById = new Map<number, CatalogArticle>();
@@ -435,6 +436,7 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
 
   openItemModal(item: PickItemState): void {
     this.selectedItem = item;
+    this.modalProductName = item.productName;
     this.modalPickedQuantity = item.pickedQuantity > 0 ? item.pickedQuantity : item.targetQuantity;
     this.modalNote = item.note || '';
     this.modalUnavailable = item.status === 'unavailable';
@@ -476,6 +478,7 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     this.showReplacementSearchDropdown = false;
     this.modalReplacementArticleNumber = '';
     this.modalReplacementArticleName = '';
+    this.modalProductName = '';
     this.modalAddPfand = false;
     this.modalPfandSearch = '';
     this.modalPfandResults = [];
@@ -634,11 +637,19 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
         Math.max(0, Number(this.modalPickedQuantity) || 0)
       );
       this.selectedItem.note = this.modalNote.trim() || undefined;
+      if (this.selectedItem.status === 'unavailable') {
+        this.selectedItem.status = 'pending';
+      }
       this.selectedItem.status = this.pickingState.updateItemStatus(this.selectedItem);
     }
 
     this.selectedItem.replacementArticleNumber = this.modalReplacementArticleNumber || undefined;
     this.selectedItem.replacementArticleName = this.modalReplacementArticleName || undefined;
+
+    const trimmedProductName = this.modalProductName.trim();
+    if (trimmedProductName) {
+      this.selectedItem.productName = trimmedProductName;
+    }
 
     if (this.modalUnavailable) {
       this.selectedItem.pfandEnabled = false;
@@ -662,10 +673,24 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     this.closeItemModal();
   }
 
-  markSelectedUnavailable(): void {
-    this.modalUnavailable = true;
-    this.modalPickedQuantity = 0;
-    this.modalAddPfand = false;
+  onModalUnavailableChange(unavailable: boolean): void {
+    this.modalUnavailable = unavailable;
+    if (unavailable) {
+      this.modalPickedQuantity = 0;
+      this.modalAddPfand = false;
+      this.showModalCalculator = false;
+      if (!this.modalNote.trim()) {
+        this.modalNote = 'Nicht verfügbar';
+      }
+      return;
+    }
+
+    if (this.selectedItem) {
+      this.modalPickedQuantity = this.selectedItem.targetQuantity;
+    }
+    if (this.modalNote.trim() === 'Nicht verfügbar') {
+      this.modalNote = '';
+    }
   }
 
   getSuggestedPfandForItem(item: PickItemState): PfandProduct | null {

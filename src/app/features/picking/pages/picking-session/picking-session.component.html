@@ -259,9 +259,18 @@
   <div class="modal-overlay" (click)="closeItemModal()">
     <div class="modal-card" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h2 class="modal-title">{{ selectedItem.productName }}</h2>
         <p class="modal-sub">{{ selectedItem.articleNumber }}</p>
       </div>
+
+      <label class="field">
+        <span>Artikelbeschreibung</span>
+        <input
+          type="text"
+          [(ngModel)]="modalProductName"
+          [disabled]="modalUnavailable"
+          placeholder="Artikelbeschreibung eingeben…"
+        />
+      </label>
 
       <label class="field">
         <span class="field-label-row">
@@ -388,14 +397,24 @@
         </div>
       }
 
+      <div class="field unavailable-toggle">
+        <label class="checkbox-row">
+          <input
+            type="checkbox"
+            [(ngModel)]="modalUnavailable"
+            (ngModelChange)="onModalUnavailableChange($event)"
+          />
+          <span>Nicht verfügbar</span>
+        </label>
+        <small class="field-hint">
+          Position wird aus der Bestellung entfernt. Häkchen entfernen, um sie wieder verfügbar zu machen.
+        </small>
+      </div>
+
       <label class="field">
         <span>Notiz (optional)</span>
         <textarea [(ngModel)]="modalNote" rows="2" placeholder="z. B. nur 3 statt 5 verfügbar"></textarea>
       </label>
-
-      <button type="button" class="danger-btn" (click)="markSelectedUnavailable()">
-        Nicht verfügbar / Position löschen
-      </button>
 
       <div class="modal-actions">
         <button type="button" class="secondary-btn" (click)="closeItemModal()">Abbrechen</button>

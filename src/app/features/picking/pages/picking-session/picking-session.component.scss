@@ -877,6 +877,22 @@
   }
 }
 
+.unavailable-toggle {
+  padding: 0.45rem 0.5rem;
+  border-radius: 8px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+
+  .checkbox-row span {
+    font-weight: 600;
+    color: #b91c1c;
+  }
+
+  input[type='checkbox'] {
+    accent-color: #dc2626;
+  }
+}
+
 .pfand-field {
   padding: 0.45rem 0.5rem;
   border-radius: 8px;
