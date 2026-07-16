@@ -17,6 +17,7 @@ import { IndexedDBService } from '../indexeddb.service';
 import { OffersService, OfferWithProducts, OfferProduct } from '../offers.service';
 import { RecentImagesModalComponent } from '../recent-images-modal/recent-images-modal.component';
 import { environment } from '../../environments/environment';
+import { showCameraScanner } from '../core/platform';
 
 @Component({
   selector: 'app-employees',
@@ -44,6 +45,7 @@ export class EmployeesComponent implements OnInit, OnDestroy {
   customerArticlePrices: any[] = []; // Neue Property für Kunden-Artikel-Preise
   pendingCustomerForPriceUpdate: any = null; // Temporärer Kunde für Preis-Updates nach dem Laden der Artikel
   isVisible: boolean = true;
+  readonly showCameraScanner = showCameraScanner();
   isScanning = false;
   
   // Neue Properties für Dropdown-Navigation

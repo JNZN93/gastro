@@ -12,6 +12,7 @@ import { ZXingScannerComponent, ZXingScannerModule } from '@zxing/ngx-scanner';
 import { BarcodeFormat } from '@zxing/browser';
 import { OffersService, OfferWithProducts, OfferProduct } from '../offers.service';
 import { environment } from '../../environments/environment';
+import { showCameraScanner } from '../core/platform';
 
 // Interface für kundenspezifische Preise
 interface CustomerArticlePrice {
@@ -77,6 +78,7 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
   toastTopPosition: number = 20;
 
   // Scanner-Eigenschaften
+  readonly showCameraScanner = showCameraScanner();
   isScanning = false;
   isTorchOn = false;
   availableDevices: MediaDeviceInfo[] = [];

@@ -555,7 +555,7 @@
                   <span class="material-icons">close</span>
                 </button>
               </div>
-              <button (click)="startScanner()" [disabled]="isScanning" class="scanner-btn">
+              <button *ngIf="showCameraScanner" (click)="startScanner()" [disabled]="isScanning" class="scanner-btn">
                 <span class="material-symbols-outlined">barcode</span>
               </button>
               <button (click)="imageInput.click()" class="upload-images-btn" [disabled]="isAnalyzingImages">
@@ -688,7 +688,7 @@
                       <span class="material-icons">close</span>
                     </button>
                   </div>
-                  <button (click)="startScanner()" [disabled]="isScanning" class="scanner-btn">
+                  <button *ngIf="showCameraScanner" (click)="startScanner()" [disabled]="isScanning" class="scanner-btn">
                     <span class="material-symbols-outlined">barcode</span>
                   </button>
                   <button (click)="imageInput.click()" class="upload-images-btn" [disabled]="isAnalyzingImages">
@@ -1569,7 +1569,8 @@
                    maxlength="13"
                    (input)="onEanInput($event)"
                    (keyup.enter)="assignEan()">
-            <button (click)="startEanScanner()" 
+            <button *ngIf="showCameraScanner"
+                    (click)="startEanScanner()" 
                     [disabled]="isEanScanning" 
                     class="scanner-btn"
                     title="EAN-Code scannen">

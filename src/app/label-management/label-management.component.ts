@@ -11,6 +11,7 @@ import { MyDialogComponent } from '../my-dialog/my-dialog.component';
 import { ZXingScannerComponent, ZXingScannerModule } from '@zxing/ngx-scanner';
 import { BarcodeFormat } from '@zxing/browser';
 import { OffersService, OfferWithProducts } from '../offers.service';
+import { showCameraScanner } from '../core/platform';
 
 interface Product {
   id: number;
@@ -53,6 +54,7 @@ export class LabelManagementComponent implements OnInit {
   searchTerm: string = '';
   isLoading: boolean = false;
   isCartExpanded: boolean = false; // Cart starts collapsed by default
+  readonly showCameraScanner = showCameraScanner();
   isScanning = false;
 
   // Scanner properties

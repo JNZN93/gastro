@@ -7,6 +7,7 @@ import { ZXingScannerComponent, ZXingScannerModule } from '@zxing/ngx-scanner';
 import { BarcodeFormat } from '@zxing/browser';
 import { lastValueFrom } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
+import { showCameraScanner } from '../../../../core/platform';
 import { OrderService } from '../../../../order.service';
 import { GlobalService } from '../../../../global.service';
 import { ArtikelDataService } from '../../../../artikel-data.service';
@@ -71,6 +72,8 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
   scanFeedback: ScanResultFeedback | null = null;
 
   eanInputValue = '';
+  /** Camera scanner only on web; native handhelds use hardware keyboard-wedge. */
+  readonly showCameraScanner = showCameraScanner();
   isScanning = false;
   showItemModal = false;
   showStartWarning = false;
@@ -147,6 +150,7 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
 
   ngAfterViewInit(): void {
     this.observeStickyBar();
+    setTimeout(() => this.focusEanInput(), 150);
   }
 
   ngOnDestroy(): void {

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Gastro Kom</string>
+    <string name="title_activity_main">Gastro Kom</string>
+    <string name="package_name">com.gastrodepot.app</string>
+    <string name="custom_url_scheme">com.gastrodepot.app</string>
+</resources>

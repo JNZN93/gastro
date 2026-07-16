@@ -11,6 +11,7 @@ import { BarcodeFormat } from '@zxing/browser';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { filter } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
+import { showCameraScanner } from '../core/platform';
 
 @Component({
   selector: 'app-product-management',
@@ -29,6 +30,7 @@ export class ProductManagementComponent implements OnInit, OnDestroy, AfterViewI
   searchTerm: string = '';
   imageFilter: 'all' | 'with-image' | 'without-image' = 'all';
   isVisible: boolean = true;
+  readonly showCameraScanner = showCameraScanner();
   isScanning = false;
   isTorchOn = false;
   

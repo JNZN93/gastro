@@ -21,6 +21,7 @@ import * as QRCode from 'qrcode';
 import { environment } from '../../environments/environment';
 import { firstValueFrom, Subscription } from 'rxjs';
 import { ArticleSearchService } from '../services/article-search.service';
+import { showCameraScanner } from '../core/platform';
 
 @Component({
   selector: 'app-customer-orders',
@@ -61,6 +62,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   customerArticlePrices: any[] = []; // Neue Property für Kunden-Artikel-Preise
   pendingCustomerForPriceUpdate: any = null; // Temporärer Kunde für Preis-Updates nach dem Laden der Artikel
   isVisible: boolean = true;
+  readonly showCameraScanner = showCameraScanner();
   isScanning = false;
   isAnalyzingImages = false;
   isCostPriceBlurred: boolean = true; // EK-Preis Blur-Effekt aktiviert (Standard)

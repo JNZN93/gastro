@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from '../../environments/environment';
+import { showCameraScanner } from '../core/platform';
 import { trigger, transition, style, animate } from '@angular/animations';
 import { ZXingScannerComponent, ZXingScannerModule } from '@zxing/ngx-scanner';
 import { BarcodeFormat } from '@zxing/browser';
@@ -75,6 +76,7 @@ export class InventoryComponent implements OnInit {
   showConfirmSaveModal: boolean = false;
 
   // Scanner properties
+  readonly showCameraScanner = showCameraScanner();
   isScanning: boolean = false;
   availableDevices: MediaDeviceInfo[] = [];
   selectedDevice?: MediaDeviceInfo;
