@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - main
+      - feature/android-hardware-scanner
     paths:
       - 'src/**'
       - 'android/**'
