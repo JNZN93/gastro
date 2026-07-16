@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, of } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { catchError, map, switchMap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
 export interface ArticleSearchResult {
@@ -13,21 +13,25 @@ export interface ArticleSearchResult {
 export class ArticleSearchService {
   private readonly http = inject(HttpClient);
 
+  normalizeSearchTerm(term: string): string {
+    return term.trim();
+  }
+
   filterArticles(artikels: any[], searchTerm: string): Observable<ArticleSearchResult> {
-    const trimmedTerm = searchTerm.trim();
+    const trimmedTerm = this.normalizeSearchTerm(searchTerm);
 
     if (!trimmedTerm) {
       return of({ results: [], showDropdown: false });
     }
 
-    const isEanSearch = /^\d{8}$|^\d{13}$/.test(trimmedTerm);
+    const isEanSearch = /^\d{8}$|^\d{12}$|^\d{13}$/.test(trimmedTerm);
     if (!isEanSearch && trimmedTerm.length < 3) {
       return of({ results: [], showDropdown: false });
     }
 
     if (isEanSearch) {
-      const localEanResults = artikels.filter(
-        (artikel) => artikel.ean?.toLowerCase() === trimmedTerm.toLowerCase()
+      const localEanResults = artikels.filter((artikel) =>
+        this.eanMatches(trimmedTerm, artikel.ean)
       );
 
       if (localEanResults.length > 0) {
@@ -51,7 +55,63 @@ export class ArticleSearchService {
     return of({ results, showDropdown: results.length > 0 });
   }
 
+  private getEanLookupVariants(ean: string): string[] {
+    const trimmed = ean.trim();
+    const variants = new Set<string>([trimmed]);
+
+    if (/^\d{13}$/.test(trimmed) && trimmed.startsWith('0')) {
+      variants.add(trimmed.slice(1));
+    }
+
+    if (/^\d{12}$/.test(trimmed)) {
+      variants.add(`0${trimmed}`);
+    }
+
+    return [...variants];
+  }
+
+  private eanMatches(searchEan: string, storedEan: string | undefined): boolean {
+    if (!storedEan) {
+      return false;
+    }
+
+    const searchVariants = this.getEanLookupVariants(searchEan);
+    const storedVariants = this.getEanLookupVariants(storedEan);
+    return searchVariants.some((variant) => storedVariants.includes(variant));
+  }
+
   private searchEanInApi(artikels: any[], eanCode: string): Observable<ArticleSearchResult> {
+    const variants = this.getEanLookupVariants(eanCode);
+    return this.tryEanVariantsInApi(artikels, variants);
+  }
+
+  private tryEanVariantsInApi(
+    artikels: any[],
+    variants: string[]
+  ): Observable<ArticleSearchResult> {
+    if (variants.length === 0) {
+      return of({ results: [], showDropdown: false });
+    }
+
+    const [currentVariant, ...remainingVariants] = variants;
+
+    return this.fetchEanFromApi(artikels, currentVariant).pipe(
+      switchMap((result) => {
+        if (result.results.length > 0 || remainingVariants.length === 0) {
+          return of(result);
+        }
+        return this.tryEanVariantsInApi(artikels, remainingVariants);
+      }),
+      catchError(() => {
+        if (remainingVariants.length === 0) {
+          return of(this.performLocalSearch(artikels, currentVariant));
+        }
+        return this.tryEanVariantsInApi(artikels, remainingVariants);
+      })
+    );
+  }
+
+  private fetchEanFromApi(artikels: any[], eanCode: string): Observable<ArticleSearchResult> {
     const token = localStorage.getItem('token');
 
     return this.http
@@ -72,8 +132,7 @@ export class ArticleSearchService {
             }
           }
           return { results: [], showDropdown: false };
-        }),
-        catchError(() => of(this.performLocalSearch(artikels, eanCode)))
+        })
       );
   }
 

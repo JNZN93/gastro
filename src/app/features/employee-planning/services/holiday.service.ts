@@ -28,8 +28,11 @@ export class HolidayService {
       return null;
     }
 
-    // Öffentliche Feiertage bevorzugen; sonst ersten Eintrag nehmen
-    const publicHoliday = result.find((h) => h.type === 'public') ?? result[0];
+    const publicHoliday = result.find((h) => h.type === 'public');
+    if (!publicHoliday) {
+      return null;
+    }
+
     return { name: publicHoliday.name };
   }
 
