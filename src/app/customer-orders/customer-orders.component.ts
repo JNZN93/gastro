@@ -168,7 +168,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   // Mobile Tab properties
   activeTab: 'search' | 'order' | 'prices' = 'search';
   
-  // Neue Properties für Datumsfelder
+  // Neue Properties für Datumsfelder (Standard: heutiges Datum)
   orderDate: string = '';
   deliveryDate: string = '';
   
@@ -276,6 +276,8 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.setDefaultDates();
+
     // Footer verstecken
     this.hideFooter();
     
@@ -3470,10 +3472,9 @@ filteredArtikelData() {
     this.editingCompanyName = '';
     console.log('✅ [CLEAR-ALL-ORDER] Kundenspezifische Preise geleert');
     
-    // 5. Leere die Datumsfelder
-    this.orderDate = '';
-    this.deliveryDate = '';
-    console.log('✅ [CLEAR-ALL-ORDER] Datumsfelder geleert');
+    // 5. Datumsfelder auf heute zurücksetzen
+    this.setDefaultDates();
+    console.log('✅ [CLEAR-ALL-ORDER] Datumsfelder auf heute zurückgesetzt');
     
     // 6. Setze alle Artikel auf Standard-Preise zurück
     this.globalArtikels = this.globalArtikels.map(artikel => ({
@@ -3560,10 +3561,9 @@ filteredArtikelData() {
     // Lösche auch aus localStorage
     this.globalService.clearCustomerOrders();
     
-    // Leere die Datumsfelder
-    this.orderDate = '';
-    this.deliveryDate = '';
-    console.log('✅ [CLEAR-ORDER] Datumsfelder geleert');
+    // Datumsfelder auf heute zurücksetzen
+    this.setDefaultDates();
+    console.log('✅ [CLEAR-ORDER] Datumsfelder auf heute zurückgesetzt');
     
     // Setze die kundenspezifischen Preise in der Artikelauswahl zurück
     if (this.customerArticlePrices.length > 0) {
@@ -3722,10 +3722,9 @@ filteredArtikelData() {
     this.editingCompanyName = '';
     console.log('🧹 [SELECT-CUSTOMER] Geänderter Firmenname zurückgesetzt');
     
-    // Lösche die Datumsfelder beim Kundenwechsel
-    this.orderDate = '';
-    this.deliveryDate = '';
-    console.log('🧹 [SELECT-CUSTOMER] Datumsfelder zurückgesetzt');
+    // Datumsfelder beim Kundenwechsel auf heute zurücksetzen
+    this.setDefaultDates();
+    console.log('🧹 [SELECT-CUSTOMER] Datumsfelder auf heute zurückgesetzt');
     
     // Lade Kunden-Artikel-Preise für den ausgewählten Kunden
     console.log('🔄 [SELECT-CUSTOMER] Starte loadCustomerArticlePrices für Kunde:', customer.customer_number);
@@ -3785,10 +3784,9 @@ filteredArtikelData() {
     this.editingCompanyName = '';
     console.log('🗑️ [CLEAR-CUSTOMER] Geänderter Firmenname zurückgesetzt');
     
-    // Lösche die Datumsfelder
-    this.orderDate = '';
-    this.deliveryDate = '';
-    console.log('🗑️ [CLEAR-CUSTOMER] Datumsfelder zurückgesetzt');
+    // Datumsfelder auf heute zurücksetzen
+    this.setDefaultDates();
+    console.log('🗑️ [CLEAR-CUSTOMER] Datumsfelder auf heute zurückgesetzt');
     
     // Lösche das Suchfeld und gefilterte Artikel beim Zurücksetzen des Kunden
     this.clearSearch();
@@ -5929,6 +5927,20 @@ filteredArtikelData() {
         : item.sale_price;
       return total + (price * item.quantity);
     }, 0);
+  }
+
+  private getTodayDateString(): string {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  private setDefaultDates(): void {
+    const today = this.getTodayDateString();
+    this.orderDate = today;
+    this.deliveryDate = today;
   }
 
   // Hilfsmethode zum Formatieren eines Datums für Input-Felder (YYYY-MM-DD)
