@@ -479,15 +479,15 @@
                 Split beenden
               </button>
             }
-            <button (click)="generateOrderPDF()" class="pdf-order-btn">
+            <button (click)="generateOrderPDF()" class="pdf-order-btn" [disabled]="isPrintingOrder || isSavingOrder">
               <span class="material-icons">print</span>
-              Drucken
+              {{ isPrintingOrder ? 'Speichern & Drucken…' : 'Drucken' }}
             </button>
-            <button (click)="confirmSaveOrderAsOpen()" class="save-order-open-btn" [disabled]="isSplitMode">
+            <button (click)="confirmSaveOrderAsOpen()" class="save-order-open-btn" [disabled]="isSplitMode || isPrintingOrder || isSavingOrder">
               <span class="material-icons">schedule</span>
               Zwischenspeichern
             </button>
-            <button (click)="saveOrder()" class="save-order-btn">
+            <button (click)="saveOrder()" class="save-order-btn" [disabled]="isPrintingOrder || isSavingOrder">
               <span class="material-icons">save</span>
               Auftrag speichern
             </button>
@@ -915,15 +915,15 @@
               </div>
               
               <div class="mobile-order-actions">
-                <button (click)="generateOrderPDF()" class="pdf-order-btn">
+                <button (click)="generateOrderPDF()" class="pdf-order-btn" [disabled]="isPrintingOrder || isSavingOrder">
                   <span class="material-icons">print</span>
-                  Drucken
+                  {{ isPrintingOrder ? 'Speichern & Drucken…' : 'Drucken' }}
                 </button>
-                <button (click)="confirmSaveOrderAsOpen()" class="save-order-open-btn" [disabled]="isSplitMode">
+                <button (click)="confirmSaveOrderAsOpen()" class="save-order-open-btn" [disabled]="isSplitMode || isPrintingOrder || isSavingOrder">
                   <span class="material-icons">schedule</span>
                   Zwischenspeichern
                 </button>
-                <button (click)="saveOrder()" class="save-order-btn">
+                <button (click)="saveOrder()" class="save-order-btn" [disabled]="isPrintingOrder || isSavingOrder">
                   <span class="material-icons">save</span>
                   Auftrag speichern
                 </button>
@@ -1654,7 +1654,7 @@
         </div>
 
         <h3>Soll zusätzlich ein Palettenschein gedruckt werden?</h3>
-        <p>Der Palettenschein wird als zusätzliche Seite an den Kommissionierungsschein angehängt und enthält Kundenname, Adresse, Lieferdaten sowie eine Checkliste mit Tiefkühl- &amp; Kühlware zum Abhaken.</p>
+        <p>Beim Drucken wird der Auftrag zuerst zwischengespeichert (Status: Offen). Danach wird derselbe Kommissionierungsschein wie in der Bestellübersicht erzeugt (optional mit Palettenschein).</p>
 
         @if (globalService.selectedCustomerForOrders) {
           <div class="palettenschein-preview">
@@ -1679,12 +1679,12 @@
       </div>
 
       <div class="palettenschein-modal-footer">
-        <button class="btn-secondary" (click)="confirmPrintWithoutPalettenschein()">
-          Nein, nur Kommissionierungsschein
+        <button class="btn-secondary" (click)="confirmPrintWithoutPalettenschein()" [disabled]="isPrintingOrder">
+          {{ isPrintingOrder ? 'Speichern…' : 'Nein, nur Kommissionierungsschein' }}
         </button>
-        <button class="btn-primary" (click)="confirmPrintWithPalettenschein()">
+        <button class="btn-primary" (click)="confirmPrintWithPalettenschein()" [disabled]="isPrintingOrder">
           <span class="material-icons">print</span>
-          Ja, mit Palettenschein
+          {{ isPrintingOrder ? 'Speichern…' : 'Ja, mit Palettenschein' }}
         </button>
       </div>
     </div>
