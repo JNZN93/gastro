@@ -150,10 +150,12 @@ export class OrderOverviewComponent implements OnInit {
   }
 
   /**
-   * Lädt alle Bestellungen. Gibt ein Observable zurück, damit nach dem Laden
+   * Lädt Bestellungen. Gibt ein Observable zurück, damit nach dem Laden
    * weitere Aktionen ausgeführt werden können (z. B. Details, Drucken, Bearbeiten).
+   * @param excludeArchived Archivierte Bestellungen nicht vom Server laden (bestehende bleiben erhalten).
    */
-  loadOrders(): Observable<OrdersResponse> {
+  loadOrders(options?: { excludeArchived?: boolean }): Observable<OrdersResponse> {
+    const excludeArchived = options?.excludeArchived ?? false;
     this.isLoading = true;
     const token = localStorage.getItem('token');
 
@@ -167,9 +169,19 @@ export class OrderOverviewComponent implements OnInit {
       'Authorization': `Bearer ${token}`
     });
 
-    return this.http.get<OrdersResponse>(`${environment.apiUrl}/api/orders/all-orders`, { headers }).pipe(
+    const url = excludeArchived
+      ? `${environment.apiUrl}/api/orders/all-orders?excludeArchived=true`
+      : `${environment.apiUrl}/api/orders/all-orders`;
+
+    return this.http.get<OrdersResponse>(url, { headers }).pipe(
       tap((response) => {
-        this.orders = response.orders || [];
+        const freshOrders = response.orders || [];
+        if (excludeArchived) {
+          const archivedOrders = this.orders.filter(order => order.status === 'archived');
+          this.orders = [...freshOrders, ...archivedOrders];
+        } else {
+          this.orders = freshOrders;
+        }
         this.isLoading = false;
       }),
       catchError((error) => {
@@ -381,7 +393,7 @@ export class OrderOverviewComponent implements OnInit {
 
   /** Erst Bestellungen neu laden, dann Details anzeigen. */
   openDetailsAfterReload(order: Order): void {
-    this.loadOrders().subscribe({
+    this.loadOrders({ excludeArchived: true }).subscribe({
       next: () => {
         const refreshed = this.getOrderAfterReload(order.order_id) ?? order;
         this.onOrderClick(refreshed);
@@ -391,7 +403,7 @@ export class OrderOverviewComponent implements OnInit {
 
   /** Erst Bestellungen neu laden, dann Palettenschein-Abfrage anzeigen. */
   printAfterReload(order: Order): void {
-    this.loadOrders().subscribe({
+    this.loadOrders({ excludeArchived: true }).subscribe({
       next: () => {
         const refreshed = this.getOrderAfterReload(order.order_id) ?? order;
         this.openPalettenscheinPrompt(refreshed);
@@ -431,7 +443,7 @@ export class OrderOverviewComponent implements OnInit {
 
   /** Erst Bestellungen neu laden, dann Bearbeiten ausführen. */
   editOrderAfterReload(order: Order): void {
-    this.loadOrders().subscribe({
+    this.loadOrders({ excludeArchived: true }).subscribe({
       next: () => {
         const refreshed = this.getOrderAfterReload(order.order_id) ?? order;
         this.editOrder(refreshed);
