@@ -6077,7 +6077,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Zwischenspeichern (Status: open) → PDF mit Bestellnummer → lokalen Auftrag leeren.
+   * Zwischenspeichern (Status: open) → Status in_progress → PDF → Bearbeitungsmodus.
    */
   private async saveThenPrintOrder(includePalettenschein: boolean): Promise<void> {
     if (this.isPrintingOrder || this.isSavingOrder) {
@@ -6089,14 +6089,48 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       const orderId = await this.saveOrderAsOpenBeforePrint();
       this.showPalettenscheinModal = false;
       this.generateOrderPDFInternal(includePalettenschein, orderId);
-      // Nach dem Druck wie bei Zwischenspeichern: lokalen Auftrag leeren
-      this.clearAllOrderData();
+      await this.enterEditModeAfterPrint(orderId);
     } catch (error: any) {
       console.error('❌ [PRINT-ORDER] Speichern vor Druck fehlgeschlagen:', error);
       alert(error?.message || 'Auftrag konnte nicht zwischengespeichert werden. Druck abgebrochen.');
     } finally {
       this.isPrintingOrder = false;
     }
+  }
+
+  /**
+   * Nach dem Druck: Status auf in_progress setzen und Bearbeitungsmodus aktivieren.
+   */
+  private async enterEditModeAfterPrint(orderId: number): Promise<void> {
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        await firstValueFrom(
+          this.orderService.updateOrderStatusOnly(orderId, 'in_progress', token)
+        );
+        console.log('✅ [PRINT-ORDER] Status auf in_progress gesetzt für Bestellung #' + orderId);
+      } catch (error) {
+        console.error('❌ [PRINT-ORDER] Status-Update fehlgeschlagen, Bearbeitungsmodus wird trotzdem aktiviert:', error);
+      }
+    }
+
+    const preserveOriginalStatus = this.isEditMode && this.editingOrderId != null;
+    this.isEditMode = true;
+    this.editingOrderId = orderId;
+    this.originalStatus = preserveOriginalStatus ? this.originalStatus : 'open';
+
+    const editModeData = {
+      isEditMode: true,
+      editingOrderId: orderId,
+      originalStatus: this.originalStatus,
+      orderDate: this.orderDate,
+      deliveryDate: this.deliveryDate,
+      customerNotes: this.customerNotes1
+    };
+    localStorage.setItem('editModeData', JSON.stringify(editModeData));
+    this.globalService.saveCustomerOrders(this.orderItems);
+
+    console.log('✏️ [PRINT-ORDER] Bearbeitungsmodus aktiviert für Bestellung #' + orderId);
   }
 
   /** Baut das Payload für Zwischenspeichern (status: open). */
@@ -6163,7 +6197,6 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
 
   /**
    * Speichert den aktuellen Auftrag als offen und liefert die Order-ID.
-   * Leert den lokalen Auftrag nicht – das macht der Print-Flow danach.
    */
   private async saveOrderAsOpenBeforePrint(): Promise<number> {
     if (this.orderItems.filter(item => item.quantity !== 0).length === 0) {
