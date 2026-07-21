@@ -222,6 +222,56 @@
   margin-bottom: 0.85rem;
 }
 
+.order-address {
+  margin-bottom: 0.65rem;
+  color: #4b5563;
+
+  strong {
+    display: block;
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #6b7280;
+    margin-bottom: 0.15rem;
+  }
+
+  span {
+    font-size: 0.82rem;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+}
+
+.order-notes {
+  display: grid;
+  gap: 0.15rem;
+  margin-bottom: 0.85rem;
+  padding: 0.45rem 0.55rem;
+  border-radius: 8px;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #9a3412;
+
+  strong {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  span {
+    font-size: 0.78rem;
+    line-height: 1.35;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+  }
+}
+
 .picker-hint {
   margin: 0 0 0.85rem;
   font-size: 0.84rem;

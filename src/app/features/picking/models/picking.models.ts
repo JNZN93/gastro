@@ -22,6 +22,9 @@ export interface PickingOrder {
   created_at?: string;
   delivery_date?: string;
   shipping_address?: string;
+  customer_street?: string;
+  customer_postal_code?: string;
+  customer_city?: string;
   status: string;
   customer_notes?: string;
   picker_user_id?: number | null;

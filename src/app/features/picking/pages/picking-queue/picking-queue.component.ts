@@ -9,6 +9,7 @@ import { PickingOrder } from '../../models/picking.models';
 import { PickingState, PickingProgress } from '../../models/picking.models';
 import { PickingStateService } from '../../services/picking-state.service';
 import { formatPickingDate } from '../../utils/picking-date.util';
+import { formatPickingAddress, PickingAddressCustomer } from '../../utils/picking-address.util';
 
 interface QueueEntry {
   order: PickingOrder;
@@ -20,6 +21,10 @@ interface CustomerSummary {
   customer_number?: string;
   last_name_company?: string;
   first_name?: string;
+  name_addition?: string;
+  street?: string;
+  postal_code?: string;
+  city?: string;
 }
 
 @Component({
@@ -39,6 +44,7 @@ export class PickingQueueComponent implements OnInit {
   orders: PickingOrder[] = [];
   localStates = new Map<number, PickingState>();
   customerNameByNumber = new Map<string, string>();
+  customerByNumber = new Map<string, PickingAddressCustomer>();
   queueEntries: QueueEntry[] = [];
 
   constructor(
@@ -164,6 +170,8 @@ export class PickingQueueComponent implements OnInit {
       order.customer_number,
       order.email,
       order.picker_user_name,
+      order.customer_notes,
+      this.getFullAddress(order),
       this.getCustomerNameFromMasterData(order.customer_number),
     ]
       .filter(Boolean)
@@ -222,6 +230,17 @@ export class PickingQueueComponent implements OnInit {
     return type || '—';
   }
 
+  getCustomerNotes(order: PickingOrder): string {
+    return (order.customer_notes || '').trim();
+  }
+
+  getFullAddress(order: PickingOrder): string {
+    const customer = order.customer_number
+      ? this.customerByNumber.get(order.customer_number.trim())
+      : undefined;
+    return formatPickingAddress(order, customer);
+  }
+
   getStatusLabel(status: string): string {
     switch (status) {
       case 'open':
@@ -258,6 +277,7 @@ export class PickingQueueComponent implements OnInit {
 
   private async loadCustomerNames(headers: HttpHeaders): Promise<void> {
     this.customerNameByNumber.clear();
+    this.customerByNumber.clear();
 
     try {
       const customers = await lastValueFrom(
@@ -279,6 +299,13 @@ export class PickingQueueComponent implements OnInit {
         if (normalizedName) {
           this.customerNameByNumber.set(number, normalizedName);
         }
+
+        this.customerByNumber.set(number, {
+          name_addition: customer.name_addition,
+          street: customer.street,
+          postal_code: customer.postal_code,
+          city: customer.city,
+        });
       }
     } catch {
       // Falls Kundendaten nicht geladen werden können, wird auf Order-Felder zurückgegriffen.

@@ -63,11 +63,25 @@
 
             <h2>{{ getCustomerLabel(entry.order) }}</h2>
 
+            @if (getFullAddress(entry.order)) {
+              <div class="order-address">
+                <strong>Adresse</strong>
+                <span>{{ getFullAddress(entry.order) }}</span>
+              </div>
+            }
+
             <div class="meta">
               <span>{{ getFulfillmentLabel(entry.order.fulfillment_type) }}</span>
               <span>{{ getOrderDateLabel(entry.order) }}</span>
               <span>{{ entry.order.items.length || 0 }} Positionen</span>
             </div>
+
+            @if (getCustomerNotes(entry.order)) {
+              <div class="order-notes">
+                <strong>Anmerkung</strong>
+                <span>{{ getCustomerNotes(entry.order) }}</span>
+              </div>
+            }
 
             @if (entry.order.picker_user_name) {
               <p class="picker-hint">
