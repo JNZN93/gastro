@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { AuthService } from '../authentication.service';
 import { GlobalService } from '../global.service';
@@ -14,7 +15,7 @@ interface CustomerArticlePrice {
   invoice_id: number;
   unit_price_net: number | string;
   unit_price_gross: number | string;
-  article_text: string;
+  article_text?: string | null;
   invoice_date: string;
   created_at: string;
   updated_at: string;
@@ -50,6 +51,7 @@ type ArticleSortMode = 'count' | 'price' | 'date';
 export class CustomerPriceOverviewComponent implements OnInit {
   customerPrices: CustomerArticlePrice[] = [];
   productOverviews: ProductPriceOverview[] = [];
+  private productNameByArticleNumber = new Map<string, string>();
   loading = false;
   error: string | null = null;
   searchTerm = '';
@@ -99,13 +101,23 @@ export class CustomerPriceOverviewComponent implements OnInit {
       return;
     }
 
-    this.http.get<CustomerArticlePrice[]>(`${environment.apiUrl}/api/customer-article-prices`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
+    forkJoin({
+      prices: this.http.get<CustomerArticlePrice[]>(`${environment.apiUrl}/api/customer-article-prices`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      }),
+      products: this.http.get<Array<{ article_number?: string; article_text?: string }>>(
+        `${environment.apiUrl}/api/products`
+      )
     }).subscribe({
-      next: (prices) => {
+      next: ({ prices, products }) => {
+        this.productNameByArticleNumber = new Map(
+          products
+            .filter(product => product.article_number && product.article_text?.trim())
+            .map(product => [product.article_number!, product.article_text!.trim()])
+        );
         this.customerPrices = prices;
         this.processPriceData();
         this.loading = false;
@@ -116,6 +128,19 @@ export class CustomerPriceOverviewComponent implements OnInit {
         this.loading = false;
       }
     });
+  }
+
+  private resolveArticleText(productId: string, prices: CustomerArticlePrice[]): string {
+    const priceText = prices
+      .map(price => (price.article_text || '').trim())
+      .find(text => text.length > 0);
+
+    if (priceText) {
+      return priceText;
+    }
+
+    const productText = (this.productNameByArticleNumber.get(productId) || '').trim();
+    return productText || 'Unbekannter Artikel';
   }
 
   processPriceData(): void {
@@ -161,13 +186,11 @@ export class CustomerPriceOverviewComponent implements OnInit {
         }))
       })).sort((a, b) => b.count - a.count); // Sortiere nach Anzahl absteigend
 
-      const articleText = prices
-        .map(price => (price.article_text || '').trim())
-        .find(text => text.length > 0);
+      const articleText = this.resolveArticleText(productId, prices);
 
       return {
         product_id: productId,
-        article_text: articleText || 'Unbekannter Artikel',
+        article_text: articleText,
         price_groups: priceGroupArray,
         total_customers: prices.length
       };
