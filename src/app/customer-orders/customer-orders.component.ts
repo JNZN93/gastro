@@ -3741,43 +3741,59 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const searchTerm = this.customerSearchTerm.toLowerCase();
-    this.filteredCustomers = this.customers.filter(customer => {
-      const normalizedSearchTerm = searchTerm.replace(/\s+/g, '');
-      
-      const normalizedCustomerNumber = customer.customer_number?.toLowerCase().replace(/\s+/g, '') || '';
-      const normalizedCompanyName = customer.last_name_company?.toLowerCase().replace(/\s+/g, '') || '';
-      const normalizedNameAddition = customer.name_addition?.toLowerCase().replace(/\s+/g, '') || '';
-      const normalizedCity = customer.city?.toLowerCase().replace(/\s+/g, '') || '';
-      const normalizedStreet = customer.street?.toLowerCase().replace(/\s+/g, '') || '';
-      const normalizedPostalCode = customer.postal_code?.toLowerCase().replace(/\s+/g, '') || '';
-      const normalizedEmail = customer.email?.toLowerCase().replace(/\s+/g, '') || '';
-      
-      const originalCustomerNumber = customer.customer_number?.toLowerCase() || '';
-      const originalCompanyName = customer.last_name_company?.toLowerCase() || '';
-      const originalNameAddition = customer.name_addition?.toLowerCase() || '';
-      const originalCity = customer.city?.toLowerCase() || '';
-      const originalStreet = customer.street?.toLowerCase() || '';
-      const originalPostalCode = customer.postal_code?.toLowerCase() || '';
-      const originalEmail = customer.email?.toLowerCase() || '';
-      
-      return (
-        normalizedCustomerNumber.includes(normalizedSearchTerm) ||
-        normalizedCompanyName.includes(normalizedSearchTerm) ||
-        normalizedNameAddition.includes(normalizedSearchTerm) ||
-        normalizedCity.includes(normalizedSearchTerm) ||
-        normalizedStreet.includes(normalizedSearchTerm) ||
-        normalizedPostalCode.includes(normalizedSearchTerm) ||
-        normalizedEmail.includes(normalizedSearchTerm) ||
-        originalCustomerNumber.includes(searchTerm) ||
-        originalCompanyName.includes(searchTerm) ||
-        originalNameAddition.includes(searchTerm) ||
-        originalCity.includes(searchTerm) ||
-        originalStreet.includes(searchTerm) ||
-        originalPostalCode.includes(searchTerm) ||
-        originalEmail.includes(searchTerm)
-      );
-    });
+    this.filteredCustomers = this.customers.filter((customer) =>
+      this.customerMatchesSearch(customer, this.customerSearchTerm)
+    );
+  }
+
+  private normalizeCustomerSearchTerm(term: string): string {
+    return term
+      .toLowerCase()
+      .trim()
+      .replace(/ä/g, 'ae')
+      .replace(/ö/g, 'oe')
+      .replace(/ü/g, 'ue')
+      .replace(/ß/g, 'ss');
+  }
+
+  private getCustomerSearchFields(customer: any): string[] {
+    return [
+      customer.customer_number,
+      customer.last_name_company,
+      customer.name_addition,
+      customer.street,
+      customer.postal_code,
+      customer.city,
+      customer.email,
+    ]
+      .filter((value) => value !== null && value !== undefined && String(value).trim() !== '')
+      .map((value) => this.normalizeCustomerSearchTerm(String(value)));
+  }
+
+  private customerFieldMatchesToken(field: string, token: string): boolean {
+    if (field.includes(token)) {
+      return true;
+    }
+
+    const compactField = field.replace(/[\s.\-_/]/g, '');
+    const compactToken = token.replace(/[\s.\-_/]/g, '');
+    return compactToken.length > 0 && compactField.includes(compactToken);
+  }
+
+  private customerMatchesSearch(customer: any, searchTerm: string): boolean {
+    const tokens = this.normalizeCustomerSearchTerm(searchTerm)
+      .split(/\s+/)
+      .filter(Boolean);
+
+    if (tokens.length === 0) {
+      return true;
+    }
+
+    const fields = this.getCustomerSearchFields(customer);
+
+    return tokens.every((token) =>
+      fields.some((field) => this.customerFieldMatchesToken(field, token))
+    );
   }
 
   selectCustomer(customer: any) {
