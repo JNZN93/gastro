@@ -369,26 +369,35 @@
           flex: 1;
         }
 
-        .sort-toggle-btn {
-          background: #667eea;
-          border: none;
-          color: white;
-          width: 32px;
-          height: 32px;
-          border-radius: 8px;
-          cursor: pointer;
-          display: flex;
+        .sort-select-wrapper {
+          display: inline-flex;
           align-items: center;
-          justify-content: center;
-          transition: background 0.2s ease;
+          gap: 0.35rem;
           flex-shrink: 0;
-
-          &:hover {
-            background: #5a67d8;
-          }
+          background: #f8fafc;
+          border: 1px solid #e2e8f0;
+          border-radius: 8px;
+          padding: 0.2rem 0.45rem 0.2rem 0.55rem;
 
           i {
-            font-size: 15px;
+            color: #667eea;
+            font-size: 0.85rem;
+          }
+
+          .sort-select {
+            border: none;
+            background: transparent;
+            color: #374151;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 0.15rem 0.1rem;
+            min-width: 7.5rem;
+            outline: none;
+
+            &:focus {
+              color: #4f46e5;
+            }
           }
         }
       }
@@ -421,22 +430,6 @@
           padding: 0.15rem 0.45rem;
           border-radius: 4px;
           font-size: 0.75rem;
-        }
-
-        .sort-indicator {
-          color: #4f46e5;
-          font-weight: 500;
-          background: #eef2ff;
-          padding: 0.15rem 0.45rem;
-          border-radius: 4px;
-          font-size: 0.7rem;
-          display: flex;
-          align-items: center;
-          gap: 4px;
-
-          i {
-            font-size: 12px;
-          }
         }
       }
     }
@@ -482,6 +475,15 @@
             color: white;
             padding: 0.15rem 0.55rem;
             border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+          }
+
+          .price-latest-date {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            color: #6b7280;
             font-size: 0.75rem;
             font-weight: 500;
           }
@@ -1002,9 +1004,11 @@
             font-size: 0.95rem;
           }
 
-          .sort-toggle-btn {
-            width: 30px;
-            height: 30px;
+          .sort-select-wrapper {
+            .sort-select {
+              min-width: 6.5rem;
+              font-size: 0.7rem;
+            }
           }
         }
 

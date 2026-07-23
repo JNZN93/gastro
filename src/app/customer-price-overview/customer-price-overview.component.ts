@@ -38,6 +38,8 @@ interface ProductPriceOverview {
   total_customers: number;
 }
 
+type ArticleSortMode = 'count' | 'price' | 'date';
+
 @Component({
   selector: 'app-customer-price-overview',
   standalone: true,
@@ -159,9 +161,13 @@ export class CustomerPriceOverviewComponent implements OnInit {
         }))
       })).sort((a, b) => b.count - a.count); // Sortiere nach Anzahl absteigend
 
+      const articleText = prices
+        .map(price => (price.article_text || '').trim())
+        .find(text => text.length > 0);
+
       return {
         product_id: productId,
-        article_text: prices[0]?.article_text || 'Unbekannter Artikel',
+        article_text: articleText || 'Unbekannter Artikel',
         price_groups: priceGroupArray,
         total_customers: prices.length
       };
@@ -321,28 +327,65 @@ export class CustomerPriceOverviewComponent implements OnInit {
   }
 
   // Sortierung State Management
-  articleSortMode = new Map<string, 'count' | 'price'>(); // 'count' für nach Anzahl, 'price' für nach Preis
+  articleSortMode = new Map<string, ArticleSortMode>();
 
-  toggleArticleSort(articleText: string): void {
-    const currentSort = this.articleSortMode.get(articleText) || 'count';
-    const newSort = currentSort === 'count' ? 'price' : 'count';
-    this.articleSortMode.set(articleText, newSort);
+  readonly articleSortOptions: { value: ArticleSortMode; label: string }[] = [
+    { value: 'count', label: 'Kundenanzahl' },
+    { value: 'price', label: 'Preis' },
+    { value: 'date', label: 'Datum (neueste)' }
+  ];
+
+  setArticleSortMode(productId: string, mode: ArticleSortMode): void {
+    this.articleSortMode.set(productId, mode);
   }
 
-  getArticleSortMode(articleText: string): 'count' | 'price' {
-    return this.articleSortMode.get(articleText) || 'count';
+  getArticleSortMode(productId: string): ArticleSortMode {
+    return this.articleSortMode.get(productId) || 'count';
+  }
+
+  getLatestInvoiceDate(group: PriceGroup): string | null {
+    let latestDate: string | null = null;
+    let latestTimestamp = 0;
+
+    group.invoice_info.forEach(info => {
+      if (!info.invoice_date) {
+        return;
+      }
+
+      const timestamp = new Date(info.invoice_date).getTime();
+      if (!Number.isNaN(timestamp) && timestamp >= latestTimestamp) {
+        latestTimestamp = timestamp;
+        latestDate = info.invoice_date;
+      }
+    });
+
+    return latestDate;
+  }
+
+  private getLatestInvoiceTimestamp(group: PriceGroup): number {
+    const latestDate = this.getLatestInvoiceDate(group);
+    if (!latestDate) {
+      return 0;
+    }
+
+    const timestamp = new Date(latestDate).getTime();
+    return Number.isNaN(timestamp) ? 0 : timestamp;
   }
 
   getSortedPriceGroups(overview: ProductPriceOverview): PriceGroup[] {
-    const sortMode = this.getArticleSortMode(overview.article_text);
+    const sortMode = this.getArticleSortMode(overview.product_id);
     
     if (sortMode === 'price') {
-      // Sortiere nach Preis (aufsteigend)
       return [...overview.price_groups].sort((a, b) => a.price - b.price);
-    } else {
-      // Sortiere nach Anzahl Kunden (absteigend - bereits so in processPriceData)
-      return overview.price_groups;
     }
+
+    if (sortMode === 'date') {
+      return [...overview.price_groups].sort(
+        (a, b) => this.getLatestInvoiceTimestamp(b) - this.getLatestInvoiceTimestamp(a)
+      );
+    }
+
+    return overview.price_groups;
   }
 
   // Store customer details for quick access

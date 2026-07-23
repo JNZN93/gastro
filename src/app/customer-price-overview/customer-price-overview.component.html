@@ -90,20 +90,25 @@
               <i class="bi bi-tag"></i>
             </div>
             <h3 class="product-title">{{ overview.article_text }}</h3>
-            <button class="sort-toggle-btn" (click)="toggleArticleSort(overview.article_text)" title="Sortierung umschalten">
-              <i class="bi" [class.bi-sort-numeric-down]="getArticleSortMode(overview.article_text) === 'count'" 
-                       [class.bi-sort-alpha-down]="getArticleSortMode(overview.article_text) === 'price'"></i>
-            </button>
+            <label class="sort-select-wrapper" *ngIf="overview.price_groups.length > 1" (click)="$event.stopPropagation()">
+              <i class="bi bi-sort-down"></i>
+              <select
+                class="sort-select"
+                [ngModel]="getArticleSortMode(overview.product_id)"
+                (ngModelChange)="setArticleSortMode(overview.product_id, $event)"
+                aria-label="Preisgruppen sortieren"
+              >
+                <option *ngFor="let option of articleSortOptions" [ngValue]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </label>
           </div>
           <div class="product-info">
             <span class="product-id">{{ overview.product_id }}</span>
             <span class="total-customers">{{ overview.total_customers }} Kunden</span>
             <span *ngIf="hasMultiplePrices(overview)" class="price-variation">
               ±{{ formatPrice(getPriceDifference(overview)) }}
-            </span>
-            <span class="sort-indicator" *ngIf="overview.price_groups.length > 1">
-              <i class="bi bi-info-circle"></i>
-              {{ getArticleSortMode(overview.article_text) === 'count' ? 'Sortiert nach Kundenanzahl' : 'Sortiert nach Preis' }}
             </span>
           </div>
         </div>
@@ -114,6 +119,9 @@
               <div class="price-info">
                 <span class="price-value">{{ formatPrice(group.price) }}</span>
                 <span class="price-count">{{ group.count }} Kunde(n)</span>
+                <span class="price-latest-date" *ngIf="getArticleSortMode(overview.product_id) === 'date' && getLatestInvoiceDate(group)">
+                  <i class="bi bi-calendar3"></i> {{ formatInvoiceDate(getLatestInvoiceDate(group) || '') }}
+                </span>
               </div>
               <i class="bi" [class.bi-chevron-down]="!isArticleExpanded(overview.article_text + '-' + group.price)" 
                            [class.bi-chevron-up]="isArticleExpanded(overview.article_text + '-' + group.price)"></i>
