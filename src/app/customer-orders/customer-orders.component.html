@@ -1348,35 +1348,32 @@
       
       <div class="customers-grid">
         @for (customer of filteredCustomers; track customer.id) {
-        <div class="customer-card">
-          <div class="customer-card-header">
-            <h3>{{ customer.customer_number }}</h3>
-          </div>
+        <div class="customer-card"
+             (click)="selectCustomer(customer)"
+             role="button"
+             tabindex="0"
+             (keydown.enter)="selectCustomer(customer)">
+          <span class="customer-number">{{ customer.customer_number }}</span>
           <div class="customer-card-body">
-            <p class="customer-name"><strong>{{ customer.last_name_company || 'Kein Name' }}</strong></p>
-            <p class="customer-addition" *ngIf="customer.name_addition">{{ customer.name_addition }}</p>
+            <p class="customer-name">{{ customer.last_name_company || 'Kein Name' }}</p>
+            @if (customer.name_addition) {
+              <p class="customer-addition">{{ customer.name_addition }}</p>
+            }
             @if (customer.street || customer.postal_code || customer.city) {
               <p class="customer-address">
                 @if (customer.street) {
-                  {{ customer.street }}<br>
+                  {{ customer.street }}@if (customer.postal_code || customer.city) {, }
                 }
-                @if (customer.postal_code || customer.city) {
-                  @if (customer.postal_code) {
-                    {{ customer.postal_code }}
-                  }
-                  @if (customer.city) {
-                    {{ customer.city }}
-                  }
+                @if (customer.postal_code) {
+                  {{ customer.postal_code }}
+                }
+                @if (customer.city) {
+                  {{ customer.city }}
                 }
               </p>
             }
           </div>
-          <div class="customer-card-footer">
-            <button class="select-customer-btn" (click)="selectCustomer(customer)">
-              <span class="material-icons">check</span>
-              Auswählen
-            </button>
-          </div>
+          <span class="material-icons customer-select-icon">chevron_right</span>
         </div>
         }
       </div>
