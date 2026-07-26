@@ -513,35 +513,28 @@ $touch: 2.75rem;
 .order-chat__quick-replies {
   flex: none;
   display: flex;
+  flex-wrap: wrap;
   gap: 0.4rem;
-  padding: 0.6rem 0.85rem 0;
-  // Am Handy horizontal scrollbar statt umbrechend, damit die Höhe stabil bleibt
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  scrollbar-width: none;
-
-  &::-webkit-scrollbar {
-    display: none;
-  }
+  padding: 0.55rem 0.85rem 0;
 
   @media (min-width: $bp-wide) {
-    flex-wrap: wrap;
-    overflow-x: visible;
     padding: 0.6rem 0.75rem 0;
   }
 }
 
 .quick-reply {
   flex: none;
+  max-width: 100%;
   border: 1px solid var(--accent);
   background: transparent;
   color: var(--accent);
   border-radius: 999px;
   min-height: 2.25rem;
-  padding: 0 0.85rem;
+  padding: 0.35rem 0.85rem;
   font-size: 0.85rem;
   font-weight: 600;
-  white-space: nowrap;
+  line-height: 1.25;
+  text-align: left;
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease;
   -webkit-tap-highlight-color: transparent;
@@ -552,8 +545,6 @@ $touch: 2.75rem;
   }
 
   @media (min-width: $bp-wide) {
-    white-space: normal;
-
     &:hover {
       background: var(--accent);
       color: #fff;
