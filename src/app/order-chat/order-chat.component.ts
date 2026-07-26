@@ -92,6 +92,8 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   private ephemeralErrorTimer: ReturnType<typeof setTimeout> | null = null;
   /** true während bewusstem Neu-Start — kein Ablauf-Hinweis überschreiben */
   private resettingSession = false;
+  /** true während automatischer Recovery nach 410 — verhindert Doppel-Restarts */
+  private recoveringExpiry = false;
 
   ngOnInit(): void {
     this.watchViewport();
@@ -278,8 +280,8 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
         this.customerLabel = res.customerLabel || null;
         this.draft = res.draft || null;
         this.sessionReady = true;
-        // Nach erfolgreichem Start/Reset keinen alten Ablauf-Hinweis stehen lassen
         this.resettingSession = false;
+        this.recoveringExpiry = false;
         this.error = null;
 
         if (res.sessionClosesAt) {
@@ -325,6 +327,7 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
       },
       error: (err) => {
         this.resettingSession = false;
+        this.recoveringExpiry = false;
         this.error = err?.error?.error || 'Chat konnte nicht gestartet werden.';
         this.setLoading(false);
       },
@@ -695,8 +698,11 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   private restartAfterExpiry(): void {
-    if (this.resettingSession) return;
+    if (this.resettingSession || this.recoveringExpiry) return;
+    this.recoveringExpiry = true;
     this.clearPostOrderClose();
+    // Alte ID sofort ungültig machen — sonst gehen weitere Requests auf die tote Session
+    this.sessionId = '';
     try {
       localStorage.removeItem(SESSION_KEY);
     } catch {
@@ -754,8 +760,7 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     }
     if (res.sessionClosesAt) {
       this.schedulePostOrderClose(res.sessionClosesAt, res.postOrderTtlMinutes);
-    } else if (res.orderId == null && res.draft?.items?.length) {
-      // Weiterbestellen hebt den Post-Order-Countdown auf
+    } else {
       this.clearPostOrderClose();
     }
     if (opts.pushReply && res.replyText) {
