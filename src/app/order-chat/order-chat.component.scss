@@ -555,10 +555,13 @@ $touch: 2.75rem;
 /* ---------- Entwurf (am Handy einklappbar) ---------- */
 
 .order-chat__draft {
-  flex: none;
+  // Schrumpfbar, damit Entwurf und Optionen gleichzeitig Platz finden;
+  // min-height hält mindestens die Kopfzeile mit dem Aufklappen sichtbar.
+  flex: 0 1 auto;
+  min-height: $touch;
   border-top: 1px solid var(--line);
   background: var(--accent-soft);
-  max-height: 45dvh;
+  max-height: 38dvh;
   overflow-y: auto;
   overscroll-behavior: contain;
 
@@ -775,12 +778,15 @@ $touch: 2.75rem;
 /* ---------- Quick Replies ---------- */
 
 .order-chat__product-options {
-  flex: none;
+  // Darf bei knappem Platz schrumpfen und scrollt dann selbst, statt den
+  // Nachrichtenbereich zu verdrängen.
+  flex: 0 1 auto;
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
   padding: 0.55rem 0.85rem 0;
-  max-height: 40dvh;
+  min-height: 0;
+  max-height: 34dvh;
   overflow-y: auto;
   overscroll-behavior: contain;
 
@@ -790,6 +796,9 @@ $touch: 2.75rem;
 }
 
 .product-option {
+  // Ohne flex: none stauchen die Karten im scrollenden Spalten-Flex auf
+  // min-height zusammen und der Hinzufügen-Button wird abgeschnitten.
+  flex: none;
   display: flex;
   align-items: flex-start;
   gap: 0.65rem;
