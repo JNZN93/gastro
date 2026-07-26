@@ -30,6 +30,8 @@ interface ChatMessage {
 const SESSION_KEY = 'order_chat_session_id';
 const OPEN_KEY = 'order_chat_widget_open';
 const MOBILE_QUERY = '(max-width: 640px)';
+const MAX_EXPIRY_RECOVERIES = 2;
+const EXPIRY_WINDOW_MS = 60_000;
 const TYPING_LABELS = [
   'schreibt …',
   'suche passende Artikel …',
@@ -94,6 +96,10 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   private resettingSession = false;
   /** true während automatischer Recovery nach 410 — verhindert Doppel-Restarts */
   private recoveringExpiry = false;
+  /** Nachricht, die nach Session-Neustart erneut gesendet wird */
+  private pendingOutbound: string | null = null;
+  private expiryRecoveries = 0;
+  private expiryWindowStart = 0;
 
   ngOnInit(): void {
     this.watchViewport();
@@ -307,6 +313,7 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
                 this.showArticles = !this.articlesPreferFullscreen;
                 this.loadArticles();
               }
+              this.flushPendingOutbound();
             },
             error: (err) => {
               if (this.isSessionExpiredError(err)) {
@@ -317,6 +324,7 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
                 this.messages = [{ direction: 'out', body: res.replyText }];
               }
               this.setLoading(false);
+              this.flushPendingOutbound();
             },
           });
           return;
@@ -324,6 +332,7 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
 
         this.applyResponse(res, { pushReply: !!res.replyText });
         this.setLoading(false);
+        this.flushPendingOutbound();
       },
       error: (err) => {
         this.resettingSession = false;
@@ -503,9 +512,32 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   send(): void {
     const text = this.inputText.trim();
+    if (!text || this.loading) return;
+
+    // Session noch nicht bereit (Neustart läuft) — merken und nachholen
+    if (!this.sessionId || !this.sessionReady) {
+      this.pendingOutbound = text;
+      this.inputText = '';
+      this.messages.push({ direction: 'in', body: text });
+      this.shouldScroll = true;
+      if (!this.recoveringExpiry && !this.resettingSession) {
+        this.bootstrapSession(false);
+      }
+      return;
+    }
+
+    this.sendText(text);
+  }
+
+  private sendText(text: string): void {
     if (!text || !this.sessionId || this.loading) return;
 
-    this.messages.push({ direction: 'in', body: text });
+    const alreadyShown = this.messages.some(
+      (m, i) => m.direction === 'in' && m.body === text && i === this.messages.length - 1
+    );
+    if (!alreadyShown) {
+      this.messages.push({ direction: 'in', body: text });
+    }
     this.inputText = '';
     this.quickReplies = [];
     this.productOptions = [];
@@ -515,6 +547,7 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
 
     this.orderChatService.sendMessage(this.sessionId, text).subscribe({
       next: (res) => {
+        this.expiryRecoveries = 0;
         this.applyResponse(res, { pushReply: true });
         this.setLoading(false);
         if (this.canUseArticles) {
@@ -523,6 +556,8 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
       },
       error: (err) => {
         if (this.isSessionExpiredError(err)) {
+          // Nachricht nach frischer Session erneut senden — nicht stillschweigend verwerfen
+          this.pendingOutbound = text;
           this.restartAfterExpiry();
           return;
         }
@@ -530,6 +565,22 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
         this.setLoading(false);
       },
     });
+  }
+
+  private flushPendingOutbound(): void {
+    const text = this.pendingOutbound?.trim();
+    if (!text || !this.sessionId || !this.sessionReady || this.loading) return;
+    this.pendingOutbound = null;
+    // Kurz warten, damit Welcome-Bubble zuerst gerendert ist
+    setTimeout(() => {
+      this.zone.run(() => {
+        if (!this.sessionId || this.loading) {
+          this.pendingOutbound = text;
+          return;
+        }
+        this.sendText(text);
+      });
+    }, 50);
   }
 
   onArticleSearch(): void {
@@ -618,6 +669,8 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   resetChat(): void {
     this.resettingSession = true;
+    this.recoveringExpiry = false;
+    this.pendingOutbound = null;
     this.clearPostOrderClose();
     this.clearEphemeralError();
     this.messages = [];
@@ -699,6 +752,23 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   private restartAfterExpiry(): void {
     if (this.resettingSession || this.recoveringExpiry) return;
+
+    // Wenn auch die frische Session sofort wieder 410 liefert, würde jeder
+    // Neustart den nächsten auslösen — hier abbrechen statt endlos zu loopen.
+    const now = Date.now();
+    if (now - this.expiryWindowStart > EXPIRY_WINDOW_MS) {
+      this.expiryWindowStart = now;
+      this.expiryRecoveries = 0;
+    }
+    this.expiryRecoveries += 1;
+    if (this.expiryRecoveries > MAX_EXPIRY_RECOVERIES) {
+      this.pendingOutbound = null;
+      this.sessionReady = false;
+      this.setLoading(false);
+      this.error = 'Der Chat lässt sich gerade nicht neu starten. Bitte die Seite neu laden.';
+      return;
+    }
+
     this.recoveringExpiry = true;
     this.clearPostOrderClose();
     // Alte ID sofort ungültig machen — sonst gehen weitere Requests auf die tote Session
@@ -708,7 +778,7 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     } catch {
       /* ignore */
     }
-    this.messages = [];
+    // pendingOutbound behalten — wird nach Neustart erneut gesendet
     this.quickReplies = [];
     this.productOptions = [];
     this.draft = null;
@@ -721,7 +791,9 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.showArticles = false;
     this.articlesFullscreen = false;
     this.sessionReady = false;
-    this.showEphemeralError('Sitzung abgelaufen — neuer Chat gestartet.');
+    // Nachrichten erst leeren, wenn wir neu bootstrappen — pending Text bleibt über pendingOutbound
+    this.messages = [];
+    this.showEphemeralError('Sitzung war abgelaufen — starte neu und sende Ihre Nachricht erneut …');
     this.bootstrapSession(false);
   }
 
