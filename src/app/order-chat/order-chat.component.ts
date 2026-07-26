@@ -29,6 +29,12 @@ interface ChatMessage {
 const SESSION_KEY = 'order_chat_session_id';
 const OPEN_KEY = 'order_chat_widget_open';
 const MOBILE_QUERY = '(max-width: 640px)';
+const TYPING_LABELS = [
+  'schreibt …',
+  'suche passende Artikel …',
+  'prüfe Kundendaten …',
+  'bereite Antwort vor …',
+];
 
 @Component({
   selector: 'app-order-chat',
@@ -50,6 +56,7 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   isMobile = false;
   draftExpanded = true;
   isOpen = false;
+  confirmResetOpen = false;
   sessionReady = false;
   sessionId = '';
   phase = 'identify';
@@ -60,6 +67,7 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   productOptions: ProductOption[] = [];
   inputText = '';
   loading = false;
+  typingLabel = TYPING_LABELS[0];
   error: string | null = null;
 
   articleQuery = '';
@@ -72,6 +80,7 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   private shouldScroll = false;
   private teardown: Array<() => void> = [];
   private previousBodyOverflow: string | null = null;
+  private typingTimer: ReturnType<typeof setInterval> | null = null;
 
   ngOnInit(): void {
     this.watchViewport();
@@ -95,6 +104,7 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   ngOnDestroy(): void {
+    this.stopTypingAnimation();
     this.releaseScrollLock();
     this.teardown.forEach((fn) => fn());
     this.teardown = [];
@@ -216,7 +226,7 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   private bootstrapSession(reset = false): void {
     const existing = localStorage.getItem(SESSION_KEY) || undefined;
-    this.loading = true;
+    this.setLoading(true);
     this.orderChatService.createSession(existing, reset).subscribe({
       next: (res) => {
         localStorage.setItem(SESSION_KEY, res.sessionId);
@@ -238,28 +248,32 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
                 this.messages.push({ direction: 'out', body: res.replyText });
               }
               this.shouldScroll = true;
-              this.loading = false;
+              this.setLoading(false);
               if (this.canUseArticles) {
                 this.showArticles = !this.articlesPreferFullscreen;
                 this.loadArticles();
               }
             },
-            error: () => {
+            error: (err) => {
+              if (this.isSessionExpiredError(err)) {
+                this.restartAfterExpiry();
+                return;
+              }
               if (res.replyText) {
                 this.messages = [{ direction: 'out', body: res.replyText }];
               }
-              this.loading = false;
+              this.setLoading(false);
             },
           });
           return;
         }
 
         this.applyResponse(res, { pushReply: !!res.replyText });
-        this.loading = false;
+        this.setLoading(false);
       },
       error: (err) => {
         this.error = err?.error?.error || 'Chat konnte nicht gestartet werden.';
-        this.loading = false;
+        this.setLoading(false);
       },
     });
   }
@@ -289,21 +303,25 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.inputText = '';
     this.quickReplies = [];
     this.productOptions = [];
-    this.loading = true;
+    this.setLoading(true);
     this.error = null;
     this.shouldScroll = true;
 
     this.orderChatService.sendMessage(this.sessionId, text).subscribe({
       next: (res) => {
         this.applyResponse(res, { pushReply: true });
-        this.loading = false;
+        this.setLoading(false);
         if (this.canUseArticles) {
           this.loadArticles();
         }
       },
       error: (err) => {
+        if (this.isSessionExpiredError(err)) {
+          this.restartAfterExpiry();
+          return;
+        }
         this.error = err?.error?.error || 'Nachricht fehlgeschlagen.';
-        this.loading = false;
+        this.setLoading(false);
       },
     });
   }
@@ -348,7 +366,7 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   addArticle(article: CustomerArticle): void {
     if (!this.sessionId || this.loading) return;
     const qty = this.selectedQty[article.article_number] || 1;
-    this.loading = true;
+    this.setLoading(true);
     this.error = null;
 
     this.messages.push({
@@ -360,17 +378,35 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.orderChatService.addDraftItem(this.sessionId, article.article_number, qty).subscribe({
       next: (res) => {
         this.applyResponse(res, { pushReply: true });
-        this.loading = false;
+        this.setLoading(false);
         // Fullscreen bleibt offen zum Weiterwählen; kompakt im Widget nach Add schließen
         if (this.isWidget && !this.articlesFullscreen) {
           this.showArticles = false;
         }
       },
       error: (err) => {
+        if (this.isSessionExpiredError(err)) {
+          this.restartAfterExpiry();
+          return;
+        }
         this.error = err?.error?.error || 'Artikel konnte nicht hinzugefügt werden.';
-        this.loading = false;
+        this.setLoading(false);
       },
     });
+  }
+
+  requestReset(): void {
+    if (this.loading) return;
+    this.confirmResetOpen = true;
+  }
+
+  cancelReset(): void {
+    this.confirmResetOpen = false;
+  }
+
+  confirmReset(): void {
+    this.confirmResetOpen = false;
+    this.resetChat();
   }
 
   resetChat(): void {
@@ -384,6 +420,12 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.showArticles = false;
     this.articlesFullscreen = false;
     this.sessionReady = false;
+    this.error = null;
+    try {
+      localStorage.removeItem(SESSION_KEY);
+    } catch {
+      /* ignore */
+    }
     this.bootstrapSession(true);
   }
 
@@ -396,11 +438,70 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
         this.articles = res.items || [];
         this.articlesLoading = false;
       },
-      error: () => {
+      error: (err) => {
         this.articles = [];
         this.articlesLoading = false;
+        if (this.isSessionExpiredError(err)) {
+          this.restartAfterExpiry();
+        }
       },
     });
+  }
+
+  private isSessionExpiredError(err: { status?: number; error?: { code?: string; error?: string } } | null): boolean {
+    return (
+      err?.status === 410 ||
+      err?.error?.code === 'SESSION_EXPIRED' ||
+      err?.error?.error === 'SESSION_EXPIRED'
+    );
+  }
+
+  private setLoading(value: boolean): void {
+    this.loading = value;
+    if (value) {
+      this.startTypingAnimation();
+      this.shouldScroll = true;
+    } else {
+      this.stopTypingAnimation();
+    }
+  }
+
+  private startTypingAnimation(): void {
+    this.stopTypingAnimation();
+    this.typingLabel = TYPING_LABELS[0];
+    let index = 0;
+    this.typingTimer = setInterval(() => {
+      index = (index + 1) % TYPING_LABELS.length;
+      this.typingLabel = TYPING_LABELS[index];
+    }, 2200);
+  }
+
+  private stopTypingAnimation(): void {
+    if (this.typingTimer) {
+      clearInterval(this.typingTimer);
+      this.typingTimer = null;
+    }
+    this.typingLabel = TYPING_LABELS[0];
+  }
+
+  private restartAfterExpiry(): void {
+    try {
+      localStorage.removeItem(SESSION_KEY);
+    } catch {
+      /* ignore */
+    }
+    this.messages = [];
+    this.quickReplies = [];
+    this.productOptions = [];
+    this.draft = null;
+    this.customerNumber = null;
+    this.articles = [];
+    this.phase = 'identify';
+    this.showArticles = false;
+    this.articlesFullscreen = false;
+    this.sessionReady = false;
+    this.error = 'Sitzung abgelaufen — neuer Chat gestartet.';
+    this.bootstrapSession(false);
   }
 
   private applyResponse(res: OrderIntakeResponse, opts: { pushReply: boolean }): void {
