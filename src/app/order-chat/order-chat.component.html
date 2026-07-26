@@ -110,9 +110,18 @@
               @if (draftExpanded) {
                 <ul>
                   @for (item of draft!.items; track item.article_number) {
-                    <li>
-                      <span>{{ item.quantity }}× {{ item.name }}</span>
-                      <span>€{{ (item.price * item.quantity) | number:'1.2-2' }}</span>
+                    <li class="draft-item">
+                      @if (item.image_url) {
+                        <img
+                          class="thumb"
+                          [src]="item.image_url"
+                          [alt]="item.name"
+                          loading="lazy"
+                          (error)="onImageError($event)"
+                        />
+                      }
+                      <span class="draft-item__text">{{ item.quantity }}× {{ item.name }}</span>
+                      <span class="draft-item__price">€{{ (item.price * item.quantity) | number:'1.2-2' }}</span>
                     </li>
                   }
                 </ul>
@@ -127,6 +136,36 @@
 
           @if (error) {
             <div class="order-chat__error">{{ error }}</div>
+          }
+
+          @if (productOptions.length && !loading) {
+            <div class="order-chat__product-options" role="list">
+              @for (option of productOptions; track option.article_number; let i = $index) {
+                <button
+                  type="button"
+                  class="product-option"
+                  role="listitem"
+                  (click)="selectProductOption(option, i)"
+                >
+                  @if (option.image_url) {
+                    <img
+                      class="thumb"
+                      [src]="option.image_url"
+                      [alt]="option.name"
+                      loading="lazy"
+                      (error)="onImageError($event)"
+                    />
+                  } @else {
+                    <span class="thumb thumb--empty" aria-hidden="true"></span>
+                  }
+                  <span class="product-option__body">
+                    <strong>{{ option.name }}</strong>
+                    <span>{{ option.article_number }} · €{{ option.price | number:'1.2-2' }}</span>
+                  </span>
+                  <span class="product-option__index">{{ i + 1 }}</span>
+                </button>
+              }
+            </div>
           }
 
           @if (quickReplies.length && !loading) {
@@ -188,6 +227,15 @@
               <ul>
                 @for (article of articles; track article.article_number) {
                   <li>
+                    @if (article.image_url) {
+                      <img
+                        class="thumb"
+                        [src]="article.image_url"
+                        [alt]="article.name"
+                        loading="lazy"
+                        (error)="onImageError($event)"
+                      />
+                    }
                     <div class="article-info">
                       <strong>{{ article.name }}</strong>
                       <span>{{ article.article_number }} · €{{ article.price | number:'1.2-2' }}</span>
@@ -265,6 +313,15 @@
           <ul class="order-chat__articles-grid">
             @for (article of articles; track article.article_number) {
               <li>
+                @if (article.image_url) {
+                  <img
+                    class="thumb thumb--lg"
+                    [src]="article.image_url"
+                    [alt]="article.name"
+                    loading="lazy"
+                    (error)="onImageError($event)"
+                  />
+                }
                 <div class="article-info">
                   <strong>{{ article.name }}</strong>
                   <span>{{ article.article_number }} · €{{ article.price | number:'1.2-2' }}</span>

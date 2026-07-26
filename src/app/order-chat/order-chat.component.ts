@@ -17,6 +17,7 @@ import {
   OrderIntakeDraft,
   OrderIntakeResponse,
   QuickReply,
+  ProductOption,
 } from './order-chat.service';
 
 interface ChatMessage {
@@ -56,6 +57,7 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   draft: OrderIntakeDraft | null = null;
   messages: ChatMessage[] = [];
   quickReplies: QuickReply[] = [];
+  productOptions: ProductOption[] = [];
   inputText = '';
   loading = false;
   error: string | null = null;
@@ -268,6 +270,17 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.send();
   }
 
+  selectProductOption(option: ProductOption, index: number): void {
+    if (this.loading) return;
+    this.inputText = String(index + 1);
+    this.send();
+  }
+
+  onImageError(event: Event): void {
+    const img = event.target as HTMLImageElement | null;
+    if (img) img.style.display = 'none';
+  }
+
   send(): void {
     const text = this.inputText.trim();
     if (!text || !this.sessionId || this.loading) return;
@@ -275,6 +288,7 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.messages.push({ direction: 'in', body: text });
     this.inputText = '';
     this.quickReplies = [];
+    this.productOptions = [];
     this.loading = true;
     this.error = null;
     this.shouldScroll = true;
@@ -362,6 +376,7 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   resetChat(): void {
     this.messages = [];
     this.quickReplies = [];
+    this.productOptions = [];
     this.draft = null;
     this.customerNumber = null;
     this.articles = [];
@@ -394,6 +409,7 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.customerNumber = res.customerNumber || null;
     this.draft = res.draft || null;
     this.quickReplies = res.quickReplies || [];
+    this.productOptions = res.productOptions || [];
     if (opts.pushReply && res.replyText) {
       this.messages.push({
         direction: 'out',

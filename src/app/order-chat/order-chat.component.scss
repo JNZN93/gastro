@@ -437,11 +437,21 @@ $touch: 2.75rem;
 
   li {
     display: flex;
-    justify-content: space-between;
-    gap: 0.75rem;
+    align-items: center;
+    gap: 0.55rem;
     padding: 0.25rem 0;
     font-size: 0.86rem;
   }
+}
+
+.draft-item__text {
+  flex: 1;
+  min-width: 0;
+}
+
+.draft-item__price {
+  flex: none;
+  font-variant-numeric: tabular-nums;
 }
 
 .order-chat__draft-toggle {
@@ -509,6 +519,95 @@ $touch: 2.75rem;
 }
 
 /* ---------- Quick Replies ---------- */
+
+.order-chat__product-options {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.55rem 0.85rem 0;
+  max-height: 40dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+
+  @media (min-width: $bp-wide) {
+    padding: 0.6rem 0.75rem 0;
+  }
+}
+
+.product-option {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  min-height: $touch;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 0.85rem;
+  background: #fff;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+
+  &:hover,
+  &:focus-visible {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    outline: none;
+  }
+}
+
+.product-option__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+
+  strong {
+    font-size: 0.88rem;
+    overflow-wrap: anywhere;
+  }
+
+  span {
+    font-size: 0.76rem;
+    opacity: 0.7;
+  }
+}
+
+.product-option__index {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #f7fffc;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.thumb {
+  flex: none;
+  width: 2.5rem;
+  height: 2.5rem;
+  object-fit: cover;
+  border-radius: 0.45rem;
+  background: rgba(28, 25, 20, 0.06);
+
+  &--lg {
+    width: 3.25rem;
+    height: 3.25rem;
+  }
+
+  &--empty {
+    display: block;
+  }
+}
 
 .order-chat__quick-replies {
   flex: none;
@@ -817,6 +916,7 @@ $touch: 2.75rem;
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
+  flex: 1;
   min-width: 0;
 
   strong {

@@ -12,6 +12,7 @@ export interface OrderIntakeDraftItem {
   sale_price?: number;
   confidence?: number;
   description?: string;
+  image_url?: string | null;
 }
 
 export interface OrderIntakeDraft {
@@ -24,6 +25,13 @@ export interface OrderIntakeDraft {
 export interface QuickReply {
   label: string;
   value: string;
+}
+
+export interface ProductOption {
+  article_number: string;
+  name: string;
+  price: number;
+  image_url?: string | null;
 }
 
 export interface OrderIntakeResponse {
@@ -40,6 +48,7 @@ export interface OrderIntakeResponse {
   }> | null;
   customerNumber?: string | null;
   quickReplies?: QuickReply[] | null;
+  productOptions?: ProductOption[] | null;
   resumed?: boolean;
 }
 
@@ -51,6 +60,7 @@ export interface CustomerArticle {
   unit_price_net?: number | null;
   sale_price?: number;
   price: number;
+  image_url?: string | null;
 }
 
 @Injectable({ providedIn: 'root' })
