@@ -143,213 +143,237 @@
             }
           </div>
 
-          @if (draft?.items?.length) {
-            <aside class="order-chat__draft">
-              <button
-                type="button"
-                class="order-chat__draft-toggle"
-                (click)="toggleDraft()"
-                [attr.aria-expanded]="draftExpanded"
+          <div class="order-chat__dock">
+            @if (productOptions.length && !loading) {
+              <section
+                class="order-chat__choices"
+                [class.order-chat__choices--open]="choicesExpanded"
+                aria-label="Artikelauswahl"
               >
-                <span class="order-chat__draft-label">
-                  Entwurf · {{ draft!.items.length }} {{ draft!.items.length === 1 ? 'Position' : 'Positionen' }}
-                </span>
-                <span class="order-chat__draft-total">€{{ draft!.totalPrice | number:'1.2-2' }}</span>
-                <span class="order-chat__draft-caret" [class.is-open]="draftExpanded" aria-hidden="true"></span>
-              </button>
-
-              @if (draftExpanded) {
-                <ul>
-                  @for (item of draft!.items; track item.article_number) {
-                    <li class="draft-item">
-                      @if (item.image_url) {
-                        <img
-                          class="thumb"
-                          [src]="item.image_url"
-                          [alt]="item.name"
-                          loading="lazy"
-                          (error)="onImageError($event)"
-                        />
-                      }
-                      <div class="draft-item__main">
-                        <span class="draft-item__text">{{ item.name }}</span>
-                        <span class="draft-item__meta">{{ item.article_number }} · €{{ item.price | number:'1.2-2' }}</span>
-                      </div>
-                      <div class="qty-stepper" (click)="$event.stopPropagation()">
-                        <button
-                          type="button"
-                          class="qty-stepper__btn"
-                          (click)="bumpDraftQty(item, -1)"
-                          [disabled]="loading"
-                          [attr.aria-label]="'Menge verringern für ' + item.name"
-                        >
-                          −
-                        </button>
-                        <input
-                          type="number"
-                          min="1"
-                          step="1"
-                          [ngModel]="item.quantity"
-                          (change)="updateDraftQty(item, $any($event.target).value)"
-                          [disabled]="loading"
-                          inputmode="decimal"
-                          [attr.aria-label]="'Menge für ' + item.name"
-                        />
-                        <button
-                          type="button"
-                          class="qty-stepper__btn"
-                          (click)="bumpDraftQty(item, 1)"
-                          [disabled]="loading"
-                          [attr.aria-label]="'Menge erhöhen für ' + item.name"
-                        >
-                          +
-                        </button>
-                      </div>
-                      <span class="draft-item__price">€{{ (item.price * item.quantity) | number:'1.2-2' }}</span>
-                      <button
-                        type="button"
-                        class="draft-item__remove"
-                        (click)="removeDraftItem(item)"
-                        [disabled]="loading"
-                        [attr.aria-label]="item.name + ' entfernen'"
-                      >
-                        ×
-                      </button>
-                    </li>
-                  }
-                </ul>
-                @if (draft!.unmatched.length) {
-                  <p class="order-chat__unmatched">
-                    Nicht erkannt: {{ draft!.unmatched.length }}
-                  </p>
-                }
                 <button
                   type="button"
-                  class="order-chat__submit"
-                  (click)="requestSubmit()"
-                  [disabled]="loading"
+                  class="order-chat__choices-toggle"
+                  (click)="toggleChoices()"
+                  [attr.aria-expanded]="choicesExpanded"
                 >
-                  Bestellung absenden · €{{ draft!.totalPrice | number:'1.2-2' }}
+                  <span class="order-chat__choices-badge" aria-hidden="true">{{ productOptions.length }}</span>
+                  <span class="order-chat__choices-label">Zur Auswahl</span>
+                  <span class="order-chat__choices-hint">{{ productOptions.length }} Treffer</span>
+                  <span class="order-chat__choices-caret" [class.is-open]="choicesExpanded" aria-hidden="true"></span>
                 </button>
-              }
-            </aside>
-          }
-
-          @if (error) {
-            <div class="order-chat__error">{{ error }}</div>
-          }
-
-          @if (sessionCloseHint && !loading) {
-            <div class="order-chat__session-hint">{{ sessionCloseHint }}</div>
-          }
-
-          @if (productOptions.length && !loading) {
-            <div class="order-chat__product-options" role="list">
-              @for (option of productOptions; track option.article_number; let i = $index) {
-                <div class="product-option" role="listitem">
-                  @if (option.image_url) {
-                    <img
-                      class="thumb"
-                      [src]="option.image_url"
-                      [alt]="option.name"
-                      loading="lazy"
-                      (error)="onImageError($event)"
-                    />
-                  } @else {
-                    <span class="thumb thumb--empty" aria-hidden="true"></span>
-                  }
-                  <div class="product-option__body">
-                    <strong>{{ option.name }}</strong>
-                    <span>{{ option.article_number }} · €{{ option.price | number:'1.2-2' }}</span>
-                    <div class="product-option__actions">
-                      <div class="qty-stepper">
-                        <button
-                          type="button"
-                          class="qty-stepper__btn"
-                          (click)="bumpOptionQty(option.article_number, -1, $event)"
-                          [disabled]="loading"
-                          aria-label="Menge verringern"
-                        >
-                          −
-                        </button>
-                        <input
-                          type="number"
-                          min="1"
-                          step="1"
-                          [ngModel]="optionQuantity(option.article_number)"
-                          (ngModelChange)="setOptionQty(option.article_number, $event)"
-                          [name]="'opt-qty-' + option.article_number"
-                          inputmode="decimal"
-                          [attr.aria-label]="'Menge für ' + option.name"
-                        />
-                        <button
-                          type="button"
-                          class="qty-stepper__btn"
-                          (click)="bumpOptionQty(option.article_number, 1, $event)"
-                          [disabled]="loading"
-                          aria-label="Menge erhöhen"
-                        >
-                          +
-                        </button>
+                @if (choicesExpanded) {
+                  <div class="order-chat__product-options" role="list">
+                    @for (option of productOptions; track option.article_number) {
+                      <div class="product-option" role="listitem">
+                        @if (option.image_url) {
+                          <img
+                            class="thumb"
+                            [src]="option.image_url"
+                            [alt]=""
+                            loading="lazy"
+                            (error)="onImageError($event)"
+                          />
+                        } @else {
+                          <span class="thumb thumb--empty" aria-hidden="true"></span>
+                        }
+                        <div class="product-option__body">
+                          <strong>{{ option.name }}</strong>
+                          <span>€{{ option.price | number:'1.2-2' }} · {{ option.article_number }}</span>
+                        </div>
+                        <div class="product-option__actions">
+                          <div class="qty-stepper">
+                            <button
+                              type="button"
+                              class="qty-stepper__btn"
+                              (click)="bumpOptionQty(option.article_number, -1, $event)"
+                              [disabled]="loading"
+                              aria-label="Menge verringern"
+                            >
+                              −
+                            </button>
+                            <input
+                              type="number"
+                              min="1"
+                              step="1"
+                              [ngModel]="optionQuantity(option.article_number)"
+                              (ngModelChange)="setOptionQty(option.article_number, $event)"
+                              [name]="'opt-qty-' + option.article_number"
+                              inputmode="decimal"
+                              [attr.aria-label]="'Menge für ' + option.name"
+                            />
+                            <button
+                              type="button"
+                              class="qty-stepper__btn"
+                              (click)="bumpOptionQty(option.article_number, 1, $event)"
+                              [disabled]="loading"
+                              aria-label="Menge erhöhen"
+                            >
+                              +
+                            </button>
+                          </div>
+                          <button
+                            type="button"
+                            class="product-option__add"
+                            (click)="addProductOption(option, $event)"
+                            [disabled]="loading"
+                            [attr.aria-label]="option.name + ' hinzufügen'"
+                          >
+                            <span class="product-option__add-label">Hinzu</span>
+                            <span class="product-option__add-icon" aria-hidden="true">+</span>
+                          </button>
+                        </div>
                       </div>
-                      <button
-                        type="button"
-                        class="product-option__add"
-                        (click)="addProductOption(option, $event)"
-                        [disabled]="loading"
-                      >
-                        Hinzufügen
-                      </button>
-                    </div>
+                    }
                   </div>
-                </div>
-              }
-            </div>
-          }
+                }
+              </section>
+            }
 
-          @if (showStartActions) {
-            <div class="order-chat__start-actions">
-              <p class="order-chat__start-title">Wie möchten Sie starten?</p>
-              <div class="order-chat__start-grid">
+            @if (showStartActions) {
+              <div class="order-chat__start-actions">
+                <p class="order-chat__start-title">Wie möchten Sie starten?</p>
+                <div class="order-chat__start-grid">
+                  @for (reply of quickReplies; track reply.value) {
+                    <button type="button" class="start-action" (click)="onStartAction(reply)">
+                      {{ reply.label }}
+                    </button>
+                  }
+                  <button type="button" class="start-action start-action--soft" (click)="openMyArticles()">
+                    Artikelliste
+                  </button>
+                </div>
+              </div>
+            } @else if (quickReplies.length && !loading) {
+              <div class="order-chat__quick-replies">
                 @for (reply of quickReplies; track reply.value) {
-                  <button type="button" class="start-action" (click)="onStartAction(reply)">
+                  <button type="button" class="quick-reply" (click)="sendQuickReply(reply)">
                     {{ reply.label }}
                   </button>
                 }
-                <button type="button" class="start-action start-action--soft" (click)="openMyArticles()">
-                  Artikelliste
-                </button>
               </div>
-            </div>
-          } @else if (quickReplies.length && !loading) {
-            <div class="order-chat__quick-replies">
-              @for (reply of quickReplies; track reply.value) {
-                <button type="button" class="quick-reply" (click)="sendQuickReply(reply)">
-                  {{ reply.label }}
-                </button>
-              }
-            </div>
-          }
+            }
 
-          <form class="order-chat__composer" (ngSubmit)="send()">
-            <input
-              type="text"
-              [(ngModel)]="inputText"
-              name="chatInput"
-              [placeholder]="composerPlaceholder"
-              [disabled]="loading"
-              autocomplete="off"
-              autocapitalize="sentences"
-              enterkeyhint="send"
-              aria-label="Nachricht"
-            />
-            <button type="submit" [disabled]="loading || !inputText.trim()" aria-label="Senden">
-              <span class="order-chat__send-label">Senden</span>
-              <svg class="order-chat__send-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path d="M3.4 20.4l17.45-7.48a1 1 0 000-1.84L3.4 3.6a.996.996 0 00-1.39.91L2 9.12c0 .5.37.93.87.99L17 12 2.87 13.89c-.5.06-.87.49-.87.99l.01 4.61c0 .71.73 1.2 1.39.91z" />
-              </svg>
-            </button>
-          </form>
+            @if (draft?.items?.length) {
+              <aside class="order-chat__draft" [class.order-chat__draft--open]="draftExpanded">
+                <button
+                  type="button"
+                  class="order-chat__draft-toggle"
+                  (click)="toggleDraft()"
+                  [attr.aria-expanded]="draftExpanded"
+                >
+                  <span class="order-chat__draft-badge" aria-hidden="true">{{ draft!.items.length }}</span>
+                  <span class="order-chat__draft-label">Warenkorb</span>
+                  <span class="order-chat__draft-total">€{{ draft!.totalPrice | number:'1.2-2' }}</span>
+                  <span class="order-chat__draft-caret" [class.is-open]="draftExpanded" aria-hidden="true"></span>
+                </button>
+
+                @if (draftExpanded) {
+                  <ul>
+                    @for (item of draft!.items; track item.article_number) {
+                      <li class="draft-item">
+                        @if (item.image_url) {
+                          <img
+                            class="thumb"
+                            [src]="item.image_url"
+                            [alt]=""
+                            loading="lazy"
+                            (error)="onImageError($event)"
+                          />
+                        } @else {
+                          <span class="thumb thumb--empty" aria-hidden="true"></span>
+                        }
+                        <div class="draft-item__main">
+                          <span class="draft-item__text">{{ item.name }}</span>
+                          <span class="draft-item__meta">€{{ item.price | number:'1.2-2' }} · {{ item.article_number }}</span>
+                        </div>
+                        <div class="qty-stepper" (click)="$event.stopPropagation()">
+                          <button
+                            type="button"
+                            class="qty-stepper__btn"
+                            (click)="bumpDraftQty(item, -1)"
+                            [disabled]="loading"
+                            [attr.aria-label]="'Menge verringern für ' + item.name"
+                          >
+                            −
+                          </button>
+                          <input
+                            type="number"
+                            min="1"
+                            step="1"
+                            [ngModel]="item.quantity"
+                            (change)="updateDraftQty(item, $any($event.target).value)"
+                            [disabled]="loading"
+                            inputmode="decimal"
+                            [attr.aria-label]="'Menge für ' + item.name"
+                          />
+                          <button
+                            type="button"
+                            class="qty-stepper__btn"
+                            (click)="bumpDraftQty(item, 1)"
+                            [disabled]="loading"
+                            [attr.aria-label]="'Menge erhöhen für ' + item.name"
+                          >
+                            +
+                          </button>
+                        </div>
+                        <span class="draft-item__price">€{{ (item.price * item.quantity) | number:'1.2-2' }}</span>
+                        <button
+                          type="button"
+                          class="draft-item__remove"
+                          (click)="removeDraftItem(item)"
+                          [disabled]="loading"
+                          [attr.aria-label]="item.name + ' entfernen'"
+                        >
+                          ×
+                        </button>
+                      </li>
+                    }
+                  </ul>
+                  @if (draft!.unmatched.length) {
+                    <p class="order-chat__unmatched">
+                      Nicht erkannt: {{ draft!.unmatched.length }}
+                    </p>
+                  }
+                  <button
+                    type="button"
+                    class="order-chat__submit"
+                    (click)="requestSubmit()"
+                    [disabled]="loading"
+                  >
+                    Absenden · €{{ draft!.totalPrice | number:'1.2-2' }}
+                  </button>
+                }
+              </aside>
+            }
+
+            @if (error) {
+              <div class="order-chat__error">{{ error }}</div>
+            }
+
+            @if (sessionCloseHint && !loading) {
+              <div class="order-chat__session-hint">{{ sessionCloseHint }}</div>
+            }
+
+            <form class="order-chat__composer" (ngSubmit)="send()">
+              <input
+                type="text"
+                [(ngModel)]="inputText"
+                name="chatInput"
+                [placeholder]="composerPlaceholder"
+                [disabled]="loading"
+                autocomplete="off"
+                autocapitalize="sentences"
+                enterkeyhint="send"
+                aria-label="Nachricht"
+              />
+              <button type="submit" [disabled]="loading || !inputText.trim()" aria-label="Senden">
+                <span class="order-chat__send-label">Senden</span>
+                <svg class="order-chat__send-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M3.4 20.4l17.45-7.48a1 1 0 000-1.84L3.4 3.6a.996.996 0 00-1.39.91L2 9.12c0 .5.37.93.87.99L17 12 2.87 13.89c-.5.06-.87.49-.87.99l.01 4.61c0 .71.73 1.2 1.39.91z" />
+                </svg>
+              </button>
+            </form>
+          </div>
         </section>
 
         @if (showArticles && canUseArticles && !articlesFullscreen) {

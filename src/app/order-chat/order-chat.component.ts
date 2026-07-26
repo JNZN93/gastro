@@ -58,6 +58,8 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   isMobile = false;
   draftExpanded = true;
+  /** Trefferliste einklappbar — bei neuen Optionen wieder aufklappen */
+  choicesExpanded = true;
   isOpen = false;
   confirmResetOpen = false;
   sessionReady = false;
@@ -262,6 +264,17 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   toggleDraft(): void {
     this.draftExpanded = !this.draftExpanded;
+    // Auf schmalen Screens nur eine Liste gleichzeitig offen
+    if (this.draftExpanded && this.isMobile) {
+      this.choicesExpanded = false;
+    }
+  }
+
+  toggleChoices(): void {
+    this.choicesExpanded = !this.choicesExpanded;
+    if (this.choicesExpanded && this.isMobile) {
+      this.draftExpanded = false;
+    }
   }
 
   /** Artikelliste als Overlay: am Handy immer, am Desktop nur im Widget. */
@@ -297,6 +310,19 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
         }
 
         if (res.resumed) {
+          this.quickReplies = res.quickReplies || [];
+          this.productOptions = res.productOptions || [];
+          if (this.productOptions.length) {
+            for (const option of this.productOptions) {
+              if (!this.optionQty[option.article_number]) {
+                this.optionQty[option.article_number] = 1;
+              }
+            }
+            this.choicesExpanded = true;
+            this.draftExpanded = false;
+          } else {
+            this.choicesExpanded = false;
+          }
           this.orderChatService.getMessages(res.sessionId).subscribe({
             next: (history) => {
               this.messages = (history.messages || []).map((m) => ({
@@ -829,6 +855,11 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
           this.optionQty[option.article_number] = 1;
         }
       }
+      // Neue Treffer: Auswahl aufklappen, Warenkorb einklappen
+      this.choicesExpanded = true;
+      this.draftExpanded = false;
+    } else {
+      this.choicesExpanded = false;
     }
     if (res.sessionClosesAt) {
       this.schedulePostOrderClose(res.sessionClosesAt, res.postOrderTtlMinutes);
