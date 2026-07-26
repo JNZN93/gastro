@@ -50,6 +50,8 @@ export interface OrderIntakeResponse {
   quickReplies?: QuickReply[] | null;
   productOptions?: ProductOption[] | null;
   resumed?: boolean;
+  sessionClosesAt?: string | null;
+  postOrderTtlMinutes?: number | null;
 }
 
 export interface CustomerArticle {

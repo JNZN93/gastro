@@ -167,6 +167,10 @@
             <div class="order-chat__error">{{ error }}</div>
           }
 
+          @if (sessionCloseHint && !loading) {
+            <div class="order-chat__session-hint">{{ sessionCloseHint }}</div>
+          }
+
           @if (productOptions.length && !loading) {
             <div class="order-chat__product-options" role="list">
               @for (option of productOptions; track option.article_number; let i = $index) {

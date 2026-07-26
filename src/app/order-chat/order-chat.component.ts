@@ -69,6 +69,7 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   loading = false;
   typingLabel = TYPING_LABELS[0];
   error: string | null = null;
+  sessionCloseHint: string | null = null;
 
   articleQuery = '';
   articles: CustomerArticle[] = [];
@@ -81,6 +82,9 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   private teardown: Array<() => void> = [];
   private previousBodyOverflow: string | null = null;
   private typingTimer: ReturnType<typeof setInterval> | null = null;
+  private postOrderCloseTimer: ReturnType<typeof setTimeout> | null = null;
+  private postOrderHintTimer: ReturnType<typeof setInterval> | null = null;
+  private sessionClosesAtMs: number | null = null;
 
   ngOnInit(): void {
     this.watchViewport();
@@ -105,6 +109,7 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   ngOnDestroy(): void {
     this.stopTypingAnimation();
+    this.clearPostOrderClose();
     this.releaseScrollLock();
     this.teardown.forEach((fn) => fn());
     this.teardown = [];
@@ -235,6 +240,12 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
         this.customerNumber = res.customerNumber || null;
         this.draft = res.draft || null;
         this.sessionReady = true;
+
+        if (res.sessionClosesAt) {
+          this.schedulePostOrderClose(res.sessionClosesAt, res.postOrderTtlMinutes);
+        } else {
+          this.clearPostOrderClose();
+        }
 
         if (res.resumed) {
           this.orderChatService.getMessages(res.sessionId).subscribe({
@@ -410,6 +421,7 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   resetChat(): void {
+    this.clearPostOrderClose();
     this.messages = [];
     this.quickReplies = [];
     this.productOptions = [];
@@ -485,6 +497,7 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   private restartAfterExpiry(): void {
+    this.clearPostOrderClose();
     try {
       localStorage.removeItem(SESSION_KEY);
     } catch {
@@ -500,7 +513,9 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.showArticles = false;
     this.articlesFullscreen = false;
     this.sessionReady = false;
-    this.error = 'Sitzung abgelaufen — neuer Chat gestartet.';
+    if (!this.error) {
+      this.error = 'Sitzung abgelaufen — neuer Chat gestartet.';
+    }
     this.bootstrapSession(false);
   }
 
@@ -511,6 +526,12 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.draft = res.draft || null;
     this.quickReplies = res.quickReplies || [];
     this.productOptions = res.productOptions || [];
+    if (res.sessionClosesAt) {
+      this.schedulePostOrderClose(res.sessionClosesAt, res.postOrderTtlMinutes);
+    } else if (res.orderId == null && res.draft?.items?.length) {
+      // Weiterbestellen hebt den Post-Order-Countdown auf
+      this.clearPostOrderClose();
+    }
     if (opts.pushReply && res.replyText) {
       this.messages.push({
         direction: 'out',
@@ -522,6 +543,58 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     if (this.canUseArticles && !this.articlesPreferFullscreen) {
       this.showArticles = true;
     }
+  }
+
+  private schedulePostOrderClose(closesAt: string, ttlMinutes?: number | null): void {
+    const closesAtMs = new Date(closesAt).getTime();
+    if (Number.isNaN(closesAtMs)) return;
+
+    this.clearPostOrderClose();
+    this.sessionClosesAtMs = closesAtMs;
+    this.updateSessionCloseHint(ttlMinutes);
+
+    const delay = Math.max(closesAtMs - Date.now(), 0);
+    this.postOrderCloseTimer = setTimeout(() => {
+      this.zone.run(() => {
+        this.error = 'Session nach Bestellung geschlossen — neuer Chat gestartet.';
+        this.restartAfterExpiry();
+      });
+    }, delay);
+
+    this.postOrderHintTimer = setInterval(() => {
+      this.zone.run(() => this.updateSessionCloseHint(ttlMinutes));
+    }, 15000);
+  }
+
+  private updateSessionCloseHint(ttlMinutes?: number | null): void {
+    if (!this.sessionClosesAtMs) {
+      this.sessionCloseHint = null;
+      return;
+    }
+    const remainingMs = this.sessionClosesAtMs - Date.now();
+    if (remainingMs <= 0) {
+      this.sessionCloseHint = 'Chat wird gleich neu gestartet …';
+      return;
+    }
+    const mins = Math.max(1, Math.ceil(remainingMs / 60000));
+    const fallback = ttlMinutes || 5;
+    this.sessionCloseHint =
+      mins >= fallback
+        ? `Nach der Bestellung schließt der Chat in ca. ${fallback} Min.`
+        : `Chat schließt in ca. ${mins} Min. — oder einfach weiterbestellen.`;
+  }
+
+  private clearPostOrderClose(): void {
+    if (this.postOrderCloseTimer) {
+      clearTimeout(this.postOrderCloseTimer);
+      this.postOrderCloseTimer = null;
+    }
+    if (this.postOrderHintTimer) {
+      clearInterval(this.postOrderHintTimer);
+      this.postOrderHintTimer = null;
+    }
+    this.sessionClosesAtMs = null;
+    this.sessionCloseHint = null;
   }
 
   private scrollToBottom(): void {
