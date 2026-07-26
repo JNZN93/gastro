@@ -25,6 +25,8 @@ interface ChatMessage {
   direction: 'in' | 'out';
   body: string;
   orderId?: number | null;
+  /** Lokale Vorschau für gerade hochgeladene Fotos (nicht vom Server) */
+  imagePreviewUrl?: string | null;
 }
 
 const SESSION_KEY = 'order_chat_session_id';
@@ -36,6 +38,7 @@ const TYPING_LABELS = [
   'schreibt …',
   'suche passende Artikel …',
   'prüfe Kundendaten …',
+  'lese Foto …',
   'bereite Antwort vor …',
 ];
 
@@ -131,6 +134,15 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.releaseScrollLock();
     this.teardown.forEach((fn) => fn());
     this.teardown = [];
+    for (const msg of this.messages) {
+      if (msg.imagePreviewUrl) {
+        try {
+          URL.revokeObjectURL(msg.imagePreviewUrl);
+        } catch {
+          /* ignore */
+        }
+      }
+    }
   }
 
   ngAfterViewChecked(): void {
@@ -218,7 +230,11 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     if (this.draft?.items?.length) {
       return 'Noch etwas dazu? z. B. 2× Zwiebel …';
     }
-    return 'z. B. 5× Eisbergsalat, 2× Zwiebel …';
+    return 'z. B. 5× Eisbergsalat — oder Foto senden';
+  }
+
+  get canSendImage(): boolean {
+    return !!this.customerNumber && (this.phase === 'ordering' || this.phase === 'confirm_order');
   }
 
   get headerSubtitle(): string {
@@ -553,6 +569,72 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     }
 
     this.sendText(text);
+  }
+
+  onImagePicked(event: Event): void {
+    const input = event.target as HTMLInputElement | null;
+    const file = input?.files?.[0];
+    if (input) input.value = '';
+    if (!file || this.loading) return;
+
+    if (!this.canSendImage) {
+      this.showEphemeralError('Bitte zuerst Kunde bestätigen, dann Foto senden.');
+      return;
+    }
+    if (!file.type.startsWith('image/')) {
+      this.showEphemeralError('Bitte eine Bilddatei wählen.');
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      this.showEphemeralError('Bild ist zu groß (max. 8 MB).');
+      return;
+    }
+
+    this.sendImage(file);
+  }
+
+  private sendImage(file: File): void {
+    if (!this.sessionId || this.loading) return;
+
+    const caption = this.inputText.trim();
+    const previewUrl = URL.createObjectURL(file);
+    this.messages.push({
+      direction: 'in',
+      body: caption || 'Foto gesendet',
+      imagePreviewUrl: previewUrl,
+    });
+    this.inputText = '';
+    this.quickReplies = [];
+    this.productOptions = [];
+    this.setLoading(true);
+    this.error = null;
+    this.shouldScroll = true;
+
+    this.orderChatService.sendImage(this.sessionId, file, caption).subscribe({
+      next: (res) => {
+        this.expiryRecoveries = 0;
+        if (res.vision?.displayLabel) {
+          const last = this.messages[this.messages.length - 1];
+          if (last?.direction === 'in' && last.imagePreviewUrl === previewUrl) {
+            last.body = res.vision.displayLabel;
+          }
+        }
+        this.applyResponse(res, { pushReply: true });
+        this.setLoading(false);
+        if (this.canUseArticles) {
+          this.loadArticles();
+        }
+      },
+      error: (err) => {
+        if (this.isSessionExpiredError(err)) {
+          this.showEphemeralError('Session abgelaufen — bitte Foto erneut senden.');
+          this.restartAfterExpiry();
+          return;
+        }
+        this.error = err?.error?.error || 'Foto konnte nicht analysiert werden.';
+        this.setLoading(false);
+      },
+    });
   }
 
   private sendText(text: string): void {

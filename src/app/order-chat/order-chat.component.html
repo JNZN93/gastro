@@ -127,6 +127,9 @@
           <div class="order-chat__messages" #scrollContainer>
             @for (msg of messages; track $index) {
               <div class="bubble" [class.bubble--in]="msg.direction === 'in'" [class.bubble--out]="msg.direction === 'out'">
+                @if (msg.imagePreviewUrl) {
+                  <img class="bubble__image" [src]="msg.imagePreviewUrl" alt="" />
+                }
                 <div class="bubble__text">{{ msg.body }}</div>
                 @if (msg.orderId) {
                   <div class="bubble__meta">Auftrag #{{ msg.orderId }}</div>
@@ -355,6 +358,34 @@
             }
 
             <form class="order-chat__composer" (ngSubmit)="send()">
+              <input
+                #imageInput
+                type="file"
+                accept="image/*"
+                capture="environment"
+                class="order-chat__file-input"
+                (change)="onImagePicked($event)"
+                tabindex="-1"
+                aria-hidden="true"
+              />
+              <button
+                type="button"
+                class="order-chat__attach"
+                (click)="imageInput.click()"
+                [disabled]="loading || !canSendImage"
+                [attr.title]="canSendImage ? 'Foto oder Scan senden' : 'Erst Kunde bestätigen'"
+                aria-label="Foto oder Scan senden"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="1.8"
+                    d="M3 8.5A2.5 2.5 0 015.5 6h1.2l1.1-1.6A1.5 1.5 0 018.99 3.8h6.02c.48 0 .93.24 1.19.64L17.3 6h1.2A2.5 2.5 0 0121 8.5v9A2.5 2.5 0 0118.5 20h-13A2.5 2.5 0 013 17.5v-9z"
+                  />
+                  <circle cx="12" cy="13" r="3.25" stroke-width="1.8" />
+                </svg>
+              </button>
               <input
                 type="text"
                 [(ngModel)]="inputText"

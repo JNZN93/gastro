@@ -53,6 +53,17 @@ export interface OrderIntakeResponse {
   resumed?: boolean;
   sessionClosesAt?: string | null;
   postOrderTtlMinutes?: number | null;
+  vision?: {
+    items?: Array<{
+      name: string;
+      quantity: number;
+      article_number?: string | null;
+      unit?: string | null;
+      brand?: string | null;
+    }>;
+    notes?: string | null;
+    displayLabel?: string | null;
+  } | null;
 }
 
 export interface CustomerArticle {
@@ -85,6 +96,15 @@ export class OrderChatService {
       text,
       channel: 'webchat',
     });
+  }
+
+  sendImage(sessionId: string, file: File, caption = ''): Observable<OrderIntakeResponse> {
+    const form = new FormData();
+    form.append('image', file, file.name || 'photo.jpg');
+    form.append('sessionId', sessionId);
+    form.append('channel', 'webchat');
+    if (caption.trim()) form.append('caption', caption.trim());
+    return this.http.post<OrderIntakeResponse>(`${this.base}/image`, form);
   }
 
   getCustomerArticles(sessionId: string, q = '', limit = 50): Observable<{
