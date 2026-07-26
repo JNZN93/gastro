@@ -47,6 +47,7 @@ export interface OrderIntakeResponse {
     city?: string;
   }> | null;
   customerNumber?: string | null;
+  customerLabel?: string | null;
   quickReplies?: QuickReply[] | null;
   productOptions?: ProductOption[] | null;
   resumed?: boolean;
@@ -104,6 +105,30 @@ export class OrderChatService {
       sessionId,
       articleNumber,
       quantity,
+      channel: 'webchat',
+    });
+  }
+
+  updateDraftItem(sessionId: string, articleNumber: string, quantity: number): Observable<OrderIntakeResponse> {
+    return this.http.patch<OrderIntakeResponse>(`${this.base}/draft-item`, {
+      sessionId,
+      articleNumber,
+      quantity,
+      channel: 'webchat',
+    });
+  }
+
+  removeDraftItem(sessionId: string, articleNumber: string): Observable<OrderIntakeResponse> {
+    const params = new HttpParams()
+      .set('sessionId', sessionId)
+      .set('articleNumber', articleNumber)
+      .set('channel', 'webchat');
+    return this.http.delete<OrderIntakeResponse>(`${this.base}/draft-item`, { params });
+  }
+
+  submitDraft(sessionId: string): Observable<OrderIntakeResponse> {
+    return this.http.post<OrderIntakeResponse>(`${this.base}/submit`, {
+      sessionId,
       channel: 'webchat',
     });
   }

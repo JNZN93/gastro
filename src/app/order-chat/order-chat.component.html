@@ -40,13 +40,7 @@
       <header class="order-chat__header">
         <div class="order-chat__title">
           <h1>Bestell-Chat</h1>
-          <p class="order-chat__sub">
-            @if (customerNumber) {
-              Kunde {{ customerNumber }}
-            } @else {
-              Bitte zuerst identifizieren
-            }
-          </p>
+          <p class="order-chat__sub">{{ headerSubtitle }}</p>
         </div>
         <div class="order-chat__header-actions">
           @if (canUseArticles) {
@@ -92,6 +86,34 @@
             <div class="order-chat__confirm-actions">
               <button type="button" class="ghost-btn" (click)="cancelReset()">Abbrechen</button>
               <button type="button" class="confirm-btn" (click)="confirmReset()">Neu starten</button>
+            </div>
+          </div>
+        </div>
+      }
+
+      @if (confirmSubmitOpen) {
+        <div
+          class="order-chat__confirm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="order-chat-submit-title"
+        >
+          <button
+            type="button"
+            class="order-chat__confirm-backdrop"
+            (click)="cancelSubmit()"
+            aria-label="Abbrechen"
+          ></button>
+          <div class="order-chat__confirm-card">
+            <h2 id="order-chat-submit-title">Bestellung absenden?</h2>
+            <p>
+              {{ draft!.items.length }}
+              {{ draft!.items.length === 1 ? 'Position' : 'Positionen' }}
+              · €{{ draft!.totalPrice | number:'1.2-2' }}
+            </p>
+            <div class="order-chat__confirm-actions">
+              <button type="button" class="ghost-btn" (click)="cancelSubmit()">Abbrechen</button>
+              <button type="button" class="confirm-btn" (click)="confirmSubmit()">Absenden</button>
             </div>
           </div>
         </div>
@@ -149,8 +171,50 @@
                           (error)="onImageError($event)"
                         />
                       }
-                      <span class="draft-item__text">{{ item.quantity }}× {{ item.name }}</span>
+                      <div class="draft-item__main">
+                        <span class="draft-item__text">{{ item.name }}</span>
+                        <span class="draft-item__meta">{{ item.article_number }} · €{{ item.price | number:'1.2-2' }}</span>
+                      </div>
+                      <div class="qty-stepper" (click)="$event.stopPropagation()">
+                        <button
+                          type="button"
+                          class="qty-stepper__btn"
+                          (click)="bumpDraftQty(item, -1)"
+                          [disabled]="loading"
+                          [attr.aria-label]="'Menge verringern für ' + item.name"
+                        >
+                          −
+                        </button>
+                        <input
+                          type="number"
+                          min="1"
+                          step="1"
+                          [ngModel]="item.quantity"
+                          (change)="updateDraftQty(item, $any($event.target).value)"
+                          [disabled]="loading"
+                          inputmode="decimal"
+                          [attr.aria-label]="'Menge für ' + item.name"
+                        />
+                        <button
+                          type="button"
+                          class="qty-stepper__btn"
+                          (click)="bumpDraftQty(item, 1)"
+                          [disabled]="loading"
+                          [attr.aria-label]="'Menge erhöhen für ' + item.name"
+                        >
+                          +
+                        </button>
+                      </div>
                       <span class="draft-item__price">€{{ (item.price * item.quantity) | number:'1.2-2' }}</span>
+                      <button
+                        type="button"
+                        class="draft-item__remove"
+                        (click)="removeDraftItem(item)"
+                        [disabled]="loading"
+                        [attr.aria-label]="item.name + ' entfernen'"
+                      >
+                        ×
+                      </button>
                     </li>
                   }
                 </ul>
@@ -159,6 +223,14 @@
                     Nicht erkannt: {{ draft!.unmatched.length }}
                   </p>
                 }
+                <button
+                  type="button"
+                  class="order-chat__submit"
+                  (click)="requestSubmit()"
+                  [disabled]="loading"
+                >
+                  Bestellung absenden · €{{ draft!.totalPrice | number:'1.2-2' }}
+                </button>
               }
             </aside>
           }
@@ -174,12 +246,7 @@
           @if (productOptions.length && !loading) {
             <div class="order-chat__product-options" role="list">
               @for (option of productOptions; track option.article_number; let i = $index) {
-                <button
-                  type="button"
-                  class="product-option"
-                  role="listitem"
-                  (click)="selectProductOption(option, i)"
-                >
+                <div class="product-option" role="listitem">
                   @if (option.image_url) {
                     <img
                       class="thumb"
@@ -191,17 +258,70 @@
                   } @else {
                     <span class="thumb thumb--empty" aria-hidden="true"></span>
                   }
-                  <span class="product-option__body">
+                  <div class="product-option__body">
                     <strong>{{ option.name }}</strong>
                     <span>{{ option.article_number }} · €{{ option.price | number:'1.2-2' }}</span>
-                  </span>
-                  <span class="product-option__index">{{ i + 1 }}</span>
-                </button>
+                    <div class="product-option__actions">
+                      <div class="qty-stepper">
+                        <button
+                          type="button"
+                          class="qty-stepper__btn"
+                          (click)="bumpOptionQty(option.article_number, -1, $event)"
+                          [disabled]="loading"
+                          aria-label="Menge verringern"
+                        >
+                          −
+                        </button>
+                        <input
+                          type="number"
+                          min="1"
+                          step="1"
+                          [ngModel]="optionQuantity(option.article_number)"
+                          (ngModelChange)="setOptionQty(option.article_number, $event)"
+                          [name]="'opt-qty-' + option.article_number"
+                          inputmode="decimal"
+                          [attr.aria-label]="'Menge für ' + option.name"
+                        />
+                        <button
+                          type="button"
+                          class="qty-stepper__btn"
+                          (click)="bumpOptionQty(option.article_number, 1, $event)"
+                          [disabled]="loading"
+                          aria-label="Menge erhöhen"
+                        >
+                          +
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        class="product-option__add"
+                        (click)="addProductOption(option, $event)"
+                        [disabled]="loading"
+                      >
+                        Hinzufügen
+                      </button>
+                    </div>
+                  </div>
+                </div>
               }
             </div>
           }
 
-          @if (quickReplies.length && !loading) {
+          @if (showStartActions) {
+            <div class="order-chat__start-actions">
+              <p class="order-chat__start-title">Wie möchten Sie starten?</p>
+              <div class="order-chat__start-grid">
+                @for (reply of quickReplies; track reply.value) {
+                  <button type="button" class="start-action" (click)="onStartAction(reply)">
+                    {{ reply.label }}
+                  </button>
+                }
+                <button type="button" class="start-action start-action--soft" (click)="openMyArticles()">
+                  Artikelliste
+                </button>
+              </div>
+            </div>
+          } @else if (quickReplies.length && !loading) {
             <div class="order-chat__quick-replies">
               @for (reply of quickReplies; track reply.value) {
                 <button type="button" class="quick-reply" (click)="sendQuickReply(reply)">
@@ -216,7 +336,7 @@
               type="text"
               [(ngModel)]="inputText"
               name="chatInput"
-              placeholder="Nachricht schreiben …"
+              [placeholder]="composerPlaceholder"
               [disabled]="loading"
               autocomplete="off"
               autocapitalize="sentences"

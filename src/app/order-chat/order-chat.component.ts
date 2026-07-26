@@ -15,6 +15,7 @@ import {
   CustomerArticle,
   OrderChatService,
   OrderIntakeDraft,
+  OrderIntakeDraftItem,
   OrderIntakeResponse,
   QuickReply,
   ProductOption,
@@ -61,15 +62,18 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   sessionId = '';
   phase = 'identify';
   customerNumber: string | null = null;
+  customerLabel: string | null = null;
   draft: OrderIntakeDraft | null = null;
   messages: ChatMessage[] = [];
   quickReplies: QuickReply[] = [];
   productOptions: ProductOption[] = [];
+  optionQty: Record<string, number> = {};
   inputText = '';
   loading = false;
   typingLabel = TYPING_LABELS[0];
   error: string | null = null;
   sessionCloseHint: string | null = null;
+  confirmSubmitOpen = false;
 
   articleQuery = '';
   articles: CustomerArticle[] = [];
@@ -85,6 +89,9 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   private postOrderCloseTimer: ReturnType<typeof setTimeout> | null = null;
   private postOrderHintTimer: ReturnType<typeof setInterval> | null = null;
   private sessionClosesAtMs: number | null = null;
+  private ephemeralErrorTimer: ReturnType<typeof setTimeout> | null = null;
+  /** true während bewusstem Neu-Start — kein Ablauf-Hinweis überschreiben */
+  private resettingSession = false;
 
   ngOnInit(): void {
     this.watchViewport();
@@ -110,6 +117,7 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   ngOnDestroy(): void {
     this.stopTypingAnimation();
     this.clearPostOrderClose();
+    this.clearEphemeralError();
     this.releaseScrollLock();
     this.teardown.forEach((fn) => fn());
     this.teardown = [];
@@ -184,6 +192,35 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     return !!this.customerNumber && (this.phase === 'ordering' || this.phase === 'confirm_order');
   }
 
+  get showStartActions(): boolean {
+    return (
+      this.canUseArticles &&
+      !this.loading &&
+      !(this.draft?.items?.length) &&
+      this.quickReplies.length > 0
+    );
+  }
+
+  get composerPlaceholder(): string {
+    if (!this.customerNumber) {
+      return 'Firma oder Kundennummer …';
+    }
+    if (this.draft?.items?.length) {
+      return 'Noch etwas dazu? z. B. 2× Zwiebel …';
+    }
+    return 'z. B. 5× Eisbergsalat, 2× Zwiebel …';
+  }
+
+  get headerSubtitle(): string {
+    if (this.customerLabel && this.customerNumber) {
+      return this.customerLabel === this.customerNumber
+        ? `Kunde ${this.customerNumber}`
+        : `${this.customerLabel} · ${this.customerNumber}`;
+    }
+    if (this.customerNumber) return `Kunde ${this.customerNumber}`;
+    return 'Bitte zuerst identifizieren';
+  }
+
   get isWidget(): boolean {
     return this.mode === 'widget';
   }
@@ -238,8 +275,12 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
         this.sessionId = res.sessionId;
         this.phase = res.phase;
         this.customerNumber = res.customerNumber || null;
+        this.customerLabel = res.customerLabel || null;
         this.draft = res.draft || null;
         this.sessionReady = true;
+        // Nach erfolgreichem Start/Reset keinen alten Ablauf-Hinweis stehen lassen
+        this.resettingSession = false;
+        this.error = null;
 
         if (res.sessionClosesAt) {
           this.schedulePostOrderClose(res.sessionClosesAt, res.postOrderTtlMinutes);
@@ -283,6 +324,7 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
         this.setLoading(false);
       },
       error: (err) => {
+        this.resettingSession = false;
         this.error = err?.error?.error || 'Chat konnte nicht gestartet werden.';
         this.setLoading(false);
       },
@@ -295,15 +337,165 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.send();
   }
 
-  selectProductOption(option: ProductOption, index: number): void {
+  selectProductOption(option: ProductOption, _index?: number): void {
     if (this.loading) return;
-    this.inputText = String(index + 1);
-    this.send();
+    this.addProductOption(option);
+  }
+
+  optionQuantity(articleNumber: string): number {
+    return this.optionQty[articleNumber] || 1;
+  }
+
+  bumpOptionQty(articleNumber: string, delta: number, event?: Event): void {
+    event?.stopPropagation();
+    const next = Math.max(1, (this.optionQty[articleNumber] || 1) + delta);
+    this.optionQty[articleNumber] = next;
+  }
+
+  setOptionQty(articleNumber: string, value: number | string, event?: Event): void {
+    event?.stopPropagation();
+    const qty = Math.max(1, Number(value) || 1);
+    this.optionQty[articleNumber] = qty;
+  }
+
+  addProductOption(option: ProductOption, event?: Event): void {
+    event?.stopPropagation();
+    if (!this.sessionId || this.loading) return;
+    const qty = this.optionQuantity(option.article_number);
+    this.setLoading(true);
+    this.error = null;
+    this.messages.push({
+      direction: 'in',
+      body: `${qty}× ${option.name} (${option.article_number})`,
+    });
+    this.productOptions = [];
+    this.shouldScroll = true;
+
+    this.orderChatService.addDraftItem(this.sessionId, option.article_number, qty).subscribe({
+      next: (res) => {
+        this.applyResponse(res, { pushReply: true });
+        this.setLoading(false);
+      },
+      error: (err) => {
+        if (this.isSessionExpiredError(err)) {
+          this.restartAfterExpiry();
+          return;
+        }
+        this.error = err?.error?.error || 'Artikel konnte nicht hinzugefügt werden.';
+        this.setLoading(false);
+      },
+    });
   }
 
   onImageError(event: Event): void {
     const img = event.target as HTMLImageElement | null;
     if (img) img.style.display = 'none';
+  }
+
+  bumpDraftQty(item: OrderIntakeDraftItem, delta: number): void {
+    if (!this.sessionId || this.loading) return;
+    const next = Number(item.quantity) + delta;
+    if (next <= 0) {
+      this.removeDraftItem(item);
+      return;
+    }
+    this.updateDraftQty(item, next);
+  }
+
+  updateDraftQty(item: OrderIntakeDraftItem, quantity: number | string): void {
+    if (!this.sessionId || this.loading) return;
+    const qty = Number(quantity);
+    if (!qty || qty <= 0) {
+      this.removeDraftItem(item);
+      return;
+    }
+    this.setLoading(true);
+    this.error = null;
+    this.orderChatService.updateDraftItem(this.sessionId, item.article_number, qty).subscribe({
+      next: (res) => {
+        this.applyResponse(res, { pushReply: false });
+        this.setLoading(false);
+      },
+      error: (err) => {
+        if (this.isSessionExpiredError(err)) {
+          this.restartAfterExpiry();
+          return;
+        }
+        this.error = err?.error?.error || 'Menge konnte nicht geändert werden.';
+        this.setLoading(false);
+      },
+    });
+  }
+
+  removeDraftItem(item: OrderIntakeDraftItem): void {
+    if (!this.sessionId || this.loading) return;
+    this.setLoading(true);
+    this.error = null;
+    this.orderChatService.removeDraftItem(this.sessionId, item.article_number).subscribe({
+      next: (res) => {
+        this.applyResponse(res, { pushReply: false });
+        this.setLoading(false);
+      },
+      error: (err) => {
+        if (this.isSessionExpiredError(err)) {
+          this.restartAfterExpiry();
+          return;
+        }
+        this.error = err?.error?.error || 'Position konnte nicht entfernt werden.';
+        this.setLoading(false);
+      },
+    });
+  }
+
+  requestSubmit(): void {
+    if (this.loading || !this.draft?.items?.length) return;
+    this.confirmSubmitOpen = true;
+  }
+
+  cancelSubmit(): void {
+    this.confirmSubmitOpen = false;
+  }
+
+  confirmSubmit(): void {
+    this.confirmSubmitOpen = false;
+    this.submitDraft();
+  }
+
+  submitDraft(): void {
+    if (!this.sessionId || this.loading || !this.draft?.items?.length) return;
+    this.setLoading(true);
+    this.error = null;
+    this.messages.push({ direction: 'in', body: 'Ja, bitte absenden' });
+    this.shouldScroll = true;
+    this.orderChatService.submitDraft(this.sessionId).subscribe({
+      next: (res) => {
+        this.applyResponse(res, { pushReply: true });
+        this.setLoading(false);
+      },
+      error: (err) => {
+        if (this.isSessionExpiredError(err)) {
+          this.restartAfterExpiry();
+          return;
+        }
+        this.error = err?.error?.error || 'Auftrag konnte nicht angelegt werden.';
+        this.setLoading(false);
+      },
+    });
+  }
+
+  openMyArticles(): void {
+    if (!this.canUseArticles) return;
+    this.expandArticles();
+  }
+
+  onStartAction(reply: QuickReply): void {
+    if (this.loading) return;
+    // „Meine Artikel“ öffnet die Liste direkt statt einen Chat-Zug zu brauchen
+    if (/artikel|items|ürün|articles|материалы|товары/i.test(reply.label) || /normalerweise|usually|sipariş ediyorum/i.test(reply.value)) {
+      this.openMyArticles();
+      return;
+    }
+    this.sendQuickReply(reply);
   }
 
   send(): void {
@@ -417,17 +609,23 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   confirmReset(): void {
     this.confirmResetOpen = false;
+    this.error = null;
     this.resetChat();
   }
 
   resetChat(): void {
+    this.resettingSession = true;
     this.clearPostOrderClose();
+    this.clearEphemeralError();
     this.messages = [];
     this.quickReplies = [];
     this.productOptions = [];
     this.draft = null;
     this.customerNumber = null;
+    this.customerLabel = null;
     this.articles = [];
+    this.optionQty = {};
+    this.confirmSubmitOpen = false;
     this.phase = 'identify';
     this.showArticles = false;
     this.articlesFullscreen = false;
@@ -497,6 +695,7 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   private restartAfterExpiry(): void {
+    if (this.resettingSession) return;
     this.clearPostOrderClose();
     try {
       localStorage.removeItem(SESSION_KEY);
@@ -508,24 +707,51 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.productOptions = [];
     this.draft = null;
     this.customerNumber = null;
+    this.customerLabel = null;
     this.articles = [];
+    this.optionQty = {};
+    this.confirmSubmitOpen = false;
     this.phase = 'identify';
     this.showArticles = false;
     this.articlesFullscreen = false;
     this.sessionReady = false;
-    if (!this.error) {
-      this.error = 'Sitzung abgelaufen — neuer Chat gestartet.';
-    }
+    this.showEphemeralError('Sitzung abgelaufen — neuer Chat gestartet.');
     this.bootstrapSession(false);
+  }
+
+  private showEphemeralError(message: string): void {
+    this.clearEphemeralError();
+    this.error = message;
+    this.ephemeralErrorTimer = setTimeout(() => {
+      this.zone.run(() => {
+        if (this.error === message) this.error = null;
+        this.ephemeralErrorTimer = null;
+      });
+    }, 4000);
+  }
+
+  private clearEphemeralError(): void {
+    if (this.ephemeralErrorTimer) {
+      clearTimeout(this.ephemeralErrorTimer);
+      this.ephemeralErrorTimer = null;
+    }
   }
 
   private applyResponse(res: OrderIntakeResponse, opts: { pushReply: boolean }): void {
     this.sessionId = res.sessionId;
     this.phase = res.phase;
     this.customerNumber = res.customerNumber || null;
+    this.customerLabel = res.customerLabel || this.customerLabel;
     this.draft = res.draft || null;
     this.quickReplies = res.quickReplies || [];
     this.productOptions = res.productOptions || [];
+    if (this.productOptions.length) {
+      for (const option of this.productOptions) {
+        if (!this.optionQty[option.article_number]) {
+          this.optionQty[option.article_number] = 1;
+        }
+      }
+    }
     if (res.sessionClosesAt) {
       this.schedulePostOrderClose(res.sessionClosesAt, res.postOrderTtlMinutes);
     } else if (res.orderId == null && res.draft?.items?.length) {
@@ -556,7 +782,8 @@ export class OrderChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     const delay = Math.max(closesAtMs - Date.now(), 0);
     this.postOrderCloseTimer = setTimeout(() => {
       this.zone.run(() => {
-        this.error = 'Session nach Bestellung geschlossen — neuer Chat gestartet.';
+        if (this.resettingSession) return;
+        this.showEphemeralError('Session nach Bestellung geschlossen — neuer Chat gestartet.');
         this.restartAfterExpiry();
       });
     }, delay);
