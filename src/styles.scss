@@ -60,6 +60,17 @@ body {
         -webkit-transform: none !important;
         transform: none !important;
     }
+
+    // Bestell-Chat: nur die Vorfahren des Vollbild-Sheets transform-frei halten.
+    // Ein transform auf einem Vorfahren macht diesen zum Bezugsrahmen für
+    // position: fixed, wodurch das Sheet auf iOS in eine Mini-Box kollabiert.
+    // Die Kinder bleiben absichtlich ausgenommen, damit Animationen funktionieren.
+    app-root,
+    app-order-chat,
+    app-order-chat > .order-chat {
+        -webkit-transform: none !important;
+        transform: none !important;
+    }
 }
 
 input[type="number"]::-webkit-outer-spin-button,

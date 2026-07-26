@@ -1,0 +1,299 @@
+<div
+  class="order-chat"
+  [class.order-chat--widget]="isWidget"
+  [class.order-chat--page]="!isWidget"
+  [class.order-chat--open]="isOpen"
+  [class.order-chat--articles-fs]="articlesFullscreen && showArticles"
+>
+  @if (isWidget) {
+    <button
+      type="button"
+      class="order-chat__launcher"
+      (click)="toggleOpen()"
+      [attr.aria-expanded]="isOpen"
+      aria-label="Bestell-Chat öffnen oder schließen"
+    >
+      @if (isOpen) {
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      } @else {
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+        </svg>
+        <span class="order-chat__launcher-label">Bestellen</span>
+      }
+    </button>
+  }
+
+  @if (isOpen) {
+    <div class="order-chat__panel" role="dialog" aria-modal="true" aria-label="Bestell-Chat">
+      @if (isWidget) {
+        <button
+          type="button"
+          class="order-chat__grabber"
+          (click)="closeWidget()"
+          aria-label="Chat schließen"
+        ></button>
+      }
+
+      <header class="order-chat__header">
+        <div class="order-chat__title">
+          <h1>Bestell-Chat</h1>
+          <p class="order-chat__sub">
+            @if (customerNumber) {
+              Kunde {{ customerNumber }}
+            } @else {
+              Bitte zuerst identifizieren
+            }
+          </p>
+        </div>
+        <div class="order-chat__header-actions">
+          @if (canUseArticles) {
+            <button type="button" class="ghost-btn" (click)="toggleArticles()">
+              {{ showArticles && !articlesFullscreen ? 'Chat' : 'Artikel' }}
+            </button>
+            @if (!articlesFullscreen) {
+              <button
+                type="button"
+                class="ghost-btn ghost-btn--wide-only"
+                (click)="expandArticles()"
+                title="Artikelliste vergrößern"
+              >
+                Vollbild
+              </button>
+            }
+          }
+          <button type="button" class="ghost-btn" (click)="resetChat()">Neu</button>
+          @if (isWidget) {
+            <button type="button" class="ghost-btn ghost-btn--icon" (click)="closeWidget()" aria-label="Schließen">
+              ✕
+            </button>
+          }
+        </div>
+      </header>
+
+      <div class="order-chat__body">
+        <section
+          class="order-chat__main"
+          [class.order-chat__main--hidden]="showArticles && canUseArticles && isWidget && !articlesFullscreen"
+        >
+          <div class="order-chat__messages" #scrollContainer>
+            @for (msg of messages; track $index) {
+              <div class="bubble" [class.bubble--in]="msg.direction === 'in'" [class.bubble--out]="msg.direction === 'out'">
+                <div class="bubble__text">{{ msg.body }}</div>
+                @if (msg.orderId) {
+                  <div class="bubble__meta">Auftrag #{{ msg.orderId }}</div>
+                }
+              </div>
+            }
+            @if (loading) {
+              <div class="bubble bubble--out bubble--typing">schreibt …</div>
+            }
+          </div>
+
+          @if (draft?.items?.length) {
+            <aside class="order-chat__draft">
+              <button
+                type="button"
+                class="order-chat__draft-toggle"
+                (click)="toggleDraft()"
+                [attr.aria-expanded]="draftExpanded"
+              >
+                <span class="order-chat__draft-label">
+                  Entwurf · {{ draft!.items.length }} {{ draft!.items.length === 1 ? 'Position' : 'Positionen' }}
+                </span>
+                <span class="order-chat__draft-total">€{{ draft!.totalPrice | number:'1.2-2' }}</span>
+                <span class="order-chat__draft-caret" [class.is-open]="draftExpanded" aria-hidden="true"></span>
+              </button>
+
+              @if (draftExpanded) {
+                <ul>
+                  @for (item of draft!.items; track item.article_number) {
+                    <li>
+                      <span>{{ item.quantity }}× {{ item.name }}</span>
+                      <span>€{{ (item.price * item.quantity) | number:'1.2-2' }}</span>
+                    </li>
+                  }
+                </ul>
+                @if (draft!.unmatched.length) {
+                  <p class="order-chat__unmatched">
+                    Nicht erkannt: {{ draft!.unmatched.length }}
+                  </p>
+                }
+              }
+            </aside>
+          }
+
+          @if (error) {
+            <div class="order-chat__error">{{ error }}</div>
+          }
+
+          @if (quickReplies.length && !loading) {
+            <div class="order-chat__quick-replies">
+              @for (reply of quickReplies; track reply.value) {
+                <button type="button" class="quick-reply" (click)="sendQuickReply(reply)">
+                  {{ reply.label }}
+                </button>
+              }
+            </div>
+          }
+
+          <form class="order-chat__composer" (ngSubmit)="send()">
+            <input
+              type="text"
+              [(ngModel)]="inputText"
+              name="chatInput"
+              placeholder="Nachricht schreiben …"
+              [disabled]="loading"
+              autocomplete="off"
+              autocapitalize="sentences"
+              enterkeyhint="send"
+              aria-label="Nachricht"
+            />
+            <button type="submit" [disabled]="loading || !inputText.trim()" aria-label="Senden">
+              <span class="order-chat__send-label">Senden</span>
+              <svg class="order-chat__send-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M3.4 20.4l17.45-7.48a1 1 0 000-1.84L3.4 3.6a.996.996 0 00-1.39.91L2 9.12c0 .5.37.93.87.99L17 12 2.87 13.89c-.5.06-.87.49-.87.99l.01 4.61c0 .71.73 1.2 1.39.91z" />
+              </svg>
+            </button>
+          </form>
+        </section>
+
+        @if (showArticles && canUseArticles && !articlesFullscreen) {
+          <aside class="order-chat__articles">
+            <div class="order-chat__articles-head">
+              <h2>Ihre Artikel</h2>
+              <div class="order-chat__articles-actions">
+                <button type="button" class="ghost-btn" (click)="expandArticles()">Vollbild</button>
+                <button type="button" class="ghost-btn" (click)="closeArticles()">Schließen</button>
+              </div>
+            </div>
+            <input
+              type="search"
+              [(ngModel)]="articleQuery"
+              name="articleQuery"
+              placeholder="Suchen …"
+              (ngModelChange)="onArticleSearch()"
+              autocomplete="off"
+              autocapitalize="off"
+              enterkeyhint="search"
+              aria-label="Artikel suchen"
+            />
+            @if (articlesLoading) {
+              <p class="muted">Lade Artikel …</p>
+            } @else if (!articles.length) {
+              <p class="muted">Keine Treffer</p>
+            } @else {
+              <ul>
+                @for (article of articles; track article.article_number) {
+                  <li>
+                    <div class="article-info">
+                      <strong>{{ article.name }}</strong>
+                      <span>{{ article.article_number }} · €{{ article.price | number:'1.2-2' }}</span>
+                    </div>
+                    <div class="article-actions">
+                      <input
+                        type="number"
+                        min="0.1"
+                        step="1"
+                        [ngModel]="selectedQty[article.article_number] || 1"
+                        (ngModelChange)="selectedQty[article.article_number] = $event"
+                        [name]="'qty-' + article.article_number"
+                        inputmode="decimal"
+                        [attr.aria-label]="'Menge für ' + article.name"
+                      />
+                      <button
+                        type="button"
+                        (click)="addArticle(article)"
+                        [disabled]="loading"
+                        [attr.aria-label]="article.name + ' hinzufügen'"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </li>
+                }
+              </ul>
+            }
+          </aside>
+        }
+      </div>
+    </div>
+  }
+
+  @if (showArticles && canUseArticles && articlesFullscreen) {
+    <div class="order-chat__articles-fs" role="dialog" aria-label="Artikelliste Vollbild">
+      <header class="order-chat__articles-fs-header">
+        <div>
+          <h2>Ihre Artikel</h2>
+          @if (customerNumber) {
+            <p>Kunde {{ customerNumber }}@if (draft?.items?.length) { · Entwurf: {{ draft!.items.length }} Positionen }</p>
+          }
+        </div>
+        <div class="order-chat__articles-actions">
+          <button type="button" class="ghost-btn" (click)="collapseArticles()">Einklappen</button>
+          <button type="button" class="ghost-btn ghost-btn--primary" (click)="closeArticles()">Zum Chat</button>
+        </div>
+      </header>
+
+      <div class="order-chat__articles-fs-toolbar">
+        <input
+          type="search"
+          [(ngModel)]="articleQuery"
+          name="articleQueryFs"
+          placeholder="Artikel suchen …"
+          (ngModelChange)="onArticleSearch()"
+          autocomplete="off"
+          autocapitalize="off"
+          enterkeyhint="search"
+          aria-label="Artikel suchen"
+        />
+        @if (draft?.items?.length) {
+          <div class="order-chat__articles-fs-draft">
+            Summe Entwurf: €{{ draft!.totalPrice | number:'1.2-2' }}
+          </div>
+        }
+      </div>
+
+      <div class="order-chat__articles-fs-body">
+        @if (articlesLoading) {
+          <p class="muted">Lade Artikel …</p>
+        } @else if (!articles.length) {
+          <p class="muted">Keine Treffer</p>
+        } @else {
+          <ul class="order-chat__articles-grid">
+            @for (article of articles; track article.article_number) {
+              <li>
+                <div class="article-info">
+                  <strong>{{ article.name }}</strong>
+                  <span>{{ article.article_number }} · €{{ article.price | number:'1.2-2' }}</span>
+                </div>
+                <div class="article-actions">
+                  <input
+                    type="number"
+                    min="0.1"
+                    step="1"
+                    [ngModel]="selectedQty[article.article_number] || 1"
+                    (ngModelChange)="selectedQty[article.article_number] = $event"
+                    [name]="'qty-fs-' + article.article_number"
+                    inputmode="decimal"
+                    [attr.aria-label]="'Menge für ' + article.name"
+                  />
+                  <button
+                    type="button"
+                    (click)="addArticle(article)"
+                    [disabled]="loading"
+                    [attr.aria-label]="article.name + ' hinzufügen'"
+                  >
+                    +
+                  </button>
+                </div>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+    </div>
+  }
+</div>

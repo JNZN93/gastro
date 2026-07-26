@@ -85,5 +85,9 @@ export const routes: Routes = [
     {
         path: 'customer-order/:token/image/:articleNumber',
         loadComponent: () => import('./public-image-viewer/public-image-viewer.component').then(m => m.PublicImageViewerComponent)
+    },
+    {
+        path: 'order-chat',
+        loadComponent: () => import('./order-chat/order-chat.component').then(m => m.OrderChatComponent)
     }
 ];

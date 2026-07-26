@@ -2,15 +2,14 @@ import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { HeaderComponent } from './header/header.component';
-import { LoginComponent } from "./login/login.component";
 import { GlobalService } from './global.service';
 import { FooterComponent } from "./footer/footer.component";
-import { ProductCatalogComponent } from "./product-catalog/product-catalog.component";
+import { OrderChatComponent } from './order-chat/order-chat.component';
 import { filter, Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-root',
-  imports: [CommonModule, RouterOutlet, HeaderComponent, FooterComponent],
+  imports: [CommonModule, RouterOutlet, HeaderComponent, FooterComponent, OrderChatComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })
@@ -19,6 +18,7 @@ export class AppComponent implements OnInit, OnDestroy {
   isCategoryDetailRoute = false;
   shouldHideFooter = false;
   shouldHideHeader = false;
+  showOrderChatWidget = true;
   private isEmployeesRoute = false;
   private routerSubscription?: Subscription;
 
@@ -30,6 +30,7 @@ export class AppComponent implements OnInit, OnDestroy {
     this.shouldHideFooter = this.isFooterHiddenForUrl(this.router.url);
     this.updateHeaderVisibility();
     this.updatePickingBodyClass(this.router.url);
+    this.updateOrderChatWidget(this.router.url);
 
     this.routerSubscription = this.router.events
       .pipe(filter(event => event instanceof NavigationEnd))
@@ -41,6 +42,7 @@ export class AppComponent implements OnInit, OnDestroy {
         this.isEmployeesRoute = event.url.includes('/employees');
         this.updateHeaderVisibility();
         this.updatePickingBodyClass(event.url);
+        this.updateOrderChatWidget(event.url);
       });
   }
 
@@ -65,6 +67,7 @@ export class AppComponent implements OnInit, OnDestroy {
       url.includes('/customer-order/') ||
       url.includes('/customer-price-overview') ||
       url.includes('/mitarbeiterplanung') ||
+      url.includes('/order-chat') ||
       url.startsWith('/picking')
     );
   }
@@ -74,8 +77,9 @@ export class AppComponent implements OnInit, OnDestroy {
     const isPublicOrderReview = this.router.url.includes('/customer-order/') && this.router.url.includes('/review');
     const isOfferFlyer = this.router.url.includes('/offers/') && this.router.url.includes('/flyer');
     const isPicking = this.router.url.startsWith('/picking');
+    const isOrderChat = this.router.url.includes('/order-chat');
 
-    this.shouldHideHeader = (this.isEmployeesRoute && isMobileOrTablet) || isPublicOrderReview || isOfferFlyer || isPicking;
+    this.shouldHideHeader = (this.isEmployeesRoute && isMobileOrTablet) || isPublicOrderReview || isOfferFlyer || isPicking || isOrderChat;
   }
 
   private updatePickingBodyClass(url: string): void {
@@ -83,6 +87,32 @@ export class AppComponent implements OnInit, OnDestroy {
       return;
     }
     document.body.classList.toggle('picking-mode', url.startsWith('/picking'));
+  }
+
+  private updateOrderChatWidget(url: string): void {
+    // Float auf öffentlichen Seiten; auf Admin-/Mitarbeiterflächen und der Vollseite ausblenden
+    const hide =
+      url.includes('/order-chat') ||
+      url.includes('/admin') ||
+      url.includes('/guest-link') ||
+      url.includes('/product-management') ||
+      url.includes('/employees') ||
+      url.includes('/label-management') ||
+      url.includes('/order-overview') ||
+      url.includes('/customer-orders') ||
+      url.includes('/user-management') ||
+      url.includes('/route-planning') ||
+      url.includes('/reports') ||
+      url.includes('/offers') ||
+      url.includes('/customer-price-overview') ||
+      url.includes('/open-invoices') ||
+      url.includes('/device-tracking') ||
+      url.includes('/inventory') ||
+      url.includes('/mitarbeiterplanung') ||
+      url.startsWith('/picking') ||
+      url.includes('/login') ||
+      url.includes('/registration');
+    this.showOrderChatWidget = !hide;
   }
 
   ngOnDestroy() {

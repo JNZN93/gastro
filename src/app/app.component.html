@@ -1,3 +1,4 @@
 <app-header *ngIf="!shouldHideHeader"></app-header>
 <router-outlet></router-outlet>
 <app-footer *ngIf="!shouldHideFooter"></app-footer>
+<app-order-chat *ngIf="showOrderChatWidget" mode="widget"></app-order-chat>
