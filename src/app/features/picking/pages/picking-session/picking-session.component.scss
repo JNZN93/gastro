@@ -974,6 +974,41 @@
   }
 }
 
+.complete-modal {
+  .modal-sub {
+    margin-bottom: 1rem;
+  }
+
+  .complete-print-section {
+    padding: 0.85rem 0;
+    margin-bottom: 0.5rem;
+    border-top: 1px solid #e5e7eb;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .complete-print-label {
+    margin: 0 0 0.65rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #374151;
+  }
+
+  .complete-confirm-actions {
+    margin-top: 0.75rem;
+  }
+}
+
+.reopen-modal {
+  .modal-sub {
+    margin-bottom: 1rem;
+    line-height: 1.45;
+  }
+
+  .complete-confirm-actions {
+    margin-top: 0.25rem;
+  }
+}
+
 .scanner-modal {
   position: fixed;
   inset: 0;

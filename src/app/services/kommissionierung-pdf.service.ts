@@ -447,6 +447,40 @@ export class KommissionierungPdfService {
     window.open(pdfUrl, '_blank');
   }
 
+  generatePalettenscheinOnly(order: KommissionierungPdfOrder, context: KommissionierungPdfContext): void {
+    const doc = new jsPDF();
+    const colors = {
+      primary: [41, 128, 185],
+      secondary: [52, 73, 94],
+      accent: [46, 204, 113],
+      light: [236, 240, 241],
+      dark: [44, 62, 80],
+      white: [255, 255, 255],
+    };
+
+    const drawPageNumber = (currentPage: number, totalPages: number) => {
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(colors.secondary[0], colors.secondary[1], colors.secondary[2]);
+      doc.text(`${currentPage} von ${totalPages}`, 190, 290, { align: 'right' });
+    };
+
+    let pageCount = 1;
+    const extraPalettenscheinPages = this.drawPalettenschein(doc, order, colors, context);
+    pageCount += extraPalettenscheinPages;
+    const totalPages = pageCount;
+
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      drawPageNumber(i, totalPages);
+    }
+
+    doc.setPage(1);
+    doc.autoPrint();
+    const pdfUrl = doc.output('bloburl');
+    window.open(pdfUrl, '_blank');
+  }
+
   private getCustomerDisplayName(order: KommissionierungPdfOrder, context: KommissionierungPdfContext): string {
     const key = String(order.customer_number ?? '').trim();
     if (key) {

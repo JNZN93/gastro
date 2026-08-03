@@ -76,6 +76,23 @@ export class OrderService {
     );
   }
 
+  reopenPicking(
+    orderId: number,
+    token: string | null,
+    extra: { picker_user_name?: string } = {}
+  ): Observable<any> {
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    });
+
+    return this.http.put(
+      this.apiUrlOrder + '/' + orderId + '/picking/reopen',
+      extra,
+      { headers }
+    );
+  }
+
   deleteOrder(orderId: number, token: string | null): Observable<any> {
     const headers = new HttpHeaders({
       'Authorization': `Bearer ${token}`,

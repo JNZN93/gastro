@@ -81,7 +81,10 @@ export class PickingQueueComponent implements OnInit {
 
       this.orders = (response?.orders ?? []).filter(
         (order) =>
-          order.status === 'open' || order.status === 'picking' || order.status === 'picked'
+          order.status === 'open' ||
+          order.status === 'picking' ||
+          order.status === 'picked' ||
+          order.status === 'completed'
       );
 
       await this.loadCustomerNames(headers);
@@ -129,13 +132,13 @@ export class PickingQueueComponent implements OnInit {
       return order.status === 'picking';
     }
     if (this.statusFilter === 'picked') {
-      return order.status === 'picked';
+      return order.status === 'picked' || order.status === 'completed';
     }
     return order.status === 'open' || order.status === 'picking';
   }
 
   private getQueueProgress(order: PickingOrder, localState: PickingState | null): PickingProgress {
-    if (order.status === 'picked') {
+    if (order.status === 'picked' || order.status === 'completed') {
       const total = order.items?.length ?? 0;
       return {
         done: total,
@@ -248,6 +251,7 @@ export class PickingQueueComponent implements OnInit {
       case 'picking':
         return 'Wird kommissioniert';
       case 'picked':
+      case 'completed':
         return 'Fertig kommissioniert';
       case 'delivered':
         return 'Ausgeliefert';

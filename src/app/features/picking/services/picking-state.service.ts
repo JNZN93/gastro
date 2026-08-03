@@ -51,25 +51,32 @@ export class PickingStateService {
   }
 
   createInitialState(order: PickingOrder, startedBy: string): PickingState {
+    return this.createStateFromOrder(order, startedBy, false);
+  }
+
+  createStateFromOrder(order: PickingOrder, startedBy: string, markAsPicked: boolean): PickingState {
     return {
       orderId: order.order_id,
       orderFingerprint: this.computeOrderFingerprint(order.items),
       startedAt: new Date().toISOString(),
       startedBy,
-      items: order.items.map((item, index) => ({
-        key: this.buildItemKey(item, index),
-        productId: item.product_id,
-        articleNumber: item.product_article_number,
-        productName: item.product_name,
-        targetQuantity: Number(item.quantity),
-        pickedQuantity: 0,
-        status: 'pending' as const,
-        price: item.price != null ? Number(item.price) : 0,
-        differentPrice:
-          item.different_price != null && item.different_price !== ''
-            ? Number(item.different_price)
-            : null,
-      })),
+      items: order.items.map((item, index) => {
+        const quantity = Number(item.quantity);
+        return {
+          key: this.buildItemKey(item, index),
+          productId: item.product_id,
+          articleNumber: item.product_article_number,
+          productName: item.product_name,
+          targetQuantity: quantity,
+          pickedQuantity: markAsPicked ? quantity : 0,
+          status: (markAsPicked ? 'picked' : 'pending') as PickItemStatus,
+          price: item.price != null ? Number(item.price) : 0,
+          differentPrice:
+            item.different_price != null && item.different_price !== ''
+              ? Number(item.different_price)
+              : null,
+        };
+      }),
     };
   }
 

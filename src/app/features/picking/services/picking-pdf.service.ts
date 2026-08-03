@@ -38,6 +38,17 @@ export class PickingPdfService {
     });
   }
 
+  generatePalettenschein(order: PickingOrder, items: PickItemState[]): void {
+    void this.ensureData().then(() => {
+      const pdfOrder = this.buildPdfOrder(order, items);
+      this.kommissionierungPdf.generatePalettenscheinOnly(pdfOrder, {
+        customerNameByNumber: this.customerNameByNumber,
+        customersByNumber: this.customersByNumber,
+        allArtikels: this.allArtikels,
+      });
+    });
+  }
+
   private async ensureData(): Promise<void> {
     if (this.dataLoaded) {
       return;

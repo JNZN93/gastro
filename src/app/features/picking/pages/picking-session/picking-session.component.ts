@@ -75,6 +75,8 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
   showItemModal = false;
   showStartWarning = false;
   showPrintModal = false;
+  showCompleteModal = false;
+  showReopenModal = false;
   selectedItem: PickItemState | null = null;
   modalPickedQuantity = 0;
   modalNote = '';
@@ -210,7 +212,7 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
         return;
       }
 
-      if (order.status === 'picked') {
+      if (order.status === 'picked' || order.status === 'completed') {
         this.isReadOnlySession = true;
         this.order = order;
         await this.loadProductCatalog();
@@ -259,24 +261,85 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   private createReadOnlyStateItems(order: PickingOrder): PickItemState[] {
-    return order.items.map((item, index) => {
-      const quantity = Number(item.quantity);
-      const state: PickItemState = {
-        key: this.pickingState.buildItemKey(item, index),
-        productId: item.product_id,
-        articleNumber: item.product_article_number,
-        productName: item.product_name,
-        targetQuantity: quantity,
-        pickedQuantity: quantity,
-        status: 'picked',
-        price: item.price != null ? Number(item.price) : 0,
-        differentPrice:
-          item.different_price != null && item.different_price !== ''
-            ? Number(item.different_price)
-            : null,
-      };
-      return state;
-    });
+    return this.pickingState.createStateFromOrder(order, this.getStartedBy(), true).items;
+  }
+
+  openReopenModal(): void {
+    if (!this.order || !this.isReadOnlySession || this.isSaving) {
+      return;
+    }
+    this.showReopenModal = true;
+  }
+
+  closeReopenModal(): void {
+    this.showReopenModal = false;
+  }
+
+  private getApiErrorMessage(error: any, fallback: string): string {
+    const body = error?.error;
+    if (typeof body === 'string' && body.trim()) {
+      if (body.includes('Cannot PUT') || body.includes('Cannot GET')) {
+        return 'Server-Endpunkt nicht verfügbar. Bitte Backend neu starten.';
+      }
+      return body.trim();
+    }
+    if (body?.error) {
+      return body.error;
+    }
+    if (error?.status === 404) {
+      return 'Funktion nicht verfügbar. Bitte Backend neu starten.';
+    }
+    if (error?.status === 0) {
+      return 'Verbindung zum Server fehlgeschlagen.';
+    }
+    if (error?.message) {
+      return error.message;
+    }
+    return fallback;
+  }
+
+  async confirmReopenPicking(): Promise<void> {
+    if (!this.order || !this.isReadOnlySession) {
+      return;
+    }
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      this.router.navigate(['/login']);
+      return;
+    }
+
+    this.isSaving = true;
+
+    try {
+      await lastValueFrom(
+        this.orderService.reopenPicking(this.order.order_id, token, {
+          picker_user_name: this.getStartedBy(),
+        })
+      );
+
+      const state = this.pickingState.createStateFromOrder(this.order, this.getStartedBy(), true);
+      this.stateItems = state.items;
+      this.order.status = 'picking';
+      this.order.picker_user_name = this.getStartedBy();
+      this.order.picker_user_id = this.globalService.getUserId();
+      this.isReadOnlySession = false;
+
+      await this.loadProductCatalog();
+      this.enrichStateItemsWithProductMetadata();
+      await this.pickingState.saveState({
+        ...state,
+        items: this.stateItems,
+      });
+      this.refreshProgress();
+      this.closeReopenModal();
+      this.setFeedback('success', 'Bestellung kann erneut bearbeitet werden.');
+      this.focusEanInput();
+    } catch (error: any) {
+      this.setFeedback('error', this.getApiErrorMessage(error, 'Wiederöffnen fehlgeschlagen.'));
+    } finally {
+      this.isSaving = false;
+    }
   }
 
   private async ensurePickingState(order: PickingOrder): Promise<void> {
@@ -975,19 +1038,14 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     if (
       adjacent &&
       adjacent.status !== 'unavailable' &&
-      adjacent.articleNumber === pfandArticleNumber
+      adjacent.articleNumber === pfandArticleNumber &&
+      (adjacent.isPfandLine || adjacent.category === 'PFAND') &&
+      (!adjacent.parentItemKey || adjacent.parentItemKey === parent.key)
     ) {
       return adjacent;
     }
 
-    return (
-      this.stateItems.find(
-        (item) =>
-          item.status !== 'unavailable' &&
-          item.articleNumber === pfandArticleNumber &&
-          (item.isPfandLine || item.category === 'PFAND')
-      ) ?? null
-    );
+    return null;
   }
 
   private getPfandArticleNumberForParent(parent: PickItemState): string | null {
@@ -1152,6 +1210,31 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     this.showReplacementSearchDropdown = false;
   }
 
+  openCompleteModal(): void {
+    if (!this.order || this.isSaving) {
+      return;
+    }
+
+    const stateForComplete = {
+      orderId: this.order.order_id,
+      orderFingerprint: '',
+      startedAt: '',
+      startedBy: this.getStartedBy(),
+      items: this.stateItems,
+    };
+
+    if (!this.pickingState.canComplete(stateForComplete)) {
+      this.setFeedback('warning', 'Bitte alle Positionen bearbeiten oder als nicht verfügbar markieren.');
+      return;
+    }
+
+    this.showCompleteModal = true;
+  }
+
+  closeCompleteModal(): void {
+    this.showCompleteModal = false;
+  }
+
   async completePicking(): Promise<void> {
     if (!this.order) {
       return;
@@ -1169,6 +1252,7 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
 
     if (!this.pickingState.canComplete(stateForComplete)) {
       this.setFeedback('warning', 'Bitte alle Positionen bearbeiten oder als nicht verfügbar markieren.');
+      this.closeCompleteModal();
       return;
     }
 
@@ -1180,6 +1264,7 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
         ...stateForComplete,
         completedAt: new Date().toISOString(),
       });
+      this.closeCompleteModal();
       this.router.navigate(['/picking']);
     } catch (error: any) {
       this.setFeedback('error', error?.error?.error || 'Abschluss fehlgeschlagen.');
@@ -1443,21 +1528,34 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     this.showPrintModal = false;
   }
 
-  printSheet(includePalettenschein: boolean): void {
+  printSheet(
+    mode: 'kommissionierung' | 'both' | 'palettenschein',
+    closePrintModal = true
+  ): void {
     if (!this.order) {
       return;
     }
-    this.pickingPdf.generateKommissionierungsschein(this.order, this.stateItems, {
-      customerLabel: this.getCustomerLabel(),
-      includePalettenschein,
-    });
-    this.showPrintModal = false;
-    this.setFeedback(
-      'success',
-      includePalettenschein
+
+    if (mode === 'palettenschein') {
+      this.pickingPdf.generatePalettenschein(this.order, this.stateItems);
+    } else {
+      this.pickingPdf.generateKommissionierungsschein(this.order, this.stateItems, {
+        customerLabel: this.getCustomerLabel(),
+        includePalettenschein: mode === 'both',
+      });
+    }
+
+    if (closePrintModal) {
+      this.showPrintModal = false;
+    }
+
+    const feedbackMessage =
+      mode === 'both'
         ? 'PDF mit Palettenschein erstellt.'
-        : 'Kommissionierungsschein erstellt.'
-    );
+        : mode === 'palettenschein'
+          ? 'Palettenschein erstellt.'
+          : 'Kommissionierungsschein erstellt.';
+    this.setFeedback('success', feedbackMessage);
   }
 
   getItemStatusLabel(status: PickItemState['status']): string {

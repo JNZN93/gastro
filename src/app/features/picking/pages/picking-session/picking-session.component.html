@@ -237,7 +237,10 @@
 
   <footer class="session-footer">
     @if (isReadOnlySession) {
-      <button type="button" class="secondary-btn full-width" routerLink="/picking">Zurück zur Queue</button>
+      <button type="button" class="secondary-btn" routerLink="/picking">Zurück zur Queue</button>
+      <button type="button" class="primary-btn" (click)="openReopenModal()" [disabled]="isSaving">
+        Erneut bearbeiten
+      </button>
     } @else {
     <button type="button" class="secondary-btn" (click)="releasePicking()" [disabled]="isSaving">
       Freigeben
@@ -245,7 +248,7 @@
     <button
       type="button"
       class="primary-btn complete-btn"
-      (click)="completePicking()"
+      (click)="openCompleteModal()"
       [disabled]="isSaving || progress.done < progress.total"
     >
       Abschließen
@@ -430,13 +433,69 @@
       <h2>PDF drucken?</h2>
       <p class="modal-sub">Kommissionierungsschein mit aktuellem Pick-Stand.</p>
       <div class="modal-actions stacked">
-        <button type="button" class="primary-btn" (click)="printSheet(true)">
+        <button type="button" class="primary-btn" (click)="printSheet('both')">
           Mit Palettenschein
         </button>
-        <button type="button" class="secondary-btn" (click)="printSheet(false)">
+        <button type="button" class="secondary-btn" (click)="printSheet('kommissionierung')">
           Nur Kommissionierungsschein
         </button>
+        <button type="button" class="secondary-btn" (click)="printSheet('palettenschein')">
+          Nur Palettenschein
+        </button>
         <button type="button" class="link-btn" (click)="closePrintModal()">Abbrechen</button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (showReopenModal) {
+  <div class="modal-overlay" (click)="closeReopenModal()">
+    <div class="modal-card reopen-modal" (click)="$event.stopPropagation()">
+      <h2>Erneut bearbeiten?</h2>
+      <p class="modal-sub">
+        Möchten Sie diese fertig kommissionierte Bestellung wirklich erneut bearbeiten?
+        Der Status wird zurück auf „Wird kommissioniert“ gesetzt.
+      </p>
+      <div class="modal-actions complete-confirm-actions">
+        <button type="button" class="secondary-btn" (click)="closeReopenModal()" [disabled]="isSaving">
+          Abbrechen
+        </button>
+        <button type="button" class="primary-btn" (click)="confirmReopenPicking()" [disabled]="isSaving">
+          {{ isSaving ? 'Wird geöffnet…' : 'Erneut bearbeiten' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (showCompleteModal) {
+  <div class="modal-overlay" (click)="closeCompleteModal()">
+    <div class="modal-card complete-modal" (click)="$event.stopPropagation()">
+      <h2>Kommissionierung abschließen?</h2>
+      <p class="modal-sub">Möchten Sie die Kommissionierung wirklich abschließen?</p>
+
+      <div class="complete-print-section">
+        <p class="complete-print-label">Kommissionierungsschein drucken</p>
+        <div class="modal-actions stacked">
+          <button type="button" class="secondary-btn" (click)="printSheet('both', false)">
+            Mit Palettenschein
+          </button>
+          <button type="button" class="secondary-btn" (click)="printSheet('kommissionierung', false)">
+            Nur Kommissionierungsschein
+          </button>
+          <button type="button" class="secondary-btn" (click)="printSheet('palettenschein', false)">
+            Nur Palettenschein
+          </button>
+        </div>
+      </div>
+
+      <div class="modal-actions complete-confirm-actions">
+        <button type="button" class="secondary-btn" (click)="closeCompleteModal()" [disabled]="isSaving">
+          Abbrechen
+        </button>
+        <button type="button" class="primary-btn" (click)="completePicking()" [disabled]="isSaving">
+          {{ isSaving ? 'Wird abgeschlossen…' : 'Abschließen' }}
+        </button>
       </div>
     </div>
   </div>
