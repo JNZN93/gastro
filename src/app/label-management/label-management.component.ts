@@ -2,7 +2,7 @@ import { Component, OnInit, ViewChild } from '@angular/core';
 import { environment } from '../../environments/environment';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { HttpClient, HttpClientModule, HttpHeaders } from '@angular/common/http';
 import { jsPDF } from 'jspdf';
 import { Router } from '@angular/router';
 import JsBarcode from 'jsbarcode';
@@ -35,6 +35,8 @@ interface Product {
   offer_price?: number;
   use_offer_price?: boolean;
   has_active_offer?: boolean;
+  price_change_pending?: boolean;
+  label_printed_sale_price?: number;
 }
 
 @Component({
@@ -77,6 +79,9 @@ export class LabelManagementComponent implements OnInit {
   // Neue Eigenschaften für Angebote
   activeOffers: OfferWithProducts[] = [];
   isLoadingOffers: boolean = false;
+  isLoadingPriceChangeQueue: boolean = false;
+  pendingPriceChangeQueueCount: number = 0;
+  priceChangeQueueError: string | null = null;
 
   constructor(private http: HttpClient, private router: Router, private dialog: MatDialog, private offersService: OffersService) {}
 
@@ -149,8 +154,8 @@ export class LabelManagementComponent implements OnInit {
 
   // Neue Methode zum Anreichern der Produkte mit Angebotsinformationen
   private enrichProductsWithOffers(): void {
-    if (!this.products.length || !this.activeOffers.length) {
-      return; // Warte bis beide Daten vorhanden sind
+    if (!this.products.length) {
+      return;
     }
 
     this.products.forEach(product => {
@@ -198,6 +203,167 @@ export class LabelManagementComponent implements OnInit {
     this.filteredProducts = [...this.products];
 
     console.log('Produkte mit Angebotsinformationen angereichert:', this.products.filter(p => p.has_active_offer));
+
+    this.refreshSelectedProductsFromCatalog();
+    this.syncPriceChangeQueue();
+  }
+
+  private getAuthHeaders(): HttpHeaders {
+    const token = localStorage.getItem('token');
+    return new HttpHeaders({
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    });
+  }
+
+  private normalizeProductId(id: number | string | undefined | null): number | null {
+    if (id === undefined || id === null) {
+      return null;
+    }
+
+    const numericId = Number(id);
+    return Number.isNaN(numericId) ? null : numericId;
+  }
+
+  private findProductById(id: number | string): Product | undefined {
+    const normalizedId = this.normalizeProductId(id);
+    if (normalizedId === null) {
+      return undefined;
+    }
+
+    return this.products.find((product) => this.normalizeProductId(product.id) === normalizedId);
+  }
+
+  private refreshSelectedProductsFromCatalog(): void {
+    if (!this.selectedProducts.length || !this.products.length) {
+      return;
+    }
+
+    this.selectedProducts = this.selectedProducts
+      .map((selected) => {
+        const fresh = this.findProductById(selected.id);
+        if (!fresh) {
+          return selected;
+        }
+
+        return {
+          ...fresh,
+          isExpanded: selected.isExpanded,
+          price_change_pending: selected.price_change_pending,
+        };
+      })
+      .filter((selected) => this.findProductById(selected.id) !== undefined);
+  }
+
+  private syncPriceChangeQueue(): void {
+    const token = localStorage.getItem('token');
+    if (!token || !this.products.length) {
+      return;
+    }
+
+    this.isLoadingPriceChangeQueue = true;
+    this.priceChangeQueueError = null;
+
+    this.http.get<Product[]>(
+      `${environment.apiUrl}/api/products/label-reprint-queue`,
+      { headers: this.getAuthHeaders() }
+    ).subscribe({
+      next: (queue) => {
+        this.pendingPriceChangeQueueCount = queue.length;
+        const queueIds = new Set(
+          queue.map((product) => this.normalizeProductId(product.id)).filter((id): id is number => id !== null)
+        );
+
+        this.selectedProducts.forEach((product) => {
+          const productId = this.normalizeProductId(product.id);
+          product.price_change_pending = productId !== null && queueIds.has(productId);
+        });
+
+        queue.forEach((queuedProduct) => {
+          const queuedId = this.normalizeProductId(queuedProduct.id);
+          if (queuedId === null) {
+            return;
+          }
+
+          const alreadyInCart = this.selectedProducts.some(
+            (product) => this.normalizeProductId(product.id) === queuedId
+          );
+          if (alreadyInCart) {
+            return;
+          }
+
+          const catalogProduct = this.findProductById(queuedId);
+          this.selectedProducts.push({
+            ...(catalogProduct ?? { ...queuedProduct, id: queuedId }),
+            price_change_pending: true,
+          });
+        });
+
+        if (queue.length > 0) {
+          this.isCartExpanded = true;
+        }
+
+        this.saveCartToLocalStorage();
+        this.isLoadingPriceChangeQueue = false;
+      },
+      error: (error) => {
+        console.error('Fehler beim Laden der Preisänderungs-Druckliste:', error);
+        this.pendingPriceChangeQueueCount = 0;
+        this.priceChangeQueueError = 'Preisänderungs-Liste konnte nicht geladen werden. Bitte Backend neu starten und Seite neu laden.';
+        this.isLoadingPriceChangeQueue = false;
+      },
+    });
+  }
+
+  private markSelectedAsPrinted(): void {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      return;
+    }
+
+    const productIds = [...new Set(
+      this.selectedProducts
+        .map((product) => this.normalizeProductId(product.id))
+        .filter((id): id is number => id !== null)
+    )];
+    if (productIds.length === 0) {
+      return;
+    }
+
+    this.http.post(
+      `${environment.apiUrl}/api/products/label-reprint-mark-printed`,
+      { productIds },
+      { headers: this.getAuthHeaders() }
+    ).subscribe({
+      next: () => {
+        this.selectedProducts = [];
+        this.pendingPriceChangeQueueCount = 0;
+        this.saveCartToLocalStorage();
+      },
+      error: (error) => {
+        console.error('Fehler beim Markieren der gedruckten Etiketten:', error);
+      },
+    });
+  }
+
+  private confirmLabelsPrintedAfterPrint(): void {
+    const dialogRef = this.dialog.open(MyDialogComponent, {
+      data: {
+        title: 'Etiketten gedruckt?',
+        message: 'Wurden die Etiketten erfolgreich gedruckt? Nur dann werden sie aus der Druckliste entfernt.',
+        isConfirmation: true,
+        confirmLabel: 'Ja, gedruckt',
+        cancelLabel: 'Noch nicht'
+      },
+      maxWidth: '400px',
+      minWidth: '300px',
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result === true) {
+        this.markSelectedAsPrinted();
+      }
+    });
   }
 
   // Save cart to localStorage
@@ -554,6 +720,7 @@ export class LabelManagementComponent implements OnInit {
     doc.autoPrint();
     const pdfUrl = doc.output('bloburl');
     window.open(pdfUrl, '_blank');
+    this.confirmLabelsPrintedAfterPrint();
   }
 
   generateFullPagePdf(): void {
@@ -704,6 +871,7 @@ export class LabelManagementComponent implements OnInit {
     doc.autoPrint();
     const pdfUrl = doc.output('bloburl');
     window.open(pdfUrl, '_blank');
+    this.confirmLabelsPrintedAfterPrint();
   }
 
   formatProductName(product: Product): string {
@@ -729,6 +897,10 @@ export class LabelManagementComponent implements OnInit {
   getUniqueProductCount(): number {
     const uniqueIds = new Set(this.selectedProducts.map(p => p.id));
     return uniqueIds.size;
+  }
+
+  getPriceChangeCount(): number {
+    return this.selectedProducts.filter((p) => p.price_change_pending).length;
   }
 
   toggleCart(): void {

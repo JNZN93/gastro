@@ -35,6 +35,16 @@
                 </button>
             </div>
             
+            <div class="price-change-error" *ngIf="priceChangeQueueError">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <span>{{ priceChangeQueueError }}</span>
+            </div>
+
+            <div class="price-change-notice" *ngIf="pendingPriceChangeQueueCount > 0 || getPriceChangeCount() > 0">
+                <i class="bi bi-arrow-repeat"></i>
+                <span>{{ pendingPriceChangeQueueCount || getPriceChangeCount() }} Artikel mit geändertem Verkaufspreis – automatisch zum Druck vorgemerkt</span>
+            </div>
+
             <!-- Cart Section -->
             <div class="cart-section" *ngIf="selectedProducts.length > 0">
                 <div class="cart-header">
@@ -74,6 +84,10 @@
                                     <span class="cart-offer-badge" *ngIf="product.has_active_offer && product.use_offer_price">
                                         <i class="bi bi-tag-fill"></i>
                                         Angebot
+                                    </span>
+                                    <span class="cart-price-change-badge" *ngIf="product.price_change_pending">
+                                        <i class="bi bi-arrow-repeat"></i>
+                                        Preis geändert
                                     </span>
                                     <i class="bi expand-icon"
                                        [class.bi-chevron-down]="!product.isExpanded"
