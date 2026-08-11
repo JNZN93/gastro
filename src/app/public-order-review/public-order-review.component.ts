@@ -866,6 +866,22 @@ export class PublicOrderReviewComponent implements OnInit {
   selectedDate: string = '';
   selectedTime: string = ''; // Neue Property für Uhrzeit
 
+  /** Stabiler Warenkorb-Key: Custom-Artikel über product_id */
+  private getCartItemKey(article: any): string {
+    if (!article) return '';
+    const productId = article.product_id != null ? String(article.product_id) : '';
+    const isCustom =
+      !!article.isCustom ||
+      productId.startsWith('custom_') ||
+      article.article_number === 'Eigener Artikel';
+
+    if (isCustom && productId) {
+      return productId;
+    }
+
+    return String(article.product_id || article.article_number || '');
+  }
+
   ngOnInit(): void {
     // Verhindere Body-Scroll auf Safari
     document.body.style.overflow = 'hidden';
@@ -1056,7 +1072,8 @@ export class PublicOrderReviewComponent implements OnInit {
       const presentKeys = new Set<string>();
       for (const item of this.items) {
         const quantity = Number(item.quantity);
-        const key = String(item.article_number || item.product_id);
+        const key = this.getCartItemKey(item);
+        if (!key) continue;
 
         // Nur Artikel mit Menge > 0 speichern
         if (!quantity || quantity <= 0 || isNaN(quantity)) {
@@ -1090,6 +1107,11 @@ export class PublicOrderReviewComponent implements OnInit {
           // WICHTIG: different_price auf unit_price_net setzen (wie in customer-orders)
           different_price: Number(item.unit_price_net || 0) || 0
         };
+      }
+
+      // Entferne veralteten Kollisions-Key für Custom-Artikel
+      if (stored.items['Eigener Artikel']) {
+        delete stored.items['Eigener Artikel'];
       }
 
       // Entferne alle Einträge, die nicht mehr vorhanden sind
@@ -1176,9 +1198,9 @@ export class PublicOrderReviewComponent implements OnInit {
 
 
 
-  trackByItem(index: number, item: any): string {
-    return item.article_number || item.product_id || index.toString();
-  }
+  trackByItem = (index: number, item: any): string => {
+    return this.getCartItemKey(item) || index.toString();
+  };
 
   reduceQuantity(item: any) {
     if (item.quantity > 1) {
@@ -1210,10 +1232,9 @@ export class PublicOrderReviewComponent implements OnInit {
       minWidth: '300px',
     }).afterClosed().subscribe(result => {
       if (result) {
-        // Artikel aus dem Array entfernen
-        this.items = this.items.filter(i => 
-          (i.article_number || i.product_id) !== (item.article_number || item.product_id)
-        );
+        const itemKey = this.getCartItemKey(item);
+        // Artikel aus dem Array entfernen (über stabilen Key, auch bei mehreren Eigenen Artikeln)
+        this.items = this.items.filter(i => this.getCartItemKey(i) !== itemKey);
         
         // Total nach dem Entfernen aktualisieren
         this.updateTotal();
@@ -1473,7 +1494,24 @@ export class PublicOrderReviewComponent implements OnInit {
       },
       body: JSON.stringify(completeOrder)
     })
-    .then(response => response.json())
+    .then(async response => {
+      let data: any = null;
+      try {
+        data = await response.json();
+      } catch {
+        data = null;
+      }
+
+      if (!response.ok) {
+        const message =
+          data?.message ||
+          data?.error ||
+          `Bestellung fehlgeschlagen (HTTP ${response.status})`;
+        throw new Error(message);
+      }
+
+      return data;
+    })
     .then(data => {
       console.log('✅ Bestellung erfolgreich abgesendet:', data);
       this.isSubmitting = false;
@@ -1501,7 +1539,10 @@ export class PublicOrderReviewComponent implements OnInit {
     .catch(error => {
       console.error('❌ Fehler beim Absenden der Bestellung:', error);
       this.isSubmitting = false;
-      alert('Fehler beim Absenden der Bestellung. Bitte versuchen Sie es erneut.');
+      alert(error?.message
+        ? `Fehler beim Absenden der Bestellung: ${error.message}`
+        : 'Fehler beim Absenden der Bestellung. Bitte versuchen Sie es erneut.');
+      this.cdr.detectChanges();
     });
   }
 
@@ -1789,7 +1830,7 @@ export class PublicOrderReviewComponent implements OnInit {
       if (!stored || !stored.items) return;
       
       // Aktualisiere den Artikel im localStorage
-      const itemKey = String(item.article_number || item.product_id);
+      const itemKey = this.getCartItemKey(item);
       if (stored.items[itemKey]) {
         stored.items[itemKey].tempQuantity = item.quantity;
         console.log(`🔄 Artikel ${itemKey} im localStorage aktualisiert - neue Menge: ${item.quantity}`);
@@ -1816,7 +1857,7 @@ export class PublicOrderReviewComponent implements OnInit {
       if (!stored || !stored.items) return;
       
       // Entferne den Artikel aus dem localStorage
-      const itemKey = String(item.article_number || item.product_id);
+      const itemKey = this.getCartItemKey(item);
       if (stored.items[itemKey]) {
         delete stored.items[itemKey];
         console.log(`🗑️ Artikel ${itemKey} aus localStorage entfernt`);

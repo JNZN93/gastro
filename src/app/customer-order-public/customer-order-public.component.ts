@@ -57,6 +57,64 @@ export class CustomerOrderPublicComponent implements OnInit {
     return `customer_order_${this.customerNumber}`;
   }
 
+  /** Stabiler Warenkorb-Key: Custom-Artikel über product_id, sonst product_id/article_number */
+  private getCartItemKey(article: any): string {
+    if (!article) return '';
+    const productId = article.product_id != null ? String(article.product_id) : '';
+    const isCustom =
+      !!article.isCustom ||
+      productId.startsWith('custom_') ||
+      article.article_number === 'Eigener Artikel';
+
+    if (isCustom && productId) {
+      return productId;
+    }
+
+    return String(article.product_id || article.article_number || '');
+  }
+
+  /** Findet Produkt in der Katalogliste unabhängig von number/string Typunterschieden */
+  private findMatchingCatalogProduct(article: any): any | undefined {
+    if (!article || !this.allProducts?.length) return undefined;
+    const productId = article.product_id != null ? String(article.product_id) : '';
+    const articleNumber = article.article_number != null ? String(article.article_number) : '';
+
+    return this.allProducts.find((product: any) => {
+      const pArticle = product.article_number != null ? String(product.article_number) : '';
+      const pId = product.id != null ? String(product.id) : '';
+      const pProductId = product.product_id != null ? String(product.product_id) : '';
+      return (
+        (productId && (pArticle === productId || pId === productId || pProductId === productId)) ||
+        (articleNumber && (pArticle === articleNumber || pId === articleNumber || pProductId === articleNumber))
+      );
+    });
+  }
+
+  /** Bei neuem QR-Token denselben Kunden-Warenkorb behalten und Token aktualisieren */
+  private migrateCartTokenIfNeeded(): void {
+    if (!this.customerNumber || !this.token) return;
+
+    try {
+      const storedRaw = localStorage.getItem(this.localStorageKey);
+      if (!storedRaw) return;
+
+      const stored = JSON.parse(storedRaw);
+      if (!stored || typeof stored !== 'object') return;
+
+      if (
+        String(stored.customerNumber) === String(this.customerNumber) &&
+        stored.token !== this.token
+      ) {
+        stored.token = this.token;
+        stored.timestamp = new Date().toISOString();
+        localStorage.setItem(this.localStorageKey, JSON.stringify(stored));
+        console.log('🔄 [PUBLIC-ORDER] Warenkorb-Token für neuen QR aktualisiert');
+      }
+    } catch (error) {
+      console.error('❌ [PUBLIC-ORDER] Fehler bei Token-Migration:', error);
+    }
+  }
+
   // Methode zum Umschalten des Zustands einer Kategorie
   toggleCategory(category: string): void {
     this.categoryStates[category] = !this.categoryStates[category];
@@ -319,13 +377,21 @@ export class CustomerOrderPublicComponent implements OnInit {
       stored.customerNumber = this.customerNumber;
       stored.token = this.token;
 
+      // Alte kollidierende Custom-Keys bereinigen (früher alle unter "Eigener Artikel")
+      if (stored.items['Eigener Artikel']) {
+        delete stored.items['Eigener Artikel'];
+      }
+
       // Pro Artikel nur notwendige Felder speichern und Mengen inkrementell updaten
       for (const article of this.customerArticlePrices) {
-        const quantity = Number(article.tempQuantity);
-        const key = String(article.article_number || article.product_id);
+        const rawQty = article.tempQuantity;
+        const key = this.getCartItemKey(article);
+        if (!key) continue;
 
-        if (!quantity || quantity <= 0 || isNaN(quantity)) {
-          // Menge 0/null -> Eintrag entfernen
+        const quantity = Number(rawQty);
+
+        // Menge 0 / leer / ungültig -> Eintrag entfernen (Speichern nur noch bei blur / +/-)
+        if (rawQty === null || rawQty === undefined || rawQty === '' || isNaN(quantity) || quantity <= 0) {
           if (stored.items[key]) delete stored.items[key];
           continue;
         }
@@ -380,23 +446,35 @@ export class CustomerOrderPublicComponent implements OnInit {
 
           // Stelle die Mengen für alle Artikel wieder her
           storedEntries.forEach((storedArticle: any) => {
-            // Suche nach dem Artikel basierend auf verschiedenen Feldern
-            let article = this.customerArticlePrices.find(a => a.product_id === storedArticle.product_id);
+            // Suche nach dem Artikel basierend auf verschiedenen Feldern (string-sicher)
+            let article = this.customerArticlePrices.find(
+              a => String(a.product_id) === String(storedArticle.product_id)
+            );
             
-            // Fallback: Suche nach article_number
-            if (!article && storedArticle.article_number) {
-              article = this.customerArticlePrices.find(a => a.article_number === storedArticle.article_number);
+            // Fallback: Suche nach article_number (nicht für Custom-Artikel – alle teilen denselben Label-Wert)
+            if (
+              !article &&
+              storedArticle.article_number &&
+              storedArticle.article_number !== 'Eigener Artikel' &&
+              !storedArticle.isCustom
+            ) {
+              article = this.customerArticlePrices.find(
+                a => String(a.article_number) === String(storedArticle.article_number)
+              );
             }
             
             // Fallback: Suche nach article_text
-            if (!article && storedArticle.article_text) {
+            if (!article && storedArticle.article_text && !storedArticle.isCustom) {
               article = this.customerArticlePrices.find(a => a.article_text === storedArticle.article_text);
             }
             
-            // Fallback: Suche nach Angebotsprodukten
+            // Fallback: Angebotsprodukte – nur exakter Produkt-Match, kein „erstes Angebot“
             if (!article && storedArticle.isOfferProduct) {
-              article = this.customerArticlePrices.find(a => 
-                a.isOfferProduct && a.offerId === storedArticle.offerId
+              article = this.customerArticlePrices.find(a =>
+                a.isOfferProduct &&
+                a.offerId === storedArticle.offerId &&
+                (String(a.product_id) === String(storedArticle.product_id) ||
+                  String(a.article_number) === String(storedArticle.article_number))
               );
             }
             
@@ -418,7 +496,7 @@ export class CustomerOrderPublicComponent implements OnInit {
               // Falls Custom-Artikel: neu hinzufügen
               if (storedArticle?.isCustom && (storedArticle.tempQuantity || 0) > 0) {
                 const newCustomArticle = {
-                  product_id: storedArticle.product_id || `custom_${Date.now()}`,
+                  product_id: storedArticle.product_id || `custom_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
                   article_text: storedArticle.article_text || 'Eigener Artikel',
                   article_number: 'Eigener Artikel',
                   unit_price_net: Number(storedArticle.unit_price_net) || 0,
@@ -426,8 +504,8 @@ export class CustomerOrderPublicComponent implements OnInit {
                   isCustom: true,
                   invoice_date: null,
                   product_database_id: 571,
-                          category: 'Eigene Artikel',
-        product_category: 'Eigene Artikel',
+                  category: 'Eigene Artikel',
+                  product_category: 'Eigene Artikel',
                   main_image_url: storedArticle.main_image_url
                 };
                 this.customerArticlePrices.push(newCustomArticle);
@@ -491,6 +569,9 @@ export class CustomerOrderPublicComponent implements OnInit {
           console.log('🔍 [PUBLIC-ORDER] Token erfolgreich dekodiert für Kundennummer:', this.customerNumber);
           console.log('🔍 [PUBLIC-ORDER] Starte Laden der Kundendaten...');
           console.log('🔍 [PUBLIC-ORDER] Token war gültig und wurde erfolgreich verarbeitet');
+
+          // Warenkorb behalten, wenn QR neu generiert wurde (neues Token, gleicher Kunde)
+          this.migrateCartTokenIfNeeded();
           
           // Nach der Token-Dekodierung die Kundendaten laden
           this.loadCustomerData();
@@ -902,9 +983,11 @@ export class CustomerOrderPublicComponent implements OnInit {
 
     console.log('🔍 [PUBLIC-ORDER] Filtere Artikel basierend auf Produktliste...');
     
-    // Erstelle ein Set aller verfügbaren article_numbers aus der Produktliste
+    // Erstelle ein Set aller verfügbaren article_numbers aus der Produktliste (string-normalisiert)
     const availableArticleNumbers = new Set(
-      this.allProducts.map(product => product.article_number)
+      this.allProducts
+        .map(product => product.article_number != null ? String(product.article_number) : '')
+        .filter(Boolean)
     );
     
     console.log('🔍 [PUBLIC-ORDER] Verfügbare Artikelnummern:', Array.from(availableArticleNumbers));
@@ -916,10 +999,11 @@ export class CustomerOrderPublicComponent implements OnInit {
     // Filtere die customerArticlePrices und füge Bilder hinzu
     const originalCount = this.customerArticlePrices.length;
     this.customerArticlePrices = this.customerArticlePrices.filter(article => {
-      const productId = article.product_id;
+      const productId = article.product_id != null ? String(article.product_id) : '';
+      const articleNumber = article.article_number != null ? String(article.article_number) : '';
 
       // Benutzerdefinierte Artikel (custom_*) immer anzeigen
-      if (productId && productId.toString().startsWith('custom_')) {
+      if (productId && productId.startsWith('custom_')) {
         console.log(`🔍 [PUBLIC-ORDER] Benutzerdefinierter Artikel beibehalten: ${article.article_text}`);
         return true;
       }
@@ -931,7 +1015,7 @@ export class CustomerOrderPublicComponent implements OnInit {
         });
 
         // Versuche trotzdem Bild und custom_field_1 hinzuzufügen, falls verfügbar
-        const matchingProduct = this.allProducts.find(product => product.article_number === productId);
+        const matchingProduct = this.findMatchingCatalogProduct(article);
         if (matchingProduct) {
           if (matchingProduct.main_image_url) {
             article.main_image_url = matchingProduct.main_image_url;
@@ -947,7 +1031,9 @@ export class CustomerOrderPublicComponent implements OnInit {
         return true; // Offer Products immer behalten!
       }
 
-      const isAvailable = availableArticleNumbers.has(productId);
+      const isAvailable =
+        (productId && availableArticleNumbers.has(productId)) ||
+        (articleNumber && availableArticleNumbers.has(articleNumber));
 
       if (!isAvailable) {
         console.log(`🔍 [PUBLIC-ORDER] Artikel gefiltert: ${article.article_text} (product_id: ${productId})`, {
@@ -956,7 +1042,7 @@ export class CustomerOrderPublicComponent implements OnInit {
         });
       } else {
         // Füge das Bild und custom_field_1 zum Artikel hinzu
-        const matchingProduct = this.allProducts.find(product => product.article_number === productId);
+        const matchingProduct = this.findMatchingCatalogProduct(article);
         if (matchingProduct) {
           // Bild hinzufügen
           if (matchingProduct.main_image_url) {
@@ -1091,7 +1177,13 @@ export class CustomerOrderPublicComponent implements OnInit {
           // Extrahiere Artikel (der Endpoint gibt ein Array von Artikeln zurück)
           if (Array.isArray(data)) {
             this.customerArticlePrices = data.filter((price: any) => {
-              return price.article_text && price.unit_price_net;
+              // article_text erforderlich; Preis 0 ist erlaubt (früher falsy und wurde ausgefiltert)
+              const hasText = !!price.article_text;
+              const hasPrice =
+                price.unit_price_net !== null &&
+                price.unit_price_net !== undefined &&
+                price.unit_price_net !== '';
+              return hasText && hasPrice;
             }).map((price: any) => ({
               ...price,
               tempQuantity: null,  // Initialisiere tempQuantity mit null
@@ -1320,6 +1412,17 @@ export class CustomerOrderPublicComponent implements OnInit {
   showOrderConfirmation() {
     // Statt Modal zu öffnen, zur öffentlichen Review-Seite navigieren
     if (this.token) {
+      // Offene Mengenfelder normalisieren, bevor gespeichert wird
+      for (const article of this.customerArticlePrices) {
+        const raw = article.tempQuantity;
+        if (raw === '' || raw === null || raw === undefined) {
+          article.tempQuantity = null;
+        } else {
+          const quantity = Number(raw);
+          article.tempQuantity = !isNaN(quantity) && quantity > 0 ? quantity : null;
+        }
+      }
+
       // Stelle sicher, dass die aktuelle Auswahl im einheitlichen Key gespeichert ist
       this.saveToLocalStorage();
       
@@ -1506,9 +1609,17 @@ export class CustomerOrderPublicComponent implements OnInit {
       }, 0);
   }
 
-  // Methode die aufgerufen wird, wenn sich die Menge über das Input-Feld ändert
-  onQuantityChange(): void {
-    // Bestellung in localStorage speichern
+  // Methode die aufgerufen wird, wenn die Menge im Input bestätigt wird (blur)
+  onQuantityChange(article?: any): void {
+    if (article) {
+      const raw = article.tempQuantity;
+      if (raw === '' || raw === null || raw === undefined) {
+        article.tempQuantity = null;
+      } else {
+        const quantity = Number(raw);
+        article.tempQuantity = !isNaN(quantity) && quantity > 0 ? quantity : null;
+      }
+    }
     this.saveToLocalStorage();
   }
 
@@ -1576,7 +1687,7 @@ export class CustomerOrderPublicComponent implements OnInit {
     if (this.customArticle.article_text && this.customArticle.tempQuantity && this.customArticle.tempQuantity > 0) {
       // Erstelle einen neuen benutzerdefinierten Artikel
       const newCustomArticle = {
-        product_id: `custom_${Date.now()}`, // Eindeutige ID für benutzerdefinierte Artikel
+        product_id: `custom_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`, // Eindeutige ID
         article_text: this.customArticle.article_text,
         article_number: 'Eigener Artikel',
         unit_price_net: 0, // Preis ist 0 für benutzerdefinierte Artikel

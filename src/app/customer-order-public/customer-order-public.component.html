@@ -166,7 +166,7 @@
                   <input 
                     type="number" 
                     [(ngModel)]="article.tempQuantity"
-                    (input)="onQuantityChange()"
+                    (blur)="onQuantityChange(article)"
                     min="0"
                     placeholder="0"
                     class="quantity-input"
@@ -262,7 +262,7 @@
                   <input 
                     type="number" 
                     [(ngModel)]="article.tempQuantity"
-                    (input)="onQuantityChange()"
+                    (blur)="onQuantityChange(article)"
                     min="0"
                     placeholder="0"
                     class="quantity-input"
@@ -315,7 +315,6 @@
                   <input 
                     type="number" 
                     [(ngModel)]="customArticle.tempQuantity"
-                    (input)="onQuantityChange()"
                     min="0"
                     placeholder="0"
                     class="quantity-input"
@@ -381,7 +380,6 @@
                 <input 
                   type="number" 
                   [(ngModel)]="customArticle.tempQuantity"
-                  (input)="onQuantityChange()"
                   min="0"
                   placeholder="0"
                   class="quantity-input"
