@@ -3223,8 +3223,7 @@
 // Article Prices Modal Styles
 .article-prices-modal {
   position: fixed;
-  top: 0;
-  left: 0;
+  inset: 0;
   width: 100%;
   height: 100%;
   background-color: rgba(0, 0, 0, 0.8);
@@ -3232,17 +3231,27 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  padding: 16px;
+  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  box-sizing: border-box;
+  overscroll-behavior: contain;
 }
 
 .article-prices-modal-content {
   background: white;
   border-radius: 12px;
-  width: 1200px;
-  height: 100%;
+  width: 100%;
+  max-width: 1200px;
+  height: min(90vh, calc(100vh - 32px));
+  height: min(90dvh, calc(100dvh - 32px));
+  max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
   overflow: hidden;
   display: flex;
   flex-direction: column;
   position: relative;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 // Notification styles
@@ -3263,6 +3272,8 @@
   font-size: 14px;
   font-weight: 500;
   animation: slideDown 0.3s ease-out;
+  max-width: calc(100% - 32px);
+  box-sizing: border-box;
   
   .notification-icon {
     font-size: 18px;
@@ -3292,11 +3303,18 @@
   padding: 16px 20px;
   border-bottom: 1px solid #e0e0e0;
   background-color: #f8f9fa;
+  flex-shrink: 0;
+  gap: 12px;
+  min-width: 0;
 
   h2 {
     margin: 0;
     color: #333;
     font-size: 18px;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }
 
@@ -3308,6 +3326,7 @@
   padding: 8px;
   border-radius: 4px;
   transition: all 0.2s ease;
+  flex-shrink: 0;
 
   &:hover {
     background-color: #e9ecef;
@@ -3319,8 +3338,10 @@
   padding: 20px;
   overflow: hidden;
   flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
 }
 
 .article-prices-search {
@@ -3346,13 +3367,17 @@
 
 .article-prices-table-container {
   overflow: auto;
+  -webkit-overflow-scrolling: touch;
   border-radius: 8px;
   border: 1px solid #e0e0e0;
   flex: 1;
+  min-height: 0;
+  min-width: 0;
 }
 
 .article-prices-table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
   background: white;
   
@@ -3367,18 +3392,69 @@
 
   th {
     background-color: #f8f9fa;
-    padding: 16px 12px;
+    padding: 12px 8px;
     text-align: left;
     font-weight: 600;
     color: #333;
     border-bottom: 2px solid #dee2e6;
-    white-space: nowrap;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
 
   td {
-    padding: 12px;
+    padding: 10px 8px;
     border-bottom: 1px solid #e0e0e0;
     vertical-align: middle;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .col-delete,
+  .delete-action {
+    width: 56px;
+  }
+
+  .col-article,
+  .article-name {
+    width: 22%;
+  }
+
+  .col-article-number,
+  .article-number {
+    width: 12%;
+  }
+
+  .col-cost-price,
+  .cost-price {
+    width: 10%;
+    color: #6b7280;
+    font-size: 0.9rem;
+  }
+
+  .col-customer-price,
+  .customer-price {
+    width: 14%;
+  }
+
+  .col-invoice-id,
+  .invoice-id {
+    width: 11%;
+  }
+
+  .col-invoice-date,
+  .invoice-date {
+    width: 12%;
+  }
+
+  .col-info,
+  .notes {
+    width: 52px;
+  }
+
+  .col-action,
+  .action {
+    width: 128px;
   }
 
   .article-price-row {
@@ -3386,6 +3462,11 @@
 
     &:hover {
       background-color: #f8f9fa;
+    }
+
+    &.selected {
+      background-color: #e3f2fd;
+      box-shadow: inset 3px 0 0 #007bff;
     }
 
     &:last-child {
@@ -3396,8 +3477,7 @@
   .article-name {
     font-weight: 500;
     color: #333;
-    max-width: 300px;
-    word-wrap: break-word;
+    max-width: none;
   }
 
   .article-number {
@@ -3414,6 +3494,40 @@
     }
   }
 
+  .price-edit-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .price-edit-input {
+    width: 100%;
+    min-width: 0;
+    max-width: 96px;
+    padding: 4px 6px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+  }
+
+  .save-price-btn {
+    background: #10b981;
+    color: white;
+    border: none;
+    padding: 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    .material-icons {
+      font-size: 18px;
+    }
+  }
+
   .invoice-id {
     font-family: 'Courier New', monospace;
     color: #666;
@@ -3424,7 +3538,7 @@
   .invoice-date {
     color: #666;
     font-size: 14px;
-    white-space: nowrap;
+    white-space: normal;
   }
 
   .action {
@@ -3510,6 +3624,314 @@
   padding: 40px;
   color: #666;
   font-size: 16px;
+  flex-shrink: 0;
+}
+
+.article-prices-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 12px;
+  flex-shrink: 0;
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    color: #fff;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1.2;
+    white-space: nowrap;
+
+    &:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+
+    .material-icons {
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .spinning {
+      animation: spin 1s linear infinite;
+    }
+  }
+
+  .qr-code-btn {
+    background: #10b981;
+  }
+
+  .print-article-prices-btn {
+    background: #2563eb;
+  }
+
+  .edit-article-prices-btn {
+    background: #f59e0b;
+
+    &.active {
+      background: #d97706;
+    }
+  }
+}
+
+@media (max-width: 1200px) {
+  .article-prices-table {
+    .col-invoice-id,
+    .invoice-id,
+    .col-invoice-date,
+    .invoice-date {
+      display: none;
+    }
+
+    .col-article,
+    .article-name {
+      width: 30%;
+    }
+
+    .col-action,
+    .action {
+      width: 118px;
+    }
+  }
+}
+
+@media (max-width: 1024px) {
+  .article-prices-modal-body {
+    padding: 8px 10px;
+  }
+
+  .article-prices-search {
+    margin-bottom: 8px;
+
+    .article-prices-search-input {
+      padding: 8px 10px;
+      font-size: 16px;
+    }
+  }
+
+  .article-prices-table-container {
+    display: block;
+    flex: 1;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    border: none;
+    background: transparent;
+    border-radius: 0;
+  }
+
+  .article-prices-table,
+  .article-prices-table thead,
+  .article-prices-table tbody {
+    display: block;
+    width: 100%;
+  }
+
+  .article-prices-table {
+    table-layout: auto;
+    border-collapse: separate;
+    border-spacing: 0;
+
+    thead {
+      display: none;
+    }
+
+    td {
+      padding: 0;
+      border: none;
+      width: auto;
+      max-width: none;
+      overflow: visible;
+      word-break: normal;
+      overflow-wrap: break-word;
+      text-align: left;
+
+      &::before {
+        content: none;
+        display: none;
+      }
+    }
+
+    .article-price-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      grid-template-areas:
+        "name price price"
+        "meta notes actions";
+      align-items: start;
+      column-gap: 8px;
+      row-gap: 4px;
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-left: 3px solid #28a745;
+      border-radius: 8px;
+      padding: 8px 10px;
+      margin-bottom: 6px;
+      box-shadow: none;
+
+      &:hover {
+        background: #f8fafc;
+      }
+
+      &.selected {
+        background: #e3f2fd;
+        border-color: #93c5fd;
+      }
+
+      &::before {
+        display: none;
+      }
+    }
+
+    .article-name {
+      grid-area: name;
+      display: block;
+      overflow: visible;
+      min-width: 0;
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1.3;
+      white-space: normal;
+    }
+
+    .customer-price {
+      grid-area: price;
+      display: flex;
+      justify-content: flex-end;
+      align-items: flex-start;
+      white-space: nowrap;
+      overflow: visible;
+
+      .customer-price-value {
+        font-size: 13px;
+        font-weight: 700;
+      }
+    }
+
+    .article-number {
+      grid-area: meta;
+      display: block;
+      min-width: 0;
+      font-size: 11px;
+      line-height: 1.3;
+      color: #6b7280;
+      overflow: visible;
+      white-space: normal;
+    }
+
+    .notes {
+      grid-area: notes;
+      display: flex;
+      align-items: center;
+      width: auto;
+      height: auto;
+      overflow: visible;
+    }
+
+    .action {
+      grid-area: actions;
+      display: flex;
+      justify-content: flex-end;
+      overflow: visible;
+    }
+
+    .cost-price,
+    .invoice-id,
+    .invoice-date {
+      display: none !important;
+    }
+
+    .delete-action {
+      grid-column: 1 / -1;
+      display: flex;
+      justify-content: flex-end;
+      overflow: visible;
+    }
+
+    .price-edit-row {
+      margin: 0;
+      gap: 4px;
+    }
+
+    .price-edit-input {
+      width: 72px;
+      max-width: 72px;
+      padding: 3px 4px;
+      font-size: 13px;
+    }
+
+    .save-price-btn {
+      padding: 4px;
+
+      .material-icons {
+        font-size: 16px;
+      }
+    }
+
+    .add-article-controls {
+      margin: 0;
+      gap: 4px;
+
+      .quantity-input {
+        width: 52px;
+        padding: 3px 4px;
+        font-size: 13px;
+        height: 28px;
+      }
+
+      .add-article-btn {
+        padding: 4px 6px;
+        min-height: 28px;
+
+        .material-icons {
+          font-size: 16px;
+        }
+      }
+    }
+
+    .delete-article-price-btn {
+      padding: 4px 6px !important;
+
+      .material-icons {
+        font-size: 16px !important;
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .article-prices-table {
+    border-spacing: 0 4px;
+
+    .article-price-row {
+      padding: 6px 8px;
+      column-gap: 6px;
+    }
+
+    .article-name {
+      font-size: 12px;
+    }
+
+    .customer-price .customer-price-value {
+      font-size: 12px;
+    }
+
+    .article-number {
+      font-size: 10px;
+    }
+  }
 }
 
 // Pricing status click hint styles
@@ -3593,33 +4015,40 @@
   }
 
   // Responsive Anpassungen für Article Prices Modal
+  .article-prices-modal {
+    padding: 8px;
+    padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+    align-items: stretch;
+  }
+
   .article-prices-modal-content {
-    width: 95%;
-    height: 85vh;
-    border-radius: 16px;
+    width: 100%;
+    height: 100%;
+    max-height: none;
+    border-radius: 12px;
   }
 
   .article-prices-modal-header {
-    padding: 16px 20px;
-    border-radius: 16px 16px 0 0;
+    padding: 12px 16px;
+    border-radius: 12px 12px 0 0;
 
     h2 {
-      font-size: 18px;
+      font-size: 16px;
       font-weight: 600;
     }
   }
 
   .article-prices-modal-body {
-    padding: 16px;
-    border-radius: 0 0 16px 16px;
+    padding: 12px;
+    border-radius: 0 0 12px 12px;
   }
 
   .article-prices-search {
-    margin-bottom: 16px;
+    margin-bottom: 12px;
 
     .article-prices-search-input {
       padding: 12px 16px;
-      font-size: 14px;
+      font-size: 16px; // verhindert iOS-Zoom
       border-radius: 12px;
       border: 2px solid #e9ecef;
       
@@ -3627,6 +4056,41 @@
         border-color: #007bff;
         box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
       }
+    }
+  }
+
+  .article-prices-actions {
+    justify-content: stretch;
+
+    button {
+      flex: 1 1 calc(50% - 8px);
+      min-width: 0;
+      white-space: normal;
+      text-align: center;
+    }
+  }
+
+  .article-prices-notification {
+    left: 12px;
+    right: 12px;
+    transform: none;
+    max-width: none;
+    top: 12px;
+    animation: slideDownMobile 0.3s ease-out;
+
+    .notification-text {
+      white-space: normal;
+    }
+  }
+
+  @keyframes slideDownMobile {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
     }
   }
   
@@ -5452,8 +5916,8 @@
   display: none; // Standardmäßig versteckt, nur auf mobilen Geräten sichtbar
 }
 
-// Desktop: Zeige Tabelle, verstecke Karten
-@media (min-width: 769px) {
+// Desktop: Tabelle sichtbar, Karten versteckt
+@media (min-width: 1025px) {
   .article-prices-table-container {
     display: block;
   }
@@ -5463,17 +5927,20 @@
   }
 }
 
-// Mobile: Verstecke Tabelle, zeige Karten
-@media (max-width: 768px) {
+// Tablet & Mobile: Tabelle als gestapelte Zeilen, Karten nicht zusätzlich anzeigen
+@media (max-width: 1024px) {
   .article-prices-table-container {
-    display: none;
+    display: block;
   }
   
   .article-prices-cards {
-    display: block;
-    max-height: 60vh;
+    display: none;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
-    padding: 8px;
+    -webkit-overflow-scrolling: touch;
+    padding: 4px 0 8px;
     
     .article-price-card {
       background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
@@ -5490,6 +5957,11 @@
         transform: translateY(-1px);
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
       }
+
+      &.selected {
+        background: #e3f2fd;
+        border-color: #93c5fd;
+      }
       
       &:before {
         content: '';
@@ -5505,7 +5977,9 @@
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
+        gap: 12px;
         margin-bottom: 12px;
+        flex-wrap: wrap;
         
         .price-badge {
           background: linear-gradient(135deg, #28a745, #20c997);
@@ -5531,6 +6005,11 @@
         }
         
         .card-actions {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          flex-shrink: 0;
+
           .info-btn {
             width: 24px !important;
             height: 24px !important;
@@ -5636,6 +6115,7 @@
         
         .add-to-order-section {
           display: flex;
+          flex-wrap: wrap;
           align-items: center;
           gap: 12px;
           padding: 12px;
@@ -5715,6 +6195,15 @@
 
 // Zusätzliche mobile Optimierungen für sehr kleine Bildschirme
 @media (max-width: 480px) {
+  .article-prices-actions {
+    flex-direction: column;
+
+    button {
+      width: 100%;
+      flex: 1 1 auto;
+    }
+  }
+
   .article-prices-cards {
     padding: 6px;
     
@@ -5814,28 +6303,34 @@
         .add-to-order-section {
           padding: 8px;
           gap: 8px;
+          flex-direction: column;
+          align-items: stretch;
           
           .quantity-input-group {
             gap: 4px;
+            width: 100%;
+            justify-content: space-between;
             
             .quantity-label {
               font-size: 10px;
             }
             
             .quantity-input {
-              width: 45px;
-              height: 20px;
-              font-size: 10px;
-              padding: 1px 4px;
+              width: 72px;
+              height: 32px;
+              font-size: 14px;
+              padding: 4px 8px;
             }
           }
           
           .add-to-order-btn {
-            padding: 6px 10px;
-            font-size: 10px;
+            width: 100%;
+            padding: 10px 12px;
+            font-size: 13px;
+            min-height: 40px;
             
             .material-icons {
-              font-size: 12px;
+              font-size: 16px;
             }
           }
         }
@@ -6716,6 +7211,12 @@
       padding: 12px;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
       transition: all 0.2s ease;
+
+      &.selected {
+        background-color: #e3f2fd;
+        border-color: #93c5fd;
+        box-shadow: inset 3px 0 0 #007bff;
+      }
 
       // Angebotsartikel hervorheben
       &.offer-item {

@@ -967,9 +967,11 @@
                 <!-- Suchfeld für kundenspezifische Preise -->
                 <div class="mobile-prices-search-section">
                   <div class="prices-search-container">
-                    <input type="text" 
+                    <input #mobileArticlePricesSearchInput
+                           type="text" 
                            [(ngModel)]="articlePricesSearchTerm" 
-                           (input)="filterArticlePrices()" 
+                           (ngModelChange)="onArticlePricesSearchTermChange($event)"
+                           (keydown)="onArticlePricesSearchKeyDown($event)"
                            placeholder="Nach Artikelbezeichnung, Art.-Nr., EAN oder Produkt-ID suchen..." 
                            class="prices-search-input">
                     <button *ngIf="articlePricesSearchTerm" (click)="clearArticlePricesSearch()" class="clear-prices-search">
@@ -978,9 +980,10 @@
                   </div>
                 </div>
                 
-                <div class="mobile-article-prices-cards">
-                  @for (customerPrice of filteredArticlePrices; track customerPrice.product_id) {
+                <div class="mobile-article-prices-cards" #mobileArticlePricesList>
+                  @for (customerPrice of filteredArticlePrices; track customerPrice.id || customerPrice.product_id || $index) {
                   <div class="mobile-article-price-card" 
+                       [class.selected]="selectedArticlePriceIndex === $index"
                        [class.offer-item]="customerPrice.use_offer_price && customerPrice.offer_price !== undefined">
                     <div class="price-card-header">
                       <div class="price-badge" [class.offer-badge]="customerPrice.use_offer_price && customerPrice.offer_price !== undefined">
@@ -999,10 +1002,6 @@
                       <div class="article-info">
                         <div class="article-name">{{ sanitizeText(customerPrice.article_text || customerPrice.product_name) || 'Unbekannter Artikel' }}</div>
                         <div class="article-number">{{ customerPrice.article_number || customerPrice.product_id }}</div>
-                        <!-- Debug Logging für Modal-Anzeige -->
-                        <div style="display: none;" *ngIf="true">
-                          {{ logModalDisplay(customerPrice) }}
-                        </div>
                       </div>
                       
                       <div class="invoice-info">
@@ -1024,7 +1023,7 @@
                                  step="0.001" 
                                  class="quantity-input" 
                                  placeholder="1"
-                                 (keyup.enter)="addArticleFromPricesModal(customerPrice)">
+                                 (keydown)="onArticlePriceQuantityKeyDown($event, $index)">
                         </div>
                         <button (click)="addArticleFromPricesModal(customerPrice)" class="add-to-order-btn" title="Zum Auftrag hinzufügen">
                           <span class="material-icons">add_shopping_cart</span>
@@ -1036,9 +1035,13 @@
                   }
                 </div>
                 
-                @if (articlePricesSearchTerm && filteredArticlePrices.length === 0) {
+                @if (filteredArticlePrices.length === 0) {
                 <div class="no-prices-results">
-                  <p>Keine Artikel für "{{ articlePricesSearchTerm }}" gefunden.</p>
+                  @if (isArticlePricesSearchPending()) {
+                    <p>Geben Sie mindestens 3 Zeichen ein, um Kundenpreise zu finden.</p>
+                  } @else {
+                    <p>Keine Artikel für "{{ articlePricesSearchTerm }}" gefunden.</p>
+                  }
                 </div>
                 }
               </div>
@@ -1142,32 +1145,38 @@
     
     <div class="article-prices-modal-body">
       <div class="article-prices-search">
-        <input type="text" [(ngModel)]="articlePricesSearchTerm" (input)="filterArticlePrices()" placeholder="Nach Artikelbezeichnung, Art.-Nr., EAN oder Produkt-ID suchen..." class="article-prices-search-input">
+        <input #articlePricesSearchInput
+               type="text"
+               [(ngModel)]="articlePricesSearchTerm"
+               (ngModelChange)="onArticlePricesSearchTermChange($event)"
+               (keydown)="onArticlePricesSearchKeyDown($event)"
+               placeholder="Nach Artikelbezeichnung, Art.-Nr., EAN oder Produkt-ID suchen..."
+               class="article-prices-search-input">
       </div>
       
       <!-- Desktop Tabelle -->
-      <div class="article-prices-table-container">
+      <div class="article-prices-table-container" #articlePricesTableContainer>
         <table class="article-prices-table">
           <thead>
             <tr>
               @if (isEditingArticlePrices) {
-                <th style="width: 50px;">Löschen</th>
+                <th class="col-delete">Löschen</th>
               }
-              <th>Artikel</th>
-              <th>Art.-Nr.</th>
-              <th>EK-Preis (€)</th>
-              <th>Kundenpreis (€)</th>
-              <th>Rechnungs-ID</th>
-              <th>Rechnungsdatum</th>
-              <th>Info</th>
-              <th>Aktion</th>
+              <th class="col-article">Artikel</th>
+              <th class="col-article-number">Art.-Nr.</th>
+              <th class="col-cost-price">EK-Preis (€)</th>
+              <th class="col-customer-price">Kundenpreis (€)</th>
+              <th class="col-invoice-id">Rechnungs-ID</th>
+              <th class="col-invoice-date">Rechnungsdatum</th>
+              <th class="col-info">Info</th>
+              <th class="col-action">Aktion</th>
             </tr>
           </thead>
           <tbody>
-            @for (customerPrice of filteredArticlePrices; track customerPrice.product_id) {
-            <tr class="article-price-row">
+            @for (customerPrice of filteredArticlePrices; track customerPrice.id || customerPrice.product_id || $index) {
+            <tr class="article-price-row" [class.selected]="selectedArticlePriceIndex === $index">
               @if (isEditingArticlePrices) {
-                <td class="delete-action">
+                <td class="delete-action" data-label="Löschen">
                   <button (click)="deleteCustomerArticlePrice(customerPrice)" 
                           class="delete-article-price-btn" 
                           title="Kundenspezifischen Preis löschen"
@@ -1176,46 +1185,44 @@
                   </button>
                 </td>
               }
-              <td class="article-name">{{ sanitizeText(customerPrice.article_text || customerPrice.product_name) || 'Unbekannter Artikel' }}</td>
-              <td class="article-number">{{ customerPrice.article_number || customerPrice.product_id }}</td>
-              <td class="cost-price" [class.no-blur]="true" [title]="'EK-Preis: €' + (customerPrice.cost_price || 0).toFixed(2)" style="color: #6b7280; font-size: 0.9rem;">€{{ (customerPrice.cost_price || 0).toFixed(2) }}</td>
-              <td class="customer-price">
+              <td class="article-name" data-label="Artikel">{{ sanitizeText(customerPrice.article_text || customerPrice.product_name) || 'Unbekannter Artikel' }}</td>
+              <td class="article-number" data-label="Art.-Nr.">{{ customerPrice.article_number || customerPrice.product_id }}</td>
+              <td class="cost-price" data-label="EK-Preis" [class.no-blur]="true" [title]="'EK-Preis: €' + (customerPrice.cost_price || 0).toFixed(2)">€{{ (customerPrice.cost_price || 0).toFixed(2) }}</td>
+              <td class="customer-price" data-label="Kundenpreis">
                 @if (isEditingArticlePrices) {
-                  <div style="display: flex; align-items: center; gap: 8px;">
+                  <div class="price-edit-row">
                     <input type="number" 
                            [(ngModel)]="customerPrice.editedPrice" 
                            step="0.01" 
                            class="price-edit-input" 
-                           style="width: 80px; padding: 4px; border: 1px solid #ddd; border-radius: 4px;"
                            placeholder="{{ customerPrice.unit_price_net }}">
                     <button (click)="saveCustomerArticlePrice(customerPrice)" 
                             class="save-price-btn" 
-                            title="Preis speichern"
-                            style="background: #10b981; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
-                      <span class="material-icons" style="font-size: 18px;">save</span>
+                            title="Preis speichern">
+                      <span class="material-icons">save</span>
                     </button>
                   </div>
                 } @else {
                   <span class="customer-price-value">€{{ customerPrice.unit_price_net }}</span>
                 }
               </td>
-              <td class="invoice-id">{{ customerPrice.invoice_id || '-' }}</td>
-              <td class="invoice-date">{{ formatInvoiceDate(customerPrice.invoice_date) }}</td>
-              <td class="notes">
+              <td class="invoice-id" data-label="Rechnung">{{ customerPrice.invoice_id || '-' }}</td>
+              <td class="invoice-date" data-label="Datum">{{ formatInvoiceDate(customerPrice.invoice_date) }}</td>
+              <td class="notes" data-label="Info">
                 <button class="info-btn" 
                         (click)="showCustomerPriceNotes(customerPrice)"
                         [title]="customerPrice.article_notes ? 'Artikel-Notizen anzeigen' : 'Keine Notizen'">
                   <span class="material-icons">info</span>
                 </button>
               </td>
-              <td class="action">
+              <td class="action" data-label="Aktion">
                 <div class="add-article-controls">
                   <input type="number" 
                          [(ngModel)]="customerPrice.tempQuantity" 
                          step="0.001" 
                          class="quantity-input" 
                          placeholder="1"
-                         (keyup.enter)="addArticleFromPricesModal(customerPrice)">
+                         (keydown)="onArticlePriceQuantityKeyDown($event, $index)">
                   <button (click)="addArticleFromPricesModal(customerPrice)" class="add-article-btn" title="Zum Auftrag hinzufügen">
                     <span class="material-icons">add_shopping_cart</span>
                   </button>
@@ -1227,30 +1234,10 @@
         </table>
       </div>
 
-      <div class="article-prices-actions" style="margin-top: 12px; display: flex; gap: 8px; justify-content: flex-end;">
-        <button (click)="showQRCode()" class="qr-code-btn" title="QR-Code für Online-Bestellung anzeigen" style="display: inline-flex; align-items: center; gap: 6px; background: #10b981; color: #fff; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer;">
-          <span class="material-icons">qr_code</span>
-          QR-Code
-        </button>
-        <button (click)="printCustomerPrices()" class="print-article-prices-btn" title="Kundenpreise drucken" style="display: inline-flex; align-items: center; gap: 6px; background: #2563eb; color: #fff; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer;">
-          <span class="material-icons">print</span>
-          Drucken
-        </button>
-        <button (click)="toggleEditMode()" class="edit-article-prices-btn" [class.active]="isEditingArticlePrices" [disabled]="isLoadingArticlePrices" title="Artikel-Preise bearbeiten" style="display: inline-flex; align-items: center; gap: 6px; background: #f59e0b; color: #fff; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer;">
-          @if (isLoadingArticlePrices) {
-            <span class="material-icons" style="animation: spin 1s linear infinite;">refresh</span>
-            Preise werden geladen…
-          } @else {
-            <span class="material-icons">{{ isEditingArticlePrices ? 'edit' : 'edit_off' }}</span>
-            {{ isEditingArticlePrices ? 'Bearbeitung beenden' : 'Bearbeiten' }}
-          }
-        </button>
-      </div>
-      
       <!-- Mobile Karten-Ansicht für kundenspezifische Preise -->
       <div class="article-prices-cards">
-        @for (customerPrice of filteredArticlePrices; track customerPrice.product_id) {
-        <div class="article-price-card">
+        @for (customerPrice of filteredArticlePrices; track customerPrice.id || customerPrice.product_id || $index) {
+        <div class="article-price-card" [class.selected]="selectedArticlePriceIndex === $index">
           <div class="price-card-header">
             @if (isEditingArticlePrices) {
               <div class="price-edit-section" style="display: flex; flex-direction: column; gap: 8px; align-items: flex-start;">
@@ -1310,7 +1297,7 @@
                      [(ngModel)]="customerPrice.tempQuantity" 
                      class="quantity-input" 
                      placeholder="1"
-                     (keyup.enter)="addArticleFromPricesModal(customerPrice)">
+                     (keydown)="onArticlePriceQuantityKeyDown($event, $index)">
               </div>
               <button (click)="addArticleFromPricesModal(customerPrice)" class="add-to-order-btn" title="Zum Auftrag hinzufügen">
                 <span class="material-icons">add_shopping_cart</span>
@@ -1324,9 +1311,33 @@
       
       @if (filteredArticlePrices.length === 0) {
       <div class="no-article-prices">
-        <p>Keine Artikel gefunden.</p>
+        @if (isArticlePricesSearchPending()) {
+          <p>Geben Sie mindestens 3 Zeichen ein, um Kundenpreise zu finden.</p>
+        } @else {
+          <p>Keine Artikel für "{{ articlePricesSearchTerm }}" gefunden.</p>
+        }
       </div>
       }
+
+      <div class="article-prices-actions">
+        <button (click)="showQRCode()" class="qr-code-btn" title="QR-Code für Online-Bestellung anzeigen">
+          <span class="material-icons">qr_code</span>
+          QR-Code
+        </button>
+        <button (click)="printCustomerPrices()" class="print-article-prices-btn" title="Kundenpreise drucken">
+          <span class="material-icons">print</span>
+          Drucken
+        </button>
+        <button (click)="toggleEditMode()" class="edit-article-prices-btn" [class.active]="isEditingArticlePrices" [disabled]="isLoadingArticlePrices" title="Artikel-Preise bearbeiten">
+          @if (isLoadingArticlePrices) {
+            <span class="material-icons spinning">refresh</span>
+            Preise werden geladen…
+          } @else {
+            <span class="material-icons">{{ isEditingArticlePrices ? 'edit' : 'edit_off' }}</span>
+            {{ isEditingArticlePrices ? 'Bearbeitung beenden' : 'Bearbeiten' }}
+          }
+        </button>
+      </div>
     </div>
   </div>
 </div>

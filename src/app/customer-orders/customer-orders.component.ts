@@ -35,6 +35,10 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   @ViewChild('mobileSearchInput') mobileSearchInput!: any;
   @ViewChild('customerSearchInput') customerSearchInput?: ElementRef<HTMLInputElement>;
   @ViewChild('articlesDropdown') articlesDropdown!: any;
+  @ViewChild('articlePricesSearchInput') articlePricesSearchInput?: ElementRef<HTMLInputElement>;
+  @ViewChild('mobileArticlePricesSearchInput') mobileArticlePricesSearchInput?: ElementRef<HTMLInputElement>;
+  @ViewChild('articlePricesTableContainer') articlePricesTableContainer?: ElementRef<HTMLElement>;
+  @ViewChild('mobileArticlePricesList') mobileArticlePricesList?: ElementRef<HTMLElement>;
   @ViewChild('orderTableContainer') orderTableContainer!: any;
   @ViewChild('eanCodeInput') eanCodeInput!: any;
   @ViewChild('imageInput') imageInput!: any;
@@ -49,6 +53,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   private forceActiveSubscription: Subscription | null = null;
   private articleSearchSubscription: Subscription | null = null;
   private searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+  private articlePricesSearchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly searchDebounceMs = 120;
   artikelData: any[] = [];
   orderItems: any[] = [];
@@ -83,6 +88,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   isArticlePricesModalOpen: boolean = false;
   articlePricesSearchTerm: string = '';
   filteredArticlePrices: any[] = [];
+  selectedArticlePriceIndex: number = -1;
   
   // Edit mode for article prices modal
   isEditingArticlePrices: boolean = false;
@@ -873,6 +879,11 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     if (this.searchDebounceTimer) {
       clearTimeout(this.searchDebounceTimer);
       this.searchDebounceTimer = null;
+    }
+
+    if (this.articlePricesSearchDebounceTimer) {
+      clearTimeout(this.articlePricesSearchDebounceTimer);
+      this.articlePricesSearchDebounceTimer = null;
     }
 
     if (this.articleSearchSubscription) {
@@ -3892,20 +3903,24 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
 
   // Artikel-Preise-Modal Methoden
   openArticlePricesModal() {
-    console.log('📋 [ARTICLE-PRICES-MODAL] Öffne Artikel-Preise-Modal...');
     this.isArticlePricesModalOpen = true;
     this.articlePricesSearchTerm = '';
-    this.filterArticlePrices();
+    this.filteredArticlePrices = [];
+    this.selectedArticlePriceIndex = -1;
+    setTimeout(() => this.focusArticlePricesSearchInput(), 50);
   }
 
   closeArticlePricesModal() {
-    console.log('📋 [ARTICLE-PRICES-MODAL] Schließe Artikel-Preise-Modal...');
     this.isArticlePricesModalOpen = false;
     this.articlePricesSearchTerm = '';
     this.filteredArticlePrices = [];
-    this.isEditingArticlePrices = false; // Reset edit mode when closing
-    // Clear any active notification when closing modal
+    this.selectedArticlePriceIndex = -1;
+    this.isEditingArticlePrices = false;
     this.hideArticlePricesNotification();
+    if (this.articlePricesSearchDebounceTimer) {
+      clearTimeout(this.articlePricesSearchDebounceTimer);
+      this.articlePricesSearchDebounceTimer = null;
+    }
   }
 
   async toggleEditMode() {
@@ -4088,49 +4103,211 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
 
   clearArticlePricesSearch() {
     this.articlePricesSearchTerm = '';
-    this.filterArticlePrices();
+    this.selectedArticlePriceIndex = -1;
+    this.filteredArticlePrices = [];
+    if (this.articlePricesSearchDebounceTimer) {
+      clearTimeout(this.articlePricesSearchDebounceTimer);
+      this.articlePricesSearchDebounceTimer = null;
+    }
+  }
+
+  onArticlePricesSearchTermChange(term: string): void {
+    if (this.articlePricesSearchDebounceTimer) {
+      clearTimeout(this.articlePricesSearchDebounceTimer);
+      this.articlePricesSearchDebounceTimer = null;
+    }
+
+    if (!term.trim()) {
+      this.filterArticlePrices();
+      return;
+    }
+
+    this.articlePricesSearchDebounceTimer = setTimeout(() => {
+      this.filterArticlePrices();
+    }, this.searchDebounceMs);
   }
 
   filterArticlePrices() {
-    console.log('🔍 [ARTICLE-PRICES-MODAL] Filtere Artikel-Preise...');
-    console.log('🔍 [ARTICLE-PRICES-MODAL] Suchbegriff:', this.articlePricesSearchTerm);
-    console.log('🔍 [ARTICLE-PRICES-MODAL] Verfügbare Artikel-Preise:', this.customerArticlePrices.length);
-    console.log('🔍 [ARTICLE-PRICES-MODAL] Globale Artikel:', this.globalArtikels.length);
-    
-    // Zuerst filtere nach Verfügbarkeit in globalArtikels
-    let availableCustomerPrices = this.customerArticlePrices.filter(customerPrice => {
-      return this.isArticleAvailableInGlobal(customerPrice);
-    });
-    
-    console.log('📊 [ARTICLE-PRICES-MODAL] Verfügbare Artikel in globalArtikels:', availableCustomerPrices.length);
-    
-    if (!this.articlePricesSearchTerm.trim()) {
-      // Wenn kein Suchbegriff, zeige alle verfügbaren Artikel-Preise an
-      this.filteredArticlePrices = availableCustomerPrices;
-    } else if (this.articlePricesSearchTerm.trim().length < 3) {
-      // Wenn weniger als 3 Zeichen eingegeben wurden, zeige alle verfügbaren Artikel-Preise an
-      this.filteredArticlePrices = availableCustomerPrices;
-    } else {
-      // Intelligente Suche: Teile Suchbegriff in einzelne Wörter auf
-      const terms = this.articlePricesSearchTerm.toLowerCase().split(/\s+/);
-      
-      this.filteredArticlePrices = availableCustomerPrices.filter(customerPrice => {
-        // Suche nach jedem Suchwort in verschiedenen Feldern
-        return terms.every((term) => {
-          const articleText = customerPrice.article_text?.toLowerCase() || '';
-          const articleNumber = customerPrice.article_number?.toLowerCase() || '';
-          const productId = customerPrice.product_id?.toLowerCase() || '';
-          const ean = customerPrice.ean?.toLowerCase() || '';
-          
-          return articleText.includes(term) || 
-                 articleNumber.includes(term) || 
-                 productId.includes(term) ||
-                 ean.includes(term);
-        });
-      });
+    this.selectedArticlePriceIndex = -1;
+    const query = (this.articlePricesSearchTerm || '').trim();
+    const isEanSearch = /^\d{8}$|^\d{12}$|^\d{13}$/.test(query);
+
+    if (!query || (!isEanSearch && query.length < 3)) {
+      this.filteredArticlePrices = this.isEditingArticlePrices ? [...this.customerArticlePrices] : [];
+      return;
     }
-    
-    console.log('📊 [ARTICLE-PRICES-MODAL] Gefilterte Artikel-Preise:', this.filteredArticlePrices.length);
+
+    const terms = query.toLowerCase().split(/\s+/);
+    this.filteredArticlePrices = this.customerArticlePrices.filter((customerPrice) => {
+      const articleText = (customerPrice.article_text || customerPrice.product_name || '').toLowerCase();
+      const articleNumber = (customerPrice.article_number || '').toLowerCase();
+      const productId = (customerPrice.product_id || '').toLowerCase();
+      const ean = (customerPrice.ean || '').toLowerCase();
+
+      return terms.every((term) =>
+        articleText.includes(term) ||
+        articleNumber.includes(term) ||
+        productId.includes(term) ||
+        ean.includes(term)
+      );
+    });
+  }
+
+  isArticlePricesSearchPending(): boolean {
+    if (this.isEditingArticlePrices) {
+      return false;
+    }
+    const query = (this.articlePricesSearchTerm || '').trim();
+    const isEanSearch = /^\d{8}$|^\d{12}$|^\d{13}$/.test(query);
+    return !query || (!isEanSearch && query.length < 3);
+  }
+
+  onArticlePricesSearchKeyDown(event: KeyboardEvent): void {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      if (this.articlePricesSearchDebounceTimer) {
+        clearTimeout(this.articlePricesSearchDebounceTimer);
+        this.articlePricesSearchDebounceTimer = null;
+      }
+      const input = event.target as HTMLInputElement | null;
+      this.articlePricesSearchTerm = (input?.value ?? this.articlePricesSearchTerm).trim();
+      this.filterArticlePrices();
+      return;
+    }
+
+    this.onArticlePricesListKeyDown(event);
+  }
+
+  onArticlePricesListKeyDown(event: KeyboardEvent): void {
+    if (this.filteredArticlePrices.length === 0) {
+      return;
+    }
+
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault();
+        if (this.selectedArticlePriceIndex === -1) {
+          this.focusArticlePriceQuantityInput(0);
+        } else {
+          const nextIndex = Math.min(this.selectedArticlePriceIndex + 1, this.filteredArticlePrices.length - 1);
+          this.focusArticlePriceQuantityInput(nextIndex);
+        }
+        break;
+      case 'ArrowUp':
+        event.preventDefault();
+        if (this.selectedArticlePriceIndex === -1) {
+          this.focusArticlePriceQuantityInput(this.filteredArticlePrices.length - 1);
+        } else {
+          const prevIndex = Math.max(this.selectedArticlePriceIndex - 1, 0);
+          this.focusArticlePriceQuantityInput(prevIndex);
+        }
+        break;
+      case 'Enter':
+        event.preventDefault();
+        this.addSelectedArticlePrice();
+        break;
+      case 'Escape':
+        event.preventDefault();
+        this.clearArticlePricesSearch();
+        this.focusArticlePricesSearchInput();
+        break;
+    }
+  }
+
+  onArticlePriceQuantityKeyDown(event: KeyboardEvent, index: number): void {
+    if (this.filteredArticlePrices.length === 0) {
+      return;
+    }
+
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault();
+        this.focusArticlePriceQuantityInput(Math.min(index + 1, this.filteredArticlePrices.length - 1));
+        break;
+      case 'ArrowUp':
+        event.preventDefault();
+        this.focusArticlePriceQuantityInput(Math.max(index - 1, 0));
+        break;
+      case 'Enter':
+        event.preventDefault();
+        this.addArticlePriceFromQuantityInput(index);
+        break;
+      case 'Escape':
+        event.preventDefault();
+        this.focusArticlePricesSearchInput();
+        break;
+    }
+  }
+
+  private addSelectedArticlePrice(): void {
+    if (this.selectedArticlePriceIndex >= 0 && this.selectedArticlePriceIndex < this.filteredArticlePrices.length) {
+      this.addArticleFromPricesModal(this.filteredArticlePrices[this.selectedArticlePriceIndex]);
+    }
+  }
+
+  private addArticlePriceFromQuantityInput(index: number): void {
+    if (index >= 0 && index < this.filteredArticlePrices.length) {
+      this.addArticleFromPricesModal(this.filteredArticlePrices[index]);
+    }
+  }
+
+  private getArticlePricesListElement(): HTMLElement | null {
+    if (this.isArticlePricesModalOpen && this.articlePricesTableContainer?.nativeElement) {
+      return this.articlePricesTableContainer.nativeElement;
+    }
+    if (this.mobileArticlePricesList?.nativeElement) {
+      return this.mobileArticlePricesList.nativeElement;
+    }
+    return null;
+  }
+
+  focusArticlePriceQuantityInput(index: number): void {
+    setTimeout(() => {
+      const listElement = this.getArticlePricesListElement();
+      if (!listElement || index < 0 || index >= this.filteredArticlePrices.length) {
+        return;
+      }
+
+      const quantityInputs = listElement.querySelectorAll('.quantity-input') as NodeListOf<HTMLInputElement>;
+      if (quantityInputs[index]) {
+        quantityInputs[index].focus();
+        quantityInputs[index].select();
+        this.selectedArticlePriceIndex = index;
+        this.scrollToSelectedArticlePrice();
+      }
+    }, 50);
+  }
+
+  private scrollToSelectedArticlePrice(): void {
+    setTimeout(() => {
+      const listElement = this.getArticlePricesListElement();
+      if (!listElement || this.selectedArticlePriceIndex < 0) {
+        return;
+      }
+
+      const selectedElement =
+        listElement.querySelector(`.article-price-row.selected`) ||
+        listElement.querySelector(`.mobile-article-price-card.selected`) ||
+        listElement.querySelector(`.article-price-card.selected`);
+
+      selectedElement?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'nearest'
+      });
+    }, 50);
+  }
+
+  focusArticlePricesSearchInput(): void {
+    setTimeout(() => {
+      const modalInput = this.articlePricesSearchInput?.nativeElement;
+      const mobileInput = this.mobileArticlePricesSearchInput?.nativeElement;
+      const input = this.isArticlePricesModalOpen && modalInput ? modalInput : (mobileInput || modalInput);
+      if (input) {
+        input.focus();
+        input.select();
+      }
+    }, 50);
   }
 
   // Neue Hilfsmethode zur Überprüfung der Verfügbarkeit in globalArtikels
@@ -4860,14 +5037,9 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       
       // Setze die temporäre Menge zurück
       customerPrice.tempQuantity = null;
-      
-      // Modal bleibt offen - nicht mehr automatisch schließen
-      // this.closeArticlePricesModal();
 
-      // Nur in Desktop-Ansicht: Fokussiere zurück auf das Suchfeld und wechsle Tab
-      if (!this.isMobileOrTabletView()) {
-        this.focusSearchInput();
-      }
+      this.clearArticlePricesSearch();
+      this.focusArticlePricesSearchInput();
 
       // Scrolle zur letzten Artikel-Position
       this.scrollToLastArticle();
@@ -4941,20 +5113,6 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Debug-Methode für Modal-Anzeige
-  logModalDisplay(customerPrice: any): string {
-    const displayedText = customerPrice.article_text || customerPrice.product_name || 'Unbekannter Artikel';
-    const displayedNumber = customerPrice.article_number || customerPrice.product_id;
-
-    console.log('📱 [MODAL-DISPLAY] Einzelner Artikel im Modal:');
-    console.log('   - Artikeltext:', displayedText);
-    console.log('   - Artikelnummer:', displayedNumber);
-    console.log('   - Rohdaten:', customerPrice);
-
-    return ''; // Leerer String für Template
-  }
-
-  // Neue Methode zum Laden der Kunden-Artikel-Preise
   // Promise-Version für async/await oder .then()
   loadCustomerArticlePricesAsync(customerNumber: string): Promise<void> {
     return new Promise((resolve) => {
@@ -5753,10 +5911,10 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     
     this.activeTab = tab;
     
-    // Wenn zum Preise-Tab gewechselt wird, initialisiere die gefilterten Artikel-Preise
     if (tab === 'prices') {
       this.articlePricesSearchTerm = '';
-      this.filterArticlePrices();
+      this.filteredArticlePrices = [];
+      this.selectedArticlePriceIndex = -1;
     }
   }
 
