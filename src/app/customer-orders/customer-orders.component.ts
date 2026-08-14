@@ -3905,8 +3905,8 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   openArticlePricesModal() {
     this.isArticlePricesModalOpen = true;
     this.articlePricesSearchTerm = '';
-    this.filteredArticlePrices = [];
     this.selectedArticlePriceIndex = -1;
+    this.filterArticlePrices();
     setTimeout(() => this.focusArticlePricesSearchInput(), 50);
   }
 
@@ -4104,11 +4104,11 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   clearArticlePricesSearch() {
     this.articlePricesSearchTerm = '';
     this.selectedArticlePriceIndex = -1;
-    this.filteredArticlePrices = [];
     if (this.articlePricesSearchDebounceTimer) {
       clearTimeout(this.articlePricesSearchDebounceTimer);
       this.articlePricesSearchDebounceTimer = null;
     }
+    this.filterArticlePrices();
   }
 
   onArticlePricesSearchTermChange(term: string): void {
@@ -4133,7 +4133,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     const isEanSearch = /^\d{8}$|^\d{12}$|^\d{13}$/.test(query);
 
     if (!query || (!isEanSearch && query.length < 3)) {
-      this.filteredArticlePrices = this.isEditingArticlePrices ? [...this.customerArticlePrices] : [];
+      this.filteredArticlePrices = [...this.customerArticlePrices];
       return;
     }
 
@@ -4154,9 +4154,6 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   }
 
   isArticlePricesSearchPending(): boolean {
-    if (this.isEditingArticlePrices) {
-      return false;
-    }
     const query = (this.articlePricesSearchTerm || '').trim();
     const isEanSearch = /^\d{8}$|^\d{12}$|^\d{13}$/.test(query);
     return !query || (!isEanSearch && query.length < 3);
@@ -5913,8 +5910,8 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     
     if (tab === 'prices') {
       this.articlePricesSearchTerm = '';
-      this.filteredArticlePrices = [];
       this.selectedArticlePriceIndex = -1;
+      this.filterArticlePrices();
     }
   }
 

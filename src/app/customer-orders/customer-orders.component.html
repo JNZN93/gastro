@@ -1038,7 +1038,7 @@
                 @if (filteredArticlePrices.length === 0) {
                 <div class="no-prices-results">
                   @if (isArticlePricesSearchPending()) {
-                    <p>Geben Sie mindestens 3 Zeichen ein, um Kundenpreise zu finden.</p>
+                    <p>Keine kundenspezifischen Preise verfügbar.</p>
                   } @else {
                     <p>Keine Artikel für "{{ articlePricesSearchTerm }}" gefunden.</p>
                   }
@@ -1312,7 +1312,7 @@
       @if (filteredArticlePrices.length === 0) {
       <div class="no-article-prices">
         @if (isArticlePricesSearchPending()) {
-          <p>Geben Sie mindestens 3 Zeichen ein, um Kundenpreise zu finden.</p>
+          <p>Keine Artikel gefunden.</p>
         } @else {
           <p>Keine Artikel für "{{ articlePricesSearchTerm }}" gefunden.</p>
         }
