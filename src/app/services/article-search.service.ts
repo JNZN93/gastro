@@ -51,7 +51,7 @@ export class ArticleSearchService {
       )
     );
 
-    const results = this.sortSearchResults(filtered, trimmedTerm);
+    const results = this.sortArticles(filtered, trimmedTerm);
     return of({ results, showDropdown: results.length > 0 });
   }
 
@@ -150,43 +150,63 @@ export class ArticleSearchService {
     return { results: filtered, showDropdown: filtered.length > 0 };
   }
 
-  private sortSearchResults(filtered: any[], trimmedTerm: string): any[] {
-    const searchTermLower = trimmedTerm.toLowerCase();
+  sortArticles(filtered: any[], trimmedTerm: string = ''): any[] {
+    const searchTermLower = trimmedTerm.trim().toLowerCase();
 
     return [...filtered].sort((a, b) => {
-      const aArticleNumberExact = a.article_number?.toLowerCase() === searchTermLower;
-      const bArticleNumberExact = b.article_number?.toLowerCase() === searchTermLower;
-      const aArticleTextExact = a.article_text?.toLowerCase() === searchTermLower;
-      const bArticleTextExact = b.article_text?.toLowerCase() === searchTermLower;
-      const aEanExact = a.ean?.toLowerCase() === searchTermLower;
-      const bEanExact = b.ean?.toLowerCase() === searchTermLower;
+      if (searchTermLower) {
+        const aArticleNumber = this.getArticleNumber(a);
+        const bArticleNumber = this.getArticleNumber(b);
+        const aArticleText = this.getArticleText(a);
+        const bArticleText = this.getArticleText(b);
+        const aEan = (a.ean || '').toLowerCase();
+        const bEan = (b.ean || '').toLowerCase();
 
-      const aArticleNumberStartsWith = a.article_number?.toLowerCase().startsWith(searchTermLower);
-      const bArticleNumberStartsWith = b.article_number?.toLowerCase().startsWith(searchTermLower);
-      const aArticleTextStartsWith = a.article_text?.toLowerCase().startsWith(searchTermLower);
-      const bArticleTextStartsWith = b.article_text?.toLowerCase().startsWith(searchTermLower);
-      const aEanStartsWith = a.ean?.toLowerCase().startsWith(searchTermLower);
-      const bEanStartsWith = b.ean?.toLowerCase().startsWith(searchTermLower);
+        const aArticleNumberExact = aArticleNumber === searchTermLower;
+        const bArticleNumberExact = bArticleNumber === searchTermLower;
+        const aArticleTextExact = aArticleText === searchTermLower;
+        const bArticleTextExact = bArticleText === searchTermLower;
+        const aEanExact = aEan === searchTermLower;
+        const bEanExact = bEan === searchTermLower;
 
-      if (aArticleNumberExact && !bArticleNumberExact) return -1;
-      if (!aArticleNumberExact && bArticleNumberExact) return 1;
-      if (aArticleTextExact && !bArticleTextExact) return -1;
-      if (!aArticleTextExact && bArticleTextExact) return 1;
-      if (aEanExact && !bEanExact) return -1;
-      if (!aEanExact && bEanExact) return 1;
-      if (aArticleNumberStartsWith && !bArticleNumberStartsWith) return -1;
-      if (!aArticleNumberStartsWith && bArticleNumberStartsWith) return 1;
-      if (aArticleTextStartsWith && !bArticleTextStartsWith) return -1;
-      if (!aArticleTextStartsWith && bArticleTextStartsWith) return 1;
-      if (aEanStartsWith && !bEanStartsWith) return -1;
-      if (!aEanStartsWith && bEanStartsWith) return 1;
+        const aArticleNumberStartsWith = aArticleNumber.startsWith(searchTermLower);
+        const bArticleNumberStartsWith = bArticleNumber.startsWith(searchTermLower);
+        const aArticleTextStartsWith = aArticleText.startsWith(searchTermLower);
+        const bArticleTextStartsWith = bArticleText.startsWith(searchTermLower);
+        const aEanStartsWith = aEan.startsWith(searchTermLower);
+        const bEanStartsWith = bEan.startsWith(searchTermLower);
 
-      const articleNumberComparison = this.compareArticleNumbers(a.article_number, b.article_number);
+        if (aArticleNumberExact && !bArticleNumberExact) return -1;
+        if (!aArticleNumberExact && bArticleNumberExact) return 1;
+        if (aArticleTextExact && !bArticleTextExact) return -1;
+        if (!aArticleTextExact && bArticleTextExact) return 1;
+        if (aEanExact && !bEanExact) return -1;
+        if (!aEanExact && bEanExact) return 1;
+        if (aArticleNumberStartsWith && !bArticleNumberStartsWith) return -1;
+        if (!aArticleNumberStartsWith && bArticleNumberStartsWith) return 1;
+        if (aArticleTextStartsWith && !bArticleTextStartsWith) return -1;
+        if (!aArticleTextStartsWith && bArticleTextStartsWith) return 1;
+        if (aEanStartsWith && !bEanStartsWith) return -1;
+        if (!aEanStartsWith && bEanStartsWith) return 1;
+      }
+
+      const articleNumberComparison = this.compareArticleNumbers(
+        this.getArticleNumber(a) || undefined,
+        this.getArticleNumber(b) || undefined
+      );
       if (articleNumberComparison !== 0) {
         return articleNumberComparison;
       }
-      return (a.article_text || '').localeCompare(b.article_text || '');
+      return this.getArticleText(a).localeCompare(this.getArticleText(b));
     });
+  }
+
+  private getArticleText(item: any): string {
+    return (item?.article_text || item?.product_name || '').toLowerCase();
+  }
+
+  private getArticleNumber(item: any): string {
+    return (item?.article_number || item?.product_id || '').toLowerCase();
   }
 
   private compareArticleNumbers(a: string | undefined, b: string | undefined): number {

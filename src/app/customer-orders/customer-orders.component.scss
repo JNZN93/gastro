@@ -945,10 +945,10 @@
     position: sticky;
     top: 0;
     z-index: 10;
-    height: 22px !important;
-    min-height: 22px !important;
-    max-height: 22px !important;
-    line-height: 1.1;
+    height: 26px !important;
+    min-height: 26px !important;
+    max-height: 26px !important;
+    line-height: 1.2;
     box-sizing: border-box;
   }
 
@@ -976,14 +976,14 @@
   td:nth-child(10) { text-align: center; } // EAN
 
   td {
-    padding: 2px 5px;
+    padding: 3px 6px;
     border-bottom: 1px solid #e0e0e0;
     vertical-align: middle;
     font-size: 11px;
-    height: 24px !important;
-    min-height: 24px !important;
-    max-height: 24px !important;
-    line-height: 1.1;
+    height: 28px !important;
+    min-height: 28px !important;
+    max-height: 28px !important;
+    line-height: 1.3;
     box-sizing: border-box;
     overflow: hidden;
     white-space: nowrap;
@@ -992,9 +992,9 @@
 
   .order-row {
     transition: background-color 0.2s ease, box-shadow 0.2s ease;
-    height: 24px !important;
-    min-height: 24px !important;
-    max-height: 24px !important;
+    height: 28px !important;
+    min-height: 28px !important;
+    max-height: 28px !important;
     box-sizing: border-box;
     cursor: grab;
 
@@ -1170,14 +1170,18 @@
   .article-name {
     font-weight: 500;
     color: #333;
-    max-width: 200px;
+    max-width: none;
+    min-width: 160px;
     text-align: left;
+    overflow: hidden;
     
     .article-name-container {
       display: flex;
       align-items: center;
       gap: 6px;
-      padding: 4px 6px;
+      padding: 0 2px;
+      min-width: 0;
+      overflow: hidden;
       border-radius: 4px;
       transition: all 0.2s ease;
       
@@ -1209,9 +1213,12 @@
       
       .article-text {
         flex: 1;
+        min-width: 0;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+        line-height: 1.35;
+        padding: 1px 0;
         cursor: pointer;
         
         &:hover {
@@ -1325,10 +1332,10 @@
     text-align: center;
     font-size: 11px;
     box-sizing: border-box;
-    height: 24px !important;
-    min-height: 24px !important;
-    max-height: 24px !important;
-    line-height: 1;
+    height: 22px !important;
+    min-height: 22px !important;
+    max-height: 22px !important;
+    line-height: 1.2;
     transition: all 0.2s ease;
     background-color: #fff;
     color: #333;
@@ -3392,24 +3399,30 @@
     }
   }
 
+  th,
+  td {
+    box-sizing: border-box;
+    overflow: hidden;
+    vertical-align: middle;
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+  }
+
   th {
     background-color: #f8f9fa;
-    padding: 12px 8px;
+    padding: 9px 8px;
     text-align: left;
     font-weight: 600;
     color: #333;
     border-bottom: 2px solid #dee2e6;
     white-space: nowrap;
-    font-family: 'Poppins', sans-serif;
+    line-height: 1.3;
   }
 
   td {
-    padding: 10px 8px;
+    padding: 8px 8px;
     border-bottom: 1px solid #e0e0e0;
-    vertical-align: middle;
-    font-family: 'Poppins', sans-serif;
-    overflow-wrap: break-word;
-    word-break: normal;
+    line-height: 1.4;
 
     .material-icons {
       font-family: 'Material Icons';
@@ -3421,49 +3434,46 @@
 
   .col-delete,
   .delete-action {
-    width: 56px;
+    width: 48px;
   }
 
   .col-article,
   .article-name {
-    width: 22%;
+    width: auto;
   }
 
   .col-article-number,
   .article-number {
-    width: 12%;
+    width: 94px;
   }
 
   .col-cost-price,
   .cost-price {
-    width: 10%;
+    width: 80px;
     color: #6b7280;
-    font-size: 0.9rem;
+    white-space: nowrap;
   }
 
   .col-customer-price,
   .customer-price {
-    width: 14%;
-  }
-
-  .col-invoice-id,
-  .invoice-id {
-    width: 11%;
+    width: 108px;
+    white-space: nowrap;
   }
 
   .col-invoice-date,
   .invoice-date {
-    width: 12%;
+    width: 96px;
+    white-space: nowrap;
   }
 
   .col-info,
   .notes {
-    width: 52px;
+    width: 48px;
   }
 
   .col-action,
   .action {
-    width: 128px;
+    width: 118px;
   }
 
   .article-price-row {
@@ -3486,23 +3496,26 @@
   .article-name {
     font-weight: 500;
     color: #333;
-    max-width: none;
-    overflow-wrap: break-word;
-    word-break: normal;
     font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
 
   .article-number {
     font-family: 'Courier New', monospace;
     color: #666;
-    font-size: 14px;
+    font-size: 13px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
   }
 
   .customer-price {
     .customer-price-value {
       color: #28a745;
       font-weight: 600;
-      font-size: 16px;
+      font-size: 13px;
     }
   }
 
@@ -3521,6 +3534,7 @@
     border: 1px solid #ddd;
     border-radius: 4px;
     box-sizing: border-box;
+    font-size: 13px;
   }
 
   .save-price-btn {
@@ -3540,21 +3554,38 @@
     }
   }
 
-  .invoice-id {
-    font-family: 'Courier New', monospace;
-    color: #666;
-    font-size: 14px;
-    font-weight: 500;
-  }
-
   .invoice-date {
     color: #666;
-    font-size: 14px;
-    white-space: normal;
+    font-size: 13px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
   }
 
   .action {
     text-align: center;
+    overflow: hidden;
+
+    .add-article-controls {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 6px;
+      min-width: 0;
+      width: 100%;
+    }
+
+    .quantity-input {
+      width: 56px;
+      min-width: 0;
+      flex: 0 0 56px;
+      padding: 4px 6px;
+      font-size: 13px;
+    }
+
+    .add-article-btn {
+      flex-shrink: 0;
+      padding: 5px 7px;
+    }
   }
 
   .notes {
@@ -3695,21 +3726,14 @@
 
 @media (max-width: 1200px) {
   .article-prices-table {
-    .col-invoice-id,
-    .invoice-id,
     .col-invoice-date,
     .invoice-date {
       display: none;
     }
 
-    .col-article,
-    .article-name {
-      width: 30%;
-    }
-
     .col-action,
     .action {
-      width: 118px;
+      width: 114px;
     }
   }
 }
@@ -3868,7 +3892,6 @@
     }
 
     .cost-price,
-    .invoice-id,
     .invoice-date {
       display: none !important;
     }
@@ -4209,11 +4232,11 @@
   gap: 8px;
   
   .quantity-input {
-    width: 60px;
-    padding: 6px 8px;
+    width: 56px;
+    padding: 4px 6px;
     border: 1px solid #ddd;
     border-radius: 4px;
-    font-size: 14px;
+    font-size: 12px;
     text-align: center;
     
     &:focus {

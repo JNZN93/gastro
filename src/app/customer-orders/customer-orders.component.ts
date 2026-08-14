@@ -4132,25 +4132,27 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     const query = (this.articlePricesSearchTerm || '').trim();
     const isEanSearch = /^\d{8}$|^\d{12}$|^\d{13}$/.test(query);
 
+    let filtered: any[];
     if (!query || (!isEanSearch && query.length < 3)) {
-      this.filteredArticlePrices = [...this.customerArticlePrices];
-      return;
+      filtered = [...this.customerArticlePrices];
+    } else {
+      const terms = query.toLowerCase().split(/\s+/);
+      filtered = this.customerArticlePrices.filter((customerPrice) => {
+        const articleText = (customerPrice.article_text || customerPrice.product_name || '').toLowerCase();
+        const articleNumber = (customerPrice.article_number || '').toLowerCase();
+        const productId = (customerPrice.product_id || '').toLowerCase();
+        const ean = (customerPrice.ean || '').toLowerCase();
+
+        return terms.every((term) =>
+          articleText.includes(term) ||
+          articleNumber.includes(term) ||
+          productId.includes(term) ||
+          ean.includes(term)
+        );
+      });
     }
 
-    const terms = query.toLowerCase().split(/\s+/);
-    this.filteredArticlePrices = this.customerArticlePrices.filter((customerPrice) => {
-      const articleText = (customerPrice.article_text || customerPrice.product_name || '').toLowerCase();
-      const articleNumber = (customerPrice.article_number || '').toLowerCase();
-      const productId = (customerPrice.product_id || '').toLowerCase();
-      const ean = (customerPrice.ean || '').toLowerCase();
-
-      return terms.every((term) =>
-        articleText.includes(term) ||
-        articleNumber.includes(term) ||
-        productId.includes(term) ||
-        ean.includes(term)
-      );
-    });
+    this.filteredArticlePrices = this.articleSearchService.sortArticles(filtered, query);
   }
 
   isArticlePricesSearchPending(): boolean {

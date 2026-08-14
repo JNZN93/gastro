@@ -1164,10 +1164,9 @@
               }
               <th class="col-article">Artikel</th>
               <th class="col-article-number">Art.-Nr.</th>
-              <th class="col-cost-price">EK-Preis (€)</th>
-              <th class="col-customer-price">Kundenpreis (€)</th>
-              <th class="col-invoice-id">Rechnungs-ID</th>
-              <th class="col-invoice-date">Rechnungsdatum</th>
+              <th class="col-cost-price">EK (€)</th>
+              <th class="col-customer-price">Kundenpreis</th>
+              <th class="col-invoice-date">Datum</th>
               <th class="col-info">Info</th>
               <th class="col-action">Aktion</th>
             </tr>
@@ -1206,7 +1205,6 @@
                   <span class="customer-price-value">€{{ customerPrice.unit_price_net }}</span>
                 }
               </td>
-              <td class="invoice-id" data-label="Rechnung">{{ customerPrice.invoice_id || '-' }}</td>
               <td class="invoice-date" data-label="Datum">{{ formatInvoiceDate(customerPrice.invoice_date) }}</td>
               <td class="notes" data-label="Info">
                 <button class="info-btn" 
@@ -1280,10 +1278,6 @@
             </div>
             
             <div class="invoice-info">
-              <div class="invoice-row">
-                <span class="invoice-label">Rechnung:</span>
-                <span class="invoice-value">{{ customerPrice.invoice_id || '-' }}</span>
-              </div>
               <div class="invoice-row">
                 <span class="invoice-label">Datum:</span>
                 <span class="invoice-value">{{ formatInvoiceDate(customerPrice.invoice_date) }}</span>
