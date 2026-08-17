@@ -8,7 +8,9 @@ import { GlobalService } from '../global.service';
 import { UploadLoadingComponent } from '../upload-loading/upload-loading.component';
 import { ZXingScannerComponent, ZXingScannerModule } from '@zxing/ngx-scanner';
 import { BarcodeFormat } from '@zxing/browser';
+import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatIconModule } from '@angular/material/icon';
 import { MyDialogComponent } from '../my-dialog/my-dialog.component';
 import { RecentImagesModalComponent } from '../recent-images-modal/recent-images-modal.component';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
@@ -25,7 +27,7 @@ import { KommissionierungPdfService } from '../services/kommissionierung-pdf.ser
 
 @Component({
   selector: 'app-customer-orders',
-  imports: [CommonModule, FormsModule, RouterModule, UploadLoadingComponent, ZXingScannerModule, MatDialogModule, HttpClientModule],
+  imports: [CommonModule, FormsModule, RouterModule, UploadLoadingComponent, ZXingScannerModule, MatButtonModule, MatIconModule, MatDialogModule, HttpClientModule],
   templateUrl: './customer-orders.component.html',
   styleUrl: './customer-orders.component.scss',
 })

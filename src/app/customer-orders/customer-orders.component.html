@@ -3,15 +3,13 @@
   <!-- Back Button Header -->
   <div class="back-header">
     <div class="back-header-left">
-      <button class="back-button" (click)="goBack()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-        </svg>
+      <button mat-stroked-button type="button" class="back-button" (click)="goBack()">
+        <mat-icon>arrow_back</mat-icon>
         Zurück
       </button>
 
-      <button class="order-overview-button" (click)="goToOrderOverview()">
-        <span class="material-icons">view_list</span>
+      <button mat-flat-button type="button" class="order-overview-button" (click)="goToOrderOverview()">
+        <mat-icon>view_list</mat-icon>
         Auftragsübersicht
       </button>
     </div>
@@ -43,8 +41,8 @@
         <div class="order-section">
           <div class="order-header">
             <h3>Auftrag für {{ globalService.selectedCustomerForOrders.last_name_company || globalService.selectedCustomerForOrders.customer_number }}</h3>
-            <button (click)="openCustomerModal()" class="change-customer-btn">
-              <span class="material-icons">swap_horiz</span>
+            <button mat-stroked-button type="button" (click)="openCustomerModal()" class="change-customer-btn">
+              <mat-icon>swap_horiz</mat-icon>
               Kunde wechseln
             </button>
           </div>
@@ -468,32 +466,33 @@
           
           <div class="order-actions">
             @if (orderItems.length > 0 && !isSplitMode) {
-              <button (click)="toggleSplitMode()" class="split-order-btn">
-                <span class="material-icons">call_split</span>
+              <button mat-stroked-button type="button" (click)="toggleSplitMode()" class="split-order-btn">
+                <mat-icon>call_split</mat-icon>
                 Auftrag splitten
               </button>
             }
             @if (isSplitMode) {
-              <button (click)="toggleSplitMode()" class="unsplit-order-btn">
-                <span class="material-icons">close</span>
+              <button mat-stroked-button type="button" (click)="toggleSplitMode()" class="unsplit-order-btn">
+                <mat-icon>close</mat-icon>
                 Split beenden
               </button>
             }
-            <button (click)="generateOrderPDF()" class="pdf-order-btn" [disabled]="isPrintingOrder || isSavingOrder">
-              <span class="material-icons">print</span>
+            <span class="order-actions-spacer"></span>
+            <button mat-stroked-button type="button" (click)="generateOrderPDF()" class="pdf-order-btn" [disabled]="isPrintingOrder || isSavingOrder">
+              <mat-icon>print</mat-icon>
               {{ isPrintingOrder ? 'Speichern & Drucken…' : 'Drucken' }}
             </button>
-            <button (click)="confirmSaveOrderAsOpen()" class="save-order-open-btn" [disabled]="isSplitMode || isPrintingOrder || isSavingOrder">
-              <span class="material-icons">schedule</span>
+            <button mat-flat-button type="button" (click)="confirmSaveOrderAsOpen()" class="save-order-open-btn" [disabled]="isSplitMode || isPrintingOrder || isSavingOrder">
+              <mat-icon>schedule</mat-icon>
               Zwischenspeichern
             </button>
-            <button (click)="saveOrder()" class="save-order-btn" [disabled]="isPrintingOrder || isSavingOrder">
-              <span class="material-icons">save</span>
+            <button mat-flat-button type="button" (click)="saveOrder()" class="save-order-btn" [disabled]="isPrintingOrder || isSavingOrder">
+              <mat-icon>save</mat-icon>
               Auftrag speichern
             </button>
-            <button (click)="confirmClearOrder()" class="clear-order-btn">
-              <span class="material-icons">clear</span>
-              Auftrag löschen
+            <button mat-stroked-button type="button" (click)="confirmClearOrder()" class="clear-order-btn">
+              <mat-icon>delete</mat-icon>
+              Löschen
             </button>
           </div>
           } @else {
@@ -506,8 +505,8 @@
         <div class="no-customer-selected">
           <h3>Auftragserstellung</h3>
           <p>Bitte wählen Sie zuerst einen Kunden aus, um einen Auftrag zu erstellen.</p>
-          <button (click)="openCustomerModal()" class="select-customer-btn">
-            <span class="material-icons">people</span>
+          <button mat-flat-button type="button" (click)="openCustomerModal()" class="select-customer-btn">
+            <mat-icon>people</mat-icon>
             Kunde auswählen
           </button>
         </div>
@@ -639,8 +638,8 @@
           }
         </div>
         <div class="customer-actions">
-          <button (click)="openCustomerModal()" class="change-customer-btn">
-            <span class="material-icons">swap_horiz</span>
+          <button mat-stroked-button type="button" (click)="openCustomerModal()" class="change-customer-btn">
+            <mat-icon>swap_horiz</mat-icon>
           </button>
           <button (click)="confirmClearSelectedCustomer()" class="clear-customer-btn">
             <span class="material-icons">close</span>
@@ -650,8 +649,8 @@
       } @else {
       <div class="mobile-no-customer">
         <h3>Auftragserstellung</h3>
-        <button (click)="openCustomerModal()" class="select-customer-btn">
-          <span class="material-icons">people</span>
+        <button mat-flat-button type="button" (click)="openCustomerModal()" class="select-customer-btn">
+          <mat-icon>people</mat-icon>
           Kunde auswählen
         </button>
       </div>
@@ -915,21 +914,21 @@
               </div>
               
               <div class="mobile-order-actions">
-                <button (click)="generateOrderPDF()" class="pdf-order-btn" [disabled]="isPrintingOrder || isSavingOrder">
-                  <span class="material-icons">print</span>
+                <button mat-stroked-button type="button" (click)="generateOrderPDF()" class="pdf-order-btn" [disabled]="isPrintingOrder || isSavingOrder">
+                  <mat-icon>print</mat-icon>
                   {{ isPrintingOrder ? 'Speichern & Drucken…' : 'Drucken' }}
                 </button>
-                <button (click)="confirmSaveOrderAsOpen()" class="save-order-open-btn" [disabled]="isSplitMode || isPrintingOrder || isSavingOrder">
-                  <span class="material-icons">schedule</span>
+                <button mat-flat-button type="button" (click)="confirmSaveOrderAsOpen()" class="save-order-open-btn" [disabled]="isSplitMode || isPrintingOrder || isSavingOrder">
+                  <mat-icon>schedule</mat-icon>
                   Zwischenspeichern
                 </button>
-                <button (click)="saveOrder()" class="save-order-btn" [disabled]="isPrintingOrder || isSavingOrder">
-                  <span class="material-icons">save</span>
+                <button mat-flat-button type="button" (click)="saveOrder()" class="save-order-btn" [disabled]="isPrintingOrder || isSavingOrder">
+                  <mat-icon>save</mat-icon>
                   Auftrag speichern
                 </button>
-                <button (click)="confirmClearOrder()" class="clear-order-btn">
-                  <span class="material-icons">clear</span>
-                  Auftrag löschen
+                <button mat-stroked-button type="button" (click)="confirmClearOrder()" class="clear-order-btn">
+                  <mat-icon>delete</mat-icon>
+                  Löschen
                 </button>
               </div>
               } @else {

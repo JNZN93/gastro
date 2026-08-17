@@ -111,61 +111,20 @@
   }
 
   .back-button {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 16px;
-    background: #f3f4f6;
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
-    color: #374151;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-family: 'Poppins', sans-serif;
-
-    &:hover {
-      background: #e5e7eb;
-      border-color: #9ca3af;
-      transform: translateY(-1px);
-    }
-
-    svg {
-      width: 20px;
-      height: 20px;
-    }
+    --mdc-outlined-button-label-text-color: #455a64;
+    --mdc-outlined-button-outline-color: #90a4ae;
+    --mat-outlined-button-state-layer-color: #455a64;
+    --mat-outlined-button-ripple-color: rgba(69, 90, 100, 0.12);
   }
 
   .order-overview-button {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 18px;
-    background: linear-gradient(135deg, #2563eb, #3b82f6);
-    border: none;
-    border-radius: 8px;
-    color: #fff;
-    font-weight: 500;
-    cursor: pointer;
-    font-family: 'Poppins', sans-serif;
-    box-shadow: 0 8px 20px rgba(37, 99, 235, 0.25);
-    transition: all 0.2s ease;
-
-    &:hover {
-      background: linear-gradient(135deg, #1d4ed8, #2563eb);
-      transform: translateY(-1px);
-      box-shadow: 0 10px 24px rgba(37, 99, 235, 0.28);
-    }
-
-    .material-icons {
-      font-size: 20px;
-    }
+    --mdc-filled-button-container-color: #1565c0;
+    --mdc-filled-button-label-text-color: #fff;
+    --mat-filled-button-state-layer-color: #fff;
+    --mat-filled-button-ripple-color: rgba(255, 255, 255, 0.16);
 
     @media (max-width: 768px) {
       flex: 1 1 auto;
-      justify-content: center;
-      padding: 9px 12px;
-      font-size: 13px;
     }
   }
 }
@@ -733,30 +692,12 @@
 }
 
 .change-customer-btn {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 11px;
-  font-weight: 500;
-  transition: all 0.3s ease;
-  white-space: nowrap;
+  --mdc-outlined-button-label-text-color: #1565c0;
+  --mdc-outlined-button-outline-color: #90caf9;
+  --mat-outlined-button-state-layer-color: #1565c0;
+  --mat-outlined-button-ripple-color: rgba(21, 101, 192, 0.12);
   flex-shrink: 0;
-
-  &:hover {
-    background-color: #0056b3;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 123, 255, 0.2);
-  }
-
-  .material-icons {
-    font-size: 12px;
-  }
+  white-space: nowrap;
 }
 
 // Kunden-Info-Box
@@ -837,6 +778,7 @@
       border: 2px solid #007bff;
       border-radius: 4px;
       padding: 4px 8px;
+      font-family: 'Poppins', sans-serif;
       font-size: 13px;
       font-weight: 600;
       color: #2c3e50;
@@ -933,6 +875,12 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   flex: 1;
   min-height: 200px;
+
+  input,
+  textarea,
+  select {
+    font-family: 'Poppins', sans-serif;
+  }
 
   th {
     background-color: #f8f9fa;
@@ -1240,6 +1188,7 @@
           background: transparent;
           border: none;
           color: white;
+          font-family: 'Poppins', sans-serif;
           font-size: inherit;
           font-weight: 500;
           width: 100%;
@@ -1255,6 +1204,7 @@
         background: transparent;
         border: none;
         color: inherit;
+        font-family: 'Poppins', sans-serif;
         font-size: inherit;
         font-weight: 500;
         width: 100%;
@@ -1330,6 +1280,7 @@
     border: 1px solid #ddd;
     border-radius: 3px;
     text-align: center;
+    font-family: 'Poppins', sans-serif;
     font-size: 11px;
     box-sizing: border-box;
     height: 22px !important;
@@ -1506,106 +1457,62 @@
   }
 }
 
-.order-actions {
-  display: flex;
-  gap: 12px;
-  margin-top: 16px;
-  flex-wrap: wrap;
-  
-  button {
-    padding: 12px 20px;
-    border: none;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 500;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: all 0.2s ease;
-    
-    .material-icons {
-      font-size: 18px;
-    }
-  }
-  
+@mixin order-action-colors {
   .split-order-btn {
-    background: #8b5cf6;
-    color: white;
-    
-    &:hover {
-      background: #7c3aed;
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
-    }
-  }
-
-  .unsplit-order-btn {
-    background: #64748b;
-    color: white;
-    
-    &:hover {
-      background: #475569;
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
-    }
-  }
-
-  .save-order-open-btn {
-    background: #f59e0b;
-    color: white;
-    
-    &:hover:not(:disabled) {
-      background: #d97706;
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
-    }
-
-    &:disabled {
-      background: #9ca3af;
-      color: #e5e7eb;
-      cursor: not-allowed;
-      opacity: 0.6;
-      
-      &:hover {
-        transform: none;
-        box-shadow: none;
-        background: #9ca3af;
-      }
-    }
+    --mdc-outlined-button-label-text-color: #6a1b9a;
+    --mdc-outlined-button-outline-color: #ce93d8;
+    --mat-outlined-button-state-layer-color: #6a1b9a;
+    --mat-outlined-button-ripple-color: rgba(106, 27, 154, 0.12);
   }
 
   .pdf-order-btn {
-    background: #2563eb;
-    color: white;
-    
-    &:hover {
-      background: #1d4ed8;
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
-    }
+    --mdc-outlined-button-label-text-color: #1565c0;
+    --mdc-outlined-button-outline-color: #90caf9;
+    --mat-outlined-button-state-layer-color: #1565c0;
+    --mat-outlined-button-ripple-color: rgba(21, 101, 192, 0.12);
+  }
+
+  .save-order-open-btn {
+    --mdc-filled-button-container-color: #ef6c00;
+    --mdc-filled-button-label-text-color: #fff;
+    --mat-filled-button-state-layer-color: #fff;
+    --mat-filled-button-ripple-color: rgba(255, 255, 255, 0.16);
   }
 
   .save-order-btn {
-    background: #10b981;
-    color: white;
-    
-    &:hover {
-      background: #059669;
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    --mdc-filled-button-container-color: #2e7d32;
+    --mdc-filled-button-label-text-color: #fff;
+    --mat-filled-button-state-layer-color: #fff;
+    --mat-filled-button-ripple-color: rgba(255, 255, 255, 0.16);
+  }
+
+  .clear-order-btn {
+    --mdc-outlined-button-label-text-color: #c62828;
+    --mdc-outlined-button-outline-color: #ef9a9a;
+    --mdc-text-button-label-text-color: #c62828;
+    --mat-outlined-button-state-layer-color: #c62828;
+    --mat-text-button-state-layer-color: #c62828;
+    --mat-outlined-button-ripple-color: rgba(198, 40, 40, 0.12);
+    --mat-text-button-ripple-color: rgba(198, 40, 40, 0.12);
+    color: #c62828;
+
+    mat-icon {
+      color: #c62828;
     }
   }
-  
-  .clear-order-btn {
-    background: #ef4444;
-    color: white;
-    
-    &:hover {
-      background: #dc2626;
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-    }
+}
+
+.order-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+
+  @include order-action-colors;
+
+  .order-actions-spacer {
+    flex: 1 1 8px;
   }
 }
 
@@ -2289,8 +2196,6 @@
       right: auto !important;
       left: auto !important;
       margin-top: 12px;
-      box-shadow: none;
-      border: 1px solid #e2e8f0;
     }
   }
 }
@@ -2299,12 +2204,15 @@
   .split-view-container {
     .order-actions {
       flex-direction: column;
+      align-items: stretch;
       gap: 8px;
-      
+
+      .order-actions-spacer {
+        display: none;
+      }
+
       button {
         width: 100%;
-        padding: 10px 16px;
-        font-size: 11px;
       }
     }
   }
@@ -2313,24 +2221,11 @@
 @media (max-width: 480px) {
   .split-view-container {
     .order-actions {
-      gap: 6px;
       position: sticky;
       bottom: 0;
       background: white;
-      border-top: 2px solid #e2e8f0;
       margin-top: 16px;
-      padding: 12px;
-      box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
-      
-      button {
-        padding: 10px 12px;
-        font-size: 11px;
-        font-weight: 600;
-        
-        .material-icons {
-          font-size: 18px;
-        }
-      }
+      padding: 8px 0 4px;
     }
   }
 }
@@ -2464,23 +2359,10 @@
 }
 
 .select-customer-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-  transition: all 0.3s ease;
-
-  &:hover {
-    background-color: #0056b3;
-    transform: translateY(-1px);
-  }
+  --mdc-filled-button-container-color: #1565c0;
+  --mdc-filled-button-label-text-color: #fff;
+  --mat-filled-button-state-layer-color: #fff;
+  --mat-filled-button-ripple-color: rgba(255, 255, 255, 0.16);
 }
 
 // Responsive Design
@@ -2533,23 +2415,21 @@
     right: 16px;
     background: white;
     padding: 12px;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    border: 1px solid #e0e0e0;
+    border-radius: 16px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
     z-index: 1000;
     flex-direction: column;
+    align-items: stretch;
     gap: 8px;
-    min-width: 160px;
-  }
-  
-  .pdf-order-btn,
-  .save-order-open-btn,
-  .save-order-btn,
-  .clear-order-btn {
-    width: 100%;
-    justify-content: center;
-    padding: 10px 16px;
-    font-size: 11px;
+    min-width: 220px;
+
+    .order-actions-spacer {
+      display: none;
+    }
+
+    button {
+      width: 100%;
+    }
   }
 }
 
@@ -2857,29 +2737,25 @@
     left: 8px;
     background: white;
     padding: 8px;
-    border-radius: 6px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    border: 1px solid #e0e0e0;
+    border-radius: 16px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
     z-index: 1000;
     flex-direction: row;
+    flex-wrap: nowrap;
     gap: 6px;
     justify-content: space-between;
-    
-    .save-order-open-btn,
-    .save-order-btn,
-    .clear-order-btn {
+    min-width: 0;
+
+    .order-actions-spacer {
+      display: none;
+    }
+
+    button {
       flex: 1;
-      justify-content: center;
-      padding: 8px 6px;
-      font-size: 11px;
       min-width: 0;
-      height: 32px;
-      
-      .material-icons {
-        font-size: 14px;
-      }
-      
-      span:not(.material-icons) {
+      width: auto;
+
+      .mdc-button__label {
         display: none;
       }
     }
@@ -2899,14 +2775,7 @@
     }
     
     .change-customer-btn {
-      padding: 3px 5px !important;
-      font-size: 9px !important;
-      height: 20px !important;
-      white-space: nowrap !important;
-      
-      .material-icons {
-        font-size: 10px !important;
-      }
+      white-space: nowrap;
     }
   }
 
@@ -3192,21 +3061,8 @@
 }
 
 .customer-card-footer .select-customer-btn {
-  background-color: #28a745;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 6px 12px;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  white-space: nowrap;
-  flex-shrink: 0;
-
-  &:hover {
-    background-color: #218838;
-    transform: translateY(-1px);
-  }
+  --mdc-filled-button-container-color: #2e7d32;
+  --mdc-filled-button-label-text-color: #fff;
 }
 
 .customer-loading, .no-customers {
@@ -5325,18 +5181,6 @@
     left: 6px;
     padding: 6px;
     gap: 4px;
-    
-    .save-order-open-btn,
-    .save-order-btn,
-    .clear-order-btn {
-      padding: 6px 4px;
-      font-size: 10px;
-      height: 28px;
-      
-      .material-icons {
-        font-size: 12px;
-      }
-    }
   }
 
   // Kompaktere Header
@@ -5349,13 +5193,7 @@
     }
     
     .change-customer-btn {
-      padding: 2px 4px !important;
-      font-size: 8px !important;
-      height: 18px !important;
-      
-      .material-icons {
-        font-size: 9px !important;
-      }
+      white-space: nowrap;
     }
   }
 
@@ -5862,7 +5700,9 @@
   }
   
   // Verbesserte Textauswahl
-  .article-name {
+  .article-name,
+  .article-name-edit-input {
+    font-family: 'Poppins', sans-serif;
     -webkit-user-select: text;
     -moz-user-select: text;
     -ms-user-select: text;
@@ -6465,39 +6305,42 @@
   .customer-actions {
     display: flex;
     gap: 8px;
+    align-items: center;
 
-    .change-customer-btn,
+    .change-customer-btn {
+      min-width: 40px;
+      width: 40px;
+      height: 40px;
+      padding: 0;
+
+      mat-icon {
+        margin: 0 !important;
+        margin-inline: 0 !important;
+      }
+
+      ::ng-deep .mdc-button__label {
+        display: none;
+      }
+    }
+
     .clear-customer-btn {
-      width: 32px;
-      height: 32px;
+      width: 40px;
+      height: 40px;
       border: none;
-      border-radius: 6px;
+      border-radius: 20px;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      transition: all 0.2s ease;
-
-      .material-icons {
-        font-size: 16px;
-      }
-    }
-
-    .change-customer-btn {
-      background: #007bff;
-      color: white;
-
-      &:hover {
-        background: #0056b3;
-      }
-    }
-
-    .clear-customer-btn {
       background: #dc3545;
       color: white;
 
       &:hover {
         background: #c82333;
+      }
+
+      .material-icons {
+        font-size: 18px;
       }
     }
   }
@@ -6520,28 +6363,6 @@
     margin: 0 0 12px 0;
     font-size: 16px;
     color: #333;
-  }
-
-  .select-customer-btn {
-    background: #007bff;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    padding: 8px 16px;
-    font-size: 14px;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    transition: background 0.2s ease;
-
-    &:hover {
-      background: #0056b3;
-    }
-
-    .material-icons {
-      font-size: 16px;
-    }
   }
 }
 
@@ -7026,76 +6847,15 @@
 }
 
 .mobile-order-actions {
-  display: flex;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
   margin-top: 16px;
 
-  .save-order-open-btn,
-  .save-order-btn,
-  .clear-order-btn {
-    flex: 1;
-    padding: 12px;
-    border: none;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 500;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    transition: all 0.2s ease;
+  @include order-action-colors;
 
-    .material-icons {
-      font-size: 16px;
-    }
-  }
-
-  .save-order-open-btn {
-    background: #f59e0b;
-    color: white;
-
-    &:hover:not(:disabled) {
-      background: #d97706;
-    }
-
-    &:disabled {
-      background: #9ca3af;
-      color: #e5e7eb;
-      cursor: not-allowed;
-      opacity: 0.6;
-      
-      &:hover {
-        background: #9ca3af;
-      }
-    }
-  }
-
-  .pdf-order-btn {
-    background: #2563eb;
-    color: white;
-
-    &:hover {
-      background: #1d4ed8;
-    }
-  }
-
-  .save-order-btn {
-    background: #28a745;
-    color: white;
-
-    &:hover {
-      background: #218838;
-    }
-  }
-
-  .clear-order-btn {
-    background: #dc3545;
-    color: white;
-
-    &:hover {
-      background: #c82333;
-    }
+  button {
+    width: 100%;
   }
 }
 
@@ -7573,7 +7333,6 @@
     }
 
     .customer-actions {
-      .change-customer-btn,
       .clear-customer-btn {
         width: 36px;
         height: 36px;
@@ -7718,7 +7477,6 @@
     }
 
     .customer-actions {
-      .change-customer-btn,
       .clear-customer-btn {
         width: 28px;
         height: 28px;
