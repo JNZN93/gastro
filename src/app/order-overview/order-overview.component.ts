@@ -11,6 +11,11 @@ import { AuthService } from '../authentication.service';
 import { OrderService } from '../order.service';
 import { GlobalService } from '../global.service';
 import { ArtikelDataService } from '../artikel-data.service';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 interface OrderItem {
   product_id: number;
@@ -54,7 +59,7 @@ interface OrdersResponse {
 @Component({
   selector: 'app-order-overview',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, MatButtonModule, MatFormFieldModule, MatIconModule, MatInputModule, MatTooltipModule],
   templateUrl: './order-overview.component.html',
   styleUrls: ['./order-overview.component.scss']
 })
