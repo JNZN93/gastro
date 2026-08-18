@@ -444,11 +444,11 @@ mat-icon.spinning {
       }
 
       &.row-sepa {
-        background: #e3f2fd;
-        border-left: 4px solid #1565c0;
+        background: #f9f2fa;
+        border-left: 4px solid #8e24aa;
 
         &:hover {
-          background: #bbdefb;
+          background: #f0e4f5;
         }
       }
     }
@@ -540,8 +540,8 @@ mat-icon.spinning {
     }
 
     &.status-sepa {
-      background: #bbdefb;
-      color: #1565c0;
+      background: #f3e5f5;
+      color: #7b1fa2;
       font-weight: 600;
     }
 
@@ -1129,8 +1129,8 @@ mat-icon.spinning {
   }
 
   &.row-sepa {
-    border-left: 4px solid #1565c0;
-    background: #e3f2fd;
+    border-left: 4px solid #8e24aa;
+    background: #f9f2fa;
   }
 
   &.row-open {
@@ -1227,8 +1227,8 @@ mat-icon.spinning {
     }
 
     &.status-sepa {
-      background: #bbdefb;
-      color: #1565c0;
+      background: #f3e5f5;
+      color: #7b1fa2;
       font-weight: 600;
     }
 
@@ -1880,9 +1880,9 @@ mat-icon.spinning {
   }
 
   &.status-sepa {
-    background: #bbdefb;
-    color: #1565c0;
-    border: 1px solid #64b5f6;
+    background: #f3e5f5;
+    color: #7b1fa2;
+    border: 1px solid #e1bee7;
   }
 
   &.status-overdue {
@@ -2251,8 +2251,8 @@ mat-icon.spinning {
               }
 
               &.status-sepa {
-                background: #bbdefb;
-                color: #1565c0;
+                background: #f3e5f5;
+                color: #7b1fa2;
               }
 
               &.status-overdue {
