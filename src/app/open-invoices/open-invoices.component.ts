@@ -5,6 +5,13 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { Router } from '@angular/router';
 import { Observable } from 'rxjs';
+import { MatButtonModule } from '@angular/material/button';
+import { MatButtonToggleChange, MatButtonToggleModule } from '@angular/material/button-toggle';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 interface Invoice {
   id: string;
@@ -52,7 +59,18 @@ interface InvoiceUpdateResponse {
 
 @Component({
   selector: 'app-open-invoices',
-  imports: [CommonModule, FormsModule],
+  standalone: true,
+  imports: [
+    CommonModule,
+    FormsModule,
+    MatButtonModule,
+    MatButtonToggleModule,
+    MatFormFieldModule,
+    MatIconModule,
+    MatInputModule,
+    MatProgressSpinnerModule,
+    MatTooltipModule
+  ],
   templateUrl: './open-invoices.component.html',
   styleUrl: './open-invoices.component.scss'
 })
@@ -976,6 +994,13 @@ export class OpenInvoicesComponent implements OnInit {
     this.updateFilteredInvoices(true);
   }
 
+  onInvoiceTabChange(event: MatButtonToggleChange): void {
+    const value = event.value;
+    if (value === 'all' || value === 'open' || value === 'paid' || value === 'overdue' || value === 'sepa') {
+      this.switchTab(value);
+    }
+  }
+
   // Method to update filtered invoices cache
   private updateFilteredInvoices(resetPage = false) {
     // Filter out the temporary new invoice row from search results
@@ -1864,6 +1889,13 @@ export class OpenInvoicesComponent implements OnInit {
     }
   }
 
+  onAuditTabChange(event: MatButtonToggleChange): void {
+    const value = event.value;
+    if (value === 'overview' || value === 'history') {
+      this.switchAuditTab(value);
+    }
+  }
+
   loadAuditLog(invoiceId: string): void {
     this.isLoadingAuditLog = true;
     this.auditLogError = '';
@@ -2082,8 +2114,8 @@ export class OpenInvoicesComponent implements OnInit {
 
   // Gibt das Sortiersymbol für die aktuelle Spalte zurück
   getSortIcon(column: string): string {
-    if (this.sortColumn !== column) return '';
-    return this.sortDirection === 'asc' ? '↑' : '↓';
+    if (this.sortColumn !== column) return 'unfold_more';
+    return this.sortDirection === 'asc' ? 'arrow_upward' : 'arrow_downward';
   }
 
   goBack() {

@@ -1,169 +1,150 @@
 <div class="open-invoices-dashboard" (scroll)="onScroll($event)">
-  <!-- Header Section -->
-  <div class="dashboard-header" [class.scrolled]="isScrolled">
+  <div class="back-button-section">
+    <div class="back-buttons">
+      <button mat-stroked-button type="button" class="back-btn" (click)="goBack()">
+        <mat-icon>arrow_back</mat-icon>
+        Zurück
+      </button>
+      <button mat-flat-button type="button" class="add-invoice-btn" (click)="addNewInvoiceRow()">
+        <mat-icon>add</mat-icon>
+        Rechnung hinzufügen
+      </button>
+    </div>
+  </div>
+
+  <div class="overview-header">
     <div class="header-content">
-      <h1 class="dashboard-title" [class.hidden]="isScrolled">
-        <svg class="dashboard-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-        </svg>
+      <h1 class="overview-title">
+        <mat-icon class="overview-icon">receipt_long</mat-icon>
         Eingehende Rechnungen
       </h1>
-      <div class="header-actions">
-        <button class="back-button" (click)="goBack()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-          </svg>
-          Zurück
-        </button>
-        <button class="add-invoice-btn" (click)="addNewInvoiceRow()">
-          <svg class="add-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-          </svg>
-          Rechnung hinzufügen
-        </button>
+      <div class="header-stats">
+        <div class="stat-item">
+          <span class="stat-number">{{ getTabStats('open').count }}</span>
+          <span class="stat-label">Offen</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number">{{ formatCurrency(getTabStats('open').amount) }}</span>
+          <span class="stat-label">Offener Betrag</span>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Invoices Section -->
   <div class="invoices-section">
-    <!-- Loading State -->
     <div *ngIf="isLoading" class="loading-container">
       <div class="loading-spinner">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-        </svg>
+        <mat-spinner diameter="36"></mat-spinner>
         <span>Rechnungen werden geladen...</span>
       </div>
     </div>
 
-    <!-- Error Message -->
     <div *ngIf="errorMessage && !isLoading" class="error-container">
       <div class="error-message">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-        </svg>
+        <mat-icon>error_outline</mat-icon>
         <span>{{ errorMessage }}</span>
-        <button (click)="loadInvoices()" class="retry-btn">Erneut versuchen</button>
+        <button mat-stroked-button type="button" class="retry-btn" (click)="loadInvoices()">
+          <mat-icon>refresh</mat-icon>
+          Erneut versuchen
+        </button>
       </div>
     </div>
 
-    <!-- Content -->
     <div *ngIf="!isLoading && !errorMessage">
-      <div class="section-header">
-        <h2 class="section-title">Rechnungsübersicht</h2>
-        <div class="table-controls">
-          <div class="search-box">
-            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-            </svg>
-            <input type="text" placeholder="Name, Rechnungsnr., Datum, Betrag, Status..." [(ngModel)]="searchTerm" class="search-input">
-          </div>
-          <button class="toggle-paid-btn" 
-                  [class.active]="showPaidInvoices"
-                  (click)="togglePaidInvoices()"
-                  title="Bezahlte Rechnungen {{ showPaidInvoices ? 'ausblenden' : 'einblenden' }}">
-            <svg *ngIf="!showPaidInvoices" class="toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.29 3.29m0 0L12 12m-5.71-5.71L12 12m0 0l3.29 3.29M12 12l3.29-3.29M12 12l-3.29-3.29m0 0L3 3"/>
-            </svg>
-            <svg *ngIf="showPaidInvoices" class="toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-              <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-            </svg>
-            <span class="toggle-text">{{ showPaidInvoices ? 'Bezahlte ausblenden' : 'Bezahlte einblenden' }}</span>
+      <div class="search-filter-section">
+        <mat-form-field appearance="outline" class="search-field" subscriptSizing="dynamic">
+          <mat-icon matPrefix>search</mat-icon>
+          <input matInput type="text" placeholder="Name, Rechnungsnr., Datum, Betrag, Status..." [(ngModel)]="searchTerm" name="invoiceSearch">
+        </mat-form-field>
+
+        <button
+          mat-stroked-button
+          type="button"
+          class="toggle-paid-btn"
+          [class.active]="showPaidInvoices"
+          (click)="togglePaidInvoices()"
+          [matTooltip]="showPaidInvoices ? 'Bezahlte Rechnungen ausblenden' : 'Bezahlte Rechnungen einblenden'">
+          <mat-icon>{{ showPaidInvoices ? 'visibility' : 'visibility_off' }}</mat-icon>
+          <span class="toggle-text">{{ showPaidInvoices ? 'Bezahlte ausblenden' : 'Bezahlte einblenden' }}</span>
+        </button>
+
+        <div class="export-buttons">
+          <button mat-stroked-button type="button" class="export-btn export-btn-view" (click)="exportToPDF(false)">
+            <mat-icon>picture_as_pdf</mat-icon>
+            <span class="btn-text-full">Als PDF exportieren (Ansicht)</span>
+            <span class="btn-text-short">PDF (Ansicht)</span>
           </button>
-          <div class="export-buttons">
-            <button class="export-btn export-btn-view" (click)="exportToPDF(false)">
-              <svg class="export-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-              </svg>
-              <span class="btn-text-full">Als PDF exportieren (Ansicht)</span>
-              <span class="btn-text-short">PDF (Ansicht)</span>
-            </button>
-            <button class="export-btn export-btn-all" (click)="exportToPDF(true)">
-              <svg class="export-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-              </svg>
-              <span class="btn-text-full">Als PDF exportieren (Alle)</span>
-              <span class="btn-text-short">PDF (Alle)</span>
-            </button>
-          </div>
+          <button mat-stroked-button type="button" class="export-btn export-btn-all" (click)="exportToPDF(true)">
+            <mat-icon>file_download</mat-icon>
+            <span class="btn-text-full">Als PDF exportieren (Alle)</span>
+            <span class="btn-text-short">PDF (Alle)</span>
+          </button>
         </div>
       </div>
 
-      <!-- Tab Navigation -->
       <div class="tab-navigation">
-        <div class="tabs-container">
-          <button class="tab-button"
-                  [class.active]="activeTab === 'all'"
-                  (click)="switchTab('all')">
-            <span class="tab-label">Alle</span>
+        <mat-button-toggle-group
+          class="invoice-tabs"
+          [value]="activeTab"
+          (change)="onInvoiceTabChange($event)"
+          hideSingleSelectionIndicator>
+          <mat-button-toggle value="all">
+            Alle
             <span class="tab-count">{{ getTabStats('all').count }}</span>
-          </button>
-          <button class="tab-button"
-                  [class.active]="activeTab === 'open'"
-                  (click)="switchTab('open')">
-            <span class="tab-label">Offen</span>
+          </mat-button-toggle>
+          <mat-button-toggle value="open">
+            Offen
             <span class="tab-count">{{ getTabStats('open').count }}</span>
-          </button>
-          <button class="tab-button"
-                  [class.active]="activeTab === 'paid'"
-                  (click)="switchTab('paid')">
-            <span class="tab-label">Bezahlt</span>
+          </mat-button-toggle>
+          <mat-button-toggle value="paid">
+            Bezahlt
             <span class="tab-count">{{ getTabStats('paid').count }}</span>
-          </button>
-          <button class="tab-button"
-                  [class.active]="activeTab === 'overdue'"
-                  (click)="switchTab('overdue')">
-            <span class="tab-label">Überfällig</span>
+          </mat-button-toggle>
+          <mat-button-toggle value="overdue">
+            Überfällig
             <span class="tab-count">{{ getTabStats('overdue').count }}</span>
-          </button>
-          <button class="tab-button"
-                  [class.active]="activeTab === 'sepa'"
-                  (click)="switchTab('sepa')">
-            <span class="tab-label">SEPA</span>
+          </mat-button-toggle>
+          <mat-button-toggle value="sepa">
+            SEPA
             <span class="tab-count">{{ getTabStats('sepa').count }}</span>
-          </button>
-        </div>
+          </mat-button-toggle>
+        </mat-button-toggle-group>
       </div>
 
-    <!-- Desktop Table View -->
     <div class="table-container desktop-view">
       <table class="invoices-table">
         <thead>
           <tr>
             <th class="sortable-header" (click)="sortBy('supplier_name')">
               <span class="header-text">Lieferant</span>
-              <span class="sort-icon">{{ getSortIcon('supplier_name') }}</span>
+              <mat-icon class="sort-icon">{{ getSortIcon('supplier_name') }}</mat-icon>
             </th>
             <th class="sortable-header" (click)="sortBy('invoice_number')">
               <span class="header-text">Rechn.-Nr.</span>
-              <span class="sort-icon">{{ getSortIcon('invoice_number') }}</span>
+              <mat-icon class="sort-icon">{{ getSortIcon('invoice_number') }}</mat-icon>
             </th>
             <th class="sortable-header" (click)="sortBy('date')">
               <span class="header-text">Datum</span>
-              <span class="sort-icon">{{ getSortIcon('date') }}</span>
+              <mat-icon class="sort-icon">{{ getSortIcon('date') }}</mat-icon>
             </th>
             <th class="sortable-header" (click)="sortBy('due_date')">
               <span class="header-text">Fällig</span>
-              <span class="sort-icon">{{ getSortIcon('due_date') }}</span>
+              <mat-icon class="sort-icon">{{ getSortIcon('due_date') }}</mat-icon>
             </th>
             <th class="sortable-header" (click)="sortBy('amount')">
               <span class="header-text">Betrag</span>
-              <span class="sort-icon">{{ getSortIcon('amount') }}</span>
+              <mat-icon class="sort-icon">{{ getSortIcon('amount') }}</mat-icon>
             </th>
             <th class="sortable-header" (click)="sortBy('status')">
               <span class="header-text">Status</span>
-              <span class="sort-icon">{{ getSortIcon('status') }}</span>
+              <mat-icon class="sort-icon">{{ getSortIcon('status') }}</mat-icon>
             </th>
             <th>Anhang</th>
-            <th>Aktionen</th>
+            <th class="actions-header">Aktionen</th>
           </tr>
         </thead>
         <tbody>
-          <!-- New Invoice Row (shown when adding) -->
           <tr *ngIf="newInvoiceRow" class="invoice-row new-invoice-row" [class]="getRowClass(newInvoiceRow)">
-            <!-- Supplier Name -->
             <td class="invoice-cell">
               <input type="text"
                      [(ngModel)]="newInvoiceRow.supplier_name"
@@ -171,7 +152,6 @@
                      placeholder="Lieferant">
             </td>
 
-            <!-- Invoice Number -->
             <td class="invoice-cell">
               <input type="text"
                      [(ngModel)]="newInvoiceRow.invoice_number"
@@ -179,7 +159,6 @@
                      placeholder="Rechnungsnummer">
             </td>
 
-            <!-- Date -->
             <td class="invoice-cell">
               <input type="date"
                      [(ngModel)]="newInvoiceRow.date"
@@ -187,7 +166,6 @@
                      (input)="onDateInput($event, 'new', 'date')">
             </td>
 
-            <!-- Due Date -->
             <td class="invoice-cell">
               <input type="date"
                      [(ngModel)]="newInvoiceRow.due_date"
@@ -195,7 +173,6 @@
                      (input)="onDateInput($event, 'new', 'due_date')">
             </td>
 
-            <!-- Amount -->
             <td class="invoice-cell">
               <input type="number"
                      step="0.01"
@@ -205,7 +182,6 @@
                      (input)="onAmountInput($event, 'new')">
             </td>
 
-            <!-- Status -->
             <td class="status-cell">
               <select [(ngModel)]="newInvoiceRow.status"
                       class="status-select"
@@ -218,56 +194,34 @@
               </select>
             </td>
 
-            <!-- Anhang: File Upload for new invoice (only one Anhang column) -->
             <td class="attachment-cell">
               <div class="attachment-info">
                 <div class="upload-section">
                   <input type="file" [id]="'new-invoice-file'" accept=".pdf,.jpg,.jpeg,.png" class="hidden-file-input" (change)="onNewInvoiceFileSelected($event)" />
-                  <button class="upload-row-btn" (click)="triggerNewInvoiceFileInput()" [disabled]="isCreatingInvoice" title="Datei für neue Rechnung auswählen (wird automatisch zu HiDrive hochgeladen)">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="upload-icon">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"/>
-                    </svg>
-                    <span [title]="newInvoiceRow.file ? newInvoiceRow.file.name : 'Datei wählen (Auto HiDrive)'" style="display:inline-block; max-width: 50px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; vertical-align:middle;">
-                      {{ newInvoiceRow.file ? newInvoiceRow.file.name : 'Datei wählen (Auto HiDrive)' }}
-                    </span>
+                  <button mat-icon-button type="button" class="upload-row-btn" (click)="triggerNewInvoiceFileInput()" [disabled]="isCreatingInvoice" [matTooltip]="newInvoiceRow.file ? newInvoiceRow.file.name : 'Datei wählen (Auto HiDrive)'">
+                    <mat-icon>{{ newInvoiceRow.file ? 'attach_file' : 'cloud_upload' }}</mat-icon>
                   </button>
-                  <button *ngIf="newInvoiceRow?.file" class="remove-file-btn" (click)="removeNewInvoiceFile()" title="Datei entfernen" type="button" style="background:transparent;border:none;padding:0;margin-left:4px;display:inline-flex;align-items:center;cursor:pointer;">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#ef4444" class="remove-icon">
-                      <circle cx="12" cy="12" r="9" stroke-width="2"/>
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 9l6 6M15 9l-6 6"/>
-                    </svg>
+                  <button *ngIf="newInvoiceRow.file" mat-icon-button type="button" class="remove-file-btn" (click)="removeNewInvoiceFile()" matTooltip="Datei entfernen">
+                    <mat-icon>close</mat-icon>
                   </button>
                 </div>
               </div>
             </td>
 
-            <!-- Actions (Save/Cancel) -->
             <td class="actions-cell">
-
               <div class="new-invoice-buttons">
-                <button class="save-btn" (click)="saveNewInvoice()" [disabled]="isCreatingInvoice">
-                  <svg *ngIf="!isCreatingInvoice" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="btn-icon">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                  </svg>
-                  <svg *ngIf="isCreatingInvoice" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="btn-icon spinning">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                  </svg>
-                  {{ isCreatingInvoice ? 'Speichern...' : 'Speichern' }}
+                <button mat-icon-button type="button" class="save-btn" (click)="saveNewInvoice()" [disabled]="isCreatingInvoice" matTooltip="Speichern">
+                  <mat-icon [class.spinning]="isCreatingInvoice">{{ isCreatingInvoice ? 'sync' : 'check' }}</mat-icon>
                 </button>
-                <button class="cancel-btn" (click)="cancelNewInvoice()" [disabled]="isCreatingInvoice">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="btn-icon">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                  </svg>
-                  Abbrechen
+                <button mat-icon-button type="button" class="cancel-btn" (click)="cancelNewInvoice()" [disabled]="isCreatingInvoice" matTooltip="Abbrechen">
+                  <mat-icon>close</mat-icon>
                 </button>
               </div>
             </td>
           </tr>
 
-          <!-- Existing Invoice Rows -->
           <tr *ngFor="let invoice of paginatedInvoices; let i = index; trackBy: trackByInvoiceId"
               class="invoice-row" [class]="getRowClass(invoice)">
-            <!-- Supplier Name -->
             <td class="invoice-cell">
               <span *ngIf="!isInvoiceEditing(invoice)" class="display-text">{{ invoice.supplier_name }}</span>
               <input *ngIf="isInvoiceEditing(invoice)" type="text"
@@ -277,7 +231,6 @@
                      (input)="updateInvoiceFieldLocally(invoice, 'supplier_name', $any($event.target).value)">
             </td>
 
-            <!-- Invoice Number -->
             <td class="invoice-cell">
               <span *ngIf="!isInvoiceEditing(invoice)" class="display-text">{{ invoice.invoice_number }}</span>
               <input *ngIf="isInvoiceEditing(invoice)" type="text"
@@ -287,7 +240,6 @@
                      (input)="updateInvoiceFieldLocally(invoice, 'invoice_number', $any($event.target).value)">
             </td>
 
-            <!-- Date -->
             <td class="invoice-cell">
               <span *ngIf="!isInvoiceEditing(invoice)" class="display-text">{{ formatDate(invoice.date) }}</span>
               <input *ngIf="isInvoiceEditing(invoice)" type="date"
@@ -297,7 +249,6 @@
                      (blur)="onDateBlur($event, invoice, 'date')">
             </td>
 
-            <!-- Due Date -->
             <td class="invoice-cell">
               <span *ngIf="!isInvoiceEditing(invoice)" class="display-text">{{ formatDate(invoice.due_date) }}</span>
               <input *ngIf="isInvoiceEditing(invoice)" type="date"
@@ -307,7 +258,6 @@
                      (blur)="onDateBlur($event, invoice, 'due_date')">
             </td>
 
-            <!-- Amount -->
             <td class="invoice-cell">
               <span *ngIf="!isInvoiceEditing(invoice)" class="display-text">{{ formatCurrency(invoice.amount) }}</span>
               <input *ngIf="isInvoiceEditing(invoice)" type="number"
@@ -318,7 +268,6 @@
                      (input)="updateInvoiceFieldLocally(invoice, 'amount', $any($event.target).value)">
             </td>
 
-            <!-- Status -->
             <td class="status-cell">
               <select [ngModel]="invoice.status"
                       class="status-select"
@@ -331,38 +280,25 @@
               </select>
             </td>
 
-            <!-- Attachment -->
             <td class="attachment-cell">
               <div class="attachment-info">
-                <!-- Hidden file input (always available for upload/replace operations) -->
                 <input type="file" [id]="'file-' + i" accept=".pdf,.jpg,.jpeg,.png" class="hidden-file-input" (change)="onFileSelectedForInvoice($event, invoice.id)" />
 
                 <div *ngIf="invoice.file_name" class="file-attached">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="attachment-icon">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
-                  </svg>
+                  <mat-icon class="attachment-icon">attach_file</mat-icon>
                   <span class="file-name">{{ invoice.file_name }}</span>
-                  <button class="download-btn" (click)="downloadInvoiceFile(invoice)" title="Datei herunterladen">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="download-icon">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                    </svg>
+                  <button mat-icon-button type="button" class="download-btn" (click)="downloadInvoiceFile(invoice)" matTooltip="Datei herunterladen">
+                    <mat-icon>download</mat-icon>
                   </button>
                 </div>
                 <div *ngIf="!invoice.file_name" class="upload-section">
-
-                  <!-- Upload Options -->
                   <div class="upload-options-row">
-                    <button class="upload-hidrive-btn" (click)="triggerFileInputForHiDrive(i)" [disabled]="isUploadingInvoice === invoice.id || isInvoiceEditing(invoice) || invoice.status !== 'open'" title="Zu HiDrive hochladen (nur offene Rechnungen)">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="upload-icon">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"/>
-                      </svg>
-                      <span>HiDrive</span>
+                    <button mat-icon-button type="button" class="upload-hidrive-btn" (click)="triggerFileInputForHiDrive(i)" [disabled]="isUploadingInvoice === invoice.id || isInvoiceEditing(invoice) || invoice.status !== 'open'" matTooltip="Zu HiDrive hochladen (nur offene Rechnungen)">
+                      <mat-icon>cloud_upload</mat-icon>
                     </button>
 
                     <div *ngIf="isUploadingInvoice === invoice.id" class="upload-loading">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="upload-icon spinning">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                      </svg>
+                      <mat-icon class="spinning">sync</mat-icon>
                       <span>Wird hochgeladen...</span>
                     </div>
                   </div>
@@ -370,54 +306,37 @@
               </div>
             </td>
 
-            <!-- Actions -->
             <td class="actions-cell">
               <div class="actions-buttons">
-                <button *ngIf="!isInvoiceEditing(invoice)" class="info-btn"
+                <button *ngIf="!isInvoiceEditing(invoice)" mat-icon-button type="button" class="info-btn"
                         (click)="showInvoiceAuditInfo(invoice)"
-                        title="Audit-Informationen anzeigen">
-                  <span class="material-icons">info</span>
+                        matTooltip="Audit-Informationen anzeigen">
+                  <mat-icon>info</mat-icon>
                 </button>
 
-                <!-- Edit Button (shown when not editing) -->
-                <button *ngIf="!isInvoiceEditing(invoice)" class="edit-btn icon-only"
+                <button *ngIf="!isInvoiceEditing(invoice)" mat-icon-button type="button" class="edit-btn"
                         (click)="startEditingInvoice(invoice)"
-                        [disabled]="editingInvoiceId && editingInvoiceId !== invoice.id"
-                        title="Bearbeiten">
-                  <span class="material-icons">edit</span>
+                        [disabled]="!!(editingInvoiceId && editingInvoiceId !== invoice.id)"
+                        matTooltip="Bearbeiten">
+                  <mat-icon>edit</mat-icon>
                 </button>
 
-                <!-- Delete Button (shown when not editing) -->
-                <button *ngIf="!isInvoiceEditing(invoice)" class="delete-btn icon-only"
+                <button *ngIf="!isInvoiceEditing(invoice)" mat-icon-button type="button" class="delete-btn"
                         (click)="confirmDeleteInvoice(invoice)"
-                        [disabled]="editingInvoiceId && editingInvoiceId !== invoice.id"
-                        title="Löschen">
-                  <span class="material-icons">delete</span>
+                        [disabled]="!!(editingInvoiceId && editingInvoiceId !== invoice.id)"
+                        matTooltip="Löschen">
+                  <mat-icon>delete</mat-icon>
                 </button>
 
-                <!-- Save/Cancel Buttons (shown when editing) -->
                 <div *ngIf="isInvoiceEditing(invoice)" class="edit-buttons">
-                  <!-- Overwrite existing HiDrive file (visible only when a HiDrive path exists) -->
-                  <button *ngIf="invoice.hidrive_path" class="upload-hidrive-btn" (click)="triggerFileInputForHiDriveOverwrite(i)" [disabled]="isUploadingInvoice === invoice.id" title="Bestehende HiDrive-Datei ersetzen">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="upload-icon">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M12 10v6m0 0l-3-3m3 3l3-3"/>
-                    </svg>
-                    Ersetzen
+                  <button *ngIf="invoice.hidrive_path" mat-icon-button type="button" class="upload-hidrive-btn" (click)="triggerFileInputForHiDriveOverwrite(i)" [disabled]="isUploadingInvoice === invoice.id" matTooltip="Bestehende HiDrive-Datei ersetzen">
+                    <mat-icon>swap_horiz</mat-icon>
                   </button>
-                  <button class="save-btn" (click)="saveEditedInvoice(invoice)" [disabled]="isCreatingInvoice">
-                    <svg *ngIf="!isCreatingInvoice" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="btn-icon">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                    </svg>
-                    <svg *ngIf="isCreatingInvoice" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="btn-icon spinning">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                    </svg>
-                    {{ isCreatingInvoice ? 'Speichern...' : 'Speichern' }}
+                  <button mat-icon-button type="button" class="save-btn" (click)="saveEditedInvoice(invoice)" [disabled]="isCreatingInvoice" matTooltip="Speichern">
+                    <mat-icon [class.spinning]="isCreatingInvoice">{{ isCreatingInvoice ? 'sync' : 'check' }}</mat-icon>
                   </button>
-                  <button class="cancel-btn" (click)="cancelEditingInvoice(invoice)" [disabled]="isCreatingInvoice">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="btn-icon">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                    </svg>
-                    Abbrechen
+                  <button mat-icon-button type="button" class="cancel-btn" (click)="cancelEditingInvoice(invoice)" [disabled]="isCreatingInvoice" matTooltip="Abbrechen">
+                    <mat-icon>close</mat-icon>
                   </button>
                 </div>
               </div>
@@ -427,9 +346,7 @@
       </table>
     </div>
 
-    <!-- Mobile/Tablet Card View -->
     <div class="cards-container mobile-view">
-      <!-- New Invoice Card (shown when adding) -->
       <div *ngIf="newInvoiceRow" class="invoice-card new-invoice-card" [class]="getRowClass(newInvoiceRow)">
         <div class="card-header">
           <div class="card-title">
@@ -450,7 +367,7 @@
             </select>
           </div>
         </div>
-        
+
         <div class="card-content">
           <div class="card-row-group">
             <div class="card-row half-width">
@@ -462,7 +379,7 @@
                        placeholder="Rechnungsnummer">
               </div>
             </div>
-            
+
             <div class="card-row half-width">
               <div class="card-label">Betrag:</div>
               <div class="card-value">
@@ -475,7 +392,7 @@
               </div>
             </div>
           </div>
-          
+
           <div class="card-row-group">
             <div class="card-row half-width">
               <div class="card-label">Datum:</div>
@@ -486,7 +403,7 @@
                        (input)="onDateInput($event, 'new', 'date')">
               </div>
             </div>
-            
+
             <div class="card-row half-width">
               <div class="card-label">Fälligkeitsdatum:</div>
               <div class="card-value">
@@ -497,55 +414,38 @@
               </div>
             </div>
           </div>
-          
+
           <div class="card-row">
             <div class="card-label">Anhang:</div>
             <div class="card-value">
               <div class="attachment-info">
                 <div class="upload-section">
                   <input type="file" [id]="'new-invoice-file-mobile'" accept=".pdf,.jpg,.jpeg,.png" class="hidden-file-input" (change)="onNewInvoiceFileSelected($event)" />
-                  <button class="upload-row-btn" (click)="triggerNewInvoiceFileInputMobile()" [disabled]="isCreatingInvoice" title="Datei für neue Rechnung auswählen (wird automatisch zu HiDrive hochgeladen)">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="upload-icon">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"/>
-                    </svg>
-                    <span [title]="newInvoiceRow.file ? newInvoiceRow.file.name : 'Datei wählen (Auto HiDrive)'" style="display:inline-block; max-width: 50px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; vertical-align:middle;">
-                      {{ newInvoiceRow.file ? newInvoiceRow.file.name : 'Datei wählen (Auto HiDrive)' }}
-                    </span>
+                  <button mat-icon-button type="button" class="upload-row-btn" (click)="triggerNewInvoiceFileInputMobile()" [disabled]="isCreatingInvoice" [matTooltip]="newInvoiceRow.file ? newInvoiceRow.file.name : 'Datei wählen (Auto HiDrive)'">
+                    <mat-icon>{{ newInvoiceRow.file ? 'attach_file' : 'cloud_upload' }}</mat-icon>
                   </button>
-                  <button *ngIf="newInvoiceRow?.file" class="remove-file-btn" (click)="removeNewInvoiceFile()" title="Datei entfernen" type="button" style="background:transparent;border:none;padding:0;margin-left:4px;display:inline-flex;align-items:center;cursor:pointer;">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#ef4444" class="remove-icon">
-                      <circle cx="12" cy="12" r="9" stroke-width="2"/>
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 9l6 6M15 9l-6 6"/>
-                    </svg>
+                  <span *ngIf="newInvoiceRow.file" class="file-name-truncate" [title]="newInvoiceRow.file.name">{{ newInvoiceRow.file.name }}</span>
+                  <button *ngIf="newInvoiceRow.file" mat-icon-button type="button" class="remove-file-btn" (click)="removeNewInvoiceFile()" matTooltip="Datei entfernen">
+                    <mat-icon>close</mat-icon>
                   </button>
                 </div>
               </div>
             </div>
           </div>
         </div>
-        
+
         <div class="card-actions">
           <div class="new-invoice-buttons">
-            <button class="save-btn" (click)="saveNewInvoice()" [disabled]="isCreatingInvoice">
-              <svg *ngIf="!isCreatingInvoice" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="btn-icon">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-              </svg>
-              <svg *ngIf="isCreatingInvoice" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="btn-icon spinning">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-              </svg>
-              {{ isCreatingInvoice ? 'Speichern...' : 'Speichern' }}
+            <button mat-icon-button type="button" class="save-btn" (click)="saveNewInvoice()" [disabled]="isCreatingInvoice" matTooltip="Speichern">
+              <mat-icon [class.spinning]="isCreatingInvoice">{{ isCreatingInvoice ? 'sync' : 'check' }}</mat-icon>
             </button>
-            <button class="cancel-btn" (click)="cancelNewInvoice()" [disabled]="isCreatingInvoice">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="btn-icon">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-              </svg>
-              Abbrechen
+            <button mat-icon-button type="button" class="cancel-btn" (click)="cancelNewInvoice()" [disabled]="isCreatingInvoice" matTooltip="Abbrechen">
+              <mat-icon>close</mat-icon>
             </button>
           </div>
         </div>
       </div>
 
-      <!-- Existing Invoice Cards -->
       <div *ngFor="let invoice of paginatedInvoices; let i = index; trackBy: trackByInvoiceId"
            class="invoice-card" [class]="getRowClass(invoice)">
         <div class="card-header">
@@ -567,14 +467,9 @@
               <option value="sepa">SEPA</option>
               <option value="overdue">Überfällig</option>
             </select>
-            <button *ngIf="!isInvoiceEditing(invoice)" class="info-btn mobile-card-info-btn"
-                    (click)="showInvoiceAuditInfo(invoice)"
-                    title="Audit-Informationen anzeigen">
-              <span class="material-icons">info</span>
-            </button>
           </div>
         </div>
-        
+
         <div class="card-content">
           <div class="card-row-group">
             <div class="card-row half-width">
@@ -588,7 +483,7 @@
                        (input)="updateInvoiceFieldLocally(invoice, 'invoice_number', $any($event.target).value)">
               </div>
             </div>
-            
+
             <div class="card-row half-width">
               <div class="card-label">Betrag:</div>
               <div class="card-value">
@@ -602,7 +497,7 @@
               </div>
             </div>
           </div>
-          
+
           <div class="card-row-group">
             <div class="card-row half-width">
               <div class="card-label">Datum:</div>
@@ -615,7 +510,7 @@
                        (blur)="onDateBlur($event, invoice, 'date')">
               </div>
             </div>
-            
+
             <div class="card-row half-width">
               <div class="card-label">Fälligkeitsdatum:</div>
               <div class="card-value">
@@ -628,39 +523,28 @@
               </div>
             </div>
           </div>
-          
+
           <div class="card-row">
             <div class="card-label">Anhang:</div>
             <div class="card-value">
               <div class="attachment-info">
-                <!-- Hidden file input (always available for upload/replace operations) -->
                 <input type="file" [id]="'file-mobile-' + i" accept=".pdf,.jpg,.jpeg,.png" class="hidden-file-input" (change)="onFileSelectedForInvoice($event, invoice.id)" />
 
                 <div *ngIf="invoice.file_name" class="file-attached">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="attachment-icon">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
-                  </svg>
+                  <mat-icon class="attachment-icon">attach_file</mat-icon>
                   <span class="file-name">{{ invoice.file_name }}</span>
-                  <button class="download-btn" (click)="downloadInvoiceFile(invoice)" title="Datei herunterladen">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="download-icon">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                    </svg>
+                  <button mat-icon-button type="button" class="download-btn" (click)="downloadInvoiceFile(invoice)" matTooltip="Datei herunterladen">
+                    <mat-icon>download</mat-icon>
                   </button>
                 </div>
                 <div *ngIf="!invoice.file_name" class="upload-section">
-                  <!-- Upload Options -->
                   <div class="upload-options-row">
-                    <button class="upload-hidrive-btn" (click)="triggerFileInputForHiDriveMobile(i)" [disabled]="isUploadingInvoice === invoice.id || isInvoiceEditing(invoice) || invoice.status !== 'open'" title="Zu HiDrive hochladen (nur offene Rechnungen)">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="upload-icon">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"/>
-                      </svg>
-                      <span>HiDrive</span>
+                    <button mat-icon-button type="button" class="upload-hidrive-btn" (click)="triggerFileInputForHiDriveMobile(i)" [disabled]="isUploadingInvoice === invoice.id || isInvoiceEditing(invoice) || invoice.status !== 'open'" matTooltip="Zu HiDrive hochladen (nur offene Rechnungen)">
+                      <mat-icon>cloud_upload</mat-icon>
                     </button>
 
                     <div *ngIf="isUploadingInvoice === invoice.id" class="upload-loading">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="upload-icon spinning">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                      </svg>
+                      <mat-icon class="spinning">sync</mat-icon>
                       <span>Wird hochgeladen...</span>
                     </div>
                   </div>
@@ -669,52 +553,38 @@
             </div>
           </div>
         </div>
-        
+
         <div class="card-actions">
           <div class="actions-buttons">
-            <!-- Edit Button (shown when not editing) -->
-            <button *ngIf="!isInvoiceEditing(invoice)" class="edit-btn"
+            <button *ngIf="!isInvoiceEditing(invoice)" mat-icon-button type="button" class="info-btn"
+                    (click)="showInvoiceAuditInfo(invoice)"
+                    matTooltip="Audit-Informationen anzeigen">
+              <mat-icon>info</mat-icon>
+            </button>
+
+            <button *ngIf="!isInvoiceEditing(invoice)" mat-icon-button type="button" class="edit-btn"
                     (click)="startEditingInvoice(invoice)"
-                    [disabled]="editingInvoiceId && editingInvoiceId !== invoice.id">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="btn-icon">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-              </svg>
-              Bearbeiten
+                    [disabled]="!!(editingInvoiceId && editingInvoiceId !== invoice.id)"
+                    matTooltip="Bearbeiten">
+              <mat-icon>edit</mat-icon>
             </button>
 
-            <!-- Delete Button (shown when not editing) -->
-            <button *ngIf="!isInvoiceEditing(invoice)" class="delete-btn"
+            <button *ngIf="!isInvoiceEditing(invoice)" mat-icon-button type="button" class="delete-btn"
                     (click)="confirmDeleteInvoice(invoice)"
-                    [disabled]="editingInvoiceId && editingInvoiceId !== invoice.id">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="btn-icon">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-              </svg>
-              Löschen
+                    [disabled]="!!(editingInvoiceId && editingInvoiceId !== invoice.id)"
+                    matTooltip="Löschen">
+              <mat-icon>delete</mat-icon>
             </button>
 
-            <!-- Save/Cancel Buttons (shown when editing) -->
             <div *ngIf="isInvoiceEditing(invoice)" class="edit-buttons">
-              <!-- Overwrite existing HiDrive file (visible only when a HiDrive path exists) -->
-              <button *ngIf="invoice.hidrive_path" class="upload-hidrive-btn" (click)="triggerFileInputForHiDriveOverwriteMobile(i)" [disabled]="isUploadingInvoice === invoice.id" title="Bestehende HiDrive-Datei ersetzen">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="upload-icon">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M12 10v6m0 0l-3-3m3 3l3-3"/>
-                </svg>
-                Ersetzen
+              <button *ngIf="invoice.hidrive_path" mat-icon-button type="button" class="upload-hidrive-btn" (click)="triggerFileInputForHiDriveOverwriteMobile(i)" [disabled]="isUploadingInvoice === invoice.id" matTooltip="Bestehende HiDrive-Datei ersetzen">
+                <mat-icon>swap_horiz</mat-icon>
               </button>
-              <button class="save-btn" (click)="saveEditedInvoice(invoice)" [disabled]="isCreatingInvoice">
-                <svg *ngIf="!isCreatingInvoice" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="btn-icon">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                </svg>
-                <svg *ngIf="isCreatingInvoice" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="btn-icon spinning">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                </svg>
-                {{ isCreatingInvoice ? 'Speichern...' : 'Speichern' }}
+              <button mat-icon-button type="button" class="save-btn" (click)="saveEditedInvoice(invoice)" [disabled]="isCreatingInvoice" matTooltip="Speichern">
+                <mat-icon [class.spinning]="isCreatingInvoice">{{ isCreatingInvoice ? 'sync' : 'check' }}</mat-icon>
               </button>
-              <button class="cancel-btn" (click)="cancelEditingInvoice(invoice)" [disabled]="isCreatingInvoice">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="btn-icon">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                </svg>
-                Abbrechen
+              <button mat-icon-button type="button" class="cancel-btn" (click)="cancelEditingInvoice(invoice)" [disabled]="isCreatingInvoice" matTooltip="Abbrechen">
+                <mat-icon>close</mat-icon>
               </button>
             </div>
           </div>
@@ -722,21 +592,20 @@
       </div>
     </div>
 
-    <!-- Pagination -->
     <div *ngIf="filteredInvoices.length > 0" class="pagination-bar">
       <span class="pagination-info">
         {{ paginationRangeStart }}–{{ paginationRangeEnd }} von {{ filteredInvoices.length }} Rechnungen
       </span>
       <div *ngIf="totalPages > 1" class="pagination-controls">
-        <button class="pagination-btn" (click)="previousPage()" [disabled]="currentPage <= 1" title="Vorherige Seite">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-          </svg>
+        <button mat-icon-button type="button" class="pagination-btn" (click)="previousPage()" [disabled]="currentPage <= 1" matTooltip="Vorherige Seite">
+          <mat-icon>chevron_left</mat-icon>
         </button>
         <div class="page-numbers">
           <ng-container *ngFor="let page of getVisiblePages()">
             <span *ngIf="page === '...'" class="page-ellipsis">...</span>
             <button *ngIf="page !== '...'"
+                    mat-icon-button
+                    type="button"
                     class="page-number-btn"
                     [class.active]="page === currentPage"
                     (click)="goToPage(page)">
@@ -744,15 +613,12 @@
             </button>
           </ng-container>
         </div>
-        <button class="pagination-btn" (click)="nextPage()" [disabled]="currentPage >= totalPages" title="Nächste Seite">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-          </svg>
+        <button mat-icon-button type="button" class="pagination-btn" (click)="nextPage()" [disabled]="currentPage >= totalPages" matTooltip="Nächste Seite">
+          <mat-icon>chevron_right</mat-icon>
         </button>
       </div>
     </div>
 
-    <!-- Summary Stats -->
     <div class="summary-stats">
       <div class="stat-item">
         <span class="stat-label">
@@ -776,16 +642,17 @@
       </div>
     </div>
   </div>
+  </div>
 
-  <!-- Duplicate Invoice Warning Modal -->
   <div class="modal-overlay" [class.active]="showDuplicateModal" (click)="cancelDuplicateCreation()"></div>
   <div class="duplicate-modal" [class.active]="showDuplicateModal">
     <div class="modal-header">
-      <h2>⚠️ Rechnungsnummer existiert bereits</h2>
-      <button class="close-btn" (click)="cancelDuplicateCreation()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-        </svg>
+      <h2>
+        <mat-icon>warning</mat-icon>
+        Rechnungsnummer existiert bereits
+      </h2>
+      <button mat-icon-button type="button" class="close-btn" (click)="cancelDuplicateCreation()">
+        <mat-icon>close</mat-icon>
       </button>
     </div>
     <div class="modal-content">
@@ -793,7 +660,7 @@
         Die Rechnungsnummer <strong>{{ pendingInvoiceData?.invoice_number }}</strong> existiert bereits.
         Sind Sie sicher, dass Sie diese Rechnung trotzdem erstellen möchten?
       </p>
-      
+
       <div class="existing-invoices">
         <h3>Bestehende Rechnungen mit dieser Nummer:</h3>
         <div class="invoice-list">
@@ -818,9 +685,9 @@
               <div class="info-row">
                 <span class="label">Status:</span>
                 <span class="value" [class]="'status-badge ' + getStatusClass(invoice.status)">
-                  {{ invoice.status === 'open' ? 'Offen' : 
-                     invoice.status === 'paid' ? 'Bezahlt' : 
-                     invoice.status === 'sepa' ? 'SEPA' : 
+                  {{ invoice.status === 'open' ? 'Offen' :
+                     invoice.status === 'paid' ? 'Bezahlt' :
+                     invoice.status === 'sepa' ? 'SEPA' :
                      invoice.status === 'overdue' ? 'Überfällig' : invoice.status }}
                 </span>
               </div>
@@ -828,38 +695,29 @@
           </div>
         </div>
       </div>
-      
+
       <div class="modal-actions">
-        <button class="cancel-btn" (click)="cancelDuplicateCreation()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="btn-icon">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-          </svg>
+        <button mat-stroked-button type="button" class="cancel-btn" (click)="cancelDuplicateCreation()">
+          <mat-icon>close</mat-icon>
           Abbrechen
         </button>
-        <button class="confirm-btn" (click)="confirmCreateDespiteDuplicates()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="btn-icon">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-          </svg>
+        <button mat-flat-button type="button" class="confirm-btn" (click)="confirmCreateDespiteDuplicates()">
+          <mat-icon>check</mat-icon>
           Trotzdem erstellen
         </button>
       </div>
     </div>
   </div>
 
-  <!-- Paid Status Confirmation Modal -->
   <div *ngIf="showPaidStatusModal" class="modal-overlay active" [ngStyle]="{opacity: '1', visibility: 'visible', display: 'flex'}">
-    <div class="modal-content" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+    <div class="modal-content paid-status-modal" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h3 class="modal-title">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="modal-icon">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-          </svg>
+          <mat-icon>task_alt</mat-icon>
           Rechnung als bezahlt markieren
         </h3>
-        <button class="modal-close-btn" (click)="closePaidStatusModal()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-          </svg>
+        <button mat-icon-button type="button" class="modal-close-btn" (click)="closePaidStatusModal()">
+          <mat-icon>close</mat-icon>
         </button>
       </div>
 
@@ -867,9 +725,7 @@
         <div class="invoice-info">
           <div class="info-card">
             <div class="info-header">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="info-icon">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-              </svg>
+              <mat-icon>description</mat-icon>
               <h4>Rechnungsdetails</h4>
             </div>
             <div class="info-content">
@@ -890,60 +746,43 @@
         </div>
 
         <div class="date-selection">
-          <label class="date-label">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="label-icon">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-            </svg>
-            Bezahldatum auswählen:
-          </label>
-          <input type="date" 
-                 [(ngModel)]="paidDate" 
-                 class="date-input"
-                 [max]="getTodayDate()">
+          <mat-form-field appearance="outline" class="date-field" subscriptSizing="dynamic">
+            <mat-label>Bezahldatum</mat-label>
+            <input matInput type="date" [(ngModel)]="paidDate" name="paidDate" [max]="getTodayDate()">
+            <mat-icon matSuffix>calendar_today</mat-icon>
+          </mat-form-field>
           <p class="date-hint">Das gewählte Datum wird für die HiDrive-Ordnerstruktur verwendet.</p>
         </div>
 
         <div class="confirmation-warning">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="warning-icon">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
-          </svg>
+          <mat-icon>warning</mat-icon>
           <p><strong>Wichtiger Hinweis:</strong> Diese Aktion kann nicht rückgängig gemacht werden. Die Rechnung wird als bezahlt markiert und die Datei wird automatisch in den entsprechenden HiDrive-Ordner verschoben.</p>
         </div>
       </div>
 
       <div class="modal-actions">
-        <button class="cancel-btn" 
-                (click)="closePaidStatusModal()" 
+        <button mat-stroked-button type="button" class="cancel-btn"
+                (click)="closePaidStatusModal()"
                 [disabled]="isConfirmingPaid">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="btn-icon">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-          </svg>
+          <mat-icon>close</mat-icon>
           Abbrechen
         </button>
-        <button class="confirm-btn paid-confirm" 
-                (click)="confirmPaidStatus()" 
+        <button mat-flat-button type="button" class="confirm-btn paid-confirm"
+                (click)="confirmPaidStatus()"
                 [disabled]="!paidDate || isConfirmingPaid">
-          <svg *ngIf="!isConfirmingPaid" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="btn-icon">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-          </svg>
-          <svg *ngIf="isConfirmingPaid" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="btn-icon spinning">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-          </svg>
+          <mat-icon [class.spinning]="isConfirmingPaid">{{ isConfirmingPaid ? 'sync' : 'task_alt' }}</mat-icon>
           {{ isConfirmingPaid ? 'Wird gespeichert...' : 'Als bezahlt bestätigen' }}
         </button>
       </div>
     </div>
   </div>
 
-  <!-- HiDrive Move Warning Modal -->
   <div class="modal-overlay" [class.active]="showHiDriveWarningModal" (click)="closeHiDriveWarningModal()"></div>
   <div class="duplicate-modal hidrive-warning-modal" [class.active]="showHiDriveWarningModal">
     <div class="modal-header">
       <h2>{{ getHiDriveWarningTitle() }}</h2>
-      <button class="close-btn" (click)="closeHiDriveWarningModal()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-        </svg>
+      <button mat-icon-button type="button" class="close-btn" (click)="closeHiDriveWarningModal()">
+        <mat-icon>close</mat-icon>
       </button>
     </div>
     <div class="modal-content">
@@ -958,25 +797,22 @@
         Der Fehler wurde in der Rechnungshistorie protokolliert.
       </p>
       <div class="modal-actions">
-        <button class="cancel-btn" (click)="openHiDriveWarningAuditHistory()" *ngIf="hiDriveWarningInvoice">
+        <button mat-stroked-button type="button" class="cancel-btn" (click)="openHiDriveWarningAuditHistory()" *ngIf="hiDriveWarningInvoice">
           Historie öffnen
         </button>
-        <button class="confirm-btn" (click)="closeHiDriveWarningModal()">
+        <button mat-flat-button type="button" class="confirm-btn" (click)="closeHiDriveWarningModal()">
           Verstanden
         </button>
       </div>
     </div>
   </div>
 
-  <!-- Audit Info Modal -->
   <div class="modal-overlay" [class.active]="showAuditModal" (click)="closeAuditModal()"></div>
   <div class="audit-modal" [class.active]="showAuditModal" *ngIf="auditInvoice">
     <div class="modal-header">
       <h2>Rechnungsinformationen</h2>
-      <button class="close-btn" (click)="closeAuditModal()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-        </svg>
+      <button mat-icon-button type="button" class="close-btn" (click)="closeAuditModal()">
+        <mat-icon>close</mat-icon>
       </button>
     </div>
     <div class="modal-content">
@@ -984,18 +820,14 @@
         <strong>{{ auditInvoice.supplier_name }}</strong> · {{ auditInvoice.invoice_number }}
       </p>
 
-      <div class="audit-tabs">
-        <button class="audit-tab"
-                [class.active]="auditModalTab === 'overview'"
-                (click)="switchAuditTab('overview')">
-          Übersicht
-        </button>
-        <button class="audit-tab"
-                [class.active]="auditModalTab === 'history'"
-                (click)="switchAuditTab('history')">
-          Historie
-        </button>
-      </div>
+      <mat-button-toggle-group
+        class="audit-tabs"
+        [value]="auditModalTab"
+        (change)="onAuditTabChange($event)"
+        hideSingleSelectionIndicator>
+        <mat-button-toggle value="overview">Übersicht</mat-button-toggle>
+        <mat-button-toggle value="history">Historie</mat-button-toggle>
+      </mat-button-toggle-group>
 
       <div *ngIf="auditModalTab === 'overview'" class="audit-info-list">
         <div class="info-row">
@@ -1052,7 +884,7 @@
       </div>
 
       <div class="modal-actions">
-        <button class="cancel-btn" (click)="closeAuditModal()">
+        <button mat-stroked-button type="button" class="cancel-btn" (click)="closeAuditModal()">
           Schließen
         </button>
       </div>
