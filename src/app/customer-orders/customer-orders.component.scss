@@ -3008,6 +3008,18 @@
     background-color: #f8f9fa;
   }
 
+  &:focus {
+    outline: none;
+  }
+
+  &.selected,
+  &:focus {
+    background-color: #e3f2fd;
+    border-color: #007bff;
+    border-left: 4px solid #007bff;
+    padding-left: 5px;
+  }
+
   &:active {
     background-color: #eef4ff;
   }

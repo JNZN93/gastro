@@ -36,6 +36,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   @ViewChild('searchInput') searchInput!: any;
   @ViewChild('mobileSearchInput') mobileSearchInput!: any;
   @ViewChild('customerSearchInput') customerSearchInput?: ElementRef<HTMLInputElement>;
+  @ViewChild('customersGrid') customersGrid?: ElementRef<HTMLElement>;
   @ViewChild('articlesDropdown') articlesDropdown!: any;
   @ViewChild('articlePricesSearchInput') articlePricesSearchInput?: ElementRef<HTMLInputElement>;
   @ViewChild('mobileArticlePricesSearchInput') mobileArticlePricesSearchInput?: ElementRef<HTMLInputElement>;
@@ -84,6 +85,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   customers: any[] = [];
   filteredCustomers: any[] = [];
   customerSearchTerm: string = '';
+  selectedCustomerIndex: number = -1;
   isLoadingCustomers: boolean = false;
   
   // Article prices modal properties
@@ -3708,16 +3710,18 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     this.isCustomerModalOpen = true;
     this.filteredCustomers = this.customers;
     this.customerSearchTerm = '';
+    this.selectedCustomerIndex = -1;
 
     // Wait until the modal input is rendered (*ngIf) before focusing it.
     setTimeout(() => {
-      this.customerSearchInput?.nativeElement?.focus();
+      this.focusCustomerSearchInput();
     }, 0);
   }
 
   closeCustomerModal() {
     this.isCustomerModalOpen = false;
     this.customerSearchTerm = '';
+    this.selectedCustomerIndex = -1;
   }
 
   loadCustomers() {
@@ -3749,6 +3753,8 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   }
 
   filterCustomers() {
+    this.selectedCustomerIndex = -1;
+
     if (!this.customerSearchTerm.trim()) {
       this.filteredCustomers = this.customers;
       return;
@@ -3757,6 +3763,102 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     this.filteredCustomers = this.customers.filter((customer) =>
       this.customerMatchesSearch(customer, this.customerSearchTerm)
     );
+  }
+
+  onCustomerSearchKeyDown(event: KeyboardEvent): void {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      this.closeCustomerModal();
+      return;
+    }
+
+    if (this.filteredCustomers.length === 0) {
+      return;
+    }
+
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault();
+        this.focusCustomerCard(this.selectedCustomerIndex === -1 ? 0 : Math.min(this.selectedCustomerIndex + 1, this.filteredCustomers.length - 1));
+        break;
+      case 'ArrowUp':
+        event.preventDefault();
+        if (this.selectedCustomerIndex > 0) {
+          this.focusCustomerCard(this.selectedCustomerIndex - 1);
+        } else if (this.selectedCustomerIndex === 0) {
+          this.focusCustomerSearchInput();
+        }
+        break;
+      case 'Enter':
+        event.preventDefault();
+        this.selectHighlightedCustomer();
+        break;
+    }
+  }
+
+  onCustomerCardKeyDown(event: KeyboardEvent, index: number): void {
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault();
+        this.focusCustomerCard(Math.min(index + 1, this.filteredCustomers.length - 1));
+        break;
+      case 'ArrowUp':
+        event.preventDefault();
+        if (index === 0) {
+          this.focusCustomerSearchInput();
+        } else {
+          this.focusCustomerCard(index - 1);
+        }
+        break;
+      case 'Enter':
+      case ' ':
+        event.preventDefault();
+        if (index >= 0 && index < this.filteredCustomers.length) {
+          this.selectCustomer(this.filteredCustomers[index]);
+        }
+        break;
+      case 'Escape':
+        event.preventDefault();
+        this.closeCustomerModal();
+        break;
+    }
+  }
+
+  private selectHighlightedCustomer(): void {
+    if (this.filteredCustomers.length === 0) {
+      return;
+    }
+
+    const index = this.selectedCustomerIndex >= 0 ? this.selectedCustomerIndex : 0;
+    this.selectCustomer(this.filteredCustomers[index]);
+  }
+
+  private focusCustomerCard(index: number): void {
+    if (index < 0 || index >= this.filteredCustomers.length) {
+      return;
+    }
+
+    this.selectedCustomerIndex = index;
+    this.cdr.detectChanges();
+
+    const cards = this.customersGrid?.nativeElement?.querySelectorAll('.customer-card') as NodeListOf<HTMLElement> | undefined;
+    const card = cards?.[index];
+    if (!card) {
+      return;
+    }
+
+    card.focus();
+    card.scrollIntoView({
+      behavior: 'smooth',
+      block: 'nearest',
+      inline: 'nearest'
+    });
+  }
+
+  private focusCustomerSearchInput(): void {
+    this.selectedCustomerIndex = -1;
+    this.customerSearchInput?.nativeElement?.focus();
+    this.customerSearchInput?.nativeElement?.select();
   }
 
   private normalizeCustomerSearchTerm(term: string): string {
@@ -3837,6 +3939,8 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     // Lade Kunden-Artikel-Preise für den ausgewählten Kunden
     console.log('🔄 [SELECT-CUSTOMER] Starte loadCustomerArticlePrices für Kunde:', customer.customer_number);
     this.loadCustomerArticlePrices(customer.customer_number);
+
+    this.focusSearchInput();
   }
 
   // Öffne Modal mit den letzten hochgeladenen Bildern

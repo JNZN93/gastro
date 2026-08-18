@@ -1347,16 +1347,23 @@
     
     <div class="customer-modal-body">
       <div class="customer-search">
-        <input #customerSearchInput type="text" [(ngModel)]="customerSearchTerm" (input)="filterCustomers()" placeholder="Suchen..." class="customer-search-input">
+        <input #customerSearchInput
+               type="text"
+               [(ngModel)]="customerSearchTerm"
+               (input)="filterCustomers()"
+               (keydown)="onCustomerSearchKeyDown($event)"
+               placeholder="Suchen..."
+               class="customer-search-input">
       </div>
       
-      <div class="customers-grid">
+      <div class="customers-grid" #customersGrid>
         @for (customer of filteredCustomers; track customer.id) {
         <div class="customer-card"
+             [class.selected]="selectedCustomerIndex === $index"
              (click)="selectCustomer(customer)"
              role="button"
              tabindex="0"
-             (keydown.enter)="selectCustomer(customer)">
+             (keydown)="onCustomerCardKeyDown($event, $index)">
           <span class="customer-number">{{ customer.customer_number }}</span>
           <div class="customer-card-body">
             <p class="customer-name">{{ customer.last_name_company || 'Kein Name' }}</p>
