@@ -1,29 +1,21 @@
 <div class="admin-dashboard">
-  <!-- Header Section -->
-  <div class="dashboard-header">
+  <div class="overview-header">
     <div class="header-content">
-      <h1 class="dashboard-title">
-        <svg class="dashboard-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-        </svg>
+      <h1 class="overview-title">
+        <mat-icon class="overview-icon">dashboard</mat-icon>
         {{ isAdmin() ? 'Admin Dashboard' : 'Mitarbeiter Dashboard' }}
       </h1>
-      <button class="upload-toggle-btn" (click)="toggleUploadModal()" *ngIf="canUploadData()">
-        <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
-        </svg>
+      <button mat-flat-button type="button" class="upload-toggle-btn" (click)="toggleUploadModal()" *ngIf="canUploadData()">
+        <mat-icon>cloud_upload</mat-icon>
         Daten hochladen
       </button>
     </div>
   </div>
 
-  <!-- Stats Cards -->
   <div class="stats-grid">
     <div class="stat-card">
       <div class="stat-icon orders-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-        </svg>
+        <mat-icon>description</mat-icon>
       </div>
       <div class="stat-content">
         <h3 class="stat-number">{{ orders.length }}</h3>
@@ -33,9 +25,7 @@
 
     <div class="stat-card">
       <div class="stat-icon pending-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-        </svg>
+        <mat-icon>schedule</mat-icon>
       </div>
       <div class="stat-content">
         <h3 class="stat-number">{{ getOrdersByStatus('open').length }}</h3>
@@ -45,9 +35,7 @@
 
     <div class="stat-card">
       <div class="stat-icon progress-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-        </svg>
+        <mat-icon>pending_actions</mat-icon>
       </div>
       <div class="stat-content">
         <h3 class="stat-number">{{ getOrdersByStatus('in_progress').length }}</h3>
@@ -57,9 +45,7 @@
 
     <div class="stat-card">
       <div class="stat-icon completed-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-        </svg>
+        <mat-icon>task_alt</mat-icon>
       </div>
       <div class="stat-content">
         <h3 class="stat-number">{{ getOrdersByStatus('completed').length }}</h3>
@@ -68,184 +54,143 @@
     </div>
   </div>
 
-  <!-- Quick Actions -->
   <div class="quick-actions">
     <h2 class="section-title">Schnellzugriff</h2>
     <div class="actions-grid">
-      <button class="action-card" routerLink="/order-overview">
+      <button type="button" class="action-card action-orders" routerLink="/order-overview">
         <div class="action-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-          </svg>
+          <mat-icon>receipt_long</mat-icon>
         </div>
         <span>Bestellungsübersicht</span>
       </button>
 
-      <button class="action-card" routerLink="/picking">
+      <button type="button" class="action-card action-picking" routerLink="/picking">
         <div class="action-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
-          </svg>
+          <mat-icon>checklist</mat-icon>
         </div>
         <span>Kommissionierung</span>
       </button>
 
-      <button class="action-card" routerLink="/products">
+      <button type="button" class="action-card action-create-orders" routerLink="/customer-orders" *ngIf="canCreateOrders()">
         <div class="action-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
-          </svg>
-        </div>
-        <span>Online-Shop</span>
-      </button>
-
-      <button class="action-card gastlink-hidden" routerLink="/guest-link" *ngIf="canCreateGuestLink()">
-        <div class="action-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-          </svg>
-        </div>
-        <span>Gastzugang erstellen</span>
-      </button>
-
-
-
-      <button class="action-card" routerLink="/label-management">
-        <div class="action-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17v.01"/>
-          </svg>
-        </div>
-        <span>Etikettendruck</span>
-      </button>
-
-      <button class="action-card" routerLink="/employees">
-        <div class="action-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-1a4 4 0 00-5.356-3.77M9 20H2v-1a7 7 0 0114 0v1H9zm0-9a4 4 0 100-8 4 4 0 000 8zm8-1a3 3 0 100-6 3 3 0 000 6z"/>
-          </svg>
-        </div>
-        <span>Mitarbeiteransicht</span>
-      </button>
-
-      <button class="action-card" routerLink="/mitarbeiterplanung">
-        <div class="action-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-          </svg>
-        </div>
-        <span>Mitarbeiterplanung</span>
-      </button>
-
-      <button class="action-card" routerLink="/customer-orders" *ngIf="canCreateOrders()">
-        <div class="action-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-          </svg>
+          <mat-icon>add_box</mat-icon>
         </div>
         <span>Aufträge erstellen</span>
       </button>
 
-      <button class="action-card" routerLink="/user-management" *ngIf="canManageUsers()">
+      <button type="button" class="action-card action-invoices" routerLink="/open-invoices" *ngIf="isAdmin()">
         <div class="action-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14a4 4 0 100-8 4 4 0 000 8zm0 0c-3.314 0-6 1.79-6 4v2h12v-2c0-2.21-2.686-4-6-4zm7.5.5l2 2m0 0l2-2m-2 2v-4m-5.5 6h7"/>
-          </svg>
-        </div>
-        <span>User Management</span>
-      </button>
-
-      <button class="action-card" routerLink="/product-management">
-        <div class="action-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-          </svg>
-        </div>
-        <span>Produktverwaltung</span>
-      </button>
-
-      <button class="action-card" routerLink="/route-planning">
-        <div class="action-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 4m0 13V4m-6 3l6-3"/>
-          </svg>
-        </div>
-        <span>Routenplanung</span>
-      </button>
-
-      <button class="action-card" routerLink="/reports">
-        <div class="action-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-          </svg>
-        </div>
-        <span>Reports & Analysen</span>
-      </button>
-
-      <button class="action-card" routerLink="/offers">
-        <div class="action-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <text x="12" y="16" text-anchor="middle" font-size="16" font-weight="bold" stroke="currentColor" fill="currentColor">%</text>
-          </svg>
-        </div>
-        <span>Angebote verwalten</span>
-      </button>
-
-      <button class="action-card" routerLink="/customer-price-overview" *ngIf="isAdmin()">
-        <div class="action-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
-          </svg>
-        </div>
-        <span>Kundenpreise Übersicht</span>
-      </button>
-
-      <button class="action-card" routerLink="/open-invoices" *ngIf="isAdmin()">
-        <div class="action-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-          </svg>
+          <mat-icon>receipt</mat-icon>
         </div>
         <span>Offene Rechnungen</span>
       </button>
 
-      <button class="action-card" routerLink="/device-tracking">
+      <button type="button" class="action-card action-labels" routerLink="/label-management">
         <div class="action-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-          </svg>
+          <mat-icon>sell</mat-icon>
+        </div>
+        <span>Etikettendruck</span>
+      </button>
+
+      <button type="button" class="action-card action-routes" routerLink="/route-planning">
+        <div class="action-icon">
+          <mat-icon>map</mat-icon>
+        </div>
+        <span>Routenplanung</span>
+      </button>
+
+      <button type="button" class="action-card action-inventory" routerLink="/inventory" *ngIf="isAdmin()">
+        <div class="action-icon">
+          <mat-icon>warehouse</mat-icon>
+        </div>
+        <span>Lagerbestand / Inventur</span>
+      </button>
+
+      <button type="button" class="action-card action-employees" routerLink="/employees">
+        <div class="action-icon">
+          <mat-icon>groups</mat-icon>
+        </div>
+        <span>Mitarbeiteransicht</span>
+      </button>
+
+      <button type="button" class="action-card action-planning" routerLink="/mitarbeiterplanung">
+        <div class="action-icon">
+          <mat-icon>calendar_month</mat-icon>
+        </div>
+        <span>Mitarbeiterplanung</span>
+      </button>
+
+      <button type="button" class="action-card action-shop" routerLink="/products">
+        <div class="action-icon">
+          <mat-icon>storefront</mat-icon>
+        </div>
+        <span>Online-Shop</span>
+      </button>
+
+      <button type="button" class="action-card action-products" routerLink="/product-management">
+        <div class="action-icon">
+          <mat-icon>inventory_2</mat-icon>
+        </div>
+        <span>Produktverwaltung</span>
+      </button>
+
+      <button type="button" class="action-card action-offers" routerLink="/offers">
+        <div class="action-icon">
+          <mat-icon>percent</mat-icon>
+        </div>
+        <span>Angebote verwalten</span>
+      </button>
+
+      <button type="button" class="action-card action-prices" routerLink="/customer-price-overview" *ngIf="isAdmin()">
+        <div class="action-icon">
+          <mat-icon>payments</mat-icon>
+        </div>
+        <span>Kundenpreise Übersicht</span>
+      </button>
+
+      <button type="button" class="action-card action-reports" routerLink="/reports">
+        <div class="action-icon">
+          <mat-icon>analytics</mat-icon>
+        </div>
+        <span>Reports & Analysen</span>
+      </button>
+
+      <button type="button" class="action-card action-users" routerLink="/user-management" *ngIf="canManageUsers()">
+        <div class="action-icon">
+          <mat-icon>manage_accounts</mat-icon>
+        </div>
+        <span>User Management</span>
+      </button>
+
+      <button type="button" class="action-card action-tracking" routerLink="/device-tracking">
+        <div class="action-icon">
+          <mat-icon>location_on</mat-icon>
         </div>
         <span>Geräte-Tracking</span>
       </button>
 
-      <button class="action-card" routerLink="/inventory" *ngIf="isAdmin()">
+      <button type="button" class="action-card action-guest gastlink-hidden" routerLink="/guest-link" *ngIf="canCreateGuestLink()">
         <div class="action-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
-          </svg>
+          <mat-icon>lock</mat-icon>
         </div>
-        <span>Lagerbestand / Inventur</span>
+        <span>Gastzugang erstellen</span>
       </button>
     </div>
   </div>
 
-  <!-- Orders Table -->
   @if (hasActiveOrders()) {
   <div class="orders-section">
     <div class="section-header">
       <h2 class="section-title">Bestellungen</h2>
       <div class="table-controls">
-        <div class="search-box">
-          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-          </svg>
-          <input type="text" placeholder="Bestellungen durchsuchen..." [(ngModel)]="searchTerm" class="search-input">
-        </div>
+        <mat-form-field appearance="outline" class="search-field" subscriptSizing="dynamic">
+          <mat-icon matPrefix>search</mat-icon>
+          <input matInput type="text" placeholder="Bestellungen durchsuchen..." [(ngModel)]="searchTerm" name="adminOrderSearch">
+        </mat-form-field>
       </div>
     </div>
 
-    <div class="table-container">
+    <div class="table-container desktop-view">
       <table class="orders-table">
         <thead>
           <tr>
@@ -263,7 +208,8 @@
             <td class="order-id">{{ order.order_id }}</td>
             <td class="order-date"
                 [class.has-edit-info]="!!getOrderEditTooltip(order)"
-                [title]="getOrderEditTooltip(order)">
+                [matTooltip]="getOrderEditTooltip(order)"
+                [matTooltipDisabled]="!getOrderEditTooltip(order)">
               {{ order.created_at | date: 'dd.MM.yyyy HH:mm' }}
             </td>
             <td class="customer-name">{{ getCustomerName(order) }}</td>
@@ -284,17 +230,12 @@
               }
             </td>
             <td class="actions-cell">
-              <button class="view-btn" (click)="generatePdf(order.company, order.shipping_address, order.payment_status, order.order_date, order.created_at, order.fulfillment_type, order.name, order.email, order.order_id, order.total_price, order.delivery_date, order.items)">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                </svg>
+              <button mat-stroked-button type="button" class="view-btn" (click)="generatePdf(order.company, order.shipping_address, order.payment_status, order.order_date, order.created_at, order.fulfillment_type, order.name, order.email, order.order_id, order.total_price, order.delivery_date, order.items)">
+                <mat-icon>visibility</mat-icon>
                 Anzeigen
               </button>
-              <button class="load-order-btn" routerLink="/order-overview" *ngIf="canCreateOrders()">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-                </svg>
+              <button mat-flat-button type="button" class="load-order-btn" routerLink="/order-overview" *ngIf="canCreateOrders()">
+                <mat-icon>add</mat-icon>
                 Auftrag einlesen
               </button>
             </td>
@@ -304,7 +245,7 @@
       </table>
     </div>
 
-    <div class="orders-cards">
+    <div class="orders-cards mobile-view">
       @for (order of filteredOrders; track order.order_id) {
       <article class="order-card" [class.completed]="order.status === 'completed'">
         <div class="order-card-top">
@@ -312,7 +253,8 @@
             <span class="order-id">#{{ order.order_id }}</span>
             <span class="order-date"
                   [class.has-edit-info]="!!getOrderEditTooltip(order)"
-                  [title]="getOrderEditTooltip(order)">
+                  [matTooltip]="getOrderEditTooltip(order)"
+                  [matTooltipDisabled]="!getOrderEditTooltip(order)">
               {{ order.created_at | date: 'dd.MM.yyyy HH:mm' }}
             </span>
           </div>
@@ -337,17 +279,12 @@
           <div class="company-name">{{ getCustomerDisplayName(order) }}</div>
         </div>
         <div class="order-card-actions">
-          <button class="view-btn" (click)="generatePdf(order.company, order.shipping_address, order.payment_status, order.order_date, order.created_at, order.fulfillment_type, order.name, order.email, order.order_id, order.total_price, order.delivery_date, order.items)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-            </svg>
+          <button mat-stroked-button type="button" class="view-btn" (click)="generatePdf(order.company, order.shipping_address, order.payment_status, order.order_date, order.created_at, order.fulfillment_type, order.name, order.email, order.order_id, order.total_price, order.delivery_date, order.items)">
+            <mat-icon>visibility</mat-icon>
             Anzeigen
           </button>
-          <button class="load-order-btn" routerLink="/order-overview" *ngIf="canCreateOrders()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-            </svg>
+          <button mat-flat-button type="button" class="load-order-btn" routerLink="/order-overview" *ngIf="canCreateOrders()">
+            <mat-icon>add</mat-icon>
             Auftrag einlesen
           </button>
         </div>
@@ -357,26 +294,23 @@
   </div>
   }
 
-  <!-- Upload Side Modal -->
   <div class="side-modal-overlay" [class.active]="showUploadModal" (click)="closeUploadModal()"></div>
   <div class="side-modal" [class.active]="showUploadModal">
     <div class="modal-header">
-      <h2>Daten hochladen</h2>
-      <button class="close-btn" (click)="closeUploadModal()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-        </svg>
+      <h2>
+        <mat-icon>cloud_upload</mat-icon>
+        Daten hochladen
+      </h2>
+      <button mat-icon-button type="button" class="close-btn" (click)="closeUploadModal()" aria-label="Schließen">
+        <mat-icon>close</mat-icon>
       </button>
     </div>
 
     <div class="upload-sections">
-      <!-- Kunden Upload -->
       <div class="upload-card">
         <div class="upload-header">
-          <div class="upload-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/>
-            </svg>
+          <div class="upload-icon upload-icon-customers">
+            <mat-icon>people</mat-icon>
           </div>
           <div class="upload-info">
             <h3>Kundenliste</h3>
@@ -386,24 +320,19 @@
         <div class="upload-content">
           <input #customerFileInput type="file" id="customerXml" accept=".xml" class="file-input" (change)="onCustomerFileSelected($event)" />
           <label for="customerXml" class="file-label" [class.file-selected]="selectedCustomerFile">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
-            </svg>
+            <mat-icon>upload_file</mat-icon>
             <span>{{ selectedCustomerFile || 'Datei auswählen' }}</span>
           </label>
-          <button (click)="onCustomerUploadClick()" class="upload-btn success" [disabled]="!selectedCustomerFile">
+          <button mat-flat-button type="button" (click)="onCustomerUploadClick()" class="upload-btn success" [disabled]="!selectedCustomerFile">
             Kunden aktualisieren
           </button>
         </div>
       </div>
 
-      <!-- Kunden Artikel Preise Upload -->
       <div class="upload-card">
         <div class="upload-header">
-          <div class="upload-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
-            </svg>
+          <div class="upload-icon upload-icon-prices">
+            <mat-icon>payments</mat-icon>
           </div>
           <div class="upload-info">
             <h3>Kunden-Artikelpreise</h3>
@@ -413,24 +342,19 @@
         <div class="upload-content">
           <input #customerArticlePricesFileInput type="file" id="customerArticlePricesXml" accept=".xml" class="file-input" (change)="onCustomerArticlePricesFileSelected($event)" />
           <label for="customerArticlePricesXml" class="file-label" [class.file-selected]="selectedCustomerArticlePricesFile">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
-            </svg>
+            <mat-icon>upload_file</mat-icon>
             <span>{{ selectedCustomerArticlePricesFile || 'Datei auswählen' }}</span>
           </label>
-          <button (click)="onCustomerArticlePricesUploadClick()" class="upload-btn warning" [disabled]="!selectedCustomerArticlePricesFile">
+          <button mat-flat-button type="button" (click)="onCustomerArticlePricesUploadClick()" class="upload-btn warning" [disabled]="!selectedCustomerArticlePricesFile">
             Preise aktualisieren
           </button>
         </div>
       </div>
 
-      <!-- Artikel Upload -->
       <div class="upload-card">
         <div class="upload-header">
-          <div class="upload-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
-            </svg>
+          <div class="upload-icon upload-icon-articles">
+            <mat-icon>inventory_2</mat-icon>
           </div>
           <div class="upload-info">
             <h3>Artikel</h3>
@@ -440,12 +364,10 @@
         <div class="upload-content">
           <input #articlesFileInput type="file" id="articlesXml" accept=".xml" class="file-input" (change)="onArticlesFileSelected($event)" />
           <label for="articlesXml" class="file-label" [class.file-selected]="selectedArticlesFile">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
-            </svg>
+            <mat-icon>upload_file</mat-icon>
             <span>{{ selectedArticlesFile || 'Datei auswählen' }}</span>
           </label>
-          <button (click)="onArticlesUploadClick()" class="upload-btn primary" [disabled]="!selectedArticlesFile">
+          <button mat-flat-button type="button" (click)="onArticlesUploadClick()" class="upload-btn primary" [disabled]="!selectedArticlesFile">
             Artikel aktualisieren
           </button>
         </div>
@@ -453,20 +375,17 @@
     </div>
   </div>
 
-  <!-- Confirmation Modal -->
   @if (showModal) {
   <div class="modal-overlay" (click)="cancelCompletion()">
     <div class="confirmation-modal" (click)="$event.stopPropagation()">
       <div class="modal-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-        </svg>
+        <mat-icon>task_alt</mat-icon>
       </div>
       <h3>Bestellung abschließen</h3>
       <p>Möchten Sie diesen Auftrag wirklich als abgeschlossen markieren?</p>
       <div class="modal-actions">
-        <button class="btn-secondary" (click)="cancelCompletion()">Abbrechen</button>
-        <button class="btn-primary" (click)="confirmCompletion()">Abschließen</button>
+        <button mat-stroked-button type="button" class="btn-secondary" (click)="cancelCompletion()">Abbrechen</button>
+        <button mat-flat-button type="button" class="btn-primary" (click)="confirmCompletion()">Abschließen</button>
       </div>
     </div>
   </div>

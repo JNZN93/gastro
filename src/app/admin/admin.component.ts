@@ -5,6 +5,11 @@ import { jsPDF } from 'jspdf';
 import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { AuthService } from '../authentication.service';
 import { UploadLoadingComponent } from "../upload-loading/upload-loading.component";
 import { GlobalService } from '../global.service';
@@ -13,7 +18,17 @@ import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-admin',
-  imports: [RouterModule, CommonModule, FormsModule, UploadLoadingComponent],
+  imports: [
+    RouterModule,
+    CommonModule,
+    FormsModule,
+    UploadLoadingComponent,
+    MatButtonModule,
+    MatFormFieldModule,
+    MatIconModule,
+    MatInputModule,
+    MatTooltipModule
+  ],
   templateUrl: './admin.component.html',
   styleUrl: './admin.component.scss',
 })
