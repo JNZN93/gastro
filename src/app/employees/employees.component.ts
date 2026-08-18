@@ -2316,6 +2316,28 @@ export class EmployeesComponent implements OnInit, OnDestroy {
     return foundInGlobal;
   }
 
+  private dedupeCustomerArticlePrices(prices: any[]): any[] {
+    if (!Array.isArray(prices) || prices.length === 0) return [];
+
+    const latestByKey = new Map<string, any>();
+    for (const price of prices) {
+      const productKey = String(price?.product_id || price?.article_number || '').trim().toLowerCase();
+      const key = productKey || `id:${price?.id}`;
+      const existing = latestByKey.get(key);
+      if (!existing) {
+        latestByKey.set(key, price);
+        continue;
+      }
+
+      const existingDate = existing.invoice_date ? new Date(existing.invoice_date).getTime() : 0;
+      const nextDate = price.invoice_date ? new Date(price.invoice_date).getTime() : 0;
+      if (nextDate > existingDate || (nextDate === existingDate && (price.id || 0) > (existing.id || 0))) {
+        latestByKey.set(key, price);
+      }
+    }
+    return Array.from(latestByKey.values());
+  }
+
   // Druck-Funktion für kundenspezifische Preise (Employees)
   // Druck-Funktion für kundenspezifische Preise mit Excel-ähnlicher Tabelle
   printCustomerPrices(): void {
@@ -2709,7 +2731,7 @@ export class EmployeesComponent implements OnInit, OnDestroy {
       
       // Filtere kundenspezifische Artikel, die nicht mehr in globalArtikels vorhanden sind (wie in Customer Orders)
       const filteredCustomerPrices = Array.isArray(data)
-        ? data.filter((price: any) => this.isArticleAvailableInGlobal(price))
+        ? this.dedupeCustomerArticlePrices(data.filter((price: any) => this.isArticleAvailableInGlobal(price)))
         : [];
       
       console.log('📊 [CUSTOMER-ARTICLE-PRICES] Verfügbare (gefilterte) Artikel-Preise:', filteredCustomerPrices.length);

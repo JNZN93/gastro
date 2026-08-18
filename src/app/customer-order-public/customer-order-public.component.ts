@@ -73,6 +73,33 @@ export class CustomerOrderPublicComponent implements OnInit {
     return String(article.product_id || article.article_number || '');
   }
 
+  /** Behält pro Artikelnummer nur den neuesten Kundenpreis (invoice_date). */
+  private dedupeCustomerArticlePrices(prices: any[]): any[] {
+    if (!Array.isArray(prices) || prices.length === 0) return [];
+
+    const latestByKey = new Map<string, any>();
+    for (const price of prices) {
+      const productKey = String(price?.product_id || price?.article_number || '').trim().toLowerCase();
+      const key = productKey || `id:${price?.id}`;
+      const existing = latestByKey.get(key);
+      if (!existing) {
+        latestByKey.set(key, price);
+        continue;
+      }
+
+      const existingDate = existing.invoice_date ? new Date(existing.invoice_date).getTime() : 0;
+      const nextDate = price.invoice_date ? new Date(price.invoice_date).getTime() : 0;
+      if (nextDate > existingDate || (nextDate === existingDate && (price.id || 0) > (existing.id || 0))) {
+        latestByKey.set(key, price);
+      }
+    }
+    return Array.from(latestByKey.values());
+  }
+
+  trackByArticleId(index: number, article: any): string {
+    return String(article?.id ?? article?.product_id ?? index);
+  }
+
   /** Findet Produkt in der Katalogliste unabhängig von number/string Typunterschieden */
   private findMatchingCatalogProduct(article: any): any | undefined {
     if (!article || !this.allProducts?.length) return undefined;
@@ -382,20 +409,39 @@ export class CustomerOrderPublicComponent implements OnInit {
         delete stored.items['Eigener Artikel'];
       }
 
-      // Pro Artikel nur notwendige Felder speichern und Mengen inkrementell updaten
+      // Pro Artikel nur notwendige Felder speichern.
+      // Bei Duplikaten mit gleicher product_id darf eine leere Menge den Warenkorb
+      // des anderen Eintrags nicht mehr überschreiben/löschen.
+      const qtyByKey = new Map<string, { article: any; quantity: number }>();
       for (const article of this.customerArticlePrices) {
-        const rawQty = article.tempQuantity;
         const key = this.getCartItemKey(article);
         if (!key) continue;
 
+        const rawQty = article.tempQuantity;
         const quantity = Number(rawQty);
+        const hasQuantity =
+          rawQty !== null &&
+          rawQty !== undefined &&
+          rawQty !== '' &&
+          !isNaN(quantity) &&
+          quantity > 0;
 
-        // Menge 0 / leer / ungültig -> Eintrag entfernen (Speichern nur noch bei blur / +/-)
-        if (rawQty === null || rawQty === undefined || rawQty === '' || isNaN(quantity) || quantity <= 0) {
-          if (stored.items[key]) delete stored.items[key];
-          continue;
+        if (!hasQuantity) continue;
+
+        const existing = qtyByKey.get(key);
+        if (!existing || quantity >= existing.quantity) {
+          qtyByKey.set(key, { article, quantity });
         }
+      }
 
+      for (const article of this.customerArticlePrices) {
+        const key = this.getCartItemKey(article);
+        if (key && !qtyByKey.has(key) && stored.items[key]) {
+          delete stored.items[key];
+        }
+      }
+
+      for (const [key, { article, quantity }] of qtyByKey) {
         stored.items[key] = {
           // Identifikation
           product_id: article.product_id,
@@ -1176,7 +1222,8 @@ export class CustomerOrderPublicComponent implements OnInit {
           
           // Extrahiere Artikel (der Endpoint gibt ein Array von Artikeln zurück)
           if (Array.isArray(data)) {
-            this.customerArticlePrices = data.filter((price: any) => {
+            this.customerArticlePrices = this.dedupeCustomerArticlePrices(
+              data.filter((price: any) => {
               // article_text erforderlich; Preis 0 ist erlaubt (früher falsy und wurde ausgefiltert)
               const hasText = !!price.article_text;
               const hasPrice =
@@ -1188,7 +1235,8 @@ export class CustomerOrderPublicComponent implements OnInit {
               ...price,
               tempQuantity: null,  // Initialisiere tempQuantity mit null
               product_custom_field_1: price.product_custom_field_1 || null // Stelle sicher, dass PFAND-Referenz gesetzt wird
-            }));
+            }))
+            );
             
             // Erstelle einen minimalen Kunden mit der Kundennummer aus dem ersten Artikel
             if (this.customerArticlePrices.length > 0) {

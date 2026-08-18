@@ -117,7 +117,7 @@
             </div>
           </div>
           <div *ngIf="categoryStates[category]" class="category-content">
-            <div *ngFor="let article of getFilteredArticlesForCategory(category)" class="product-card" [attr.data-article-id]="article.article_number || article.product_id">
+            <div *ngFor="let article of getFilteredArticlesForCategory(category); trackBy: trackByArticleId" class="product-card" [attr.data-article-id]="article.article_number || article.product_id">
               <div class="card-header">
                 <div class="article-info">
                   <div class="article-text">{{ article.article_text }}</div>
@@ -212,7 +212,7 @@
             </div>
           </div>
           <div *ngIf="categoryStates[category]" class="category-content">
-            <div *ngFor="let article of getFilteredArticlesForCategory(category)" class="table-row" [attr.data-article-id]="article.article_number || article.product_id">
+            <div *ngFor="let article of getFilteredArticlesForCategory(category); trackBy: trackByArticleId" class="table-row" [attr.data-article-id]="article.article_number || article.product_id">
               <div class="col-desc">
                                   <div class="article-info-with-image">
                     <div class="article-image" (click)="article.main_image_url && openImage(article)" style="cursor: pointer;">
