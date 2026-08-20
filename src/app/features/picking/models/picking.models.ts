@@ -60,6 +60,7 @@ export interface PickingState {
   startedBy: string;
   completedAt?: string;
   items: PickItemState[];
+  originalItems?: PickingOrderItem[];
 }
 
 export interface PickingProgress {

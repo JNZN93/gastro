@@ -4,6 +4,17 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { lastValueFrom } from 'rxjs';
+import { MatButtonModule } from '@angular/material/button';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { MatCardModule } from '@angular/material/card';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatRippleModule } from '@angular/material/core';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatToolbarModule } from '@angular/material/toolbar';
 import { environment } from '../../../../../environments/environment';
 import { PickingOrder } from '../../models/picking.models';
 import { PickingState, PickingProgress } from '../../models/picking.models';
@@ -30,7 +41,22 @@ interface CustomerSummary {
 @Component({
   selector: 'app-picking-queue',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterModule,
+    MatToolbarModule,
+    MatButtonModule,
+    MatIconModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatCardModule,
+    MatChipsModule,
+    MatProgressBarModule,
+    MatProgressSpinnerModule,
+    MatRippleModule,
+    MatButtonToggleModule,
+  ],
   templateUrl: './picking-queue.component.html',
   styleUrl: './picking-queue.component.scss',
 })
@@ -201,7 +227,18 @@ export class PickingQueueComponent implements OnInit {
     return dateA.localeCompare(dateB);
   }
 
-  onFiltersChanged(): void {
+  onSearchChanged(value: string): void {
+    this.searchTerm = value;
+    this.rebuildQueue();
+  }
+
+  onDateFilterChanged(value: 'all' | 'today' | 'tomorrow'): void {
+    this.dateFilter = value;
+    this.rebuildQueue();
+  }
+
+  onStatusFilterChanged(value: 'pickable' | 'picking' | 'picked' | 'all'): void {
+    this.statusFilter = value;
     this.rebuildQueue();
   }
 
@@ -252,7 +289,7 @@ export class PickingQueueComponent implements OnInit {
         return 'Wird kommissioniert';
       case 'picked':
       case 'completed':
-        return 'Fertig kommissioniert';
+        return 'Fertig';
       case 'delivered':
         return 'Ausgeliefert';
       case 'in_progress':
@@ -260,6 +297,30 @@ export class PickingQueueComponent implements OnInit {
       default:
         return status;
     }
+  }
+
+  getStatusIcon(status: string): string {
+    switch (status) {
+      case 'open':
+        return 'inventory_2';
+      case 'picking':
+        return 'hourglass_top';
+      case 'picked':
+      case 'completed':
+        return 'check_circle';
+      default:
+        return 'info';
+    }
+  }
+
+  getFulfillmentIcon(type?: string): string {
+    if (type === 'delivery') {
+      return 'local_shipping';
+    }
+    if (type === 'pickup') {
+      return 'storefront';
+    }
+    return 'help_outline';
   }
 
   private todayIso(): string {

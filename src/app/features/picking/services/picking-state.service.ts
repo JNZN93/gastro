@@ -40,6 +40,17 @@ export class PickingStateService {
     });
   }
 
+  cloneOrderItems(items: PickingOrderItem[] = []): PickingOrderItem[] {
+    return items.map((item) => ({
+      product_id: item.product_id,
+      quantity: Number(item.quantity),
+      price: item.price,
+      different_price: item.different_price ?? null,
+      product_name: item.product_name,
+      product_article_number: item.product_article_number,
+    }));
+  }
+
   computeOrderFingerprint(items: PickingOrderItem[]): string {
     return items
       .map((item, index) => `${index}:${item.product_id}:${item.product_article_number}:${item.quantity}`)
@@ -55,12 +66,14 @@ export class PickingStateService {
   }
 
   createStateFromOrder(order: PickingOrder, startedBy: string, markAsPicked: boolean): PickingState {
+    const originalItems = this.cloneOrderItems(order.items);
     return {
       orderId: order.order_id,
-      orderFingerprint: this.computeOrderFingerprint(order.items),
+      orderFingerprint: this.computeOrderFingerprint(originalItems),
       startedAt: new Date().toISOString(),
       startedBy,
-      items: order.items.map((item, index) => {
+      originalItems,
+      items: originalItems.map((item, index) => {
         const quantity = Number(item.quantity);
         return {
           key: this.buildItemKey(item, index),

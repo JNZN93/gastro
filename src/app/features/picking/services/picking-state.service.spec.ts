@@ -47,6 +47,8 @@ describe('PickingStateService', () => {
     expect(state.items[0].pickedQuantity).toBe(0);
     expect(state.items[0].price).toBe(2);
     expect(state.items[1].differentPrice).toBe(3);
+    expect(state.originalItems?.length).toBe(2);
+    expect(state.originalItems?.[0].quantity).toBe(5);
   });
 
   it('validates fingerprint against order items', () => {

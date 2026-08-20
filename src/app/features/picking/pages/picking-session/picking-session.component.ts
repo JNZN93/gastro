@@ -3,8 +3,17 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { ZXingScannerComponent, ZXingScannerModule } from '@zxing/ngx-scanner';
-import { BarcodeFormat } from '@zxing/browser';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatRippleModule } from '@angular/material/core';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatToolbarModule } from '@angular/material/toolbar';
 import { lastValueFrom } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import { OrderService } from '../../../../order.service';
@@ -17,6 +26,7 @@ import { formatPickingDate } from '../../utils/picking-date.util';
 import {
   PickItemState,
   PickingOrder,
+  PickingOrderItem,
   PickingProgress,
   PickingSyncItem,
   ScanResultFeedback,
@@ -29,7 +39,6 @@ interface CatalogArticle {
   sale_price?: string | number;
   category?: string;
   custom_field_1?: string;
-  ean?: string;
 }
 
 interface CustomerSummary {
@@ -49,13 +58,26 @@ interface PfandProduct {
 @Component({
   selector: 'app-picking-session',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, ZXingScannerModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterModule,
+    MatToolbarModule,
+    MatButtonModule,
+    MatIconModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatCardModule,
+    MatChipsModule,
+    MatProgressBarModule,
+    MatProgressSpinnerModule,
+    MatRippleModule,
+    MatCheckboxModule,
+  ],
   templateUrl: './picking-session.component.html',
   styleUrl: './picking-session.component.scss',
 })
 export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy {
-  @ViewChild(ZXingScannerComponent) scanner?: ZXingScannerComponent;
-  @ViewChild('eanInput') eanInput?: ElementRef<HTMLInputElement>;
   @ViewChild('stickyBar') stickyBar?: ElementRef<HTMLElement>;
 
   orderId = 0;
@@ -63,6 +85,7 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
   stateItems: PickItemState[] = [];
   progress: PickingProgress = { done: 0, total: 0, percent: 0 };
   stickyBarHeight = 120;
+  private originalItems: PickingOrderItem[] = [];
 
   isLoading = true;
   isSaving = false;
@@ -70,13 +93,12 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
   errorMessage = '';
   scanFeedback: ScanResultFeedback | null = null;
 
-  eanInputValue = '';
-  isScanning = false;
   showItemModal = false;
   showStartWarning = false;
   showPrintModal = false;
   showCompleteModal = false;
   showReopenModal = false;
+  showAbortModal = false;
   selectedItem: PickItemState | null = null;
   modalPickedQuantity = 0;
   modalNote = '';
@@ -104,20 +126,6 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
   private customerNameByNumber = new Map<string, string>();
   private productById = new Map<number, CatalogArticle>();
   private productByArticleNumber = new Map<string, CatalogArticle>();
-
-  formatsEnabled: BarcodeFormat[] = [
-    BarcodeFormat.EAN_13,
-    BarcodeFormat.EAN_8,
-    BarcodeFormat.CODE_128,
-    BarcodeFormat.CODE_39,
-    BarcodeFormat.ITF,
-  ];
-
-  videoConstraints: MediaTrackConstraints = {
-    width: { ideal: 1280 },
-    height: { ideal: 720 },
-    facingMode: { ideal: 'environment' },
-  };
 
   private feedbackTimer: ReturnType<typeof setTimeout> | null = null;
   private stickyResizeObserver: ResizeObserver | null = null;
@@ -256,7 +264,6 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
       this.errorMessage = 'Bestellung konnte nicht geladen werden.';
     } finally {
       this.isLoading = false;
-      setTimeout(() => this.focusEanInput(), 100);
     }
   }
 
@@ -320,6 +327,7 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
 
       const state = this.pickingState.createStateFromOrder(this.order, this.getStartedBy(), true);
       this.stateItems = state.items;
+      this.captureOriginalItems(this.order, state);
       this.order.status = 'picking';
       this.order.picker_user_name = this.getStartedBy();
       this.order.picker_user_id = this.globalService.getUserId();
@@ -334,7 +342,6 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
       this.refreshProgress();
       this.closeReopenModal();
       this.setFeedback('success', 'Bestellung kann erneut bearbeitet werden.');
-      this.focusEanInput();
     } catch (error: any) {
       this.setFeedback('error', this.getApiErrorMessage(error, 'Wiederöffnen fehlgeschlagen.'));
     } finally {
@@ -354,6 +361,7 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
 
     if (validExisting) {
       this.stateItems = validExisting.items;
+      this.captureOriginalItems(order, validExisting);
       if (order.status === 'open') {
         await this.startPicking(true, true);
       }
@@ -362,7 +370,9 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
 
     if (order.status === 'picking') {
       this.showStartWarning = true;
-      this.stateItems = this.pickingState.createInitialState(order, this.getStartedBy()).items;
+      const state = this.pickingState.createInitialState(order, this.getStartedBy());
+      this.stateItems = state.items;
+      this.captureOriginalItems(order, state);
       return;
     }
 
@@ -398,12 +408,18 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
       if (!preserveItems) {
         const state = this.pickingState.createInitialState(this.order, this.getStartedBy());
         this.stateItems = state.items;
+        this.captureOriginalItems(this.order, state);
         this.enrichStateItemsWithProductMetadata();
         await this.pickingState.saveState({ ...state, items: this.stateItems });
       } else {
         const existing = await this.pickingState.getState(this.order.order_id);
+        this.captureOriginalItems(this.order, existing);
         if (existing) {
-          await this.pickingState.saveState({ ...existing, items: this.stateItems });
+          await this.pickingState.saveState({
+            ...existing,
+            originalItems: this.originalItems,
+            items: this.stateItems,
+          });
         }
       }
 
@@ -415,86 +431,7 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     } finally {
       this.isSaving = false;
       this.refreshProgress();
-      this.focusEanInput();
     }
-  }
-
-  async onEanSubmit(): Promise<void> {
-    const ean = this.eanInputValue.trim();
-    if (!ean || !this.order) {
-      return;
-    }
-
-    this.eanInputValue = '';
-    await this.processScan(ean);
-    this.focusEanInput();
-  }
-
-  onCodeResult(result: string): void {
-    if (!result) {
-      return;
-    }
-    this.isScanning = false;
-    this.processScan(result);
-  }
-
-  private async processScan(ean: string): Promise<void> {
-    if (!this.order) {
-      return;
-    }
-
-    const token = localStorage.getItem('token');
-    if (!token) {
-      return;
-    }
-
-    try {
-      const headers = new HttpHeaders({
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      });
-
-      const response = await lastValueFrom(
-        this.http.post<{ success: boolean; data?: { article_number: string } }>(
-          `${environment.apiUrl}/api/product-eans/scan`,
-          { ean },
-          { headers }
-        )
-      );
-
-      const articleNumber = response?.data?.article_number;
-      if (!response?.success || !articleNumber) {
-        this.setFeedback('error', `EAN ${ean} nicht gefunden.`);
-        return;
-      }
-
-      const item = this.findOpenItemByArticle(articleNumber);
-      if (!item) {
-        this.setFeedback(
-          'warning',
-          `Artikel ${articleNumber} ist nicht offen in dieser Bestellung.`
-        );
-        return;
-      }
-
-      item.pickedQuantity = Math.min(item.pickedQuantity + 1, item.targetQuantity);
-      item.status = this.pickingState.updateItemStatus(item);
-      await this.persistState();
-      this.setFeedback('success', `${item.productName}: ${item.pickedQuantity}/${item.targetQuantity}`);
-    } catch {
-      this.setFeedback('error', 'EAN-Scan fehlgeschlagen.');
-    }
-  }
-
-  private findOpenItemByArticle(articleNumber: string): PickItemState | null {
-    return (
-      this.stateItems.find(
-        (item) =>
-          item.articleNumber === articleNumber &&
-          item.status !== 'unavailable' &&
-          item.pickedQuantity < item.targetQuantity
-      ) ?? null
-    );
   }
 
   openItemModal(item: PickItemState): void {
@@ -546,7 +483,6 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     this.modalPfandSearch = '';
     this.modalPfandResults = [];
     this.modalSelectedPfand = null;
-    this.focusEanInput();
   }
 
   adjustModalQuantity(delta: number): void {
@@ -732,7 +668,6 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     }
 
     await this.persistState();
-    await this.syncOrderToServer(false);
     this.closeItemModal();
   }
 
@@ -878,7 +813,7 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
           this.upsertPfandLine(existing, suggestedPfand, existing.targetQuantity);
         }
 
-        await this.persistAndSyncAfterAdd(article.article_text);
+        await this.persistAfterAdd(article.article_text);
         return;
       }
     }
@@ -905,7 +840,7 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
       this.upsertPfandLine(newItem, suggestedPfand, quantity);
     }
 
-    await this.persistAndSyncAfterAdd(article.article_text);
+    await this.persistAfterAdd(article.article_text);
   }
 
   private getSuggestedPfandForProduct(
@@ -921,7 +856,7 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     return matching ? this.toPfandProduct(matching) : null;
   }
 
-  private async persistAndSyncAfterAdd(articleLabel: string): Promise<void> {
+  private async persistAfterAdd(articleLabel: string): Promise<void> {
     this.articleSearchTerm = '';
     this.articleSearchResults = [];
     this.showArticleSearchDropdown = false;
@@ -931,13 +866,11 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
 
     try {
       await this.persistState();
-      await this.syncOrderToServer(false);
       this.setFeedback('success', `${articleLabel} hinzugefügt.`);
     } catch (error: any) {
       this.setFeedback('error', error?.error?.error || 'Artikel konnte nicht gespeichert werden.');
     } finally {
       this.isSaving = false;
-      this.focusEanInput();
     }
   }
 
@@ -1235,6 +1168,28 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     this.showCompleteModal = false;
   }
 
+  openAbortModal(): void {
+    if (!this.order || this.isSaving) {
+      return;
+    }
+    this.showAbortModal = true;
+  }
+
+  closeAbortModal(): void {
+    this.showAbortModal = false;
+  }
+
+  onBackClick(): void {
+    if (this.isSaving) {
+      return;
+    }
+    if (!this.isReadOnlySession && this.order && !this.errorMessage && !this.isLoading) {
+      this.openAbortModal();
+      return;
+    }
+    this.router.navigate(['/picking']);
+  }
+
   async completePicking(): Promise<void> {
     if (!this.order) {
       return;
@@ -1287,14 +1242,16 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
 
     try {
       if (this.order.status === 'picking') {
+        await this.restoreOriginalItemsOnServer(token);
         await lastValueFrom(
           this.orderService.updateOrderStatusOnly(this.order.order_id, 'open', token)
         );
       }
       await this.pickingState.deleteState(this.order.order_id);
+      this.closeAbortModal();
       this.router.navigate(['/picking']);
     } catch {
-      this.setFeedback('error', 'Freigabe fehlgeschlagen.');
+      this.setFeedback('error', 'Kommissionierung konnte nicht abgebrochen werden.');
     } finally {
       this.isSaving = false;
     }
@@ -1363,27 +1320,40 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
 
     if (complete) {
       this.order.status = 'picked';
-    } else {
-      this.rebuildOrderFromState();
-      await this.persistState();
     }
   }
 
-  private rebuildOrderFromState(): void {
+  private captureOriginalItems(order: PickingOrder, existing?: { originalItems?: PickingOrderItem[] } | null): void {
+    this.originalItems = existing?.originalItems?.length
+      ? this.pickingState.cloneOrderItems(existing.originalItems)
+      : this.pickingState.cloneOrderItems(order.items);
+  }
+
+  private async restoreOriginalItemsOnServer(token: string): Promise<void> {
     if (!this.order) {
       return;
     }
 
-    this.order.items = this.stateItems
-      .filter((item) => item.status !== 'unavailable')
-      .map((item) => ({
-        product_id: item.productId,
-        quantity: item.pickedQuantity > 0 ? item.pickedQuantity : item.targetQuantity,
-        price: item.price != null ? String(item.price) : '0',
-        different_price: item.differentPrice != null ? String(item.differentPrice) : null,
-        product_name: item.replacementArticleName || item.productName,
-        product_article_number: item.replacementArticleNumber || item.articleNumber,
-      }));
+    const originalItems = this.originalItems.length
+      ? this.originalItems
+      : this.pickingState.cloneOrderItems(this.order.items);
+
+    if (!originalItems.length) {
+      return;
+    }
+      product_id: item.product_id,
+      quantity: Number(item.quantity),
+      price: item.price != null ? Number(item.price) : 0,
+      different_price:
+        item.different_price != null && item.different_price !== ''
+          ? Number(item.different_price)
+          : null,
+      description: item.product_name,
+    }));
+
+    await lastValueFrom(
+      this.orderService.applyPickingItems(this.order.order_id, restoreItems, token, false)
+    );
   }
 
   private async persistState(): Promise<void> {
@@ -1392,12 +1362,18 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     }
 
     const existing = await this.pickingState.getState(this.order.order_id);
-    this.rebuildOrderFromState();
-    const fingerprint = this.pickingState.computeOrderFingerprint(this.order.items);
+    const originalItems = existing?.originalItems?.length
+      ? existing.originalItems
+      : this.originalItems.length
+        ? this.originalItems
+        : this.pickingState.cloneOrderItems(this.order.items);
+    this.originalItems = this.pickingState.cloneOrderItems(originalItems);
 
     await this.pickingState.saveState({
       orderId: this.order.order_id,
-      orderFingerprint: fingerprint,
+      orderFingerprint:
+        existing?.orderFingerprint || this.pickingState.computeOrderFingerprint(originalItems),
+      originalItems: this.originalItems,
       startedAt: existing?.startedAt || new Date().toISOString(),
       startedBy: existing?.startedBy || this.getStartedBy(),
       completedAt: existing?.completedAt,
@@ -1437,18 +1413,6 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     this.feedbackTimer = setTimeout(() => {
       this.scanFeedback = null;
     }, 3500);
-  }
-
-  focusEanInput(): void {
-    this.eanInput?.nativeElement?.focus();
-  }
-
-  openScanner(): void {
-    this.isScanning = true;
-  }
-
-  closeScanner(): void {
-    this.isScanning = false;
   }
 
   getCustomerLabel(): string {
@@ -1573,6 +1537,29 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
 
   getItemStatusClass(status: PickItemState['status']): string {
     return `item-${status}`;
+  }
+
+  getItemStatusIcon(status: PickItemState['status']): string {
+    switch (status) {
+      case 'picked':
+        return 'check_circle';
+      case 'partial':
+        return 'timelapse';
+      case 'unavailable':
+        return 'cancel';
+      default:
+        return 'radio_button_unchecked';
+    }
+  }
+
+  getFulfillmentIcon(type?: string): string {
+    if (type === 'delivery') {
+      return 'local_shipping';
+    }
+    if (type === 'pickup') {
+      return 'storefront';
+    }
+    return 'help_outline';
   }
 
   isArticleSearchActive(term: string): boolean {

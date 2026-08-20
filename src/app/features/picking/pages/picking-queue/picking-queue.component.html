@@ -1,111 +1,172 @@
 <div class="picking-page">
-  <div class="picking-shell">
-    <header class="page-header">
-      <button type="button" class="back-btn" routerLink="/admin">← Dashboard</button>
-      <div class="header-text">
-        <h1>Kommissionierung</h1>
-        <p class="subtitle">Aufträge scannen, Mengen anpassen und direkt abschließen.</p>
-      </div>
-      <button type="button" class="refresh-btn" (click)="loadQueue()" [disabled]="isLoading">
-        Aktualisieren
-      </button>
-    </header>
+  <mat-toolbar class="picking-toolbar">
+    <button mat-icon-button type="button" routerLink="/admin" aria-label="Zurück zum Dashboard">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <div class="toolbar-text">
+      <span class="toolbar-title">Kommissionierung</span>
+      @if (!isLoading && !errorMessage) {
+        <span class="toolbar-count">{{ queueEntries.length }} Aufträge</span>
+      }
+    </div>
+    <span class="toolbar-spacer"></span>
+    <button
+      mat-icon-button
+      type="button"
+      (click)="loadQueue()"
+      [disabled]="isLoading"
+      aria-label="Aktualisieren"
+    >
+      <mat-icon>refresh</mat-icon>
+    </button>
+  </mat-toolbar>
 
-    <section class="filters">
-      <input
-        type="search"
-        [(ngModel)]="searchTerm"
-        (ngModelChange)="onFiltersChanged()"
-        placeholder="Kunde, Nummer, Picker suchen…"
-      />
+  <div class="picking-content">
+    <section class="filter-panel">
+      <mat-form-field appearance="outline" class="search-field" subscriptSizing="dynamic">
+        <mat-label>Suchen</mat-label>
+        <mat-icon matPrefix>search</mat-icon>
+        <input
+          matInput
+          type="search"
+          [ngModel]="searchTerm"
+          (ngModelChange)="onSearchChanged($event)"
+          placeholder="Kunde, Nummer, Picker…"
+        />
+      </mat-form-field>
 
-      <select [(ngModel)]="dateFilter" (ngModelChange)="onFiltersChanged()">
-        <option value="all">Alle Termine</option>
-        <option value="today">Heute</option>
-        <option value="tomorrow">Morgen</option>
-      </select>
+      <mat-button-toggle-group
+        class="date-toggles"
+        [ngModel]="dateFilter"
+        (ngModelChange)="onDateFilterChanged($event)"
+        name="dateFilter"
+        aria-label="Termin filtern"
+      >
+        <mat-button-toggle value="all">Alle</mat-button-toggle>
+        <mat-button-toggle value="today">Heute</mat-button-toggle>
+        <mat-button-toggle value="tomorrow">Morgen</mat-button-toggle>
+      </mat-button-toggle-group>
 
-      <select [(ngModel)]="statusFilter" (ngModelChange)="onFiltersChanged()">
-        <option value="all">Alle (inkl. fertig)</option>
-        <option value="pickable">Offen + Wird kommissioniert</option>
-        <option value="picking">Nur wird kommissioniert</option>
-        <option value="picked">Nur fertig kommissioniert</option>
-      </select>
+      <mat-form-field appearance="outline" class="status-field" subscriptSizing="dynamic">
+        <mat-label>Status</mat-label>
+        <mat-icon matPrefix>filter_list</mat-icon>
+        <select
+          matNativeControl
+          [ngModel]="statusFilter"
+          (ngModelChange)="onStatusFilterChanged($event)"
+          name="statusFilter"
+        >
+          <option value="all">Alle (inkl. fertig)</option>
+          <option value="pickable">Offen + Wird kommissioniert</option>
+          <option value="picking">Nur wird kommissioniert</option>
+          <option value="picked">Nur fertig kommissioniert</option>
+        </select>
+      </mat-form-field>
     </section>
 
     @if (isLoading) {
-      <div class="state-box">Bestellungen werden geladen…</div>
+      <div class="state-box">
+        <mat-spinner diameter="36"></mat-spinner>
+        <p>Bestellungen werden geladen…</p>
+      </div>
     } @else if (errorMessage) {
-      <div class="state-box error">{{ errorMessage }}</div>
+      <div class="state-box error">
+        <mat-icon>error_outline</mat-icon>
+        <p>{{ errorMessage }}</p>
+        <button mat-stroked-button type="button" color="primary" (click)="loadQueue()">
+          <mat-icon>refresh</mat-icon>
+          Erneut versuchen
+        </button>
+      </div>
     } @else if (queueEntries.length === 0) {
-      <div class="state-box">Keine Bestellungen für die aktuelle Filterung.</div>
+      <div class="state-box">
+        <mat-icon>inbox</mat-icon>
+        <p>Keine Bestellungen für die aktuelle Filterung.</p>
+      </div>
     } @else {
       <div class="queue-grid">
         @for (entry of queueEntries; track entry.order.order_id) {
-          <article
+          <mat-card
             class="queue-card"
             [class.is-open]="entry.order.status === 'open'"
             [class.is-picking]="entry.order.status === 'picking'"
-            [class.is-picked]="entry.order.status === 'picked'"
+            [class.is-picked]="entry.order.status === 'picked' || entry.order.status === 'completed'"
+            matRipple
             (click)="openOrder(entry.order.order_id)"
+            role="button"
+            tabindex="0"
+            (keydown.enter)="openOrder(entry.order.order_id)"
           >
-            <div class="card-top">
-              <span class="order-id">#{{ entry.order.order_id }}</span>
-              <span
-                class="status-badge"
-                [class.picking]="entry.order.status === 'picking'"
-                [class.open]="entry.order.status === 'open'"
-                [class.picked]="entry.order.status === 'picked'"
-              >
-                {{ getStatusLabel(entry.order.status) }}
-              </span>
-            </div>
-
-            <h2>{{ getCustomerLabel(entry.order) }}</h2>
-
-            @if (getFullAddress(entry.order)) {
-              <div class="order-address">
-                <strong>Adresse</strong>
-                <span>{{ getFullAddress(entry.order) }}</span>
+            <mat-card-content>
+              <div class="card-top">
+                <span class="order-id">#{{ entry.order.order_id }}</span>
+                <mat-chip-set class="status-chips">
+                  <mat-chip
+                    class="status-chip"
+                    [class.open]="entry.order.status === 'open'"
+                    [class.picking]="entry.order.status === 'picking'"
+                    [class.picked]="entry.order.status === 'picked' || entry.order.status === 'completed'"
+                  >
+                    <mat-icon>{{ getStatusIcon(entry.order.status) }}</mat-icon>
+                    {{ getStatusLabel(entry.order.status) }}
+                  </mat-chip>
+                </mat-chip-set>
               </div>
-            }
 
-            <div class="meta">
-              <span>{{ getFulfillmentLabel(entry.order.fulfillment_type) }}</span>
-              <span>{{ getOrderDateLabel(entry.order) }}</span>
-              <span>{{ entry.order.items.length || 0 }} Positionen</span>
-            </div>
+              <h2>{{ getCustomerLabel(entry.order) }}</h2>
 
-            @if (getCustomerNotes(entry.order)) {
-              <div class="order-notes">
-                <strong>Anmerkung</strong>
-                <span>{{ getCustomerNotes(entry.order) }}</span>
+              @if (getFullAddress(entry.order)) {
+                <p class="info-row">
+                  <mat-icon>place</mat-icon>
+                  <span>{{ getFullAddress(entry.order) }}</span>
+                </p>
+              }
+
+              <div class="meta-row">
+                <span class="meta-item">
+                  <mat-icon>{{ getFulfillmentIcon(entry.order.fulfillment_type) }}</mat-icon>
+                  {{ getFulfillmentLabel(entry.order.fulfillment_type) }}
+                </span>
+                <span class="meta-item">
+                  <mat-icon>event</mat-icon>
+                  {{ getOrderDateLabel(entry.order) }}
+                </span>
+                <span class="meta-item">
+                  <mat-icon>list_alt</mat-icon>
+                  {{ entry.order.items.length || 0 }} Pos.
+                </span>
               </div>
-            }
 
-            @if (entry.order.picker_user_name) {
-              <p class="picker-hint">
-                @if (entry.order.status === 'picking') {
-                  Wird kommissioniert von {{ entry.order.picker_user_name }}
-                } @else {
-                  Kommissioniert von {{ entry.order.picker_user_name }}
-                }
-              </p>
-            }
+              @if (getCustomerNotes(entry.order)) {
+                <div class="order-notes">
+                  <mat-icon>sticky_note_2</mat-icon>
+                  <span>{{ getCustomerNotes(entry.order) }}</span>
+                </div>
+              }
 
-            <div class="progress-row">
-              <div class="progress-bar">
-                <div class="progress-fill" [style.width.%]="entry.progress.percent"></div>
+              @if (entry.order.picker_user_name) {
+                <p class="picker-hint">
+                  <mat-icon>person</mat-icon>
+                  @if (entry.order.status === 'picking') {
+                    Wird kommissioniert von {{ entry.order.picker_user_name }}
+                  } @else {
+                    Kommissioniert von {{ entry.order.picker_user_name }}
+                  }
+                </p>
+              }
+
+              <div class="progress-row">
+                <mat-progress-bar mode="determinate" [value]="entry.progress.percent"></mat-progress-bar>
+                <span class="progress-text">
+                  @if (entry.progress.total > 0) {
+                    {{ entry.progress.done }}/{{ entry.progress.total }}
+                  } @else {
+                    —
+                  }
+                </span>
               </div>
-              <span class="progress-text">
-                @if (entry.progress.total > 0) {
-                  {{ entry.progress.done }}/{{ entry.progress.total }}
-                } @else {
-                  —
-                }
-              </span>
-            </div>
-          </article>
+            </mat-card-content>
+          </mat-card>
         }
       </div>
     }
