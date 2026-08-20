@@ -1125,33 +1125,37 @@
 </div>
 
 <!-- Article Prices Modal -->
-<div class="article-prices-modal" *ngIf="isArticlePricesModalOpen">
-  <div class="article-prices-modal-content">
+<div class="article-prices-modal" *ngIf="isArticlePricesModalOpen" (click)="closeArticlePricesModal()">
+  <div class="article-prices-modal-content" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="article-prices-modal-title">
     <!-- Notification -->
     @if (isArticlePricesNotificationVisible) {
     <div class="article-prices-notification">
-      <span class="material-icons notification-icon">check_circle</span>
+      <mat-icon class="notification-icon">check_circle</mat-icon>
       <span class="notification-text">{{ articlePricesNotificationText }}</span>
     </div>
     }
     
     <div class="article-prices-modal-header">
-      <h2>Artikel-Preise</h2>
-      <button class="close-article-prices-modal" (click)="closeArticlePricesModal()">
-        <span class="material-icons">close</span>
+      <h2 id="article-prices-modal-title">
+        <mat-icon>payments</mat-icon>
+        Artikel-Preise
+      </h2>
+      <button mat-icon-button type="button" class="close-article-prices-modal" (click)="closeArticlePricesModal()" aria-label="Schließen">
+        <mat-icon>close</mat-icon>
       </button>
     </div>
     
     <div class="article-prices-modal-body">
-      <div class="article-prices-search">
+      <mat-form-field appearance="outline" class="md-dialog-search" subscriptSizing="dynamic">
+        <mat-icon matPrefix>search</mat-icon>
         <input #articlePricesSearchInput
+               matInput
                type="text"
                [(ngModel)]="articlePricesSearchTerm"
                (ngModelChange)="onArticlePricesSearchTermChange($event)"
                (keydown)="onArticlePricesSearchKeyDown($event)"
-               placeholder="Nach Artikelbezeichnung, Art.-Nr., EAN oder Produkt-ID suchen..."
-               class="article-prices-search-input">
-      </div>
+               placeholder="Artikel, Art.-Nr., EAN oder Produkt-ID">
+      </mat-form-field>
       
       <!-- Desktop Tabelle -->
       <div class="article-prices-table-container" #articlePricesTableContainer>
@@ -1175,11 +1179,12 @@
             <tr class="article-price-row" [class.selected]="selectedArticlePriceIndex === $index">
               @if (isEditingArticlePrices) {
                 <td class="delete-action" data-label="Löschen">
-                  <button (click)="deleteCustomerArticlePrice(customerPrice)" 
+                  <button mat-icon-button
+                          type="button"
+                          (click)="deleteCustomerArticlePrice(customerPrice)" 
                           class="delete-article-price-btn" 
-                          title="Kundenspezifischen Preis löschen"
-                          style="background: #dc2626; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
-                    <span class="material-icons" style="font-size: 18px;">delete</span>
+                          title="Kundenspezifischen Preis löschen">
+                    <mat-icon>delete</mat-icon>
                   </button>
                 </td>
               }
@@ -1194,10 +1199,12 @@
                            step="0.01" 
                            class="price-edit-input" 
                            placeholder="{{ customerPrice.unit_price_net }}">
-                    <button (click)="saveCustomerArticlePrice(customerPrice)" 
+                    <button mat-icon-button
+                            type="button"
+                            (click)="saveCustomerArticlePrice(customerPrice)" 
                             class="save-price-btn" 
                             title="Preis speichern">
-                      <span class="material-icons">save</span>
+                      <mat-icon>save</mat-icon>
                     </button>
                   </div>
                 } @else {
@@ -1206,10 +1213,12 @@
               </td>
               <td class="invoice-date" data-label="Datum">{{ formatInvoiceDate(customerPrice.invoice_date) }}</td>
               <td class="notes" data-label="Info">
-                <button class="info-btn" 
+                <button mat-icon-button
+                        type="button"
+                        class="info-btn" 
                         (click)="showCustomerPriceNotes(customerPrice)"
                         [title]="customerPrice.article_notes ? 'Artikel-Notizen anzeigen' : 'Keine Notizen'">
-                  <span class="material-icons">info</span>
+                  <mat-icon>info</mat-icon>
                 </button>
               </td>
               <td class="action" data-label="Aktion">
@@ -1220,8 +1229,8 @@
                          class="quantity-input" 
                          placeholder="1"
                          (keydown)="onArticlePriceQuantityKeyDown($event, $index)">
-                  <button (click)="addArticleFromPricesModal(customerPrice)" class="add-article-btn" title="Zum Auftrag hinzufügen">
-                    <span class="material-icons">add_shopping_cart</span>
+                  <button mat-icon-button type="button" (click)="addArticleFromPricesModal(customerPrice)" class="add-article-btn" title="Zum Auftrag hinzufügen">
+                    <mat-icon>add_shopping_cart</mat-icon>
                   </button>
                 </div>
               </td>
@@ -1237,18 +1246,16 @@
         <div class="article-price-card" [class.selected]="selectedArticlePriceIndex === $index">
           <div class="price-card-header">
             @if (isEditingArticlePrices) {
-              <div class="price-edit-section" style="display: flex; flex-direction: column; gap: 8px; align-items: flex-start;">
-                <label style="font-size: 12px; color: #666;">Neuer Preis:</label>
-                <div style="display: flex; gap: 8px; width: 100%;">
+              <div class="price-edit-section">
+                <label>Neuer Preis</label>
+                <div class="price-edit-row">
                   <input type="number" 
                          [(ngModel)]="customerPrice.editedPrice" 
                          step="0.01" 
-                         style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;"
+                         class="price-edit-input"
                          placeholder="{{ customerPrice.unit_price_net }}">
-                  <button (click)="saveCustomerArticlePrice(customerPrice)" 
-                          title="Preis speichern"
-                          style="background: #10b981; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
-                    <span class="material-icons" style="font-size: 20px;">save</span>
+                  <button mat-icon-button type="button" (click)="saveCustomerArticlePrice(customerPrice)" class="save-price-btn" title="Preis speichern">
+                    <mat-icon>save</mat-icon>
                   </button>
                 </div>
               </div>
@@ -1260,12 +1267,12 @@
             }
             <div class="card-actions">
               @if (isEditingArticlePrices) {
-                <button class="delete-btn" (click)="deleteCustomerArticlePrice(customerPrice)" title="Kundenspezifischen Preis löschen" style="background: #dc2626; color: white; border: none; padding: 8px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;">
-                  <span class="material-icons" style="font-size: 20px;">delete</span>
+                <button mat-icon-button type="button" class="delete-article-price-btn" (click)="deleteCustomerArticlePrice(customerPrice)" title="Kundenspezifischen Preis löschen">
+                  <mat-icon>delete</mat-icon>
                 </button>
               }
-              <button class="info-btn" (click)="showCustomerPriceNotes(customerPrice)" title="Artikel-Notizen anzeigen">
-                <span class="material-icons">info</span>
+              <button mat-icon-button type="button" class="info-btn" (click)="showCustomerPriceNotes(customerPrice)" title="Artikel-Notizen anzeigen">
+                <mat-icon>info</mat-icon>
               </button>
             </div>
           </div>
@@ -1278,23 +1285,23 @@
             
             <div class="invoice-info">
               <div class="invoice-row">
-                <span class="invoice-label">Datum:</span>
+                <span class="invoice-label">Datum</span>
                 <span class="invoice-value">{{ formatInvoiceDate(customerPrice.invoice_date) }}</span>
               </div>
             </div>
             
             <div class="add-to-order-section">
               <div class="quantity-input-group">
-                <span class="quantity-label">Menge:</span>
-                              <input type="number" 
-                     [(ngModel)]="customerPrice.tempQuantity" 
-                     class="quantity-input" 
-                     placeholder="1"
-                     (keydown)="onArticlePriceQuantityKeyDown($event, $index)">
+                <span class="quantity-label">Menge</span>
+                <input type="number" 
+                       [(ngModel)]="customerPrice.tempQuantity" 
+                       class="quantity-input" 
+                       placeholder="1"
+                       (keydown)="onArticlePriceQuantityKeyDown($event, $index)">
               </div>
-              <button (click)="addArticleFromPricesModal(customerPrice)" class="add-to-order-btn" title="Zum Auftrag hinzufügen">
-                <span class="material-icons">add_shopping_cart</span>
-                <span class="btn-text">Hinzufügen</span>
+              <button mat-stroked-button type="button" (click)="addArticleFromPricesModal(customerPrice)" class="add-to-order-btn" title="Zum Auftrag hinzufügen">
+                <mat-icon>add_shopping_cart</mat-icon>
+                Hinzufügen
               </button>
             </div>
           </div>
@@ -1304,29 +1311,33 @@
       
       @if (filteredArticlePrices.length === 0) {
       <div class="no-article-prices">
+        <mat-icon>search_off</mat-icon>
         @if (isArticlePricesSearchPending()) {
           <p>Keine Artikel gefunden.</p>
         } @else {
-          <p>Keine Artikel für "{{ articlePricesSearchTerm }}" gefunden.</p>
+          <p>Keine Artikel für „{{ articlePricesSearchTerm }}“ gefunden.</p>
         }
       </div>
       }
 
       <div class="article-prices-actions">
-        <button (click)="showQRCode()" class="qr-code-btn" title="QR-Code für Online-Bestellung anzeigen">
-          <span class="material-icons">qr_code</span>
+        <button mat-stroked-button type="button" (click)="showQRCode()" class="qr-code-btn" title="QR-Code für Online-Bestellung anzeigen">
+          <mat-icon>qr_code</mat-icon>
           QR-Code
         </button>
-        <button (click)="printCustomerPrices()" class="print-article-prices-btn" title="Kundenpreise drucken">
-          <span class="material-icons">print</span>
+        <button mat-stroked-button type="button" (click)="printCustomerPrices()" class="print-article-prices-btn" title="Kundenpreise drucken">
+          <mat-icon>print</mat-icon>
           Drucken
         </button>
-        <button (click)="toggleEditMode()" class="edit-article-prices-btn" [class.active]="isEditingArticlePrices" [disabled]="isLoadingArticlePrices" title="Artikel-Preise bearbeiten">
+        <button mat-flat-button type="button" (click)="toggleEditMode()" class="edit-article-prices-btn" [class.active]="isEditingArticlePrices" [disabled]="isLoadingArticlePrices" title="Artikel-Preise bearbeiten">
           @if (isLoadingArticlePrices) {
-            <span class="material-icons spinning">refresh</span>
+            <mat-icon class="spinning">refresh</mat-icon>
+          } @else {
+            <mat-icon>{{ isEditingArticlePrices ? 'edit' : 'edit_off' }}</mat-icon>
+          }
+          @if (isLoadingArticlePrices) {
             Preise werden geladen…
           } @else {
-            <span class="material-icons">{{ isEditingArticlePrices ? 'edit' : 'edit_off' }}</span>
             {{ isEditingArticlePrices ? 'Bearbeitung beenden' : 'Bearbeiten' }}
           }
         </button>
@@ -1336,25 +1347,29 @@
 </div>
 
 <!-- Customer Modal -->
-<div class="customer-modal" *ngIf="isCustomerModalOpen">
-  <div class="customer-modal-content">
+<div class="customer-modal" *ngIf="isCustomerModalOpen" (click)="closeCustomerModal()">
+  <div class="customer-modal-content" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="customer-modal-title">
     <div class="customer-modal-header">
-      <h2>Kundenliste</h2>
-      <button class="close-customer-modal" (click)="closeCustomerModal()">
-        <span class="material-icons">close</span>
+      <h2 id="customer-modal-title">
+        <mat-icon>people</mat-icon>
+        Kundenliste
+      </h2>
+      <button mat-icon-button type="button" class="close-customer-modal" (click)="closeCustomerModal()" aria-label="Schließen">
+        <mat-icon>close</mat-icon>
       </button>
     </div>
     
     <div class="customer-modal-body">
-      <div class="customer-search">
+      <mat-form-field appearance="outline" class="md-dialog-search" subscriptSizing="dynamic">
+        <mat-icon matPrefix>search</mat-icon>
         <input #customerSearchInput
+               matInput
                type="text"
                [(ngModel)]="customerSearchTerm"
                (input)="filterCustomers()"
                (keydown)="onCustomerSearchKeyDown($event)"
-               placeholder="Suchen..."
-               class="customer-search-input">
-      </div>
+               placeholder="Name, Nummer, Ort…">
+      </mat-form-field>
       
       <div class="customers-grid" #customersGrid>
         @for (customer of filteredCustomers; track customer.id) {
@@ -1384,20 +1399,21 @@
               </p>
             }
           </div>
-          <span class="material-icons customer-select-icon">chevron_right</span>
+          <mat-icon class="customer-select-icon">chevron_right</mat-icon>
         </div>
         }
       </div>
       
       @if (isLoadingCustomers) {
       <div class="customer-loading">
-        <div class="loader"></div>
+        <mat-spinner diameter="32"></mat-spinner>
         <p>Kunden werden geladen...</p>
       </div>
       }
       
       @if (!isLoadingCustomers && filteredCustomers.length === 0) {
       <div class="no-customers">
+        <mat-icon>person_search</mat-icon>
         <p>Keine Kunden gefunden.</p>
       </div>
       }
@@ -1406,35 +1422,46 @@
 </div>
 
 <!-- Order Confirmation Modal -->
-<div class="order-confirmation-modal" *ngIf="isOrderConfirmationModalOpen">
-  <div class="order-confirmation-modal-content">
+<div class="order-confirmation-modal"
+     *ngIf="isOrderConfirmationModalOpen"
+     [class.save-as-open]="isSavingAsOpen"
+     (click)="!isSavingOrder && closeOrderConfirmationModal()">
+  <div class="order-confirmation-modal-content" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="order-confirmation-title">
     <div class="order-confirmation-modal-header">
-      <h2>@if (isSavingAsOpen) {
-        📋 Auftrag zwischenspeichern
-      } @else {
-        📋 Auftrag bestätigen
-      }</h2>
-      <button class="close-order-confirmation-modal" (click)="closeOrderConfirmationModal()">
-        <span class="material-icons">close</span>
+      <h2 id="order-confirmation-title">
+        @if (isSavingAsOpen) {
+          <mat-icon>schedule</mat-icon>
+          Auftrag zwischenspeichern
+        } @else {
+          <mat-icon>save</mat-icon>
+          Auftrag speichern
+        }
+      </h2>
+      <button mat-icon-button type="button" class="close-order-confirmation-modal" (click)="closeOrderConfirmationModal()" [disabled]="isSavingOrder" aria-label="Schließen">
+        <mat-icon>close</mat-icon>
       </button>
     </div>
     
     <div class="order-confirmation-modal-body">
       @if (orderConfirmationData) {
         <div class="confirmation-content">
-          <!-- Kunde -->
           <div class="confirmation-section">
-            <h3>👤 Kunde</h3>
-            <p class="customer-name">{{ orderConfirmationData.customerName }}</p>
+            <h3>
+              <mat-icon>person</mat-icon>
+              Kunde
+            </h3>
+            <p class="confirmation-customer-name">{{ orderConfirmationData.customerName }}</p>
           </div>
 
-          <!-- Artikel -->
           <div class="confirmation-section">
-            <h3>📦 Artikel</h3>
+            <h3>
+              <mat-icon>inventory_2</mat-icon>
+              Artikel
+            </h3>
             <div class="order-items-list">
               @for (item of orderItems; track $index) {
                 <div class="order-item-row">
-                  <span class="item-quantity">{{ item.quantity }}x</span>
+                  <span class="item-quantity">{{ item.quantity }}×</span>
                   <span class="item-name">{{ item.article_text }}</span>
                   <span class="item-total">€{{ ((item.different_price !== undefined ? item.different_price : item.sale_price) * item.quantity).toFixed(2) }}</span>
                 </div>
@@ -1442,36 +1469,40 @@
             </div>
           </div>
 
-          <!-- Datumsfelder -->
           @if (orderConfirmationData.orderDate || orderConfirmationData.deliveryDate) {
             <div class="confirmation-section">
-              <h3>📅 Termine</h3>
+              <h3>
+                <mat-icon>event</mat-icon>
+                Termine
+              </h3>
               @if (orderConfirmationData.orderDate) {
                 <div class="date-row">
-                  <span class="date-label">Bestelldatum:</span>
+                  <span class="date-label">Bestelldatum</span>
                   <span class="date-value">{{ orderConfirmationData.orderDate }}</span>
                 </div>
               }
               @if (orderConfirmationData.deliveryDate) {
                 <div class="date-row">
-                  <span class="date-label">Lieferdatum:</span>
+                  <span class="date-label">Lieferdatum</span>
                   <span class="date-value">{{ orderConfirmationData.deliveryDate }}</span>
                 </div>
               }
             </div>
           }
 
-          <!-- Warnung bei Verkauf unter EK-Preis -->
           @if (orderConfirmationData.itemsBelowCost && orderConfirmationData.itemsBelowCost.length > 0) {
             <div class="confirmation-section warning-section">
-              <h3>⚠️ Warnung</h3>
+              <h3>
+                <mat-icon>warning</mat-icon>
+                Warnung
+              </h3>
               <div class="warning-content">
                 <p>Folgende Artikel werden unter dem Einkaufspreis verkauft:</p>
                 @for (item of orderConfirmationData.itemsBelowCost; track $index) {
                   <div class="warning-item">
                     <span class="warning-item-name">{{ item.article_text }}</span>
                     <span class="warning-item-prices">
-                      (VK: €{{ (item.different_price !== undefined ? item.different_price : item.sale_price).toFixed(2) }} < EK: €{{ item.cost_price.toFixed(2) }})
+                      (VK: €{{ (item.different_price !== undefined ? item.different_price : item.sale_price).toFixed(2) }} &lt; EK: €{{ item.cost_price.toFixed(2) }})
                     </span>
                   </div>
                 }
@@ -1479,18 +1510,17 @@
             </div>
           }
 
-          <!-- Gesamtpreis -->
           <div class="confirmation-section total-section">
             <div class="total-row">
-              <span class="total-label">Gesamtpreis:</span>
+              <span class="total-label">Gesamtpreis</span>
               <span class="total-amount">€{{ orderConfirmationData.totalPrice.toFixed(2) }}</span>
             </div>
           </div>
 
-          <!-- Hinweis für Zwischenspeichern -->
           @if (isSavingAsOpen) {
             <div class="confirmation-section info-section">
-              <p class="info-text">ℹ️ Der Auftrag wird mit dem Status "Offen" gespeichert und kann später bearbeitet werden.</p>
+              <mat-icon>info</mat-icon>
+              <p class="info-text">Der Auftrag wird mit dem Status „Offen“ gespeichert und kann später bearbeitet werden.</p>
             </div>
           }
         </div>
@@ -1498,21 +1528,23 @@
     </div>
     
     <div class="order-confirmation-modal-footer">
-      <button class="cancel-order-btn" (click)="closeOrderConfirmationModal()" [disabled]="isSavingOrder">
-        <span class="material-icons">close</span>
+      <button mat-stroked-button type="button" class="cancel-order-btn" (click)="closeOrderConfirmationModal()" [disabled]="isSavingOrder">
         Abbrechen
       </button>
-      <button class="confirm-order-btn" (click)="confirmOrderSave()" [disabled]="isSavingOrder">
+      <button mat-flat-button type="button" class="confirm-order-btn" (click)="confirmOrderSave()" [disabled]="isSavingOrder">
         @if (isSavingOrder) {
-          <span class="material-icons spinner">hourglass_empty</span>
-          Wird gespeichert...
+          <mat-icon class="spinning">hourglass_empty</mat-icon>
+        } @else if (isSavingAsOpen) {
+          <mat-icon>schedule</mat-icon>
         } @else {
-          <span class="material-icons">@if (isSavingAsOpen) { schedule } @else { save }</span>
-          @if (isSavingAsOpen) {
-            Zwischenspeichern
-          } @else {
-            Auftrag speichern
-          }
+          <mat-icon>save</mat-icon>
+        }
+        @if (isSavingOrder) {
+          Wird gespeichert...
+        } @else if (isSavingAsOpen) {
+          Zwischenspeichern
+        } @else {
+          Auftrag speichern
         }
       </button>
     </div>

@@ -10,7 +10,10 @@ import { ZXingScannerComponent, ZXingScannerModule } from '@zxing/ngx-scanner';
 import { BarcodeFormat } from '@zxing/browser';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MyDialogComponent } from '../my-dialog/my-dialog.component';
 import { RecentImagesModalComponent } from '../recent-images-modal/recent-images-modal.component';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
@@ -27,7 +30,7 @@ import { KommissionierungPdfService } from '../services/kommissionierung-pdf.ser
 
 @Component({
   selector: 'app-customer-orders',
-  imports: [CommonModule, FormsModule, RouterModule, UploadLoadingComponent, ZXingScannerModule, MatButtonModule, MatIconModule, MatDialogModule, HttpClientModule],
+  imports: [CommonModule, FormsModule, RouterModule, UploadLoadingComponent, ZXingScannerModule, MatButtonModule, MatFormFieldModule, MatIconModule, MatInputModule, MatProgressSpinnerModule, MatDialogModule, HttpClientModule],
   templateUrl: './customer-orders.component.html',
   styleUrl: './customer-orders.component.scss',
 })
