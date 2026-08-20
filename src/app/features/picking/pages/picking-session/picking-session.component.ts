@@ -1341,6 +1341,8 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     if (!originalItems.length) {
       return;
     }
+
+    const restoreItems: PickingSyncItem[] = originalItems.map((item) => ({
       product_id: item.product_id,
       quantity: Number(item.quantity),
       price: item.price != null ? Number(item.price) : 0,
