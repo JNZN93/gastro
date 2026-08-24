@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { interval, Subscription } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 // Leaflet TypeScript Deklarationen
 declare var L: any;
@@ -57,11 +58,9 @@ export class DeviceTrackingComponent implements OnInit, OnDestroy {
   selectedDeviceId: number | null = null;
   private refreshSubscription?: Subscription;
   private readonly REFRESH_INTERVAL = 3000; // 3 seconds
-  private readonly API_URL = 'https://server.traccar.org/api/positions';
-  private readonly DEVICES_URL = 'https://server.traccar.org/api/devices';
-  private readonly ROUTE_URL = 'https://server.traccar.org/api/reports/route';
-  private readonly USERNAME = 'firat.tasyurdu@gmail.com';
-  private readonly PASSWORD = 'oya0oz47';
+  private readonly API_URL = `${environment.apiUrl}/api/traccar/positions`;
+  private readonly DEVICES_URL = `${environment.apiUrl}/api/traccar/devices`;
+  private readonly ROUTE_URL = `${environment.apiUrl}/api/traccar/reports/route`;
   
   // Tab navigation
   activeTab: 'live' | 'route' = 'live';
@@ -94,6 +93,18 @@ export class DeviceTrackingComponent implements OnInit, OnDestroy {
 
 
   constructor(private http: HttpClient) {}
+
+  private authHeaders(): HttpHeaders | null {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      this.error = 'Bitte erneut anmelden — keine Session gefunden.';
+      return null;
+    }
+    return new HttpHeaders({
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    });
+  }
 
   ngOnInit(): void {
     this.loadDevices();
@@ -141,11 +152,11 @@ export class DeviceTrackingComponent implements OnInit, OnDestroy {
     }
     this.error = null;
 
-    const credentials = btoa(`${this.USERNAME}:${this.PASSWORD}`);
-    const headers = new HttpHeaders({
-      'Authorization': `Basic ${credentials}`,
-      'Content-Type': 'application/json'
-    });
+    const headers = this.authHeaders();
+    if (!headers) {
+      this.loading = false;
+      return;
+    }
 
     // Lade alle Positionsdaten
     this.http.get<PositionData[]>(this.API_URL, { headers }).subscribe({
@@ -620,11 +631,11 @@ export class DeviceTrackingComponent implements OnInit, OnDestroy {
 
   // Load available devices
   loadDevices(): void {
-    const credentials = btoa(`${this.USERNAME}:${this.PASSWORD}`);
-    const headers = new HttpHeaders({
-      'Authorization': `Basic ${credentials}`,
-      'Content-Type': 'application/json'
-    });
+    const headers = this.authHeaders();
+    if (!headers) {
+      this.availableDevices = [];
+      return;
+    }
 
     this.http.get<any[]>(this.DEVICES_URL, { headers }).subscribe({
       next: (devices) => {
@@ -671,11 +682,11 @@ export class DeviceTrackingComponent implements OnInit, OnDestroy {
     const fromISO = fromDateTime.toISOString();
     const toISO = toDateTime.toISOString();
 
-    const credentials = btoa(`${this.USERNAME}:${this.PASSWORD}`);
-    const headers = new HttpHeaders({
-      'Authorization': `Basic ${credentials}`,
-      'Content-Type': 'application/json'
-    });
+    const headers = this.authHeaders();
+    if (!headers) {
+      this.loadingRoute = false;
+      return;
+    }
 
     // Build query parameters
     const params = {
