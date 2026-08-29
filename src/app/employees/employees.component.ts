@@ -17,6 +17,7 @@ import { IndexedDBService } from '../indexeddb.service';
 import { OffersService, OfferWithProducts, OfferProduct } from '../offers.service';
 import { RecentImagesModalComponent } from '../recent-images-modal/recent-images-modal.component';
 import { environment } from '../../environments/environment';
+import { readApiJson } from '../utils/order-payload.util';
 
 @Component({
   selector: 'app-employees',
@@ -3101,7 +3102,7 @@ export class EmployeesComponent implements OnInit, OnDestroy {
       },
       orderItems: this.orderItems.map(item => ({
         ...item,
-        different_price: item.different_price, // Stelle sicher, dass different_price explizit gesetzt wird
+        different_price: item.different_price,
         sale_price: item.sale_price,
         quantity: item.quantity,
         description: item.description || item.article_text,
@@ -3140,11 +3141,12 @@ export class EmployeesComponent implements OnInit, OnDestroy {
       },
       body: JSON.stringify(completeOrder)
     })
-    .then(response => {
+    .then(async response => {
+      const data = await readApiJson(response);
       if (!response.ok) {
-        throw new Error('Fehler beim Speichern des Auftrags');
+        throw new Error(data.error || data.message || 'Fehler beim Speichern des Auftrags');
       }
-      return response.json();
+      return data;
     })
     .then(data => {
       this.isSavingOrder = false;

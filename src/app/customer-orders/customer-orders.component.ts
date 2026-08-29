@@ -27,6 +27,7 @@ import { environment } from '../../environments/environment';
 import { firstValueFrom, Subscription } from 'rxjs';
 import { ArticleSearchService } from '../services/article-search.service';
 import { KommissionierungPdfService } from '../services/kommissionierung-pdf.service';
+import { readApiJson } from '../utils/order-payload.util';
 
 @Component({
   selector: 'app-customer-orders',
@@ -3387,7 +3388,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       },
       orderItems: items.map(item => ({
         ...item,
-        different_price: item.different_price, // Stelle sicher, dass different_price explizit gesetzt wird
+        different_price: item.different_price,
         sale_price: item.sale_price,
         quantity: item.quantity,
         description: item.description || item.article_text,
@@ -3414,11 +3415,12 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       body: JSON.stringify(completeOrder)
     });
 
+    const data = await readApiJson(response);
     if (!response.ok) {
-      throw new Error('Fehler beim Speichern des Auftrags');
+      throw new Error(data.error || data.message || 'Fehler beim Speichern des Auftrags');
     }
 
-    return response.json();
+    return data;
   }
 
   saveOrderAsOpen(): void {
@@ -3520,7 +3522,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       body: JSON.stringify(completeOrder)
     })
     .then(async response => {
-      const data = await response.json();
+      const data = await readApiJson(response);
       if (!response.ok) {
         console.error('❌ [SAVE-AS-OPEN] Backend-Fehler:', data);
         throw new Error(data.error || data.message || `Fehler beim ${isEditMode ? 'Aktualisieren' : 'Zwischenspeichern'} des Auftrags`);
@@ -5836,7 +5838,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       body: JSON.stringify(completeOrder)
     })
     .then(async response => {
-      const data = await response.json();
+      const data = await readApiJson(response);
       if (!response.ok) {
         console.error('❌ [SAVE-ORDER] Backend-Fehler:', data);
         throw new Error(data.error || data.message || `Fehler beim ${isEditMode ? 'Aktualisieren' : 'Speichern'} des Auftrags`);
@@ -6530,7 +6532,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       body: JSON.stringify(completeOrder)
     });
 
-    const data = await response.json();
+    const data = await readApiJson(response);
     if (!response.ok) {
       throw new Error(data.error || data.message || 'Fehler beim Zwischenspeichern vor dem Druck');
     }
