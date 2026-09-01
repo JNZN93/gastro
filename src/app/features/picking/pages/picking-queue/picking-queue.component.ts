@@ -107,7 +107,7 @@ export class PickingQueueComponent implements OnInit {
 
       this.orders = (response?.orders ?? []).filter(
         (order) =>
-          order.status === 'open' ||
+          order.status === 'released' ||
           order.status === 'picking' ||
           order.status === 'picked' ||
           order.status === 'completed'
@@ -160,7 +160,7 @@ export class PickingQueueComponent implements OnInit {
     if (this.statusFilter === 'picked') {
       return order.status === 'picked' || order.status === 'completed';
     }
-    return order.status === 'open' || order.status === 'picking';
+    return order.status === 'released' || order.status === 'picking';
   }
 
   private getQueueProgress(order: PickingOrder, localState: PickingState | null): PickingProgress {
@@ -213,7 +213,7 @@ export class PickingQueueComponent implements OnInit {
   private compareQueueEntries(a: QueueEntry, b: QueueEntry): number {
     const statusWeight = (status: string) => {
       if (status === 'picking') return 0;
-      if (status === 'open') return 1;
+      if (status === 'released') return 1;
       if (status === 'picked') return 2;
       return 3;
     };
@@ -285,6 +285,8 @@ export class PickingQueueComponent implements OnInit {
     switch (status) {
       case 'open':
         return 'Offen';
+      case 'released':
+        return 'Freigegeben';
       case 'picking':
         return 'Wird kommissioniert';
       case 'picked':
@@ -303,6 +305,8 @@ export class PickingQueueComponent implements OnInit {
     switch (status) {
       case 'open':
         return 'inventory_2';
+      case 'released':
+        return 'task_alt';
       case 'picking':
         return 'hourglass_top';
       case 'picked':

@@ -83,6 +83,7 @@ export class OrderOverviewComponent implements OnInit {
   deleteAllConfirmationText = '';
   showDeleteAllConfirmationError = false;
   userRole: string = '';
+  isReleasing = false;
   
   // Warnung für bereits bearbeitete Bestellungen
   showProcessingWarning = false;
@@ -482,6 +483,7 @@ export class OrderOverviewComponent implements OnInit {
   getStatusClass(status: string): string {
     switch (status) {
       case 'open': return 'status-open';
+      case 'released': return 'status-released';
       case 'in_progress': return 'status-progress';
       case 'picking': return 'status-picking';
       case 'picked': return 'status-picked';
@@ -495,6 +497,7 @@ export class OrderOverviewComponent implements OnInit {
   getStatusText(status: string): string {
     switch (status) {
       case 'open': return 'Offen';
+      case 'released': return 'Freigegeben';
       case 'in_progress': return 'In Bearbeitung';
       case 'picking': return 'Wird kommissioniert';
       case 'picked': return 'Fertig kommissioniert';
@@ -1013,10 +1016,52 @@ export class OrderOverviewComponent implements OnInit {
   isOrderEditable(order: Order): boolean {
     return (
       order.status === 'open' ||
+      order.status === 'released' ||
       order.status === 'in_progress' ||
       order.status === 'picked' ||
       order.status === 'completed'
     );
+  }
+
+  canReleaseOrder(order: Order): boolean {
+    return order.status === 'open';
+  }
+
+  releaseOrder(order: Order): void {
+    if (!this.canReleaseOrder(order) || this.isReleasing) {
+      return;
+    }
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      this.router.navigate(['/login']);
+      return;
+    }
+
+    this.isReleasing = true;
+
+    this.orderService.updateOrderStatusOnly(order.order_id, 'released', token).subscribe({
+      next: () => {
+        order.status = 'released';
+        this.applyLocalStatus(order.order_id, 'released');
+        this.isReleasing = false;
+      },
+      error: (error) => {
+        console.error('❌ [RELEASE-ORDER] Fehler beim Freigeben:', error);
+        this.isReleasing = false;
+        alert(error?.error?.error || 'Bestellung konnte nicht freigegeben werden.');
+      },
+    });
+  }
+
+  private applyLocalStatus(orderId: number, status: string): void {
+    const orderIndex = this.orders.findIndex((o) => o.order_id === orderId);
+    if (orderIndex !== -1) {
+      this.orders[orderIndex].status = status;
+    }
+    if (this.selectedOrder?.order_id === orderId) {
+      this.selectedOrder.status = status;
+    }
   }
 
   // Methode zum Bearbeiten einer offenen Bestellung

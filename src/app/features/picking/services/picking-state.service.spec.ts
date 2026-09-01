@@ -7,7 +7,7 @@ describe('PickingStateService', () => {
 
   const sampleOrder: PickingOrder = {
     order_id: 42,
-    status: 'open',
+    status: 'released',
     items: [
       {
         product_id: 1,

@@ -32,6 +32,12 @@
   --mat-filled-button-state-layer-color: #fff;
 }
 
+.btn-release {
+  --mdc-filled-button-container-color: #2e7d32;
+  --mdc-filled-button-label-text-color: #fff;
+  --mat-filled-button-state-layer-color: #fff;
+}
+
 .btn-import {
   --mdc-filled-button-container-color: #2e7d32;
   --mdc-filled-button-label-text-color: #fff;
@@ -597,6 +603,15 @@ mat-icon.spinning {
           }
         }
 
+        .release-btn {
+          color: #4c8c54;
+
+          &:hover:not(:disabled) {
+            color: #2e7d32;
+            background: rgba(46, 125, 50, 0.08);
+          }
+        }
+
         .view-btn {
           color: #5b7fa6;
 
@@ -646,6 +661,11 @@ mat-icon.spinning {
   &.status-open {
     background: #fef3c7;
     color: #92400e;
+  }
+
+  &.status-released {
+    background: #dcfce7;
+    color: #166534;
   }
 
   &.status-progress {
@@ -1199,7 +1219,8 @@ mat-icon.spinning {
   .view-btn,
   .print-btn,
   .delete-btn,
-  .edit-btn {
+  .edit-btn,
+  .release-btn {
     width: 100%;
     min-width: 0;
     min-height: 36px;
@@ -1223,6 +1244,12 @@ mat-icon.spinning {
     --mdc-outlined-button-label-text-color: #ef6c00;
     --mdc-outlined-button-outline-color: #ffcc80;
     --mat-outlined-button-state-layer-color: #ef6c00;
+  }
+
+  .release-btn {
+    --mdc-outlined-button-label-text-color: #2e7d32;
+    --mdc-outlined-button-outline-color: #a5d6a7;
+    --mat-outlined-button-state-layer-color: #2e7d32;
   }
 
   .delete-btn {
@@ -1311,7 +1338,8 @@ mat-icon.spinning {
     .view-btn,
     .print-btn,
     .delete-btn,
-    .edit-btn {
+    .edit-btn,
+    .release-btn {
       min-height: 32px;
       height: 32px;
       padding: 0 8px;
@@ -1530,7 +1558,8 @@ mat-icon.spinning {
     .view-btn,
     .print-btn,
     .delete-btn,
-    .edit-btn {
+    .edit-btn,
+    .release-btn {
       min-height: 30px;
       height: 30px;
       font-size: 11px;

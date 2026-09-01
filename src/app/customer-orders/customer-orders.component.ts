@@ -1246,6 +1246,18 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * Beim Zwischenspeichern bleibt eine bereits freigegebene Bestellung freigegeben,
+   * damit sie nicht erneut aus der Kommissionierung fällt.
+   */
+  private getOpenSaveStatus(): string {
+    return this.originalStatus === 'released' ? 'released' : 'open';
+  }
+
+  private getOpenSaveStatusLabel(): string {
+    return this.getOpenSaveStatus() === 'released' ? 'Freigegeben' : 'Offen';
+  }
+
   // Stelle den ursprünglichen Status einer Bestellung wieder her
   private restoreOriginalStatus(): void {
     if (this.isEditMode && this.editingOrderId && this.originalStatus !== 'in_progress') {
@@ -3452,7 +3464,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       customer_name: this.globalService.selectedCustomerForOrders.last_name_company,
       customer_addition: this.globalService.selectedCustomerForOrders.name_addition,
       customer_email: this.globalService.selectedCustomerForOrders.email,
-      status: 'open'
+      status: this.getOpenSaveStatus()
     };
 
     // Nur Kundendaten mitsenden, wenn der Name geändert wurde
@@ -3509,7 +3521,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       console.log('🆔 [CUSTOMER-ORDERS] Bestellungs-ID:', this.editingOrderId);
     }
     console.log('📋 [CUSTOMER-ORDERS] Vollständiges Order-Payload:', JSON.stringify(completeOrder, null, 2));
-    console.log('📳 [CUSTOMER-ORDERS] Status: open (Zwischengespeichert)');
+    console.log(`📳 [CUSTOMER-ORDERS] Status: ${this.getOpenSaveStatus()} (Zwischengespeichert)`);
     console.log('🌐 [CUSTOMER-ORDERS] Endpoint:', endpoint);
     console.log('🔨 [CUSTOMER-ORDERS] HTTP-Methode:', method);
 
@@ -3531,9 +3543,10 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     })
     .then(data => {
       this.isSavingOrder = false;
+      const statusLabel = this.getOpenSaveStatusLabel();
       const successMessage = isEditMode 
-        ? 'Bestellung erfolgreich aktualisiert (Status: Offen)!' 
-        : 'Auftrag erfolgreich zwischengespeichert (Status: Offen)!';
+        ? `Bestellung erfolgreich aktualisiert (Status: ${statusLabel})!` 
+        : `Auftrag erfolgreich zwischengespeichert (Status: ${statusLabel})!`;
       alert(successMessage);
       this.clearAllOrderData();
       
@@ -5678,7 +5691,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     const customerName = this.globalService.selectedCustomerForOrders.last_name_company;
     
     // Erweiterte Bestellübersicht mit Datumsfeldern
-    const statusText = this.isSavingAsOpen ? 'zwischenspeichern (Status: Offen)' : 'speichern';
+    const statusText = this.isSavingAsOpen ? `zwischenspeichern (Status: ${this.getOpenSaveStatusLabel()})` : 'speichern';
     let confirmMessage = `📋 Auftrag ${statusText}\n\nKunde: ${customerName}\n\nArtikel:\n${orderSummary}\n\nGesamtpreis: €${totalPrice.toFixed(2)}`;
     
     // Füge Datumsfelder zur Übersicht hinzu, falls ausgefüllt
@@ -5698,7 +5711,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     }
     
     if (this.isSavingAsOpen) {
-      confirmMessage += `\n\nDer Auftrag wird mit dem Status "Offen" gespeichert und kann später bearbeitet werden.`;
+      confirmMessage += `\n\nDer Auftrag wird mit dem Status "${this.getOpenSaveStatusLabel()}" gespeichert und kann später bearbeitet werden.`;
     }
     
     confirmMessage += `\n\nMöchten Sie diesen Auftrag ${statusText}?`;
@@ -5745,8 +5758,8 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     });
 
     // Kundendaten für den Request
-    // Wenn isSavingAsOpen true ist, Status auf "open" setzen, sonst "completed"
-    const orderStatus = this.isSavingAsOpen ? 'open' : 'completed';
+    // Wenn isSavingAsOpen true ist, Status auf "open"/"released" setzen, sonst "completed"
+    const orderStatus = this.isSavingAsOpen ? this.getOpenSaveStatus() : 'completed';
     const customerData: any = {
       customer_id: this.globalService.selectedCustomerForOrders.id,
       customer_number: this.globalService.selectedCustomerForOrders.customer_number,
@@ -5847,9 +5860,10 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     })
     .then(data => {
       this.isSavingOrder = false;
-      const statusText = this.isSavingAsOpen ? 'zwischengespeichert (Status: Offen)' : 'gespeichert';
+      const statusLabel = this.getOpenSaveStatusLabel();
+      const statusText = this.isSavingAsOpen ? `zwischengespeichert (Status: ${statusLabel})` : 'gespeichert';
       const successMessage = isEditMode 
-        ? `Bestellung erfolgreich aktualisiert${this.isSavingAsOpen ? ' (Status: Offen)' : ''}!` 
+        ? `Bestellung erfolgreich aktualisiert${this.isSavingAsOpen ? ` (Status: ${statusLabel})` : ''}!` 
         : `Auftrag erfolgreich ${statusText}!`;
       alert(successMessage);
       this.closeOrderConfirmationModal();
@@ -6440,7 +6454,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     console.log('✏️ [PRINT-ORDER] Bearbeitungsmodus aktiviert für Bestellung #' + orderId);
   }
 
-  /** Baut das Payload für Zwischenspeichern (status: open). */
+  /** Baut das Payload für Zwischenspeichern (status: open bzw. released). */
   private buildOpenOrderPayload(): any {
     this.orderItems.forEach(item => {
       if (!item.description && item.article_text) {
@@ -6454,7 +6468,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       customer_name: this.globalService.selectedCustomerForOrders.last_name_company,
       customer_addition: this.globalService.selectedCustomerForOrders.name_addition,
       customer_email: this.globalService.selectedCustomerForOrders.email,
-      status: 'open'
+      status: this.getOpenSaveStatus()
     };
 
     if (this.differentCompanyName) {

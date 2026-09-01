@@ -232,8 +232,8 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
 
       this.isReadOnlySession = false;
 
-      if (order.status !== 'open' && order.status !== 'picking') {
-        this.errorMessage = 'Diese Bestellung ist nicht mehr offen zur Kommissionierung.';
+      if (order.status !== 'released' && order.status !== 'picking') {
+        this.errorMessage = 'Diese Bestellung ist nicht zur Kommissionierung freigegeben.';
         this.order = order;
         return;
       }
@@ -362,7 +362,7 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     if (validExisting) {
       this.stateItems = validExisting.items;
       this.captureOriginalItems(order, validExisting);
-      if (order.status === 'open') {
+      if (order.status === 'released') {
         await this.startPicking(true, true);
       }
       return;
@@ -394,7 +394,7 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     this.showStartWarning = false;
 
     try {
-      if (updateRemoteStatus && (this.order.status === 'open' || this.order.status === 'picking')) {
+      if (updateRemoteStatus && (this.order.status === 'released' || this.order.status === 'picking')) {
         await lastValueFrom(
           this.orderService.updateOrderStatusOnly(this.order.order_id, 'picking', token, {
             picker_user_name: this.getStartedBy(),
@@ -1244,7 +1244,7 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
       if (this.order.status === 'picking') {
         await this.restoreOriginalItemsOnServer(token);
         await lastValueFrom(
-          this.orderService.updateOrderStatusOnly(this.order.order_id, 'open', token)
+          this.orderService.updateOrderStatusOnly(this.order.order_id, 'released', token)
         );
       }
       await this.pickingState.deleteState(this.order.order_id);

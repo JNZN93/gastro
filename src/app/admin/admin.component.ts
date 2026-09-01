@@ -213,9 +213,10 @@ export class AdminComponent implements OnInit, OnDestroy {
   // Hilfsmethode um zu prüfen, ob es offene oder in Bearbeitung befindliche Bestellungen gibt
   hasActiveOrders(): boolean {
     const openOrders = this.getOrdersByStatus('open').length;
+    const releasedOrders = this.getOrdersByStatus('released').length;
     const inProgressOrders = this.getOrdersByStatus('in_progress').length;
     const pickingOrders = this.getOrdersByStatus('picking').length;
-    return openOrders > 0 || inProgressOrders > 0 || pickingOrders > 0;
+    return openOrders > 0 || releasedOrders > 0 || inProgressOrders > 0 || pickingOrders > 0;
   }
 
   /** True if order was edited after creation (status change, items, etc.). */
@@ -681,6 +682,12 @@ formatDate(dateString: string): string {
       return;
     }
     if (newStatus == 'open') {
+      this.selectedOrder = order;
+      this.newStatus = newStatus;
+      this.updateOrderStatus(this.selectedOrder, newStatus)
+      return;
+    }
+    if (newStatus == 'released') {
       this.selectedOrder = order;
       this.newStatus = newStatus;
       this.updateOrderStatus(this.selectedOrder, newStatus)

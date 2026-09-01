@@ -40,6 +40,20 @@ describe('OrderService picking API', () => {
     req.flush({ message: 'Status erfolgreich aktualisiert!', updatedOrder: { id: 12 } });
   });
 
+  it('sends released status for picking release', () => {
+    service.updateOrderStatusOnly(12, 'released', 'token-1').subscribe((res) => {
+      expect(res.updatedOrder.status).toBe('released');
+    });
+
+    const req = httpMock.expectOne(`${environment.apiUrl}/api/orders/12/status`);
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual({ status: 'released' });
+    req.flush({
+      message: 'Status erfolgreich aktualisiert!',
+      updatedOrder: { id: 12, status: 'released' },
+    });
+  });
+
   it('posts picking items with complete flag', () => {
     const items = [
       { product_id: 1, quantity: 2, price: 1.5 },

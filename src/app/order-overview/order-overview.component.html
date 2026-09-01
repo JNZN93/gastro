@@ -191,6 +191,19 @@
                 <td class="total-price">{{ getOrderTotalGross(order) | currency:'EUR':'symbol':'1.2-2' }}</td>
                 <td class="actions-cell" (click)="$event.stopPropagation()">
                   <div class="action-buttons">
+                    @if (canReleaseOrder(order)) {
+                      <button
+                        mat-icon-button
+                        type="button"
+                        class="release-btn"
+                        (click)="releaseOrder(order)"
+                        [disabled]="isReleasing"
+                        matTooltip="Für Kommissionierung freigeben"
+                        aria-label="Freigeben"
+                      >
+                        <mat-icon>task_alt</mat-icon>
+                      </button>
+                    }
                     @if (isOrderEditable(order)) {
                       <button mat-icon-button type="button" class="edit-btn" (click)="editOrderAfterReload(order)" matTooltip="Bearbeiten" aria-label="Bearbeiten">
                         <mat-icon>edit</mat-icon>
@@ -263,6 +276,19 @@
           </div>
           
           <div class="card-actions" (click)="$event.stopPropagation()">
+            @if (canReleaseOrder(order)) {
+              <button
+                mat-stroked-button
+                type="button"
+                class="release-btn"
+                (click)="releaseOrder(order)"
+                [disabled]="isReleasing"
+                title="Für Kommissionierung freigeben"
+              >
+                <mat-icon>task_alt</mat-icon>
+                Freigeben
+              </button>
+            }
             <button mat-stroked-button type="button" class="view-btn" (click)="openDetailsAfterReload(order)">
               <mat-icon>visibility</mat-icon>
               Details
@@ -568,7 +594,19 @@
 
         <div class="modal-footer">
           <button mat-stroked-button type="button" class="btn-secondary" (click)="closeOrderDetails()">Schließen</button>
-          @if (selectedOrder.status === 'open') {
+          @if (canReleaseOrder(selectedOrder)) {
+            <button
+              mat-flat-button
+              type="button"
+              class="btn-release"
+              (click)="releaseOrder(selectedOrder)"
+              [disabled]="isReleasing"
+            >
+              <mat-icon>task_alt</mat-icon>
+              Für Kommissionierung freigeben
+            </button>
+          }
+          @if (isOrderEditable(selectedOrder)) {
             <button mat-flat-button type="button" class="btn-edit" (click)="editOrderAfterReload(selectedOrder)">
               <mat-icon>edit</mat-icon>
               Bestellung bearbeiten
