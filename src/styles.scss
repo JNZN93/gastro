@@ -32,13 +32,13 @@ body {
     }
 }
 
-// Sicherstellen, dass Angular Material Overlays immer über Header/Warenkorb liegen
+// Über Header, mobile Tab-Bar (9999) und Custom-Modals wie .article-prices-modal (11000)
 .cdk-overlay-container, 
 .cdk-global-overlay-wrapper, 
 .cdk-overlay-pane, 
 .cdk-overlay-backdrop, 
 .mat-mdc-dialog-container {
-  z-index: 2000 !important;
+  z-index: 12000 !important;
 }
 
 // iOS Safari spezifische Fixes
