@@ -117,7 +117,7 @@
               <thead>
                 <tr>
                   <th>Pos.</th>
-                  <th style="width: 30px;"></th>
+                  <th class="remove-column"></th>
                   <th>Artikel</th>
                   <th>Art.-Nr.</th>
                   <th>Menge</th>
@@ -159,12 +159,16 @@
                       }
                     </div>
                   </td>
-                  <td class="info-column">
-                    <button class="info-btn" 
-                            (click)="showArticleNotes(i)"
-                            title="Artikel-Notizen anzeigen">
-                      <span class="material-icons">info</span>
-                    </button>
+                  <td class="remove-column">
+                    @if (editingItemIndex === i) {
+                      <button mat-icon-button type="button" (click)="cancelEditItem()" class="cancel-edit-btn" title="Bearbeitung abbrechen">
+                        <mat-icon>close</mat-icon>
+                      </button>
+                    } @else {
+                      <button mat-icon-button type="button" (click)="confirmRemoveFromOrder(i)" class="remove-btn" title="Entfernen">
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    }
                   </td>
                   <td class="article-name">
                     <div class="article-name-container" 
@@ -246,23 +250,15 @@
                   </td>
                   <td class="total-price">€{{ (getItemPrice(item) * item.quantity).toFixed(2) }}</td>
                   <td class="total-price-gross">€{{ (getItemGrossPrice(item) * item.quantity).toFixed(2) }}</td>
-                  <td class="remove-column">
-                    @if (editingItemIndex === i) {
-                      <button (click)="cancelEditItem()" class="cancel-edit-btn" title="Bearbeitung abbrechen">
-                        <span class="material-icons">close</span>
-                      </button>
-                    } @else {
-                      <button (click)="confirmRemoveFromOrder(i)" class="remove-btn" title="Entfernen">
-                        <span class="material-icons">delete</span>
-                      </button>
-                    }
+                  <td class="info-column">
+                    <button mat-icon-button type="button" class="info-btn" (click)="showArticleNotes(i)" title="Artikel-Notizen anzeigen">
+                      <mat-icon>info</mat-icon>
+                    </button>
                   </td>
                   <td class="ean-column">
                     @if (editingItemIndex !== i) {
-                      <button class="ean-assign-btn" 
-                              (click)="openEanAssignmentModal(item)"
-                              title="EAN-Code zuweisen">
-                        <span class="material-icons">qr_code_scanner</span>
+                      <button mat-icon-button type="button" class="ean-assign-btn" (click)="openEanAssignmentModal(item)" title="EAN-Code zuweisen">
+                        <mat-icon>qr_code_scanner</mat-icon>
                       </button>
                     }
                   </td>
@@ -431,8 +427,8 @@
                       </td>
                       <td class="customer-price">€{{ (getItemPrice(item) * item.quantity).toFixed(2) }}</td>
                       <td class="remove-column">
-                        <button (click)="removeFromOrder2(i)" class="remove-btn" title="Entfernen">
-                          <span class="material-icons">delete</span>
+                        <button mat-icon-button type="button" (click)="removeFromOrder2(i)" class="remove-btn" title="Entfernen">
+                          <mat-icon>delete</mat-icon>
                         </button>
                       </td>
                     </tr>
@@ -774,20 +770,14 @@
                   <div class="card-header">
                     <div class="position-badge">{{ i + 1 }}</div>
                     <div class="card-actions">
-                      <button class="card-btn" 
-                              (click)="showArticleNotes(i)"
-                              title="Artikel-Notizen">
-                        <span class="material-icons">info</span>
+                      <button mat-icon-button type="button" class="remove-btn" (click)="confirmRemoveFromOrder(i)" title="Entfernen">
+                        <mat-icon>delete</mat-icon>
                       </button>
-                      <button class="card-btn" 
-                              (click)="openEanAssignmentModal(item)"
-                              title="EAN-Code zuweisen">
-                        <span class="material-icons">qr_code_scanner</span>
+                      <button mat-icon-button type="button" class="ean-assign-btn" (click)="openEanAssignmentModal(item)" title="EAN-Code zuweisen">
+                        <mat-icon>qr_code_scanner</mat-icon>
                       </button>
-                      <button class="card-btn" 
-                              (click)="confirmRemoveFromOrder(i)"
-                              title="Entfernen">
-                        <span class="material-icons">delete</span>
+                      <button mat-icon-button type="button" class="info-btn" (click)="showArticleNotes(i)" title="Artikel-Notizen">
+                        <mat-icon>info</mat-icon>
                       </button>
                     </div>
                   </div>

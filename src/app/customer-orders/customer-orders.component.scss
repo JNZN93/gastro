@@ -854,6 +854,55 @@
   }
 }
 
+@mixin md-compact-icon-btn($color) {
+  --mdc-icon-button-icon-color: #{$color};
+  --mat-icon-button-state-layer-color: #{$color};
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  flex-shrink: 0;
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+}
+
+@mixin md-dense-icon-btn($color) {
+  --mdc-icon-button-icon-color: #{$color};
+  --mat-icon-button-state-layer-color: #{$color};
+  --mdc-icon-button-state-layer-size: 24px;
+  width: 24px !important;
+  height: 24px !important;
+  padding: 0 !important;
+  margin: 0;
+  flex-shrink: 0;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  line-height: 0;
+
+  mat-icon,
+  .mat-icon {
+    font-size: 16px !important;
+    width: 16px !important;
+    height: 16px !important;
+    line-height: 16px !important;
+    margin: 0;
+    overflow: visible;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .mat-mdc-button-touch-target {
+    width: 24px;
+    height: 24px;
+  }
+}
+
 // Auftragstabelle
 .order-table-container {
   overflow: auto;
@@ -902,26 +951,27 @@
 
   // Spezifische Header-Ausrichtung für bessere Bündigkeit
   th:nth-child(1) { text-align: center; } // Pos.
-  th:nth-child(2) { text-align: center; } // Info
+  th:nth-child(2) { text-align: center; } // Löschen
   th:nth-child(3) { text-align: left; }   // Artikel
   th:nth-child(4) { text-align: left; }   // Art.-Nr.
   th:nth-child(5) { text-align: center; } // Menge
   th:nth-child(6) { text-align: center; } // EK-Preis
   th:nth-child(7) { text-align: center; } // Kundenpreis
   th:nth-child(8) { text-align: center; }  // Gesamtpreis
-  th:nth-child(9) { text-align: center; } // Aktionen (Löschen + EAN)
+  th:nth-child(9) { text-align: center; } // Aktionen (Notiz + EAN)
 
   // Spezifische TD-Ausrichtung für bessere Bündigkeit
   td:nth-child(1) { text-align: center; } // Pos.
-  td:nth-child(2) { text-align: center; } // Info
+  td:nth-child(2) { text-align: center; } // Löschen
   td:nth-child(3) { text-align: left; }   // Artikel
   td:nth-child(4) { text-align: left; }   // Art.-Nr.
   td:nth-child(5) { text-align: center; } // Menge
   td:nth-child(6) { text-align: center; } // EK-Preis
   td:nth-child(7) { text-align: center; } // Kundenpreis
   td:nth-child(8) { text-align: center; }  // Gesamtpreis
-  td:nth-child(9) { text-align: center; } // Löschen
-  td:nth-child(10) { text-align: center; } // EAN
+  td:nth-child(9) { text-align: center; } // Gesamt Brutto
+  td:nth-child(10) { text-align: center; } // Artikel-Notiz
+  td:nth-child(11) { text-align: center; } // EAN
 
   td {
     padding: 3px 6px;
@@ -946,7 +996,12 @@
     box-sizing: border-box;
     cursor: grab;
 
-    &:hover {
+    &:hover:not(:focus-within):not(.editing) {
+      background-color: #f3f4f6;
+      box-shadow: inset 4px 0 0 #d1d5db;
+    }
+
+    &:focus-within:not(.editing) {
       background-color: #dbeafe;
       box-shadow: inset 4px 0 0 #2563eb;
     }
@@ -956,8 +1011,15 @@
       background-color: #fef3c7; // Sehr helles Gelb
       border-left: 3px solid #f59e0b; // Orange Akzent
       
-      &:hover {
-        background-color: #fcd34d; // Deutlich sichtbarer Hover für Angebotsartikel
+      &:hover:not(:focus-within):not(.editing) {
+        background-color: #f3f4f6;
+        box-shadow: inset 4px 0 0 #d1d5db;
+      }
+
+      &:focus-within:not(.editing) {
+        background-color: #dbeafe;
+        border-left-color: #2563eb;
+        box-shadow: inset 4px 0 0 #2563eb;
       }
     }
     
@@ -1067,52 +1129,33 @@
     }
   }
 
-  .info-column {
-    width: 30px;
+  .info-column,
+  .remove-column,
+  .ean-column {
+    width: 28px;
+    min-width: 28px;
     text-align: center;
+    vertical-align: middle;
     padding: 0;
+    overflow: visible;
+    line-height: 0;
+    font-size: 0;
   }
 
   .info-btn {
-    background: linear-gradient(135deg, #dbeafe, #eff6ff);
-    border: 1px solid #bfdbfe;
-    cursor: pointer;
-    padding: 4px;
-    border-radius: 6px;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    width: 24px !important;
-    height: 24px !important;
-    min-width: 24px !important;
-    min-height: 24px !important;
-    max-width: 24px !important;
-    max-height: 24px !important;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-sizing: border-box;
-    color: #3b82f6;
-    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.1);
+    @include md-dense-icon-btn(#1565c0);
+  }
 
-    .material-icons {
-      font-size: 16px;
-      font-weight: 500;
-    }
+  .remove-btn {
+    @include md-dense-icon-btn(#c62828);
+  }
 
-    &:hover {
-      background: linear-gradient(135deg, #3b82f6, #2563eb);
-      color: white;
-      border-color: #1d4ed8;
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-      
-      .material-icons {
-        color: white;
-      }
-    }
-    
-    &:active {
-      transform: translateY(0);
-    }
+  .cancel-edit-btn {
+    @include md-dense-icon-btn(#ef6c00);
+  }
+
+  .ean-assign-btn {
+    @include md-dense-icon-btn(#2e7d32);
   }
 
   .article-name {
@@ -1377,57 +1420,6 @@
     font-weight: 600;
     color: #333;
     text-align: center !important;
-  }
-
-  .remove-column {
-    width: 30px;
-    text-align: center;
-    padding: 0;
-  }
-
-  .ean-column {
-    width: 30px;
-    text-align: center;
-    padding: 0;
-  }
-
-  .remove-btn, .cancel-edit-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 2px;
-    border-radius: 3px;
-    transition: background-color 0.3s ease;
-    width: 20px !important;
-    height: 20px !important;
-    min-width: 20px !important;
-    min-height: 20px !important;
-    max-width: 20px !important;
-    max-height: 20px !important;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-sizing: border-box;
-
-    .material-icons {
-      font-size: 12px;
-    }
-  }
-
-  .remove-btn {
-    color: #dc3545;
-
-    &:hover {
-      background-color: #f8d7da;
-    }
-  }
-
-  .cancel-edit-btn {
-    color: #ff6b35;
-
-    &:hover {
-      background-color: #ffe0b2;
-    }
   }
 
   .order-total-row {
@@ -1716,8 +1708,8 @@
   }
 
   .remove-column {
-    width: 40px;
-    min-width: 40px;
+    width: 28px;
+    min-width: 28px;
   }
 
   .quantity-edit {
@@ -2550,9 +2542,9 @@
 
     th, td {
       padding: 2px 3px;
-      height: 24px !important;
-      min-height: 24px !important;
-      max-height: 24px !important;
+      height: 28px !important;
+      min-height: 28px !important;
+      max-height: 28px !important;
       box-sizing: border-box;
     }
 
@@ -2569,9 +2561,13 @@
       min-width: 20px;
     }
 
-    .info-column {
-      width: 20px;
-      min-width: 20px;
+    .info-column,
+    .remove-column,
+    .ean-column {
+      width: 28px;
+      min-width: 28px;
+      text-align: center;
+      padding: 0;
     }
 
     .article-name {
@@ -2615,27 +2611,6 @@
     .customer-price {
       width: 40px;
       min-width: 40px;
-    }
-
-    .remove-column, .ean-column {
-      width: 20px;
-      min-width: 20px;
-      text-align: center;
-      padding: 0;
-    }
-
-    .remove-btn, .ean-assign-btn {
-      width: 16px !important;
-      height: 16px !important;
-      min-width: 16px !important;
-      min-height: 16px !important;
-      max-width: 16px !important;
-      max-height: 16px !important;
-      box-sizing: border-box;
-
-      .material-icons {
-        font-size: 9px;
-      }
     }
 
     // Verstecke weniger wichtige Spalten auf sehr kleinen Bildschirmen
@@ -3008,21 +2983,6 @@
       color: #5b8fb8;
       flex-shrink: 0;
     }
-  }
-}
-
-@mixin md-compact-icon-btn($color) {
-  --mdc-icon-button-icon-color: #{$color};
-  --mat-icon-button-state-layer-color: #{$color};
-  width: 36px;
-  height: 36px;
-  padding: 0;
-  flex-shrink: 0;
-
-  mat-icon {
-    font-size: 20px;
-    width: 20px;
-    height: 20px;
   }
 }
 
@@ -3979,32 +3939,7 @@
 
 // EAN Assignment Styles
 .ean-assign-btn {
-  background: #4CAF50;
-  color: white;
-  border: none;
-  border-radius: 3px;
-  padding: 2px;
-  cursor: pointer;
-  font-size: 12px;
-  transition: background-color 0.3s;
-  width: 18px !important;
-  height: 18px !important;
-  min-width: 18px !important;
-  min-height: 18px !important;
-  max-width: 18px !important;
-  max-height: 18px !important;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-
-  &:hover {
-    background: #45a049;
-  }
-
-  .material-icons {
-    font-size: 14px;
-  }
+  @include md-compact-icon-btn(#2e7d32);
 }
 
 
@@ -4851,9 +4786,9 @@
 
     th, td {
       padding: 1px 2px;
-      height: 20px !important;
-      min-height: 20px !important;
-      max-height: 20px !important;
+      height: 28px !important;
+      min-height: 28px !important;
+      max-height: 28px !important;
     }
 
     th {
@@ -4868,9 +4803,11 @@
       min-width: 16px;
     }
 
-    .info-column {
-      width: 16px;
-      min-width: 16px;
+    .info-column,
+    .remove-column,
+    .ean-column {
+      width: 28px;
+      min-width: 28px;
     }
 
     .article-name {
@@ -4908,24 +4845,6 @@
     .customer-price {
       width: 35px;
       min-width: 35px;
-    }
-
-    .remove-column, .ean-column {
-      width: 16px;
-      min-width: 16px;
-    }
-
-    .remove-btn, .ean-assign-btn {
-      width: 14px !important;
-      height: 14px !important;
-      min-width: 14px !important;
-      min-height: 14px !important;
-      max-width: 14px !important;
-      max-height: 14px !important;
-
-      .material-icons {
-        font-size: 8px;
-      }
     }
   }
 
@@ -5037,9 +4956,15 @@
         position: relative;
         overflow: hidden;
         
-        &:hover {
+        &:hover:not(:focus-within):not(.editing) {
           transform: translateY(-1px);
           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+          background: #f3f4f6;
+        }
+
+        &:focus-within:not(.editing) {
+          background: #dbeafe;
+          box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.35);
         }
         
         &:before {
@@ -5062,8 +4987,14 @@
             background: linear-gradient(90deg, #f59e0b, #d97706);
           }
           
-          &:hover {
-            background: linear-gradient(135deg, #fde68a 0%, #fbbf24 100%);
+          &:hover:not(:focus-within):not(.editing) {
+            background: #f3f4f6;
+          }
+
+          &:focus-within:not(.editing) {
+            background: #dbeafe;
+            border-color: #2563eb;
+            border-left-color: #2563eb;
           }
         }
         
@@ -5089,38 +5020,19 @@
           
           .card-actions {
             display: flex;
-            gap: 4px;
-            
-            .card-btn {
-              width: 20px;
-              height: 20px;
-              padding: 0;
-              border: none;
-              background: #f8f9fa;
-              border-radius: 6px;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              cursor: pointer;
-              transition: all 0.2s ease;
-              
-              .material-icons {
-                font-size: 10px;
-                color: #6c757d;
-              }
-              
-              &:hover {
-                background: #e9ecef;
-                transform: scale(1.1);
-                
-                .material-icons {
-                  color: #495057;
-                }
-              }
-              
-              &:active {
-                transform: scale(0.95);
-              }
+            align-items: center;
+            gap: 0;
+
+            .remove-btn {
+              @include md-compact-icon-btn(#c62828);
+            }
+
+            .ean-assign-btn {
+              @include md-compact-icon-btn(#2e7d32);
+            }
+
+            .info-btn {
+              @include md-compact-icon-btn(#1565c0);
             }
           }
         }
@@ -6379,29 +6291,19 @@
 
       .card-actions {
         display: flex;
-        gap: 6px;
+        align-items: center;
+        gap: 0;
 
-        .card-btn {
-          width: 28px;
-          height: 28px;
-          border: none;
-          border-radius: 4px;
-          background: #f8f9fa;
-          color: #6c757d;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: all 0.2s ease;
+        .remove-btn {
+          @include md-compact-icon-btn(#c62828);
+        }
 
-          &:hover {
-            background: #e9ecef;
-            color: #495057;
-          }
+        .ean-assign-btn {
+          @include md-compact-icon-btn(#2e7d32);
+        }
 
-          .material-icons {
-            font-size: 14px;
-          }
+        .info-btn {
+          @include md-compact-icon-btn(#1565c0);
         }
       }
     }
