@@ -180,10 +180,8 @@
                 <td class="customer-notes-cell" [title]="order.customer_notes || ''">
                   {{ order.customer_notes || '-' }}
                 </td>
-                <td class="status-cell">
-                  <span class="status-badge" [class]="getStatusClass(order.status)">
-                    {{ getStatusText(order.status) }}
-                  </span>
+                <td class="status-cell" (click)="$event.stopPropagation()">
+                  <ng-container *ngTemplateOutlet="orderStatusSelect; context: { $implicit: order }"></ng-container>
                   @if (order.picker_user_name) {
                     <span class="picker-name">{{ order.picker_user_name }}</span>
                   }
@@ -239,9 +237,12 @@
                 {{ order.order_date | date: 'dd.MM.yyyy' }}
               </span>
             </div>
-            <span class="status-badge" [class]="getStatusClass(order.status)">
-              {{ getStatusText(order.status) }}
-            </span>
+            <div class="status-cell" (click)="$event.stopPropagation()">
+              <ng-container *ngTemplateOutlet="orderStatusSelect; context: { $implicit: order }"></ng-container>
+              @if (order.picker_user_name) {
+                <span class="picker-name">{{ order.picker_user_name }}</span>
+              }
+            </div>
           </div>
           
           <div class="card-body">
@@ -510,10 +511,8 @@
               </div>
               <div class="detail-item">
                 <span class="detail-label">Status:</span>
-                <span class="detail-value">
-                  <span class="status-badge" [class]="getStatusClass(selectedOrder.status)">
-                    {{ getStatusText(selectedOrder.status) }}
-                  </span>
+                <span class="detail-value status-detail">
+                  <ng-container *ngTemplateOutlet="orderStatusSelect; context: { $implicit: selectedOrder }"></ng-container>
                   @if (selectedOrder.picker_user_name) {
                     <span class="picker-name">{{ selectedOrder.picker_user_name }}</span>
                   }
@@ -709,4 +708,23 @@
       </div>
     </div>
   }
-</div> 
+</div>
+
+<ng-template #orderStatusSelect let-order>
+  <select
+    class="status-select"
+    [ngClass]="getStatusClass(order.status)"
+    [ngModel]="order.status"
+    [disabled]="isStatusUpdating(order)"
+    (click)="$event.stopPropagation()"
+    (mousedown)="$event.stopPropagation()"
+    (ngModelChange)="onOrderStatusChange(order, $event)"
+    [attr.aria-label]="'Status von Bestellung ' + order.order_id + ' ändern'"
+  >
+    @for (status of getStatusSelectValues(order); track status) {
+      <option [value]="status" [disabled]="!isStatusOptionSelectable(status)">
+        {{ getStatusText(status) }}
+      </option>
+    }
+  </select>
+</ng-template> 

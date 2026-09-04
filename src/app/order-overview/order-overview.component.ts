@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { environment } from '../../environments/environment';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { KommissionierungPdfService } from '../services/kommissionierung-pdf.service';
@@ -59,7 +59,7 @@ interface OrdersResponse {
 @Component({
   selector: 'app-order-overview',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatButtonModule, MatFormFieldModule, MatIconModule, MatInputModule, MatTooltipModule],
+  imports: [CommonModule, FormsModule, NgTemplateOutlet, MatButtonModule, MatFormFieldModule, MatIconModule, MatInputModule, MatTooltipModule],
   templateUrl: './order-overview.component.html',
   styleUrls: ['./order-overview.component.scss']
 })
@@ -84,6 +84,12 @@ export class OrderOverviewComponent implements OnInit {
   showDeleteAllConfirmationError = false;
   userRole: string = '';
   isReleasing = false;
+  updatingStatusOrderIds = new Set<number>();
+
+  readonly statusSelectValues = [
+    'open',
+    'completed'
+  ] as const;
   
   // Warnung für bereits bearbeitete Bestellungen
   showProcessingWarning = false;
@@ -1027,6 +1033,105 @@ export class OrderOverviewComponent implements OnInit {
     return order.status === 'open';
   }
 
+  isStatusUpdating(order: Order): boolean {
+    return this.updatingStatusOrderIds.has(order.order_id);
+  }
+
+  getStatusSelectValues(order: Order): string[] {
+    const values = [...this.statusSelectValues];
+    if (order?.status && !values.includes(order.status as typeof values[number])) {
+      return [order.status, ...values];
+    }
+    return values;
+  }
+
+  isStatusOptionSelectable(status: string): boolean {
+    return (this.statusSelectValues as readonly string[]).includes(status);
+  }
+
+  onOrderStatusChange(order: Order, newStatus: string): void {
+    if (!newStatus || newStatus === order.status) {
+      return;
+    }
+
+    if (!this.isStatusOptionSelectable(newStatus)) {
+      return;
+    }
+
+    if (newStatus === 'completed') {
+      const confirmed = confirm(
+        `Status von Bestellung #${order.order_id} auf „${this.getStatusText(newStatus)}“ ändern?`
+      );
+      if (!confirmed) {
+        return;
+      }
+    }
+
+    this.updateOrderStatusFromOverview(order, newStatus);
+  }
+
+  private updateOrderStatusFromOverview(order: Order, status: string): void {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      this.router.navigate(['/login']);
+      return;
+    }
+
+    const previousStatus = order.status;
+    const previousPickerId = order.picker_user_id ?? null;
+    const previousPickerName = order.picker_user_name ?? null;
+    const pickerReset = status === 'open' || status === 'released'
+      ? { picker_user_id: null, picker_user_name: null }
+      : undefined;
+
+    order.status = status;
+    if (pickerReset) {
+      order.picker_user_id = null;
+      order.picker_user_name = null;
+    }
+    this.applyLocalStatus(order.order_id, status, pickerReset);
+    this.setStatusUpdating(order.order_id, true);
+
+    this.orderService.updateOrderStatusOnly(order.order_id, status, token).subscribe({
+      next: (response) => {
+        const updated = response?.updatedOrder;
+        const nextStatus = updated?.status || status;
+        const pickerPatch = {
+          picker_user_id: updated?.picker_user_id ?? (pickerReset ? null : order.picker_user_id),
+          picker_user_name: updated?.picker_user_name ?? (pickerReset ? null : order.picker_user_name)
+        };
+
+        order.status = nextStatus;
+        order.picker_user_id = pickerPatch.picker_user_id;
+        order.picker_user_name = pickerPatch.picker_user_name;
+        this.applyLocalStatus(order.order_id, nextStatus, pickerPatch);
+        this.setStatusUpdating(order.order_id, false);
+      },
+      error: (error) => {
+        order.status = previousStatus;
+        order.picker_user_id = previousPickerId;
+        order.picker_user_name = previousPickerName;
+        this.applyLocalStatus(order.order_id, previousStatus, {
+          picker_user_id: previousPickerId,
+          picker_user_name: previousPickerName
+        });
+        this.setStatusUpdating(order.order_id, false);
+        console.error('❌ [STATUS-UPDATE] Fehler beim Aktualisieren des Status:', error);
+        alert(error?.error?.error || 'Status konnte nicht aktualisiert werden.');
+      }
+    });
+  }
+
+  private setStatusUpdating(orderId: number, updating: boolean): void {
+    const next = new Set(this.updatingStatusOrderIds);
+    if (updating) {
+      next.add(orderId);
+    } else {
+      next.delete(orderId);
+    }
+    this.updatingStatusOrderIds = next;
+  }
+
   releaseOrder(order: Order): void {
     if (!this.canReleaseOrder(order) || this.isReleasing) {
       return;
@@ -1054,13 +1159,29 @@ export class OrderOverviewComponent implements OnInit {
     });
   }
 
-  private applyLocalStatus(orderId: number, status: string): void {
+  private applyLocalStatus(
+    orderId: number,
+    status: string,
+    extra?: Partial<Pick<Order, 'picker_user_id' | 'picker_user_name'>>
+  ): void {
     const orderIndex = this.orders.findIndex((o) => o.order_id === orderId);
     if (orderIndex !== -1) {
       this.orders[orderIndex].status = status;
+      if (extra && 'picker_user_id' in extra) {
+        this.orders[orderIndex].picker_user_id = extra.picker_user_id;
+      }
+      if (extra && 'picker_user_name' in extra) {
+        this.orders[orderIndex].picker_user_name = extra.picker_user_name;
+      }
     }
     if (this.selectedOrder?.order_id === orderId) {
       this.selectedOrder.status = status;
+      if (extra && 'picker_user_id' in extra) {
+        this.selectedOrder.picker_user_id = extra.picker_user_id;
+      }
+      if (extra && 'picker_user_name' in extra) {
+        this.selectedOrder.picker_user_name = extra.picker_user_name;
+      }
     }
   }
 
