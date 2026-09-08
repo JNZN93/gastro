@@ -73,6 +73,7 @@ export class OrderOverviewComponent implements OnInit {
   sortBy: string = 'order_id';
   sortDirection: 'asc' | 'desc' = 'desc';
   showArchived: boolean = false;
+  showParkedOnly: boolean = false;
   showDeleteModal = false;
   orderToDelete: Order | null = null;
   isDeleting = false;
@@ -90,6 +91,7 @@ export class OrderOverviewComponent implements OnInit {
 
   readonly statusSelectValues = [
     'open',
+    'parked',
     'completed'
   ] as const;
   
@@ -246,9 +248,13 @@ export class OrderOverviewComponent implements OnInit {
   get filteredOrders(): Order[] {
     let filtered = this.orders;
     
-    // Archiv-Filter anwenden
-    if (!this.showArchived) {
-      filtered = filtered.filter(order => order.status !== 'archived');
+    if (this.showParkedOnly) {
+      filtered = filtered.filter(order => order.status === 'parked');
+    } else {
+      filtered = filtered.filter(order => order.status !== 'parked');
+      if (!this.showArchived) {
+        filtered = filtered.filter(order => order.status !== 'archived');
+      }
     }
     
     // Datumsfilter anwenden (Liefer-/Abholdatum)
@@ -491,6 +497,7 @@ export class OrderOverviewComponent implements OnInit {
   getStatusClass(status: string): string {
     switch (status) {
       case 'open': return 'status-open';
+      case 'parked': return 'status-parked';
       case 'released': return 'status-released';
       case 'in_progress': return 'status-progress';
       case 'picking': return 'status-picking';
@@ -505,6 +512,7 @@ export class OrderOverviewComponent implements OnInit {
   getStatusText(status: string): string {
     switch (status) {
       case 'open': return 'Offen';
+      case 'parked': return 'Geparkt';
       case 'released': return 'Freigegeben';
       case 'in_progress': return 'In Bearbeitung';
       case 'picking': return 'Wird kommissioniert';
@@ -1024,6 +1032,7 @@ export class OrderOverviewComponent implements OnInit {
   isOrderEditable(order: Order): boolean {
     return (
       order.status === 'open' ||
+      order.status === 'parked' ||
       order.status === 'released' ||
       order.status === 'in_progress' ||
       order.status === 'picked' ||
@@ -1032,7 +1041,7 @@ export class OrderOverviewComponent implements OnInit {
   }
 
   canReleaseOrder(order: Order): boolean {
-    return order.status === 'open';
+    return order.status === 'open' || order.status === 'parked';
   }
 
   isStatusUpdating(order: Order): boolean {
@@ -1082,7 +1091,7 @@ export class OrderOverviewComponent implements OnInit {
     const previousStatus = order.status;
     const previousPickerId = order.picker_user_id ?? null;
     const previousPickerName = order.picker_user_name ?? null;
-    const pickerReset = status === 'open' || status === 'released'
+    const pickerReset = status === 'open' || status === 'parked' || status === 'released'
       ? { picker_user_id: null, picker_user_name: null }
       : undefined;
 
@@ -1452,5 +1461,15 @@ export class OrderOverviewComponent implements OnInit {
 
   toggleArchived(): void {
     this.showArchived = !this.showArchived;
+    if (this.showArchived) {
+      this.showParkedOnly = false;
+    }
+  }
+
+  toggleParkedOnly(): void {
+    this.showParkedOnly = !this.showParkedOnly;
+    if (this.showParkedOnly) {
+      this.showArchived = false;
+    }
   }
 } 

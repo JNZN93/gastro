@@ -285,6 +285,8 @@ export class PickingQueueComponent implements OnInit {
     switch (status) {
       case 'open':
         return 'Offen';
+      case 'parked':
+        return 'Geparkt';
       case 'released':
         return 'Freigegeben';
       case 'picking':
@@ -305,6 +307,8 @@ export class PickingQueueComponent implements OnInit {
     switch (status) {
       case 'open':
         return 'inventory_2';
+      case 'parked':
+        return 'local_parking';
       case 'released':
         return 'task_alt';
       case 'picking':

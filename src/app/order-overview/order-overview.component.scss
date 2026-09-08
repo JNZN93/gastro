@@ -320,6 +320,19 @@ mat-icon.spinning {
     }
   }
 
+  .toggle-parked-btn {
+    --mdc-outlined-button-label-text-color: #6d28d9;
+    --mdc-outlined-button-outline-color: #c4b5fd;
+    --mat-outlined-button-state-layer-color: #6d28d9;
+    --mat-outlined-button-ripple-color: rgba(109, 40, 217, 0.12);
+
+    &.active {
+      --mdc-outlined-button-label-text-color: #5b21b6;
+      --mdc-outlined-button-outline-color: #a78bfa;
+      --mat-outlined-button-state-layer-color: #5b21b6;
+    }
+  }
+
   .toggle-archived-btn {
     --mdc-outlined-button-label-text-color: #546e7a;
     --mdc-outlined-button-outline-color: #b0bec5;
@@ -681,6 +694,11 @@ mat-icon.spinning {
     color: #92400e;
   }
 
+  &.status-parked {
+    background: #ede9fe;
+    color: #5b21b6;
+  }
+
   &.status-released {
     background: #dcfce7;
     color: #166534;
@@ -750,6 +768,11 @@ mat-icon.spinning {
   &.status-open {
     background: #fef3c7;
     color: #92400e;
+  }
+
+  &.status-parked {
+    background: #ede9fe;
+    color: #5b21b6;
   }
 
   &.status-released {
@@ -1537,6 +1560,7 @@ mat-icon.spinning {
     }
 
     .reload-btn,
+    .toggle-parked-btn,
     .toggle-archived-btn {
       width: auto;
       margin-left: 0;
@@ -1693,6 +1717,7 @@ mat-icon.spinning {
     }
 
     .reload-btn,
+    .toggle-parked-btn,
     .toggle-archived-btn {
       width: auto;
       margin-left: 0;

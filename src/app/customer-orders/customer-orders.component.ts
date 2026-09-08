@@ -1251,11 +1251,24 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
    * damit sie nicht erneut aus der Kommissionierung fällt.
    */
   private getOpenSaveStatus(): string {
-    return this.originalStatus === 'released' ? 'released' : 'open';
+    if (this.originalStatus === 'released') {
+      return 'released';
+    }
+    if (this.originalStatus === 'parked') {
+      return 'parked';
+    }
+    return 'open';
   }
 
   private getOpenSaveStatusLabel(): string {
-    return this.getOpenSaveStatus() === 'released' ? 'Freigegeben' : 'Offen';
+    switch (this.getOpenSaveStatus()) {
+      case 'released':
+        return 'Freigegeben';
+      case 'parked':
+        return 'Geparkt';
+      default:
+        return 'Offen';
+    }
   }
 
   // Stelle den ursprünglichen Status einer Bestellung wieder her
@@ -5758,7 +5771,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     });
 
     // Kundendaten für den Request
-    // Wenn isSavingAsOpen true ist, Status auf "open"/"released" setzen, sonst "completed"
+    // Wenn isSavingAsOpen true ist, Status auf "open"/"released"/"parked" setzen, sonst "completed"
     const orderStatus = this.isSavingAsOpen ? this.getOpenSaveStatus() : 'completed';
     const customerData: any = {
       customer_id: this.globalService.selectedCustomerForOrders.id,
@@ -6454,7 +6467,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     console.log('✏️ [PRINT-ORDER] Bearbeitungsmodus aktiviert für Bestellung #' + orderId);
   }
 
-  /** Baut das Payload für Zwischenspeichern (status: open bzw. released). */
+  /** Baut das Payload für Zwischenspeichern (status: open, parked oder released). */
   private buildOpenOrderPayload(): any {
     this.orderItems.forEach(item => {
       if (!item.description && item.article_text) {

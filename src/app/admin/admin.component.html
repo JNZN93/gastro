@@ -219,6 +219,7 @@
                       class="status-select" [class]="'status-' + order.status"
                       [disabled]="order.status === 'picking'">
                 <option value="open">Offen</option>
+                <option value="parked">Geparkt</option>
                 <option value="released">Freigegeben</option>
                 <option value="in_progress">In Bearbeitung</option>
                 <option value="picking" disabled>Wird kommissioniert</option>
@@ -264,6 +265,7 @@
                     class="status-select" [class]="'status-' + order.status"
                     [disabled]="order.status === 'picking'">
               <option value="open">Offen</option>
+              <option value="parked">Geparkt</option>
               <option value="released">Freigegeben</option>
               <option value="in_progress">In Bearbeitung</option>
               <option value="picking" disabled>Wird kommissioniert</option>

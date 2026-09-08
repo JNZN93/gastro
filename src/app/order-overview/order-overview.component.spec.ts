@@ -112,6 +112,51 @@ describe('OrderOverviewComponent', () => {
       expect(component.orders[0].status).toBe('open');
       expect(window.alert).toHaveBeenCalled();
     });
+
+    it('parks an order without confirmation', () => {
+      orderService.updateOrderStatusOnly.and.returnValue(
+        of({
+          updatedOrder: {
+            status: 'parked',
+            picker_user_id: null,
+            picker_user_name: null
+          }
+        })
+      );
+
+      component.onOrderStatusChange(component.orders[0], 'parked');
+
+      expect(orderService.updateOrderStatusOnly).toHaveBeenCalledWith(12, 'parked', 'token-1');
+      expect(component.orders[0].status).toBe('parked');
+    });
+  });
+
+  describe('parked filter', () => {
+    beforeEach(() => {
+      component.orders = [
+        { ...openOrder },
+        { ...openOrder, order_id: 13, status: 'parked' },
+        { ...openOrder, order_id: 14, status: 'archived' }
+      ];
+    });
+
+    it('hides parked orders from the default list', () => {
+      expect(component.filteredOrders.map((order) => order.order_id)).toEqual([12]);
+    });
+
+    it('shows only parked orders when the parked filter is active', () => {
+      component.toggleParkedOnly();
+
+      expect(component.showParkedOnly).toBeTrue();
+      expect(component.filteredOrders.map((order) => order.order_id)).toEqual([13]);
+    });
+
+    it('can release parked orders', () => {
+      const parkedOrder = component.orders[1];
+
+      expect(component.canReleaseOrder(parkedOrder)).toBeTrue();
+      expect(component.isOrderEditable(parkedOrder)).toBeTrue();
+    });
   });
 
   describe('release confirmation', () => {

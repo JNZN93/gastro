@@ -25,7 +25,9 @@
         <div class="stat-item">
           <span class="stat-number">{{ filteredOrders.length }}</span>
           <span class="stat-label">
-            @if (dateFrom || dateTo || searchTerm) {
+            @if (showParkedOnly) {
+              Geparkte Bestellungen
+            } @else if (dateFrom || dateTo || searchTerm) {
               Gefilterte Bestellungen
             } @else {
               Gesamt Bestellungen
@@ -88,6 +90,20 @@
     <button mat-stroked-button type="button" class="reload-btn" (click)="reloadOrders()" [disabled]="isLoading" title="Bestellungen aktualisieren">
       <mat-icon [class.spinning]="isLoading">refresh</mat-icon>
       Aktualisieren
+    </button>
+    <button 
+      mat-stroked-button
+      type="button"
+      class="toggle-parked-btn" 
+      [class.active]="showParkedOnly"
+      (click)="toggleParkedOnly()" 
+      title="Geparkte Bestellungen ein-/ausblenden">
+      <mat-icon>local_parking</mat-icon>
+      @if (showParkedOnly) {
+        Geparkte verbergen
+      } @else {
+        Geparkte anzeigen
+      }
     </button>
     <button 
       mat-stroked-button
