@@ -130,6 +130,7 @@ describe('OrderOverviewComponent', () => {
       expect(component.orderToPark).toBeNull();
       expect(orderService.updateOrderStatusOnly).not.toHaveBeenCalled();
       expect(component.orders[0].status).toBe('open');
+      expect(component.getStatusSelectReset(component.orders[0])).toBe(1);
     });
 
     it('parks an order after confirmation', () => {

@@ -859,20 +859,22 @@
 </div>
 
 <ng-template #orderStatusSelect let-order>
-  <select
-    class="status-select"
-    [ngClass]="getStatusClass(order.status)"
-    [ngModel]="order.status"
-    [disabled]="isStatusUpdating(order)"
-    (click)="$event.stopPropagation()"
-    (mousedown)="$event.stopPropagation()"
-    (ngModelChange)="onOrderStatusChange(order, $event)"
-    [attr.aria-label]="'Status von Bestellung ' + order.order_id + ' ändern'"
-  >
-    @for (status of getStatusSelectValues(order); track status) {
-      <option [value]="status" [disabled]="!isStatusOptionSelectable(status)">
-        {{ getStatusText(status) }}
-      </option>
-    }
-  </select>
+  @for (resetKey of [getStatusSelectReset(order)]; track resetKey) {
+    <select
+      class="status-select"
+      [ngClass]="getStatusClass(order.status)"
+      [ngModel]="order.status"
+      [disabled]="isStatusUpdating(order)"
+      (click)="$event.stopPropagation()"
+      (mousedown)="$event.stopPropagation()"
+      (ngModelChange)="onOrderStatusChange(order, $event)"
+      [attr.aria-label]="'Status von Bestellung ' + order.order_id + ' ändern'"
+    >
+      @for (status of getStatusSelectValues(order); track status) {
+        <option [value]="status" [disabled]="!isStatusOptionSelectable(status)">
+          {{ getStatusText(status) }}
+        </option>
+      }
+    </select>
+  }
 </ng-template> 

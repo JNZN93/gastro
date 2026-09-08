@@ -90,6 +90,7 @@ export class OrderOverviewComponent implements OnInit {
   showParkModal = false;
   orderToPark: Order | null = null;
   updatingStatusOrderIds = new Set<number>();
+  private statusSelectResetByOrderId = new Map<number, number>();
 
   readonly statusSelectValues = [
     'open',
@@ -1068,6 +1069,7 @@ export class OrderOverviewComponent implements OnInit {
     }
 
     if (!this.isStatusOptionSelectable(newStatus)) {
+      this.resetStatusSelect(order);
       return;
     }
 
@@ -1081,6 +1083,7 @@ export class OrderOverviewComponent implements OnInit {
         `Status von Bestellung #${order.order_id} auf „${this.getStatusText(newStatus)}“ ändern?`
       );
       if (!confirmed) {
+        this.resetStatusSelect(order);
         return;
       }
     }
@@ -1102,8 +1105,21 @@ export class OrderOverviewComponent implements OnInit {
       return;
     }
 
+    const order = this.orderToPark;
     this.showParkModal = false;
     this.orderToPark = null;
+    if (order) {
+      this.resetStatusSelect(order);
+    }
+  }
+
+  getStatusSelectReset(order: Order): number {
+    return this.statusSelectResetByOrderId.get(order.order_id) ?? 0;
+  }
+
+  private resetStatusSelect(order: Order): void {
+    const next = (this.statusSelectResetByOrderId.get(order.order_id) ?? 0) + 1;
+    this.statusSelectResetByOrderId.set(order.order_id, next);
   }
 
   confirmParkOrder(): void {
