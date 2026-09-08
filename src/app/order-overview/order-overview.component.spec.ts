@@ -113,7 +113,26 @@ describe('OrderOverviewComponent', () => {
       expect(window.alert).toHaveBeenCalled();
     });
 
-    it('parks an order without confirmation', () => {
+    it('opens a confirmation modal instead of parking immediately', () => {
+      component.onOrderStatusChange(component.orders[0], 'parked');
+
+      expect(component.showParkModal).toBeTrue();
+      expect(component.orderToPark?.order_id).toBe(12);
+      expect(orderService.updateOrderStatusOnly).not.toHaveBeenCalled();
+      expect(component.orders[0].status).toBe('open');
+    });
+
+    it('does not park when the confirmation is cancelled', () => {
+      component.onOrderStatusChange(component.orders[0], 'parked');
+      component.cancelParkOrder();
+
+      expect(component.showParkModal).toBeFalse();
+      expect(component.orderToPark).toBeNull();
+      expect(orderService.updateOrderStatusOnly).not.toHaveBeenCalled();
+      expect(component.orders[0].status).toBe('open');
+    });
+
+    it('parks an order after confirmation', () => {
       orderService.updateOrderStatusOnly.and.returnValue(
         of({
           updatedOrder: {
@@ -125,9 +144,12 @@ describe('OrderOverviewComponent', () => {
       );
 
       component.onOrderStatusChange(component.orders[0], 'parked');
+      component.confirmParkOrder();
 
       expect(orderService.updateOrderStatusOnly).toHaveBeenCalledWith(12, 'parked', 'token-1');
       expect(component.orders[0].status).toBe('parked');
+      expect(component.showParkModal).toBeFalse();
+      expect(component.orderToPark).toBeNull();
     });
   });
 

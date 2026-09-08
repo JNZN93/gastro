@@ -87,6 +87,8 @@ export class OrderOverviewComponent implements OnInit {
   isReleasing = false;
   showReleaseModal = false;
   orderToRelease: Order | null = null;
+  showParkModal = false;
+  orderToPark: Order | null = null;
   updatingStatusOrderIds = new Set<number>();
 
   readonly statusSelectValues = [
@@ -1069,6 +1071,11 @@ export class OrderOverviewComponent implements OnInit {
       return;
     }
 
+    if (newStatus === 'parked') {
+      this.openParkModal(order);
+      return;
+    }
+
     if (newStatus === 'completed') {
       const confirmed = confirm(
         `Status von Bestellung #${order.order_id} auf „${this.getStatusText(newStatus)}“ ändern?`
@@ -1079,6 +1086,33 @@ export class OrderOverviewComponent implements OnInit {
     }
 
     this.updateOrderStatusFromOverview(order, newStatus);
+  }
+
+  private openParkModal(order: Order): void {
+    if (this.isStatusUpdating(order)) {
+      return;
+    }
+
+    this.orderToPark = order;
+    this.showParkModal = true;
+  }
+
+  cancelParkOrder(): void {
+    if (this.orderToPark && this.isStatusUpdating(this.orderToPark)) {
+      return;
+    }
+
+    this.showParkModal = false;
+    this.orderToPark = null;
+  }
+
+  confirmParkOrder(): void {
+    const order = this.orderToPark;
+    if (!order || this.isStatusUpdating(order)) {
+      return;
+    }
+
+    this.updateOrderStatusFromOverview(order, 'parked');
   }
 
   private updateOrderStatusFromOverview(order: Order, status: string): void {
@@ -1117,6 +1151,10 @@ export class OrderOverviewComponent implements OnInit {
         order.picker_user_name = pickerPatch.picker_user_name;
         this.applyLocalStatus(order.order_id, nextStatus, pickerPatch);
         this.setStatusUpdating(order.order_id, false);
+        if (status === 'parked') {
+          this.showParkModal = false;
+          this.orderToPark = null;
+        }
       },
       error: (error) => {
         order.status = previousStatus;
@@ -1127,6 +1165,10 @@ export class OrderOverviewComponent implements OnInit {
           picker_user_name: previousPickerName
         });
         this.setStatusUpdating(order.order_id, false);
+        if (status === 'parked') {
+          this.showParkModal = false;
+          this.orderToPark = null;
+        }
         console.error('❌ [STATUS-UPDATE] Fehler beim Aktualisieren des Status:', error);
         alert(error?.error?.error || 'Status konnte nicht aktualisiert werden.');
       }

@@ -707,6 +707,72 @@
     </div>
   }
 
+  <!-- Park Confirmation Modal -->
+  @if (showParkModal) {
+    <div class="modal-overlay park-modal-overlay" (click)="cancelParkOrder()">
+      <div class="park-modal-content" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="park-modal-title">
+        <div class="park-modal-header">
+          <h2 id="park-modal-title">Bestellung parken?</h2>
+          <button mat-icon-button type="button" class="close-btn" (click)="cancelParkOrder()" [disabled]="orderToPark && isStatusUpdating(orderToPark)" aria-label="Schließen">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+
+        <div class="park-modal-body">
+          <div class="park-icon">
+            <mat-icon>local_parking</mat-icon>
+          </div>
+
+          <h3>Möchten Sie diese Bestellung parken?</h3>
+          <p>Die Bestellung bleibt bearbeitbar, wird aber aus der normalen Übersicht ausgeblendet.</p>
+
+          @if (orderToPark) {
+            <div class="park-preview">
+              <div class="preview-row">
+                <span class="preview-label">Bestellung:</span>
+                <span class="preview-value">#{{ orderToPark.order_id }}</span>
+              </div>
+              <div class="preview-row">
+                <span class="preview-label">Kunde:</span>
+                <span class="preview-value">{{ getCustomerDisplayName(orderToPark) }}</span>
+              </div>
+              @if (orderToPark.customer_number) {
+                <div class="preview-row">
+                  <span class="preview-label">Kundennr.:</span>
+                  <span class="preview-value">{{ orderToPark.customer_number }}</span>
+                </div>
+              }
+              <div class="preview-row">
+                <span class="preview-label">Bestelldatum:</span>
+                <span class="preview-value">{{ orderToPark.order_date | date: 'dd.MM.yyyy' }}</span>
+              </div>
+              @if (orderToPark.delivery_date) {
+                <div class="preview-row">
+                  <span class="preview-label">Liefer-/Abholdatum:</span>
+                  <span class="preview-value">{{ formatDate(orderToPark.delivery_date) }}</span>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="park-modal-footer">
+          <button mat-stroked-button type="button" class="btn-secondary" (click)="cancelParkOrder()" [disabled]="orderToPark && isStatusUpdating(orderToPark)">
+            Abbrechen
+          </button>
+          <button mat-flat-button type="button" class="btn-park" (click)="confirmParkOrder()" [disabled]="!orderToPark || isStatusUpdating(orderToPark)">
+            @if (orderToPark && isStatusUpdating(orderToPark)) {
+              <mat-icon class="spinning">refresh</mat-icon>
+            } @else {
+              <mat-icon>local_parking</mat-icon>
+            }
+            {{ orderToPark && isStatusUpdating(orderToPark) ? 'Wird geparkt...' : 'Parken' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
   <!-- Palettenschein Frage Modal -->
   @if (showPalettenscheinModal) {
     <div class="modal-overlay" (click)="cancelPalettenscheinPrompt()">
