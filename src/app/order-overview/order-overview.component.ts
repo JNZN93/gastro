@@ -84,6 +84,8 @@ export class OrderOverviewComponent implements OnInit {
   showDeleteAllConfirmationError = false;
   userRole: string = '';
   isReleasing = false;
+  showReleaseModal = false;
+  orderToRelease: Order | null = null;
   updatingStatusOrderIds = new Set<number>();
 
   readonly statusSelectValues = [
@@ -249,24 +251,24 @@ export class OrderOverviewComponent implements OnInit {
       filtered = filtered.filter(order => order.status !== 'archived');
     }
     
-    // Datumsfilter anwenden
+    // Datumsfilter anwenden (Liefer-/Abholdatum)
     if (this.dateFrom || this.dateTo) {
       filtered = filtered.filter(order => {
-        if (!order.order_date) return false;
+        if (!order.delivery_date) return false;
         
-        const orderDate = new Date(order.order_date);
-        orderDate.setHours(0, 0, 0, 0);
+        const deliveryDate = new Date(order.delivery_date);
+        deliveryDate.setHours(0, 0, 0, 0);
         
         if (this.dateFrom) {
           const fromDate = new Date(this.dateFrom);
           fromDate.setHours(0, 0, 0, 0);
-          if (orderDate < fromDate) return false;
+          if (deliveryDate < fromDate) return false;
         }
         
         if (this.dateTo) {
           const toDate = new Date(this.dateTo);
           toDate.setHours(23, 59, 59, 999);
-          if (orderDate > toDate) return false;
+          if (deliveryDate > toDate) return false;
         }
         
         return true;
@@ -1137,6 +1139,25 @@ export class OrderOverviewComponent implements OnInit {
       return;
     }
 
+    this.orderToRelease = order;
+    this.showReleaseModal = true;
+  }
+
+  cancelReleaseOrder(): void {
+    if (this.isReleasing) {
+      return;
+    }
+
+    this.showReleaseModal = false;
+    this.orderToRelease = null;
+  }
+
+  confirmReleaseOrder(): void {
+    const order = this.orderToRelease;
+    if (!order || !this.canReleaseOrder(order) || this.isReleasing) {
+      return;
+    }
+
     const token = localStorage.getItem('token');
     if (!token) {
       this.router.navigate(['/login']);
@@ -1150,6 +1171,8 @@ export class OrderOverviewComponent implements OnInit {
         order.status = 'released';
         this.applyLocalStatus(order.order_id, 'released');
         this.isReleasing = false;
+        this.showReleaseModal = false;
+        this.orderToRelease = null;
       },
       error: (error) => {
         console.error('❌ [RELEASE-ORDER] Fehler beim Freigeben:', error);

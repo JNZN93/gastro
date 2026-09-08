@@ -1,3 +1,4 @@
+/// <reference types="jasmine" />
 import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { of, throwError } from 'rxjs';
@@ -9,7 +10,7 @@ import { GlobalService } from '../global.service';
 import { ArtikelDataService } from '../artikel-data.service';
 import { KommissionierungPdfService } from '../services/kommissionierung-pdf.service';
 
-describe('OrderOverviewComponent status dropdown', () => {
+describe('OrderOverviewComponent', () => {
   let component: OrderOverviewComponent;
   let orderService: jasmine.SpyObj<OrderService>;
 
@@ -67,47 +68,91 @@ describe('OrderOverviewComponent status dropdown', () => {
     spyOn(window, 'alert');
   });
 
-  it('does not call the API when the same status is selected', () => {
-    component.onOrderStatusChange(component.orders[0], 'open');
+  describe('status dropdown', () => {
+    it('does not call the API when the same status is selected', () => {
+      component.onOrderStatusChange(component.orders[0], 'open');
 
-    expect(orderService.updateOrderStatusOnly).not.toHaveBeenCalled();
+      expect(orderService.updateOrderStatusOnly).not.toHaveBeenCalled();
+    });
+
+    it('ignores statuses that are not selectable in the dropdown', () => {
+      component.onOrderStatusChange(component.orders[0], 'picking');
+
+      expect(orderService.updateOrderStatusOnly).not.toHaveBeenCalled();
+      expect(component.orders[0].status).toBe('open');
+    });
+
+    it('updates the order status through the status-only endpoint', () => {
+      spyOn(window, 'confirm').and.returnValue(true);
+
+      component.onOrderStatusChange(component.orders[0], 'completed');
+
+      expect(orderService.updateOrderStatusOnly).toHaveBeenCalledWith(12, 'completed', 'token-1');
+      expect(component.orders[0].status).toBe('completed');
+    });
+
+    it('asks for confirmation before completing', () => {
+      spyOn(window, 'confirm').and.returnValue(false);
+
+      component.onOrderStatusChange(component.orders[0], 'completed');
+
+      expect(window.confirm).toHaveBeenCalled();
+      expect(orderService.updateOrderStatusOnly).not.toHaveBeenCalled();
+      expect(component.orders[0].status).toBe('open');
+    });
+
+    it('reverts the previous status when the API fails', () => {
+      spyOn(window, 'confirm').and.returnValue(true);
+      orderService.updateOrderStatusOnly.and.returnValue(
+        throwError(() => ({ error: { error: 'Fehler' } }))
+      );
+
+      component.onOrderStatusChange(component.orders[0], 'completed');
+
+      expect(component.orders[0].status).toBe('open');
+      expect(window.alert).toHaveBeenCalled();
+    });
   });
 
-  it('ignores statuses that are not selectable in the dropdown', () => {
-    component.onOrderStatusChange(component.orders[0], 'picking');
+  describe('release confirmation', () => {
+    beforeEach(() => {
+      orderService.updateOrderStatusOnly.and.returnValue(
+        of({
+          updatedOrder: {
+            status: 'released',
+            picker_user_id: null,
+            picker_user_name: null
+          }
+        })
+      );
+    });
 
-    expect(orderService.updateOrderStatusOnly).not.toHaveBeenCalled();
-    expect(component.orders[0].status).toBe('open');
-  });
+    it('opens a confirmation modal instead of releasing immediately', () => {
+      component.releaseOrder(component.orders[0]);
 
-  it('updates the order status through the status-only endpoint', () => {
-    spyOn(window, 'confirm').and.returnValue(true);
+      expect(component.showReleaseModal).toBeTrue();
+      expect(component.orderToRelease?.order_id).toBe(12);
+      expect(orderService.updateOrderStatusOnly).not.toHaveBeenCalled();
+    });
 
-    component.onOrderStatusChange(component.orders[0], 'completed');
+    it('does not release when the confirmation is cancelled', () => {
+      component.releaseOrder(component.orders[0]);
+      component.cancelReleaseOrder();
 
-    expect(orderService.updateOrderStatusOnly).toHaveBeenCalledWith(12, 'completed', 'token-1');
-    expect(component.orders[0].status).toBe('completed');
-  });
+      expect(component.showReleaseModal).toBeFalse();
+      expect(component.orderToRelease).toBeNull();
+      expect(orderService.updateOrderStatusOnly).not.toHaveBeenCalled();
+      expect(component.orders[0].status).toBe('open');
+    });
 
-  it('asks for confirmation before completing', () => {
-    spyOn(window, 'confirm').and.returnValue(false);
+    it('releases the order after confirmation', () => {
+      component.releaseOrder(component.orders[0]);
+      component.confirmReleaseOrder();
 
-    component.onOrderStatusChange(component.orders[0], 'completed');
-
-    expect(window.confirm).toHaveBeenCalled();
-    expect(orderService.updateOrderStatusOnly).not.toHaveBeenCalled();
-    expect(component.orders[0].status).toBe('open');
-  });
-
-  it('reverts the previous status when the API fails', () => {
-    spyOn(window, 'confirm').and.returnValue(true);
-    orderService.updateOrderStatusOnly.and.returnValue(
-      throwError(() => ({ error: { error: 'Fehler' } }))
-    );
-
-    component.onOrderStatusChange(component.orders[0], 'completed');
-
-    expect(component.orders[0].status).toBe('open');
-    expect(window.alert).toHaveBeenCalled();
+      expect(orderService.updateOrderStatusOnly).toHaveBeenCalledWith(12, 'released', 'token-1');
+      expect(component.orders[0].status).toBe('released');
+      expect(component.showReleaseModal).toBeFalse();
+      expect(component.orderToRelease).toBeNull();
+    });
   });
 });

@@ -128,10 +128,10 @@
                   <span class="sort-icon">{{ getSortIcon('order_id') }}</span>
                 }
               </th>
-              <th class="sortable-header" (click)="sortByColumn('order_date')">
+              <th class="sortable-header" (click)="sortByColumn('delivery_date')">
                 <span class="header-text">Datum</span>
-                @if (isSortColumn('order_date')) {
-                  <span class="sort-icon">{{ getSortIcon('order_date') }}</span>
+                @if (isSortColumn('delivery_date')) {
+                  <span class="sort-icon">{{ getSortIcon('delivery_date') }}</span>
                 }
               </th>
               <th class="sortable-header" (click)="sortByColumn('customer_number')">
@@ -172,7 +172,7 @@
                 <td class="order-date"
                     [class.has-edit-info]="!!getOrderEditTooltip(order)"
                     [title]="getOrderEditTooltip(order)">
-                  {{ order.order_date | date: 'dd.MM.yyyy' }}
+                  {{ order.delivery_date ? formatDate(order.delivery_date) : '-' }}
                 </td>
                 <td class="customer-number">{{ order.customer_number || '-' }}</td>
                 <td class="employee-name">{{ getEmployeeDisplayName(order) }}</td>
@@ -234,7 +234,7 @@
               <span class="order-date"
                     [class.has-edit-info]="!!getOrderEditTooltip(order)"
                     [title]="getOrderEditTooltip(order)">
-                {{ order.order_date | date: 'dd.MM.yyyy' }}
+                {{ order.delivery_date ? formatDate(order.delivery_date) : '-' }}
               </span>
             </div>
             <div class="status-cell" (click)="$event.stopPropagation()">
@@ -619,6 +619,72 @@
           <button mat-flat-button type="button" class="btn-primary" (click)="printAfterReload(selectedOrder)">
             <mat-icon>print</mat-icon>
             Drucken
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Release Confirmation Modal -->
+  @if (showReleaseModal) {
+    <div class="modal-overlay release-modal-overlay" (click)="cancelReleaseOrder()">
+      <div class="release-modal-content" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="release-modal-title">
+        <div class="release-modal-header">
+          <h2 id="release-modal-title">Bestellung freigeben?</h2>
+          <button mat-icon-button type="button" class="close-btn" (click)="cancelReleaseOrder()" [disabled]="isReleasing" aria-label="Schließen">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+
+        <div class="release-modal-body">
+          <div class="release-icon">
+            <mat-icon>task_alt</mat-icon>
+          </div>
+
+          <h3>Möchten Sie diese Bestellung für die Kommissionierung freigeben?</h3>
+          <p>Die Bestellung wird danach für die Kommissionierung sichtbar.</p>
+
+          @if (orderToRelease) {
+            <div class="release-preview">
+              <div class="preview-row">
+                <span class="preview-label">Bestellung:</span>
+                <span class="preview-value">#{{ orderToRelease.order_id }}</span>
+              </div>
+              <div class="preview-row">
+                <span class="preview-label">Kunde:</span>
+                <span class="preview-value">{{ getCustomerDisplayName(orderToRelease) }}</span>
+              </div>
+              @if (orderToRelease.customer_number) {
+                <div class="preview-row">
+                  <span class="preview-label">Kundennr.:</span>
+                  <span class="preview-value">{{ orderToRelease.customer_number }}</span>
+                </div>
+              }
+              <div class="preview-row">
+                <span class="preview-label">Bestelldatum:</span>
+                <span class="preview-value">{{ orderToRelease.order_date | date: 'dd.MM.yyyy' }}</span>
+              </div>
+              @if (orderToRelease.delivery_date) {
+                <div class="preview-row">
+                  <span class="preview-label">Liefer-/Abholdatum:</span>
+                  <span class="preview-value">{{ formatDate(orderToRelease.delivery_date) }}</span>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="release-modal-footer">
+          <button mat-stroked-button type="button" class="btn-secondary" (click)="cancelReleaseOrder()" [disabled]="isReleasing">
+            Abbrechen
+          </button>
+          <button mat-flat-button type="button" class="btn-release" (click)="confirmReleaseOrder()" [disabled]="isReleasing">
+            @if (isReleasing) {
+              <mat-icon class="spinning">refresh</mat-icon>
+            } @else {
+              <mat-icon>task_alt</mat-icon>
+            }
+            {{ isReleasing ? 'Wird freigegeben...' : 'Freigeben' }}
           </button>
         </div>
       </div>
