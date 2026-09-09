@@ -20,3 +20,31 @@ mat-slide-toggle {
   gap: 0.5rem;
   margin-bottom: 0.5rem;
 }
+
+.native-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0.15rem 0 0.75rem;
+}
+
+.native-label {
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+.native-select {
+  width: 100%;
+  padding: 0.7rem 0.75rem;
+  border: 1px solid #c4c4c4;
+  border-radius: 4px;
+  background: #fff;
+  font: inherit;
+  color: inherit;
+}
+
+.native-hint {
+  font-size: 0.75rem;
+  color: #64748b;
+  line-height: 1.35;
+}

@@ -5,6 +5,10 @@ export interface Employee {
   lastName: string;
   /** Vertrags-Wochenstunden */
   weeklyHours: number;
+  /** Anzahl Arbeitstage pro Woche (1–6), abgeleitet aus weeklyWorkWeekdays. */
+  weeklyWorkDays: number;
+  /** Gewählte Wochentage (1=Mo … 6=Sa). */
+  weeklyWorkWeekdays: number[];
   monthlyHours: number;
   /** true wenn monthlyHours manuell vom Vorschlag abweicht */
   monthlyHoursManual: boolean;
@@ -23,6 +27,8 @@ export interface EmployeeFormData {
   firstName: string;
   lastName: string;
   weeklyHours: number;
+  weeklyWorkDays: number;
+  weeklyWorkWeekdays: number[];
   monthlyHours: number;
   monthlyHoursManual: boolean;
   annualVacationDays: number;

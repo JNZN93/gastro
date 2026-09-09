@@ -2,7 +2,10 @@
   <mat-card-header>
     <mat-card-title>{{ employee.firstName }} {{ employee.lastName }}</mat-card-title>
     <mat-card-subtitle>
-      Sollstunden: {{ employee.monthlyHours | number: '1.0-2' : 'de' }} h · Beginn: {{ employee.defaultStartTime }} Uhr
+      Sollstunden: {{ employee.monthlyHours | number: '1.0-2' : 'de' }} h ·
+      {{ weeklyWorkDaysLabel }} ·
+      {{ employee.weeklyHours | number: '1.0-2' : 'de' }} h/Woche ·
+      Beginn: {{ employee.defaultStartTime }} Uhr
       @if (editable) {
         · Tage direkt in der Tabelle bearbeiten · TAB zum nächsten Feld
       }
@@ -18,7 +21,7 @@
       <span class="stat-chip">Feiertage: <strong>{{ stats.holidayCount }}</strong></span>
       <span class="stat-chip">Urlaubstage: <strong>{{ stats.vacationCount }}</strong></span>
       <span class="stat-chip">Krankheitstage: <strong>{{ stats.sickDayCount }}</strong></span>
-      <span class="stat-chip">Arbeitsfrei: <strong>{{ stats.unpaidDayOffCount }}</strong></span>
+      <span class="stat-chip">Frei: <strong>{{ stats.unpaidDayOffCount }}</strong></span>
       <span class="stat-chip">Sonntage: <strong>{{ stats.sundayCount }}</strong></span>
     </div>
 
@@ -31,7 +34,7 @@
               <span class="week-day-weekday">{{ formatWeekday(day.date) }}</span>
               <span class="week-day-hours">{{ formatNetDuration(day.plannedHours) }}</span>
               <span class="week-day-absence">
-                {{ formatHolidayLabel(day.isSunday, day.isHoliday, day.isVacation, day.isUnpaidDayOff, day.isSick, day.holidayName) }}
+                {{ formatDayStatus(day) }}
               </span>
             </div>
           }
@@ -65,11 +68,11 @@
                   <option value="">Arbeitstag</option>
                   <option value="paid">Bezahlter Urlaub</option>
                   <option value="sick">Krank</option>
-                  <option value="unpaid">Arbeitsfrei</option>
+                  <option value="unpaid">Frei</option>
                 </select>
               } @else {
                 <span [class.non-work]="row.day.isSunday || row.day.isHoliday">
-                  {{ formatHolidayLabel(row.day.isSunday, row.day.isHoliday, row.day.isVacation, row.day.isUnpaidDayOff, row.day.isSick, row.day.holidayName) }}
+                  {{ formatDayStatus(row.day) }}
                 </span>
               }
             </td>

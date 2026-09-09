@@ -151,6 +151,10 @@ export class MonthlyPlanningComponent implements OnInit, OnDestroy {
     return this.employeeRepo.getOverviewEmployees().length > 0;
   }
 
+  weeklyWorkDaysLabel(employee: Employee): string {
+    return this.monthlyCalculator.formatWeeklyWorkDaysOption(employee.weeklyWorkDays);
+  }
+
   selectEmployee(employeeId: string): void {
     this.selectedEmployeeId = employeeId;
   }

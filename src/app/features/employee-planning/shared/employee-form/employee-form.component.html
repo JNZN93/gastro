@@ -36,6 +36,18 @@
       }
     </mat-form-field>
 
+    <label class="native-field">
+      <span class="native-label">Arbeitstage pro Woche</span>
+      <select formControlName="weeklyWorkDays" class="native-select">
+        @for (days of weeklyWorkDayChoices; track days) {
+          <option [ngValue]="days">{{ days }} {{ days === 1 ? 'Tag' : 'Tage' }}</option>
+        }
+      </select>
+      <span class="native-hint">
+        Freie Tage werden beim automatischen Verteilen zufällig gesetzt. Die Wochenstunden werden nicht überschritten.
+      </span>
+    </label>
+
     <div class="monthly-hours-block">
       <mat-form-field appearance="outline">
         <mat-label>Monatsstunden (Soll)</mat-label>

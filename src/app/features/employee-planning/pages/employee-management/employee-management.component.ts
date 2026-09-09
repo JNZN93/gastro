@@ -15,6 +15,7 @@ import { Employee } from '../../models/employee.model';
 import { EMPLOYEE_REPOSITORY, EmployeeRepository } from '../../repositories/employee.repository';
 import { SCHEDULE_REPOSITORY, ScheduleRepository } from '../../repositories/schedule.repository';
 import { Inject } from '@angular/core';
+import { MonthlyHoursCalculatorService } from '../../services/monthly-hours-calculator.service';
 import {
   EmployeeFormComponent,
   EmployeeFormDialogResult,
@@ -65,6 +66,7 @@ export class EmployeeManagementComponent implements OnInit, OnDestroy {
   constructor(
     @Inject(EMPLOYEE_REPOSITORY) private readonly employeeRepo: EmployeeRepository,
     @Inject(SCHEDULE_REPOSITORY) private readonly scheduleRepo: ScheduleRepository,
+    private readonly monthlyCalculator: MonthlyHoursCalculatorService,
     private readonly fb: FormBuilder,
     private readonly dialog: MatDialog,
     private readonly snackBar: MatSnackBar
@@ -105,7 +107,7 @@ export class EmployeeManagementComponent implements OnInit, OnDestroy {
 
   openCreateDialog(): void {
     const dialogRef = this.dialog.open(EmployeeFormComponent, {
-      width: '460px',
+      width: '500px',
       data: { employee: null },
     });
 
@@ -119,7 +121,7 @@ export class EmployeeManagementComponent implements OnInit, OnDestroy {
 
   openEditDialog(employee: Employee): void {
     const dialogRef = this.dialog.open(EmployeeFormComponent, {
-      width: '460px',
+      width: '500px',
       data: { employee },
     });
 
@@ -174,6 +176,10 @@ export class EmployeeManagementComponent implements OnInit, OnDestroy {
       return 'Archiviert';
     }
     return employee.active ? 'Aktiv' : 'Inaktiv';
+  }
+
+  weeklyWorkDaysLabel(employee: Employee): string {
+    return this.monthlyCalculator.formatWeeklyWorkDaysOption(employee.weeklyWorkDays);
   }
 
   private applyFilters(): void {

@@ -13,6 +13,7 @@ import { HolidayService } from './holiday.service';
 import { TimeCalculationService } from './time-calculation.service';
 import { EmployeeService } from './employee.service';
 import { VacationService } from './vacation.service';
+import { MonthlyHoursCalculatorService } from './monthly-hours-calculator.service';
 
 const STORAGE_KEY = 'employee-planning:schedules';
 
@@ -36,7 +37,8 @@ export class PlanningService {
     private readonly holidayService: HolidayService,
     private readonly timeCalculation: TimeCalculationService,
     private readonly employeeService: EmployeeService,
-    private readonly vacationService: VacationService
+    private readonly vacationService: VacationService,
+    private readonly monthlyCalculator: MonthlyHoursCalculatorService
   ) {}
 
   getSchedule(employeeId: string, year: number, month: number): EmployeeSchedule | null {
@@ -77,11 +79,13 @@ export class PlanningService {
   }
 
   /**
-   * Verteilt Monatsstunden gleichmäßig auf Arbeitstage und bezahlte Urlaubstage.
-   * Sonntage, Feiertage und unbezahltes Arbeitsfrei erhalten 0 Stunden.
-   * Einzelwerte mit 2 Nachkommastellen verteilen; Rest auf die ersten Tage.
+   * Verteilt die Vertrags-Wochenstunden auf zufällig gewählte Arbeitstage.
+   * Vorher eingetragenes Frei, Krank und Urlaub bleibt erhalten.
+   * Pro Kalenderwoche höchstens weeklyWorkDays mit Stunden, Summe ≤ weeklyHours.
    */
-  distributeHours(monthlyHours: number, workDays: WorkDay[]): WorkDay[] {
+  distributeHours(employee: Employee, workDays: WorkDay[]): WorkDay[] {
+    const weeklyWorkDays = this.monthlyCalculator.normalizeWeeklyWorkDays(employee.weeklyWorkDays);
+    const weeklyHours = Math.max(0, employee.weeklyHours);
     const result = workDays.map((day) => ({
       ...day,
       plannedHours: 0,
@@ -89,31 +93,51 @@ export class PlanningService {
       endTime: undefined,
       breakMinutes: 0,
     }));
-    const workingIndices: number[] = [];
+
+    const eligibleByWeek = new Map<number, number[]>();
+    const paidAbsenceByWeek = new Map<number, number[]>();
 
     result.forEach((day, index) => {
-      if (!day.isSunday && !day.isHoliday && !day.isUnpaidDayOff) {
-        workingIndices.push(index);
+      if (day.isSunday || day.isHoliday) {
+        return;
       }
+      const weekKey = this.monthlyCalculator.getWeekStart(day.date).getTime();
+      if (day.isVacation || day.isSick) {
+        const absences = paidAbsenceByWeek.get(weekKey) ?? [];
+        absences.push(index);
+        paidAbsenceByWeek.set(weekKey, absences);
+        return;
+      }
+      if (!this.isDistributableWorkDay(day) || weeklyHours <= 0) {
+        return;
+      }
+      const group = eligibleByWeek.get(weekKey) ?? [];
+      group.push(index);
+      eligibleByWeek.set(weekKey, group);
     });
 
-    if (workingIndices.length === 0 || monthlyHours <= 0) {
-      return result;
+    const weekKeys = new Set([...eligibleByWeek.keys(), ...paidAbsenceByWeek.keys()]);
+    for (const weekKey of weekKeys) {
+      const paidAbsence = (paidAbsenceByWeek.get(weekKey) ?? []).sort((a, b) => a - b);
+      const eligible = eligibleByWeek.get(weekKey) ?? [];
+      const remainingSlots = Math.max(0, weeklyWorkDays - paidAbsence.length);
+      const picked = this.pickRandomSubset(eligible, Math.min(remainingSlots, eligible.length)).sort(
+        (a, b) => a - b
+      );
+      const assigned = [...paidAbsence, ...picked];
+      const shareDays =
+        assigned.length > weeklyWorkDays ? assigned.length : weeklyWorkDays;
+
+      assigned.forEach((dayIndex, slot) => {
+        result[dayIndex].plannedHours = this.monthlyCalculator.dayShareForIndex(
+          slot,
+          weeklyHours,
+          shareDays
+        );
+      });
     }
 
-    // Gleichmäßige Verteilung in 0,01-h-Schritten über alle Arbeitstage
-    const totalHundredths = Math.round(monthlyHours * 100);
-    const workDayCount = workingIndices.length;
-    const baseHundredths = Math.floor(totalHundredths / workDayCount);
-    const extraHundredths = totalHundredths % workDayCount;
-
-    for (let i = 0; i < workingIndices.length; i++) {
-      const index = workingIndices[i];
-      const hundredths = baseHundredths + (i < extraHundredths ? 1 : 0);
-      result[index].plannedHours = hundredths / 100;
-    }
-
-    return result;
+    return this.trimToMonthlyHours(result, employee.monthlyHours);
   }
 
   /** Plant alle aktiven Mitarbeiter für den gewählten Monat. */
@@ -139,8 +163,9 @@ export class PlanningService {
         continue;
       }
       const baseDays = this.buildMonthWorkDays(employee.id, year, month);
-      const distributed = this.distributeHours(employee.monthlyHours, baseDays);
-      const enriched = distributed.map((day) =>
+      const distributed = this.distributeHours(employee, baseDays);
+      const withFree = this.markUnplannedDaysAsFree(employee.id, distributed);
+      const enriched = withFree.map((day) =>
         this.timeCalculation.enrichWorkDay(day, employee.defaultStartTime)
       );
       const schedule = this.saveSchedule({
@@ -233,7 +258,17 @@ export class PlanningService {
       return this.timeCalculation.recalculateWorkDay(copied, employee.defaultStartTime);
     });
 
-    return this.saveSchedule({ ...schedule, workDays });
+    const capped = workDays.map((day) => {
+      if (day.date.getDay() !== weekday || this.isSameDate(day.date, sourceDate)) {
+        return day;
+      }
+      if (day.isSunday || day.isHoliday || day.isUnpaidDayOff) {
+        return day;
+      }
+      return this.applyHoursCap(employee, workDays, day, day.plannedHours);
+    });
+
+    return this.saveSchedule({ ...schedule, workDays: capped });
   }
 
   saveSchedule(schedule: EmployeeSchedule): EmployeeSchedule {
@@ -300,7 +335,14 @@ export class PlanningService {
       if (day.isSick) {
         sickDayCount++;
       }
-      if (!day.isSunday && !day.isHoliday && !day.isVacation && !day.isUnpaidDayOff && !day.isSick) {
+      if (
+        day.plannedHours > 0 &&
+        !day.isSunday &&
+        !day.isHoliday &&
+        !day.isVacation &&
+        !day.isUnpaidDayOff &&
+        !day.isSick
+      ) {
         workDayCount++;
       }
     }
@@ -341,8 +383,9 @@ export class PlanningService {
       return this.saveSchedule(synced);
     }
 
-    const redistributed = this.distributeHours(employee.monthlyHours, synced.workDays);
-    const enriched = redistributed.map((day) =>
+    const redistributed = this.distributeHours(employee, synced.workDays);
+    const withFree = this.markUnplannedDaysAsFree(employee.id, redistributed);
+    const enriched = withFree.map((day) =>
       this.timeCalculation.enrichWorkDay(day, employee.defaultStartTime)
     );
     return this.saveSchedule({ ...schedule, workDays: enriched });
@@ -411,7 +454,8 @@ export class PlanningService {
         return day;
       }
 
-      const updated = { ...day, plannedHours: rounded };
+      const allowedHours = this.capHoursForDay(employee, schedule.workDays, date, rounded);
+      const updated = { ...day, plannedHours: allowedHours };
       return this.timeCalculation.recalculateWorkDay(updated, employee.defaultStartTime);
     });
 
@@ -425,9 +469,13 @@ export class PlanningService {
     date: Date,
     startTime: string
   ): EmployeeSchedule | null {
-    return this.updateEditableWorkDay(schedule, date, (day) =>
-      this.timeCalculation.applyStartTime(day, startTime, employee.defaultStartTime)
-    );
+    return this.updateEditableWorkDay(schedule, date, (day) => {
+      const updated = this.timeCalculation.applyStartTime(day, startTime, employee.defaultStartTime);
+      if (!updated) {
+        return null;
+      }
+      return this.applyHoursCap(employee, schedule.workDays, updated, updated.plannedHours);
+    });
   }
 
   /** Passt das Arbeitsende eines Tages an. */
@@ -437,9 +485,13 @@ export class PlanningService {
     date: Date,
     endTime: string
   ): EmployeeSchedule | null {
-    return this.updateEditableWorkDay(schedule, date, (day) =>
-      this.timeCalculation.applyEndTime(day, endTime, employee.defaultStartTime)
-    );
+    return this.updateEditableWorkDay(schedule, date, (day) => {
+      const updated = this.timeCalculation.applyEndTime(day, endTime, employee.defaultStartTime);
+      if (!updated) {
+        return null;
+      }
+      return this.applyHoursCap(employee, schedule.workDays, updated, updated.plannedHours);
+    });
   }
 
   /** Passt die Pause eines Tages an. */
@@ -475,6 +527,137 @@ export class PlanningService {
     }
 
     return this.saveSchedule({ ...schedule, workDays });
+  }
+
+  private isDistributableWorkDay(day: WorkDay): boolean {
+    return (
+      !day.isSunday &&
+      !day.isHoliday &&
+      !day.isUnpaidDayOff &&
+      !day.isVacation &&
+      !day.isSick
+    );
+  }
+
+  private markUnplannedDaysAsFree(employeeId: string, workDays: WorkDay[]): WorkDay[] {
+    this.vacationService.syncUnpaidDaysForUnplannedWorkDays(employeeId, workDays);
+    return workDays.map((day) => {
+      if (day.isSunday || day.isHoliday || day.isVacation || day.isSick) {
+        return day;
+      }
+      const absenceType = this.vacationService.getAbsenceType(employeeId, day.date);
+      if (absenceType === 'unpaid') {
+        return {
+          ...day,
+          plannedHours: 0,
+          startTime: undefined,
+          endTime: undefined,
+          breakMinutes: 0,
+          isUnpaidDayOff: true,
+        };
+      }
+      return {
+        ...day,
+        isUnpaidDayOff: false,
+      };
+    });
+  }
+
+  private pickRandomSubset<T>(items: T[], count: number): T[] {
+    const copy = [...items];
+    for (let i = copy.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const current = copy[i];
+      copy[i] = copy[j];
+      copy[j] = current;
+    }
+    return copy.slice(0, Math.max(0, count));
+  }
+
+  private trimToMonthlyHours(workDays: WorkDay[], monthlyHours: number): WorkDay[] {
+    if (monthlyHours <= 0) {
+      return workDays;
+    }
+
+    let excessHundredths =
+      Math.round(workDays.reduce((sum, day) => sum + day.plannedHours, 0) * 100) -
+      Math.round(monthlyHours * 100);
+    if (excessHundredths <= 0) {
+      return workDays;
+    }
+
+    const adjustable = workDays
+      .map((day, index) => ({ day, index }))
+      .filter(
+        ({ day }) =>
+          day.plannedHours > 0 &&
+          !day.isVacation &&
+          !day.isSick &&
+          !day.isUnpaidDayOff &&
+          !day.isSunday &&
+          !day.isHoliday
+      )
+      .sort((a, b) => b.day.plannedHours - a.day.plannedHours);
+
+    for (const { index } of adjustable) {
+      if (excessHundredths <= 0) {
+        break;
+      }
+      const currentHundredths = Math.round(workDays[index].plannedHours * 100);
+      const reduceBy = Math.min(excessHundredths, currentHundredths);
+      workDays[index] = {
+        ...workDays[index],
+        plannedHours: (currentHundredths - reduceBy) / 100,
+      };
+      excessHundredths -= reduceBy;
+    }
+
+    return workDays;
+  }
+
+  capHoursForDay(
+    employee: Employee,
+    workDays: WorkDay[],
+    date: Date,
+    requestedHours: number
+  ): number {
+    const requested = this.timeCalculation.roundHours(Math.max(0, requestedHours));
+    if (requested <= 0) {
+      return 0;
+    }
+
+    let otherWeekly = 0;
+    let otherMonthly = 0;
+    for (const day of workDays) {
+      if (this.isSameDate(day.date, date)) {
+        continue;
+      }
+      otherMonthly += day.plannedHours;
+      if (this.monthlyCalculator.isSameWeek(day.date, date)) {
+        otherWeekly += day.plannedHours;
+      }
+    }
+
+    const weeklyRemaining = employee.weeklyHours - otherWeekly;
+    const monthlyRemaining = employee.monthlyHours - otherMonthly;
+    const allowed = Math.min(requested, weeklyRemaining, monthlyRemaining);
+    return this.timeCalculation.roundHours(Math.max(0, allowed));
+  }
+
+  private applyHoursCap(
+    employee: Employee,
+    workDays: WorkDay[],
+    day: WorkDay,
+    requestedHours: number
+  ): WorkDay {
+    const allowedHours = this.capHoursForDay(employee, workDays, day.date, requestedHours);
+    if (this.timeCalculation.roundHours(day.plannedHours) === allowedHours) {
+      return day;
+    }
+    return this.timeCalculation.recalculateWorkDay(
+      { ...day, plannedHours: allowedHours },
+      employee.defaultStartTime
+    );
   }
 
   private isEditableWorkDay(day: WorkDay): boolean {

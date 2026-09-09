@@ -12,17 +12,18 @@ const MONTH_NAMES = [
 
 const COMPANY_TITLE = 'Zeiterfassung Mitarbeiter Gastro Depot GmbH & Co. KG';
 
-/** Zeilenhöhen in Punkten – summieren sich auf ca. eine A4-Seite (Hochformat). */
+/** Zeilenhöhen in Punkten – Titel bis Unterschrift passen auf eine DIN-A4-Seite. */
 const LAYOUT = {
-  titleRowHeight: 30,
-  spacerRowHeight: 6,
-  infoRowHeight: 20,
-  headerRowHeight: 44,
-  dataRowHeight: 20,
-  summaryRowHeight: 24,
-  titleFontSize: 14,
-  headerFontSize: 10,
-  dataFontSize: 11,
+  titleRowHeight: 26,
+  spacerRowHeight: 5,
+  infoRowHeight: 18,
+  headerRowHeight: 36,
+  dataRowHeight: 18,
+  summaryRowHeight: 20,
+  signatureRowHeight: 28,
+  titleFontSize: 13,
+  headerFontSize: 9,
+  dataFontSize: 10,
   columns: [1, 6, 12, 12, 10, 16, 11] as const,
 };
 
@@ -141,27 +142,30 @@ export class ExcelExportService {
 
     const totalHours = this.getTotalHours(enrichedDays);
     this.fillTotalRow(worksheet, 40, totalHours);
+    this.fillSignatureRow(worksheet, 41);
 
     this.applyPrintSetup(worksheet);
   }
 
-  /** Druckeinstellungen: natürliche Größe füllt eine DIN-A4-Seite ohne Verkleinerung. */
+  /** Druckeinstellungen: eine DIN-A4-Seite Hochformat. */
   private applyPrintSetup(worksheet: ExcelJS.Worksheet): void {
     worksheet.pageSetup = {
       paperSize: 9,
       orientation: 'portrait',
-      scale: 100,
+      fitToPage: true,
+      fitToWidth: 1,
+      fitToHeight: 1,
       horizontalCentered: true,
       verticalCentered: false,
-      printArea: 'B2:G40',
+      printArea: 'B2:G41',
     };
     worksheet.pageSetup.margins = {
       left: 0.35,
       right: 0.35,
-      top: 0.35,
-      bottom: 0.35,
-      header: 0.1,
-      footer: 0.1,
+      top: 0.3,
+      bottom: 0.3,
+      header: 0,
+      footer: 0,
     };
   }
 
@@ -358,6 +362,28 @@ export class ExcelExportService {
     }
 
     row.height = LAYOUT.summaryRowHeight;
+  }
+
+  private fillSignatureRow(worksheet: ExcelJS.Worksheet, rowNumber: number): void {
+    worksheet.mergeCells(`B${rowNumber}:C${rowNumber}`);
+    worksheet.mergeCells(`D${rowNumber}:G${rowNumber}`);
+    const row = worksheet.getRow(rowNumber);
+
+    const labelCell = row.getCell(2);
+    labelCell.value = 'Unterschrift Mitarbeiter';
+    labelCell.font = { bold: true, size: LAYOUT.dataFontSize, color: { argb: COLORS.label } };
+    labelCell.alignment = { horizontal: 'left', vertical: 'bottom' };
+
+    const signatureCell = row.getCell(4);
+    signatureCell.alignment = { vertical: 'bottom' };
+
+    for (let col = 4; col <= 7; col++) {
+      row.getCell(col).border = {
+        bottom: { style: 'thin', color: { argb: COLORS.title } },
+      };
+    }
+
+    row.height = LAYOUT.signatureRowHeight;
   }
 
   private getTotalHours(workDays: WorkDay[]): number {

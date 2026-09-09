@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { AbsenceDayResult, AbsenceType, VacationEntry } from '../models/vacation.model';
+import { WorkDay } from '../models/schedule.model';
 import { HolidayService } from './holiday.service';
 
 const STORAGE_KEY = 'employee-planning:vacations';
@@ -163,6 +164,72 @@ export class VacationService {
     const vacations = this.vacationsSubject.value.filter(
       (entry) => !(entry.employeeId === employeeId && entry.date.startsWith(prefix))
     );
+    this.persist(vacations);
+  }
+
+  /** Entfernt nur unbezahltes Arbeitsfrei im Monat, Urlaub und Krankheit bleiben. */
+  clearUnpaidDaysForMonth(employeeId: string, year: number, month: number): void {
+    const prefix = `${year}-${String(month).padStart(2, '0')}-`;
+    const vacations = this.vacationsSubject.value.filter(
+      (entry) =>
+        !(
+          entry.employeeId === employeeId &&
+          entry.date.startsWith(prefix) &&
+          entry.type === 'unpaid'
+        )
+    );
+    this.persist(vacations);
+  }
+
+  /**
+   * Ungeplante Werktage (0 Stunden) als Frei speichern.
+   * Tage mit Stunden verlieren ein automatisches Frei.
+   * Urlaub, Krankheit, Sonntag und Feiertag bleiben unangetastet.
+   */
+  syncUnpaidDaysForUnplannedWorkDays(employeeId: string, workDays: WorkDay[]): void {
+    const unpaidKeys = new Set<string>();
+    const clearUnpaidKeys = new Set<string>();
+
+    for (const day of workDays) {
+      if (day.isSunday || day.isHoliday || day.isVacation || day.isSick) {
+        continue;
+      }
+      const key = this.formatDateKey(day.date);
+      if (day.plannedHours > 0) {
+        clearUnpaidKeys.add(key);
+      } else {
+        unpaidKeys.add(key);
+      }
+    }
+
+    const vacations = this.vacationsSubject.value.filter((entry) => {
+      if (entry.employeeId !== employeeId || entry.type !== 'unpaid') {
+        return true;
+      }
+      return !clearUnpaidKeys.has(entry.date);
+    });
+
+    const existingUnpaid = new Set(
+      vacations
+        .filter((entry) => entry.employeeId === employeeId && entry.type === 'unpaid')
+        .map((entry) => entry.date)
+    );
+    const blockedKeys = new Set(
+      vacations
+        .filter(
+          (entry) =>
+            entry.employeeId === employeeId && (entry.type === 'paid' || entry.type === 'sick')
+        )
+        .map((entry) => entry.date)
+    );
+
+    for (const key of unpaidKeys) {
+      if (existingUnpaid.has(key) || blockedKeys.has(key)) {
+        continue;
+      }
+      vacations.push({ employeeId, date: key, type: 'unpaid' });
+    }
+
     this.persist(vacations);
   }
 

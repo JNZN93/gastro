@@ -36,8 +36,7 @@ body {
 .cdk-overlay-container, 
 .cdk-global-overlay-wrapper, 
 .cdk-overlay-pane, 
-.cdk-overlay-backdrop, 
-.mat-mdc-dialog-container {
+.cdk-overlay-backdrop {
   z-index: 12000 !important;
 }
 

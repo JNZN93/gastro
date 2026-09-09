@@ -8,7 +8,11 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
 import { Employee, EmployeeFormData } from '../../models/employee.model';
-import { MonthlyHoursCalculatorService } from '../../services/monthly-hours-calculator.service';
+import {
+  DEFAULT_WEEKLY_WORK_DAYS,
+  MonthlyHoursCalculatorService,
+  WEEKLY_WORK_DAY_CHOICES,
+} from '../../services/monthly-hours-calculator.service';
 
 export interface EmployeeFormDialogData {
   employee: Employee | null;
@@ -40,6 +44,7 @@ export class EmployeeFormComponent implements OnInit, OnDestroy {
   form!: FormGroup;
   readonly isEditMode: boolean;
   suggestedMonthlyHours = 0;
+  readonly weeklyWorkDayChoices = WEEKLY_WORK_DAY_CHOICES;
 
   private subscriptions: Subscription[] = [];
 
@@ -57,6 +62,9 @@ export class EmployeeFormComponent implements OnInit, OnDestroy {
     const year = this.data.planningYear ?? new Date().getFullYear();
     const month = this.data.planningMonth ?? new Date().getMonth() + 1;
     const weeklyHours = employee?.weeklyHours ?? 40;
+    const weeklyWorkDays = this.monthlyCalculator.normalizeWeeklyWorkDays(
+      employee?.weeklyWorkDays ?? DEFAULT_WEEKLY_WORK_DAYS
+    );
     this.suggestedMonthlyHours = this.monthlyCalculator.calculateSuggestedMonthlyHours(
       weeklyHours,
       year,
@@ -67,6 +75,10 @@ export class EmployeeFormComponent implements OnInit, OnDestroy {
       firstName: [employee?.firstName ?? '', [Validators.required, Validators.maxLength(100)]],
       lastName: [employee?.lastName ?? '', [Validators.required, Validators.maxLength(100)]],
       weeklyHours: [weeklyHours, [Validators.required, Validators.min(0), Validators.max(168)]],
+      weeklyWorkDays: [
+        weeklyWorkDays,
+        [Validators.required, Validators.min(1), Validators.max(6)],
+      ],
       monthlyHours: [
         employee?.monthlyHours ?? this.suggestedMonthlyHours,
         [Validators.required, Validators.min(0), Validators.max(999)],
@@ -84,8 +96,8 @@ export class EmployeeFormComponent implements OnInit, OnDestroy {
     });
 
     this.subscriptions.push(
-      this.form.get('weeklyHours')!.valueChanges.subscribe((value) => {
-        this.updateSuggestedMonthlyHours(Number(value));
+      this.form.get('weeklyHours')!.valueChanges.subscribe(() => {
+        this.updateSuggestedMonthlyHours();
       }),
       this.form.get('monthlyHoursManual')!.valueChanges.subscribe((manual) => {
         if (!manual) {
@@ -121,11 +133,14 @@ export class EmployeeFormComponent implements OnInit, OnDestroy {
     }
 
     const value = this.form.getRawValue();
+    const weeklyWorkDays = this.monthlyCalculator.normalizeWeeklyWorkDays(Number(value.weeklyWorkDays));
     this.dialogRef.close({
       data: {
         firstName: String(value.firstName).trim(),
         lastName: String(value.lastName).trim(),
         weeklyHours: Number(value.weeklyHours),
+        weeklyWorkDays,
+        weeklyWorkWeekdays: [],
         monthlyHours: Number(value.monthlyHours),
         monthlyHoursManual: Boolean(value.monthlyHoursManual),
         annualVacationDays: Number(value.annualVacationDays),
@@ -135,9 +150,10 @@ export class EmployeeFormComponent implements OnInit, OnDestroy {
     });
   }
 
-  private updateSuggestedMonthlyHours(weeklyHours: number): void {
+  private updateSuggestedMonthlyHours(): void {
     const year = this.data.planningYear ?? new Date().getFullYear();
     const month = this.data.planningMonth ?? new Date().getMonth() + 1;
+    const weeklyHours = Number(this.form.get('weeklyHours')?.value);
     this.suggestedMonthlyHours = this.monthlyCalculator.calculateSuggestedMonthlyHours(
       weeklyHours,
       year,

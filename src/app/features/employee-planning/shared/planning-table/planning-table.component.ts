@@ -8,6 +8,7 @@ import { EmployeeSchedule, ScheduleStats, WorkDay } from '../../models/schedule.
 import { AbsenceType } from '../../models/vacation.model';
 import { PlanningService } from '../../services/planning.service';
 import { TimeCalculationService } from '../../services/time-calculation.service';
+import { MonthlyHoursCalculatorService } from '../../services/monthly-hours-calculator.service';
 
 type EditablePlanningField = 'absence' | 'start' | 'end' | 'break' | 'hours';
 
@@ -62,6 +63,7 @@ export class PlanningTableComponent implements OnChanges, AfterViewInit {
   constructor(
     private readonly planningService: PlanningService,
     private readonly timeCalculation: TimeCalculationService,
+    private readonly monthlyCalculator: MonthlyHoursCalculatorService,
     private readonly snackBar: MatSnackBar
   ) {}
 
@@ -307,6 +309,21 @@ export class PlanningTableComponent implements OnChanges, AfterViewInit {
     return this.stats.totalHours > this.employee.monthlyHours;
   }
 
+  get weeklyWorkDaysLabel(): string {
+    return this.monthlyCalculator.formatWeeklyWorkDaysOption(this.employee.weeklyWorkDays);
+  }
+
+  formatDayStatus(day: WorkDay): string {
+    return this.formatHolidayLabel(
+      day.isSunday,
+      day.isHoliday,
+      day.isVacation,
+      day.isUnpaidDayOff,
+      day.isSick,
+      day.holidayName
+    );
+  }
+
   formatDate(date: Date): string {
     return this.dateFormatter.format(date);
   }
@@ -371,7 +388,7 @@ export class PlanningTableComponent implements OnChanges, AfterViewInit {
       return 'Krank';
     }
     if (isUnpaidDayOff) {
-      return 'Arbeitsfrei';
+      return 'Frei';
     }
     if (isSunday) {
       return 'Sonntag';
@@ -425,6 +442,7 @@ export class PlanningTableComponent implements OnChanges, AfterViewInit {
     }
 
     const rounded = this.timeCalculation.roundHours(parsed);
+    this.notifyIfHoursCapped(day, rounded);
     this.planningService.updateDayPlannedHours(
       this.employee,
       this.viewSchedule,
@@ -475,6 +493,15 @@ export class PlanningTableComponent implements OnChanges, AfterViewInit {
     }
 
     input.value = normalized;
+    const startTime = day.startTime ?? this.employee.defaultStartTime;
+    const netHours = this.timeCalculation.calculateNetHoursFromTimes(
+      startTime,
+      normalized,
+      day.breakMinutes
+    );
+    if (netHours !== null) {
+      this.notifyIfHoursCapped(day, netHours);
+    }
     const updated = this.planningService.updateDayEndTime(
       this.employee,
       this.viewSchedule,
@@ -672,6 +699,23 @@ export class PlanningTableComponent implements OnChanges, AfterViewInit {
       case 'hours':
         this.onHoursChange(day, { target: element } as unknown as Event);
         break;
+    }
+  }
+
+  private notifyIfHoursCapped(day: WorkDay, requestedHours: number): void {
+    if (!this.viewSchedule) {
+      return;
+    }
+    const allowed = this.planningService.capHoursForDay(
+      this.employee,
+      this.viewSchedule.workDays,
+      day.date,
+      requestedHours
+    );
+    if (allowed + 0.001 < requestedHours) {
+      this.showMessage(
+        `Auf ${this.formatHours(allowed)} h begrenzt, damit die Wochenarbeitszeit nicht überschritten wird.`
+      );
     }
   }
 

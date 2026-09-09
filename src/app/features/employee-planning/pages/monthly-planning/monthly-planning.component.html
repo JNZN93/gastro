@@ -151,6 +151,7 @@
             </h3>
             <span class="calendar-employee-meta">
               {{ selectedEmployee.weeklyHours | number: '1.0-2' : 'de' }} h/Woche ·
+              {{ weeklyWorkDaysLabel(selectedEmployee) }} ·
               {{ selectedEmployee.monthlyHours | number: '1.0-2' : 'de' }} h Soll
             </span>
           </div>

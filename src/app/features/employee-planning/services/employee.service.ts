@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { Employee, EmployeeFormData, StoredEmployee } from '../models/employee.model';
+import { DEFAULT_WEEKLY_WORK_DAYS, normalizeWeeklyWorkWeekdays } from './monthly-hours-calculator.service';
 
 const STORAGE_KEY = 'employee-planning:employees';
 
@@ -40,6 +41,7 @@ export class EmployeeService {
     const employee: Employee = {
       id: crypto.randomUUID(),
       ...data,
+      ...this.normalizedWorkDays(data),
       archived: false,
     };
     this.persist([...this.getEmployees(), employee]);
@@ -57,6 +59,7 @@ export class EmployeeService {
     const updated: Employee = {
       ...existing,
       ...data,
+      ...this.normalizedWorkDays(data),
       id,
     };
     const next = [...employees];
@@ -134,6 +137,7 @@ export class EmployeeService {
       firstName: employee.firstName ?? '',
       lastName: employee.lastName ?? '',
       weeklyHours,
+      ...this.normalizedWorkDays(employee),
       monthlyHours,
       monthlyHoursManual: employee.monthlyHoursManual ?? false,
       annualVacationDays: employee.annualVacationDays ?? 30,
@@ -141,6 +145,20 @@ export class EmployeeService {
       active: employee.active ?? true,
       archived: employee.archived ?? false,
       archivedAt: employee.archivedAt,
+    };
+  }
+
+  private normalizedWorkDays(source: {
+    weeklyWorkWeekdays?: number[] | null;
+    weeklyWorkDays?: number | null;
+  }): { weeklyWorkWeekdays: number[]; weeklyWorkDays: number } {
+    const weeklyWorkWeekdays = normalizeWeeklyWorkWeekdays(
+      source.weeklyWorkWeekdays,
+      source.weeklyWorkDays ?? DEFAULT_WEEKLY_WORK_DAYS
+    );
+    return {
+      weeklyWorkWeekdays,
+      weeklyWorkDays: weeklyWorkWeekdays.length,
     };
   }
 
