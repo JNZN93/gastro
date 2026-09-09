@@ -1,4 +1,11 @@
-import { Component, Input, OnChanges, SimpleChanges, AfterViewInit } from '@angular/core';
+import {
+  AfterViewInit,
+  ChangeDetectionStrategy,
+  Component,
+  Input,
+  OnChanges,
+  SimpleChanges,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatTableModule } from '@angular/material/table';
 import { MatCardModule } from '@angular/material/card';
@@ -19,6 +26,7 @@ type EditablePlanningField = 'absence' | 'start' | 'end' | 'break' | 'hours';
   imports: [CommonModule, MatTableModule, MatCardModule, MatSnackBarModule],
   templateUrl: './planning-table.component.html',
   styleUrl: './planning-table.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PlanningTableComponent implements OnChanges, AfterViewInit {
   @Input({ required: true }) employee!: Employee;
@@ -78,7 +86,8 @@ export class PlanningTableComponent implements OnChanges, AfterViewInit {
       this.resetEditingState();
     }
 
-    if (this.focusedCellKey && !contextChanged) {
+    const keepLiveEdit = !contextChanged && (this.focusedCellKey || this.isNativeSelectOpen());
+    if (keepLiveEdit) {
       if (schedule) {
         this.stats = this.planningService.calculateStats(this.viewSchedule ?? schedule);
       }
@@ -344,6 +353,10 @@ export class PlanningTableComponent implements OnChanges, AfterViewInit {
       return 'unpaid';
     }
     return '';
+  }
+
+  absenceSelectValue(dayIndex: number, day: WorkDay): string {
+    return this.cellDrafts.get(this.cellId(dayIndex, 'absence')) ?? this.getAbsenceValue(day);
   }
 
   canEditAbsence(day: WorkDay): boolean {
@@ -654,7 +667,16 @@ export class PlanningTableComponent implements OnChanges, AfterViewInit {
     }
   }
 
+  private isNativeSelectOpen(): boolean {
+    const active = document.activeElement;
+    return active instanceof HTMLSelectElement && !!active.closest('.planning-table');
+  }
+
   private syncAllInputValues(): void {
+    if (this.isNativeSelectOpen()) {
+      return;
+    }
+
     for (const row of this.displayDayRows) {
       for (const field of ['absence', 'start', 'end', 'break', 'hours'] as const) {
         if (!this.isFieldEditable(row.day, field)) {

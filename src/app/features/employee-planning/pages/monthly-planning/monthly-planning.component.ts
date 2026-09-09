@@ -1,4 +1,11 @@
-import { Component, Inject, OnDestroy, OnInit } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  Inject,
+  OnDestroy,
+  OnInit,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -9,7 +16,8 @@ import { MatTableModule } from '@angular/material/table';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { Subscription, firstValueFrom, startWith } from 'rxjs';
+import { Subscription, firstValueFrom, merge, startWith } from 'rxjs';
+import { debounceTime } from 'rxjs/operators';
 import { Employee } from '../../models/employee.model';
 import { EmployeeSchedule } from '../../models/schedule.model';
 import { EMPLOYEE_REPOSITORY, EmployeeRepository } from '../../repositories/employee.repository';
@@ -65,6 +73,7 @@ const PAGE_SCROLL_CLASS = 'employee-planning-page';
   ],
   templateUrl: './monthly-planning.component.html',
   styleUrl: './monthly-planning.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MonthlyPlanningComponent implements OnInit, OnDestroy {
   readonly monthNames = MONTH_NAMES;
@@ -73,15 +82,16 @@ export class MonthlyPlanningComponent implements OnInit, OnDestroy {
   filterForm: FormGroup;
   overviewRows: EmployeeOverviewRow[] = [];
   selectedEmployeeId: string | null = null;
+  selectedEmployee: Employee | null = null;
+  selectedSchedule: EmployeeSchedule | null = null;
   selectedForDistribute = new Set<string>();
   detailViewMode: 'month' | 'week' = 'month';
   overviewColumns = ['select', 'name', 'targetHours', 'plannedHours', 'diff', 'absence', 'status', 'flags'];
   isDistributing = false;
+  hasPlannableEmployees = false;
+  hasOverviewEmployees = false;
 
-  private employeeSubscription?: Subscription;
-  private scheduleSubscription?: Subscription;
-  private absenceSubscription?: Subscription;
-  private filterSubscription?: Subscription;
+  private dataSubscription?: Subscription;
 
   constructor(
     private readonly fb: FormBuilder,
@@ -92,7 +102,8 @@ export class MonthlyPlanningComponent implements OnInit, OnDestroy {
     private readonly monthlyCalculator: MonthlyHoursCalculatorService,
     private readonly planningStatus: PlanningStatusService,
     private readonly dialog: MatDialog,
-    private readonly snackBar: MatSnackBar
+    private readonly snackBar: MatSnackBar,
+    private readonly cdr: ChangeDetectorRef
   ) {
     const currentYear = new Date().getFullYear();
     this.years = Array.from({ length: 7 }, (_, i) => currentYear - 3 + i);
@@ -105,20 +116,19 @@ export class MonthlyPlanningComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.enablePageScroll();
-    this.employeeSubscription = this.employeeRepo.employees$.subscribe(() => this.refreshView());
-    this.scheduleSubscription = this.scheduleRepo.schedules$.subscribe(() => this.refreshView());
-    this.absenceSubscription = this.absenceRepo.vacations$.subscribe(() => this.refreshView());
-    this.filterSubscription = this.filterForm.valueChanges
-      .pipe(startWith(this.filterForm.value))
+    this.dataSubscription = merge(
+      this.employeeRepo.employees$,
+      this.scheduleRepo.schedules$,
+      this.absenceRepo.vacations$,
+      this.filterForm.valueChanges.pipe(startWith(this.filterForm.value))
+    )
+      .pipe(debounceTime(0))
       .subscribe(() => this.refreshView());
   }
 
   ngOnDestroy(): void {
     this.disablePageScroll();
-    this.employeeSubscription?.unsubscribe();
-    this.scheduleSubscription?.unsubscribe();
-    this.absenceSubscription?.unsubscribe();
-    this.filterSubscription?.unsubscribe();
+    this.dataSubscription?.unsubscribe();
   }
 
   get selectedMonth(): number {
@@ -129,34 +139,19 @@ export class MonthlyPlanningComponent implements OnInit, OnDestroy {
     return Number(this.filterForm.get('year')?.value);
   }
 
-  get selectedEmployee(): Employee | null {
-    if (!this.selectedEmployeeId) return null;
-    return this.employeeRepo.getEmployeeById(this.selectedEmployeeId) ?? null;
-  }
-
-  get selectedSchedule(): EmployeeSchedule | null {
-    if (!this.selectedEmployeeId) return null;
-    return this.scheduleRepo.getOrCreateEmptySchedule(
-      this.selectedEmployeeId,
-      this.selectedYear,
-      this.selectedMonth
-    );
-  }
-
-  get hasPlannableEmployees(): boolean {
-    return this.employeeRepo.getPlannableEmployees().length > 0;
-  }
-
-  get hasOverviewEmployees(): boolean {
-    return this.employeeRepo.getOverviewEmployees().length > 0;
-  }
-
   weeklyWorkDaysLabel(employee: Employee): string {
     return this.monthlyCalculator.formatWeeklyWorkDaysOption(employee.weeklyWorkDays);
   }
 
+  trackOverviewRow = (_index: number, row: EmployeeOverviewRow): string => row.employee.id;
+
   selectEmployee(employeeId: string): void {
+    if (this.selectedEmployeeId === employeeId) {
+      return;
+    }
     this.selectedEmployeeId = employeeId;
+    this.updateSelectedDetail();
+    this.cdr.markForCheck();
   }
 
   isSelected(employeeId: string): boolean {
@@ -169,6 +164,7 @@ export class MonthlyPlanningComponent implements OnInit, OnDestroy {
     } else {
       this.selectedForDistribute.delete(employeeId);
     }
+    this.cdr.markForCheck();
   }
 
   isSelectedForDistribute(employeeId: string): boolean {
@@ -180,6 +176,7 @@ export class MonthlyPlanningComponent implements OnInit, OnDestroy {
     if (checked) {
       this.overviewRows.forEach((row) => this.selectedForDistribute.add(row.employee.id));
     }
+    this.cdr.markForCheck();
   }
 
   updateMonthlyTargetsFromWeekly(): void {
@@ -300,7 +297,11 @@ export class MonthlyPlanningComponent implements OnInit, OnDestroy {
   }
 
   setDetailViewMode(mode: 'month' | 'week'): void {
+    if (this.detailViewMode === mode) {
+      return;
+    }
     this.detailViewMode = mode;
+    this.cdr.markForCheck();
   }
 
   diffClass(diff: number): string {
@@ -311,6 +312,8 @@ export class MonthlyPlanningComponent implements OnInit, OnDestroy {
 
   private refreshView(): void {
     const overviewEmployees = this.employeeRepo.getOverviewEmployees();
+    this.hasOverviewEmployees = overviewEmployees.length > 0;
+    this.hasPlannableEmployees = this.employeeRepo.getPlannableEmployees().length > 0;
     this.overviewRows = overviewEmployees.map((employee) => {
       const schedule = this.scheduleRepo.getOrCreateEmptySchedule(
         employee.id,
@@ -335,6 +338,9 @@ export class MonthlyPlanningComponent implements OnInit, OnDestroy {
 
     if (overviewEmployees.length === 0) {
       this.selectedEmployeeId = null;
+      this.selectedEmployee = null;
+      this.selectedSchedule = null;
+      this.cdr.markForCheck();
       return;
     }
 
@@ -348,6 +354,30 @@ export class MonthlyPlanningComponent implements OnInit, OnDestroy {
     if (!valid) {
       this.selectedEmployeeId = overviewEmployees[0].id;
     }
+
+    this.updateSelectedDetail();
+    this.cdr.markForCheck();
+  }
+
+  private updateSelectedDetail(): void {
+    if (!this.selectedEmployeeId) {
+      this.selectedEmployee = null;
+      this.selectedSchedule = null;
+      return;
+    }
+
+    const fromOverview = this.overviewRows.find((row) => row.employee.id === this.selectedEmployeeId);
+    this.selectedEmployee =
+      fromOverview?.employee ?? this.employeeRepo.getEmployeeById(this.selectedEmployeeId) ?? null;
+    this.selectedSchedule = fromOverview
+      ? fromOverview.schedule
+      : this.selectedEmployee
+        ? this.scheduleRepo.getOrCreateEmptySchedule(
+            this.selectedEmployeeId,
+            this.selectedYear,
+            this.selectedMonth
+          )
+        : null;
   }
 
   private enablePageScroll(): void {

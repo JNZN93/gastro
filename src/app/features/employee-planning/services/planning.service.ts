@@ -298,7 +298,7 @@ export class PlanningService {
   ): EmployeeSchedule {
     const existing = this.getSchedule(employeeId, year, month);
     if (existing) {
-      return this.enrichScheduleTimes(existing, employeeId);
+      return existing;
     }
 
     return {

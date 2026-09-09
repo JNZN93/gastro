@@ -59,6 +59,7 @@
                 <select
                   class="cell-select"
                   [attr.data-cell-id]="cellId(row.dayIndex, 'absence')"
+                  [value]="absenceSelectValue(row.dayIndex, row.day)"
                   (focus)="onCellFocus($event, row.dayIndex, 'absence', row.day)"
                   (input)="onCellInput(row.dayIndex, 'absence', $event)"
                   (blur)="onCellBlur(row.day, row.dayIndex, 'absence', $event)"

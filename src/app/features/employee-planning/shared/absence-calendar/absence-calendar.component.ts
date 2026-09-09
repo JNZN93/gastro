@@ -1,11 +1,11 @@
 import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   EventEmitter,
   Inject,
   Input,
   OnChanges,
-  OnDestroy,
-  OnInit,
   Output,
   SimpleChanges,
 } from '@angular/core';
@@ -14,7 +14,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { Subscription } from 'rxjs';
 import { Employee } from '../../models/employee.model';
 import { EmployeeSchedule } from '../../models/schedule.model';
 import { AbsenceDayResult, AbsenceType } from '../../models/vacation.model';
@@ -40,8 +39,9 @@ const WEEKDAY_LABELS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
   imports: [CommonModule, MatButtonModule, MatButtonToggleModule, MatIconModule, MatSnackBarModule],
   templateUrl: './absence-calendar.component.html',
   styleUrl: './absence-calendar.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AbsenceCalendarComponent implements OnInit, OnChanges, OnDestroy {
+export class AbsenceCalendarComponent implements OnChanges {
   @Input({ required: true }) employee!: Employee;
   @Input({ required: true }) year!: number;
   @Input({ required: true }) month!: number;
@@ -55,30 +55,18 @@ export class AbsenceCalendarComponent implements OnInit, OnChanges, OnDestroy {
   calendarWeeks: (AbsenceCalendarDay | null)[][] = [];
   expanded = false;
 
-  private absenceSubscription?: Subscription;
-  private scheduleSubscription?: Subscription;
-
   constructor(
     @Inject(ABSENCE_REPOSITORY) private readonly absenceRepo: AbsenceRepository,
     @Inject(SCHEDULE_REPOSITORY) private readonly scheduleRepo: ScheduleRepository,
     private readonly holidayService: HolidayService,
-    private readonly snackBar: MatSnackBar
+    private readonly snackBar: MatSnackBar,
+    private readonly cdr: ChangeDetectorRef
   ) {}
-
-  ngOnInit(): void {
-    this.absenceSubscription = this.absenceRepo.vacations$.subscribe(() => this.buildCalendar());
-    this.scheduleSubscription = this.scheduleRepo.schedules$.subscribe(() => this.buildCalendar());
-  }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['employee'] || changes['year'] || changes['month'] || changes['schedule']) {
       this.buildCalendar();
     }
-  }
-
-  ngOnDestroy(): void {
-    this.absenceSubscription?.unsubscribe();
-    this.scheduleSubscription?.unsubscribe();
   }
 
   get canAddMorePaidVacation(): boolean {
@@ -102,6 +90,7 @@ export class AbsenceCalendarComponent implements OnInit, OnChanges, OnDestroy {
 
   toggleExpanded(): void {
     this.expanded = !this.expanded;
+    this.cdr.markForCheck();
   }
 
   onDayClick(day: AbsenceCalendarDay): void {
@@ -227,6 +216,7 @@ export class AbsenceCalendarComponent implements OnInit, OnChanges, OnDestroy {
     for (let i = 0; i < cells.length; i += 7) {
       this.calendarWeeks.push(cells.slice(i, i + 7));
     }
+    this.cdr.markForCheck();
   }
 
   private getAbsenceTypeForDate(date: Date): AbsenceType | null {
