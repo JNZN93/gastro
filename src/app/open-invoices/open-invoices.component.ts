@@ -176,28 +176,6 @@ export class OpenInvoicesComponent implements OnInit {
     this.isScrolled = window.pageYOffset > 100;
   }
 
-  // Automatisch überfällige Rechnungen aktualisieren (nur beim ersten Laden)
-  private updateOverdueStatuses(): void {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    this.invoices.forEach(invoice => {
-      // Überspringe Rechnungen die gerade bearbeitet werden oder neue temporäre Rechnungen
-      if (this.editingInvoiceId === invoice.id || (this.newInvoiceRow && this.newInvoiceRow.id === invoice.id)) {
-        return;
-      }
-
-      if (invoice.due_date && invoice.status !== 'paid' && invoice.status !== 'overdue' && invoice.status !== 'sepa') {
-        const dueDate = new Date(invoice.due_date);
-        dueDate.setHours(0, 0, 0, 0);
-
-    if (dueDate <= today) {
-          this.autoUpdateOverdueStatus(invoice);
-        }
-      }
-    });
-  }
-
   // Helper method to get auth headers
   private getAuthHeaders(): HttpHeaders {
     const token = localStorage.getItem('token');
@@ -229,9 +207,7 @@ export class OpenInvoicesComponent implements OnInit {
           // Update filtered invoices cache
           this.updateFilteredInvoices();
 
-          // Automatisch überfällige Rechnungen aktualisieren (nur beim ersten Laden)
           if (autoUpdateOverdue) {
-            this.updateOverdueStatuses();
             this.autoUpdateOverdueInvoices();
           }
         } else {
@@ -282,7 +258,7 @@ export class OpenInvoicesComponent implements OnInit {
           console.error('Server error during auto-update:', error?.status, error?.statusText);
         }
 
-        // Bei Fehler trotzdem fortfahren - die Frontend-Logik wird trotzdem funktionieren
+        // Bei Fehler trotzdem fortfahren — bezahlte Rechnungen dürfen lokal nicht überschrieben werden
       }
     });
   }
@@ -468,8 +444,7 @@ export class OpenInvoicesComponent implements OnInit {
     this.errorMessage = '';
     // Update filtered invoices cache after adding new invoice
     this.updateFilteredInvoices();
-    // Automatisch überfällige Status aktualisieren nach dem Speichern
-    this.updateOverdueStatuses();
+    this.autoUpdateOverdueInvoices();
 
     alert(`Rechnung "${invoiceData.invoice_number}" wurde erfolgreich erstellt${normalizedInvoice.file_name ? ' mit Datei' : ''}!`);
   }
@@ -586,8 +561,7 @@ export class OpenInvoicesComponent implements OnInit {
           this.errorMessage = '';
           // Update filtered invoices cache after editing invoice
           this.updateFilteredInvoices();
-          // Automatisch überfällige Status aktualisieren nach dem Speichern
-          this.updateOverdueStatuses();
+          this.autoUpdateOverdueInvoices();
         } else {
           this.errorMessage = response.message || 'Failed to update invoice';
         }
@@ -1553,7 +1527,10 @@ export class OpenInvoicesComponent implements OnInit {
       invoice.status = newStatus;
 
       // Send update to API
-      this.updateInvoice(invoice.id, { status: newStatus }).subscribe({
+      this.updateInvoice(invoice.id, {
+        status: newStatus,
+        ...(revertFromPaid ? { revertFromPaid: true } : {})
+      }).subscribe({
         next: (response) => {
           if (response.success && response.data) {
             // Update local data with server response, normalize amount and dates
@@ -1615,7 +1592,7 @@ export class OpenInvoicesComponent implements OnInit {
   }
 
   // Update invoice via API
-  private updateInvoice(id: string, updateData: Partial<Invoice>) {
+  private updateInvoice(id: string, updateData: Partial<Invoice> & { revertFromPaid?: boolean }) {
     return this.http.put<InvoiceUpdateResponse>(
       `${environment.apiUrl}/api/incoming-invoices/${id}`,
       updateData,
@@ -1764,36 +1741,6 @@ export class OpenInvoicesComponent implements OnInit {
       default:
         return 'row-open';
     }
-  }
-
-  // Automatisch Status auf "overdue" setzen
-  private autoUpdateOverdueStatus(invoice: Invoice): void {
-    // Vermeide doppelte API-Calls und überspringe SEPA-Zahlungen
-    if (invoice.status === 'overdue' || invoice.status === 'sepa') return;
-
-    invoice.status = 'overdue';
-
-    // API-Call um Status zu aktualisieren
-    this.updateInvoice(invoice.id, { status: 'overdue' }).subscribe({
-      next: (response) => {
-        if (response.success) {
-          console.log(`Invoice ${invoice.invoice_number} automatically marked as overdue`);
-          // Update filtered invoices cache after status change
-          this.updateFilteredInvoices();
-        } else {
-          console.error('Failed to update overdue status:', response.message);
-          // Bei Fehler Status zurücksetzen
-          invoice.status = 'open';
-          this.updateFilteredInvoices();
-        }
-      },
-      error: (error: any) => {
-        console.error('Error updating overdue status:', error);
-        // Bei Fehler Status zurücksetzen
-        invoice.status = 'open';
-        this.updateFilteredInvoices();
-      }
-    });
   }
 
   formatCurrency(amount: any): string {
