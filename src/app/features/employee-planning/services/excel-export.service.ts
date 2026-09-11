@@ -140,8 +140,8 @@ export class ExcelExportService {
       }
     }
 
-    const totalHours = this.getTotalHours(enrichedDays);
-    this.fillTotalRow(worksheet, 40, totalHours);
+    const weeklyHours = this.getTrailingWeekHours(enrichedDays);
+    this.fillWeeklyTotalRow(worksheet, 40, weeklyHours);
     this.fillSignatureRow(worksheet, 41);
 
     this.applyPrintSetup(worksheet);
@@ -197,14 +197,7 @@ export class ExcelExportService {
 
     if (workDay.isSunday) {
       row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLORS.sundayBg } };
-      const weeklyTotal = this.getWeeklyTotalBeforeSunday(dayNumber, allDays);
-      if (weeklyTotal > 0) {
-        this.setDurationCell(row.getCell(7), weeklyTotal);
-        row.getCell(7).font = { bold: true };
-        row.getCell(7).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLORS.weeklyTotal } };
-      } else {
-        this.setDurationCell(row.getCell(7), 0);
-      }
+      this.applyWeeklyHoursCell(row.getCell(7), this.getWeeklyTotalBeforeSunday(dayNumber, allDays));
       this.applyDataBorders(row);
       return;
     }
@@ -332,36 +325,24 @@ export class ExcelExportService {
     row.height = LAYOUT.dataRowHeight;
   }
 
-  /** Summenzeile mit Gesamtstunden am Tabellenende. */
-  private fillTotalRow(worksheet: ExcelJS.Worksheet, rowNumber: number, totalHours: number): void {
-    worksheet.mergeCells(`B${rowNumber}:E${rowNumber}`);
+  /** Letzte Wochenstunden wie an den Sonntagen: hellblaues Feld in der Spalte „Woche“. */
+  private fillWeeklyTotalRow(
+    worksheet: ExcelJS.Worksheet,
+    rowNumber: number,
+    weeklyHours: number
+  ): void {
     const row = worksheet.getRow(rowNumber);
+    row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLORS.sundayBg } };
+    this.applyWeeklyHoursCell(row.getCell(7), weeklyHours);
+    this.applyDataBorders(row);
+  }
 
-    const labelCell = row.getCell(2);
-    labelCell.value = 'Gesamtstunden';
-    labelCell.font = { bold: true, size: LAYOUT.dataFontSize, color: { argb: COLORS.headerText } };
-    labelCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLORS.headerBg } };
-    labelCell.alignment = { horizontal: 'right', vertical: 'middle' };
-
-    const totalCell = row.getCell(6);
-    this.setDurationCell(totalCell, totalHours);
-    totalCell.font = { bold: true, size: LAYOUT.dataFontSize, color: { argb: COLORS.headerText } };
-    totalCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLORS.headerBg } };
-
-    for (let col = 2; col <= 7; col++) {
-      const cell = row.getCell(col);
-      cell.border = {
-        top: { style: 'medium', color: { argb: COLORS.headerBg } },
-        left: { style: 'thin', color: { argb: COLORS.border } },
-        bottom: { style: 'thin', color: { argb: COLORS.border } },
-        right: { style: 'thin', color: { argb: COLORS.border } },
-      };
-      if (col !== 6) {
-        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLORS.headerBg } };
-      }
+  private applyWeeklyHoursCell(cell: ExcelJS.Cell, hours: number): void {
+    this.setDurationCell(cell, hours);
+    if (hours > 0) {
+      cell.font = { bold: true, size: LAYOUT.dataFontSize };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLORS.weeklyTotal } };
     }
-
-    row.height = LAYOUT.summaryRowHeight;
   }
 
   private fillSignatureRow(worksheet: ExcelJS.Worksheet, rowNumber: number): void {
@@ -386,11 +367,6 @@ export class ExcelExportService {
     row.height = LAYOUT.signatureRowHeight;
   }
 
-  private getTotalHours(workDays: WorkDay[]): number {
-    const total = workDays.reduce((sum, day) => sum + day.plannedHours, 0);
-    return Math.round(total * 100) / 100;
-  }
-
   private fullBorder(): Partial<ExcelJS.Borders> {
     const side = { style: 'thin' as const, color: { argb: COLORS.border } };
     return { top: side, left: side, bottom: side, right: side };
@@ -398,15 +374,34 @@ export class ExcelExportService {
 
   private getWeeklyTotalBeforeSunday(dayNumber: number, workDays: WorkDay[]): number {
     const weekStart = Math.max(1, dayNumber - 6);
-    let total = 0;
+    return this.sumHoursInDayRange(workDays, weekStart, dayNumber - 1);
+  }
 
+  /** Stunden der letzten Woche im Monat (nach dem letzten Sonntag, sonst die ganze Schlusswoche). */
+  private getTrailingWeekHours(workDays: WorkDay[]): number {
+    if (workDays.length === 0) {
+      return 0;
+    }
+
+    const lastDate = workDays[workDays.length - 1].date.getDate();
+    const lastSunday = [...workDays].reverse().find((day) => day.isSunday);
+
+    if (lastSunday && lastSunday.date.getDate() === lastDate) {
+      return this.getWeeklyTotalBeforeSunday(lastDate, workDays);
+    }
+
+    const weekStart = lastSunday ? lastSunday.date.getDate() + 1 : 1;
+    return this.sumHoursInDayRange(workDays, weekStart, lastDate);
+  }
+
+  private sumHoursInDayRange(workDays: WorkDay[], fromDay: number, toDay: number): number {
+    let total = 0;
     for (const day of workDays) {
       const currentDay = day.date.getDate();
-      if (currentDay >= weekStart && currentDay < dayNumber) {
+      if (currentDay >= fromDay && currentDay <= toDay) {
         total += day.plannedHours;
       }
     }
-
     return Math.round(total * 100) / 100;
   }
 
