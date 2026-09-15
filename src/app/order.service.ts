@@ -119,4 +119,40 @@ export class OrderService {
 
     return this.http.get(this.apiUrlOrder + '/' + orderId + '/processing-status', { headers });
   }
+
+  getAllOrdersWithItems(
+    token: string | null,
+    options: { excludeArchived?: boolean; includeItems?: boolean } = {}
+  ): Observable<{ orders: any[] }> {
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    });
+
+    const params: string[] = [];
+    if (options.excludeArchived) {
+      params.push('excludeArchived=true');
+    }
+    if (options.includeItems === false) {
+      params.push('includeItems=false');
+    }
+    const query = params.length ? `?${params.join('&')}` : '';
+
+    return this.http.get<{ orders: any[] }>(
+      `${this.apiUrlOrder}/all-orders${query}`,
+      { headers }
+    );
+  }
+
+  getOrderWithItems(orderId: number, token: string | null): Observable<{ order: any }> {
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    });
+
+    return this.http.get<{ order: any }>(
+      `${this.apiUrlOrder}/${orderId}/with-items`,
+      { headers }
+    );
+  }
 }

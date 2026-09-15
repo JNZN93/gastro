@@ -37,7 +37,9 @@ describe('OrderOverviewComponent', () => {
   beforeEach(async () => {
     orderService = jasmine.createSpyObj('OrderService', [
       'updateOrderStatusOnly',
-      'checkOrderProcessingStatus'
+      'checkOrderProcessingStatus',
+      'getAllOrdersWithItems',
+      'getOrderWithItems'
     ]);
     orderService.updateOrderStatusOnly.and.returnValue(
       of({
@@ -47,6 +49,11 @@ describe('OrderOverviewComponent', () => {
           picker_user_name: null
         }
       })
+    );
+    orderService.getAllOrdersWithItems.and.returnValue(of({ orders: [] }));
+    orderService.getOrderWithItems.and.returnValue(of({ order: { ...openOrder } }));
+    orderService.checkOrderProcessingStatus.and.returnValue(
+      of({ isBeingProcessed: false, isArchived: false, status: 'open' })
     );
 
     await TestBed.configureTestingModule({
@@ -179,6 +186,26 @@ describe('OrderOverviewComponent', () => {
 
       expect(component.canReleaseOrder(parkedOrder)).toBeTrue();
       expect(component.isOrderEditable(parkedOrder)).toBeTrue();
+    });
+  });
+
+  describe('performance list helpers', () => {
+    it('uses total_gross when items are not loaded', () => {
+      const order = { ...openOrder, total_price: '42.50', total_gross: '50.58', items: [] };
+
+      expect(component.getOrderTotalGross(order)).toBe(50.58);
+    });
+
+    it('blocks editing when the refreshed order is archived', () => {
+      orderService.getOrderWithItems.and.returnValue(
+        of({ order: { ...openOrder, status: 'archived', items: [] } })
+      );
+
+      component.editOrderAfterReload(component.orders[0]);
+
+      expect(orderService.getOrderWithItems).toHaveBeenCalledWith(12, 'token-1');
+      expect(window.alert).toHaveBeenCalled();
+      expect(component.orders[0].status).toBe('archived');
     });
   });
 

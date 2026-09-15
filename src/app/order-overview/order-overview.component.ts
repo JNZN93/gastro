@@ -6,7 +6,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { KommissionierungPdfService } from '../services/kommissionierung-pdf.service';
 import { Router } from '@angular/router';
 import { Observable, of } from 'rxjs';
-import { tap, catchError } from 'rxjs/operators';
+import { tap, catchError, map } from 'rxjs/operators';
 import { AuthService } from '../authentication.service';
 import { OrderService } from '../order.service';
 import { GlobalService } from '../global.service';
@@ -35,6 +35,7 @@ interface Order {
   company: string;
   customer_number: string;
   total_price: string;
+  total_gross?: string | number;
   fulfillment_type: string;
   order_date: string;
   created_at: string;
@@ -132,7 +133,10 @@ export class OrderOverviewComponent implements OnInit {
   }
 
   reloadOrders(): void {
-    this.loadOrders().subscribe();
+    this.loadOrders({
+      excludeArchived: !this.showArchived,
+      includeItems: false
+    }).subscribe();
     this.loadCustomers();
     this.loadAllArtikels();
   }
@@ -169,12 +173,13 @@ export class OrderOverviewComponent implements OnInit {
   }
 
   /**
-   * Lädt Bestellungen. Gibt ein Observable zurück, damit nach dem Laden
-   * weitere Aktionen ausgeführt werden können (z. B. Details, Drucken, Bearbeiten).
-   * @param excludeArchived Archivierte Bestellungen nicht vom Server laden (bestehende bleiben erhalten).
+   * Lädt Bestellungen für die Übersicht.
+   * Standard: ohne archivierte, ohne Positionen (Performance).
+   * Items werden bei Details/Bearbeiten/Drucken einzeln nachgeladen.
    */
-  loadOrders(options?: { excludeArchived?: boolean }): Observable<OrdersResponse> {
-    const excludeArchived = options?.excludeArchived ?? false;
+  loadOrders(options?: { excludeArchived?: boolean; includeItems?: boolean }): Observable<OrdersResponse> {
+    const excludeArchived = options?.excludeArchived ?? !this.showArchived;
+    const includeItems = options?.includeItems ?? false;
     this.isLoading = true;
     const token = localStorage.getItem('token');
 
@@ -184,17 +189,9 @@ export class OrderOverviewComponent implements OnInit {
       return of({ orders: [] });
     }
 
-    const headers = new HttpHeaders({
-      'Authorization': `Bearer ${token}`
-    });
-
-    const url = excludeArchived
-      ? `${environment.apiUrl}/api/orders/all-orders?excludeArchived=true`
-      : `${environment.apiUrl}/api/orders/all-orders`;
-
-    return this.http.get<OrdersResponse>(url, { headers }).pipe(
+    return this.orderService.getAllOrdersWithItems(token, { excludeArchived, includeItems }).pipe(
       tap((response) => {
-        const freshOrders = response.orders || [];
+        const freshOrders = (response.orders || []).map((order) => this.normalizeOrder(order));
         if (excludeArchived) {
           const archivedOrders = this.orders.filter(order => order.status === 'archived');
           this.orders = [...freshOrders, ...archivedOrders];
@@ -210,6 +207,72 @@ export class OrderOverviewComponent implements OnInit {
         return of({ orders: [] });
       })
     );
+  }
+
+  private normalizeOrder(order: Order | any): Order {
+    let items = order?.items;
+    if (typeof items === 'string') {
+      try {
+        items = JSON.parse(items);
+      } catch {
+        items = [];
+      }
+    }
+    if (!Array.isArray(items)) {
+      items = [];
+    }
+    return { ...order, items };
+  }
+
+  private mergeOrderIntoList(order: Order): void {
+    const index = this.orders.findIndex((o) => o.order_id === order.order_id);
+    if (index === -1) {
+      this.orders = [order, ...this.orders];
+      return;
+    }
+    this.orders = [
+      ...this.orders.slice(0, index),
+      order,
+      ...this.orders.slice(index + 1)
+    ];
+  }
+
+  /**
+   * Lädt eine einzelne Bestellung inkl. Positionen (für Details / PDF / Bearbeiten).
+   */
+  private fetchOrderWithItems(orderId: number): Observable<Order | null> {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      this.router.navigate(['/login']);
+      return of(null);
+    }
+
+    return this.orderService.getOrderWithItems(orderId, token).pipe(
+      map((response) => this.normalizeOrder(response.order)),
+      tap((order) => this.mergeOrderIntoList(order)),
+      catchError((error) => {
+        console.error('Fehler beim Laden der Bestellung:', error);
+        const status = error?.status;
+        const message = error?.error?.error || 'Bestellung konnte nicht geladen werden.';
+        if (status === 404) {
+          this.orders = this.orders.filter((o) => o.order_id !== orderId);
+          if (this.selectedOrder?.order_id === orderId) {
+            this.selectedOrder = null;
+          }
+        }
+        alert(message);
+        return of(null);
+      })
+    );
+  }
+
+  private handleArchivedOrderLocally(order: Order): void {
+    this.mergeOrderIntoList(order);
+    if (!this.showArchived) {
+      alert(`Bestellung #${order.order_id} ist archiviert und wird ausgeblendet.`);
+    } else {
+      alert(`Bestellung #${order.order_id} ist archiviert.`);
+    }
   }
 
   private customersByNumber: Record<string, any> = {}; // Vollständige Kundendaten
@@ -406,29 +469,25 @@ export class OrderOverviewComponent implements OnInit {
     this.selectedOrder = order;
   }
 
-  /**
-   * Lädt alle Bestellungen neu und führt danach die gewünschte Aktion aus.
-   * So wird immer mit aktuellen Daten gearbeitet (Details, Drucken, Bearbeiten).
-   */
-  private getOrderAfterReload(orderId: number): Order | undefined {
-    return this.orders.find(o => o.order_id === orderId);
-  }
-
-  /** Erst Bestellungen neu laden, dann Details anzeigen. */
+  /** Erst aktuelle Bestellung inkl. Items laden, dann Details anzeigen. */
   openDetailsAfterReload(order: Order): void {
-    this.loadOrders({ excludeArchived: true }).subscribe({
-      next: () => {
-        const refreshed = this.getOrderAfterReload(order.order_id) ?? order;
+    this.fetchOrderWithItems(order.order_id).subscribe({
+      next: (refreshed) => {
+        if (!refreshed) {
+          return;
+        }
         this.onOrderClick(refreshed);
       }
     });
   }
 
-  /** Erst Bestellungen neu laden, dann Palettenschein-Abfrage anzeigen. */
+  /** Erst aktuelle Bestellung inkl. Items laden, dann Palettenschein-Abfrage anzeigen. */
   printAfterReload(order: Order): void {
-    this.loadOrders({ excludeArchived: true }).subscribe({
-      next: () => {
-        const refreshed = this.getOrderAfterReload(order.order_id) ?? order;
+    this.fetchOrderWithItems(order.order_id).subscribe({
+      next: (refreshed) => {
+        if (!refreshed) {
+          return;
+        }
         this.openPalettenscheinPrompt(refreshed);
       }
     });
@@ -464,11 +523,17 @@ export class OrderOverviewComponent implements OnInit {
     this.generatePdf(order, true);
   }
 
-  /** Erst Bestellungen neu laden, dann Bearbeiten ausführen. */
+  /** Erst aktuelle Bestellung inkl. Items laden, dann Bearbeiten ausführen. */
   editOrderAfterReload(order: Order): void {
-    this.loadOrders({ excludeArchived: true }).subscribe({
-      next: () => {
-        const refreshed = this.getOrderAfterReload(order.order_id) ?? order;
+    this.fetchOrderWithItems(order.order_id).subscribe({
+      next: (refreshed) => {
+        if (!refreshed) {
+          return;
+        }
+        if (refreshed.status === 'archived') {
+          this.handleArchivedOrderLocally(refreshed);
+          return;
+        }
         this.editOrder(refreshed);
       }
     });
@@ -764,6 +829,11 @@ export class OrderOverviewComponent implements OnInit {
   // Neue Methode zum Laden einer Bestellung in die Customer Orders Komponente
   loadOrderToCustomerOrders(order: Order): void {
     console.log('🔄 [LOAD-ORDER] Lade Bestellung in Customer Orders:', order);
+
+    if (order.status === 'archived') {
+      this.handleArchivedOrderLocally(order);
+      return;
+    }
 
     if (order.status === 'picking') {
       alert(
@@ -1279,6 +1349,11 @@ export class OrderOverviewComponent implements OnInit {
   editOrder(order: Order): void {
     console.log('✏️ [EDIT-ORDER] Bearbeite offene Bestellung:', order);
 
+    if (order.status === 'archived') {
+      this.handleArchivedOrderLocally(order);
+      return;
+    }
+
     if (order.status === 'picking') {
       alert(
         order.picker_user_name
@@ -1311,6 +1386,12 @@ export class OrderOverviewComponent implements OnInit {
     this.orderService.checkOrderProcessingStatus(order.order_id, token).subscribe({
       next: (response) => {
         console.log('✅ [EDIT-ORDER] Bearbeitungsstatus erhalten:', response);
+
+        if (response?.status === 'archived' || response?.isArchived) {
+          const archivedOrder = { ...order, status: response?.status || 'archived' };
+          this.handleArchivedOrderLocally(archivedOrder);
+          return;
+        }
         
         if (response.isBeingProcessed) {
           // Zeige Warnung an, dass die Bestellung bereits bearbeitet wird
@@ -1443,15 +1524,26 @@ export class OrderOverviewComponent implements OnInit {
 
   // Hilfsmethode um den Gesamt-Bruttopreis einer Bestellung zu berechnen
   getOrderTotalGross(order: Order): number {
-    if (!order || !order.items || order.items.length === 0) {
+    if (!order) {
       return 0;
     }
-    return order.items.reduce((sum, item) => {
-      const netPrice = parseFloat(item.different_price || item.price || '0');
-      const grossPrice = this.getGrossPrice(netPrice, item.tax_code);
-      const quantity = Number(item.quantity) || 0;
-      return sum + (grossPrice * quantity);
-    }, 0);
+    if (order.items && order.items.length > 0) {
+      return order.items.reduce((sum, item) => {
+        const netPrice = parseFloat(item.different_price || item.price || '0');
+        const grossPrice = this.getGrossPrice(netPrice, item.tax_code);
+        const quantity = Number(item.quantity) || 0;
+        return sum + (grossPrice * quantity);
+      }, 0);
+    }
+    // Schlanke Listenansicht: serverseitig berechnetes Brutto
+    if (order.total_gross != null && order.total_gross !== '') {
+      const gross = parseFloat(String(order.total_gross));
+      if (!isNaN(gross)) {
+        return gross;
+      }
+    }
+    const fallback = parseFloat(order.total_price || '0');
+    return isNaN(fallback) ? 0 : fallback;
   }
 
   // Datumsfilter-Methoden
@@ -1521,6 +1613,8 @@ export class OrderOverviewComponent implements OnInit {
     this.showArchived = !this.showArchived;
     if (this.showArchived) {
       this.showParkedOnly = false;
+      // Archivierte nachladen (weiterhin ohne Items)
+      this.loadOrders({ excludeArchived: false, includeItems: false }).subscribe();
     }
   }
 
