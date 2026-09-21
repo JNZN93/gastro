@@ -125,6 +125,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   orderConfirmationData: any = null;
   isSavingOrder: boolean = false;
   isSavingAsOpen: boolean = false; // Flag für Zwischenspeichern (Status: open)
+  isSavingAsParked: boolean = false; // Flag für Parken (Status: parked)
   eanAssignmentItem: any = null;
   eanCode: string = '';
   isEanScanning: boolean = false;
@@ -1271,6 +1272,58 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     }
   }
 
+  /** Status beim Speichern: Parken erzwingt parked, Zwischenspeichern erhält open/parked/released. */
+  private getDraftSaveStatus(): string {
+    if (this.isSavingAsParked) {
+      return 'parked';
+    }
+    return this.getOpenSaveStatus();
+  }
+
+  private getDraftSaveStatusLabel(): string {
+    if (this.isSavingAsParked) {
+      return 'Geparkt';
+    }
+    return this.getOpenSaveStatusLabel();
+  }
+
+  getConfirmationTitle(): string {
+    if (this.isSavingAsParked) {
+      return 'Auftrag parken';
+    }
+    if (this.isSavingAsOpen) {
+      return 'Auftrag zwischenspeichern';
+    }
+    return 'Auftrag speichern';
+  }
+
+  getConfirmationActionLabel(): string {
+    if (this.isSavingAsParked) {
+      return 'Parken';
+    }
+    if (this.isSavingAsOpen) {
+      return 'Zwischenspeichern';
+    }
+    return 'Auftrag speichern';
+  }
+
+  getConfirmationInfoText(): string {
+    if (this.isSavingAsParked) {
+      return 'Die Bestellung bleibt bearbeitbar, wird aber aus der normalen Übersicht ausgeblendet.';
+    }
+    return `Der Auftrag wird mit dem Status „${this.getOpenSaveStatusLabel()}“ gespeichert und kann später bearbeitet werden.`;
+  }
+
+  getConfirmationIcon(): string {
+    if (this.isSavingAsParked) {
+      return 'local_parking';
+    }
+    if (this.isSavingAsOpen) {
+      return 'schedule';
+    }
+    return 'save';
+  }
+
   // Stelle den ursprünglichen Status einer Bestellung wieder her
   private restoreOriginalStatus(): void {
     if (this.isEditMode && this.editingOrderId && this.originalStatus !== 'in_progress') {
@@ -1465,6 +1518,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
         let offer_name: string | undefined;
         
         let catalogSalePrice: number | undefined;
+        let article_notes = (item.article_notes || '').toString().trim();
         if (articleNumber && this.globalArtikels && this.globalArtikels.length > 0) {
           const globalArtikel = this.globalArtikels.find(artikel => 
             artikel.article_number === articleNumber
@@ -1472,6 +1526,9 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
           if (globalArtikel) {
             cost_price = globalArtikel.cost_price || 0;
             catalogSalePrice = typeof globalArtikel.sale_price === 'number' ? globalArtikel.sale_price : parseFloat(globalArtikel.sale_price) || undefined;
+            if (!article_notes) {
+              article_notes = (globalArtikel.article_notes || '').toString().trim();
+            }
             console.log(`💰 [LOAD-ORDER-DATA] EK-Preis für ${articleNumber} gefunden: €${cost_price}`);
             
             // Prüfe ob der Artikel einen Angebotspreis hat
@@ -1496,6 +1553,9 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
             (cp.product_id != null && cp.product_id === item.id)
           );
           salePrice = catalogSalePrice ?? (typeof item.sale_price === 'number' ? item.sale_price : parseFloat(item.sale_price) || 0);
+          if (!article_notes && customerPriceEntry?.article_notes) {
+            article_notes = customerPriceEntry.article_notes.toString().trim();
+          }
           if (customerPriceEntry != null && customerPriceEntry.unit_price_net != null && customerPriceEntry.unit_price_net !== '') {
             const customerNet = typeof customerPriceEntry.unit_price_net === 'number'
               ? customerPriceEntry.unit_price_net
@@ -1563,7 +1623,8 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
           use_offer_price: finalUseOfferPrice,
           isOfferProduct: finalUseOfferPrice,
           offerId: finalUseOfferPrice ? offerId : undefined,
-          offer_name: finalUseOfferPrice ? offer_name : undefined
+          offer_name: finalUseOfferPrice ? offer_name : undefined,
+          article_notes
         };
       });
       
@@ -2806,9 +2867,39 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     });
   }
 
+  private resolveArticleNotes(item: any): string {
+    const fromItem = (item?.article_notes || '').toString().trim();
+    if (fromItem) {
+      return fromItem;
+    }
+
+    const articleNumber = item?.article_number || item?.product_article_number || item?.product_id;
+    if (articleNumber && this.globalArtikels?.length) {
+      const globalArtikel = this.globalArtikels.find((artikel: any) =>
+        String(artikel.article_number) === String(articleNumber)
+      );
+      const fromCatalog = (globalArtikel?.article_notes || '').toString().trim();
+      if (fromCatalog) {
+        return fromCatalog;
+      }
+    }
+
+    if (articleNumber && this.customerArticlePrices?.length) {
+      const customerPrice = this.customerArticlePrices.find((cp: any) =>
+        String(cp.article_number || cp.product_id) === String(articleNumber)
+      );
+      const fromCustomerPrice = (customerPrice?.article_notes || '').toString().trim();
+      if (fromCustomerPrice) {
+        return fromCustomerPrice;
+      }
+    }
+
+    return '';
+  }
+
   showArticleNotes(index: number): void {
     const item = this.orderItems[index];
-    const notes = item.article_notes || item.notes || item.description || '';
+    const notes = this.resolveArticleNotes(item);
     
     const dialogRef = this.dialog.open(MyDialogComponent, {
       width: '500px',
@@ -2823,13 +2914,13 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
 
   getArticleNotesTooltip(index: number): string {
     const item = this.orderItems[index];
-    const notes = item.article_notes || item.notes || item.description || '';
+    const notes = this.resolveArticleNotes(item);
     return notes ? notes : 'Keine Notizen für diesen Artikel verfügbar.';
   }
 
   // Zeige Notizen für Eintrag aus dem Artikel-Preise-Modal
   showCustomerPriceNotes(customerPrice: any): void {
-    const notes = customerPrice?.article_notes || customerPrice?.notes || customerPrice?.description || '';
+    const notes = this.resolveArticleNotes(customerPrice);
     const dialogRef = this.dialog.open(MyDialogComponent, {
       width: '500px',
       data: {
@@ -3193,8 +3284,9 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   }
 
   saveOrder(): void {
-    // Reset flag für normales Speichern
+    // Reset flags für normales Speichern
     this.isSavingAsOpen = false;
+    this.isSavingAsParked = false;
     // Im Split-Modus: Speichere immer beide Aufträge
     if (this.isSplitMode) {
       this.showSplitSaveDialog();
@@ -3655,6 +3747,13 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   confirmSaveOrderAsOpen(): void {
     // Öffne das gleiche Modal wie beim normalen Speichern, aber mit Flag für Zwischenspeichern
     this.isSavingAsOpen = true;
+    this.isSavingAsParked = false;
+    this.openOrderConfirmationModal();
+  }
+
+  confirmSaveOrderAsParked(): void {
+    this.isSavingAsParked = true;
+    this.isSavingAsOpen = false;
     this.openOrderConfirmationModal();
   }
 
@@ -5679,13 +5778,15 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   openOrderConfirmationModal(): void {
     if (!this.globalService.selectedCustomerForOrders) {
       alert('Bitte wählen Sie zuerst einen Kunden aus.');
-      this.isSavingAsOpen = false; // Reset flag
+      this.isSavingAsOpen = false;
+      this.isSavingAsParked = false;
       return;
     }
 
     if (this.orderItems.length === 0) {
       alert('Bitte fügen Sie Artikel zum Auftrag hinzu.');
-      this.isSavingAsOpen = false; // Reset flag
+      this.isSavingAsOpen = false;
+      this.isSavingAsParked = false;
       return;
     }
 
@@ -5704,7 +5805,12 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     const customerName = this.globalService.selectedCustomerForOrders.last_name_company;
     
     // Erweiterte Bestellübersicht mit Datumsfeldern
-    const statusText = this.isSavingAsOpen ? `zwischenspeichern (Status: ${this.getOpenSaveStatusLabel()})` : 'speichern';
+    let statusText = 'speichern';
+    if (this.isSavingAsParked) {
+      statusText = 'parken (Status: Geparkt)';
+    } else if (this.isSavingAsOpen) {
+      statusText = `zwischenspeichern (Status: ${this.getOpenSaveStatusLabel()})`;
+    }
     let confirmMessage = `📋 Auftrag ${statusText}\n\nKunde: ${customerName}\n\nArtikel:\n${orderSummary}\n\nGesamtpreis: €${totalPrice.toFixed(2)}`;
     
     // Füge Datumsfelder zur Übersicht hinzu, falls ausgefüllt
@@ -5723,8 +5829,10 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       confirmMessage += `\n\n⚠️ WARNUNG: Folgende Artikel werden unter dem Einkaufspreis verkauft:\n\n${itemNames}`;
     }
     
-    if (this.isSavingAsOpen) {
-      confirmMessage += `\n\nDer Auftrag wird mit dem Status "${this.getOpenSaveStatusLabel()}" gespeichert und kann später bearbeitet werden.`;
+    if (this.isSavingAsParked) {
+      confirmMessage += `\n\n${this.getConfirmationInfoText()}`;
+    } else if (this.isSavingAsOpen) {
+      confirmMessage += `\n\n${this.getConfirmationInfoText()}`;
     }
     
     confirmMessage += `\n\nMöchten Sie diesen Auftrag ${statusText}?`;
@@ -5747,7 +5855,8 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     this.isOrderConfirmationModalOpen = false;
     this.orderConfirmationData = null;
     this.isSavingOrder = false;
-    this.isSavingAsOpen = false; // Reset flag when closing modal
+    this.isSavingAsOpen = false;
+    this.isSavingAsParked = false;
   }
 
   confirmOrderSave(): void {
@@ -5771,8 +5880,10 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     });
 
     // Kundendaten für den Request
-    // Wenn isSavingAsOpen true ist, Status auf "open"/"released"/"parked" setzen, sonst "completed"
-    const orderStatus = this.isSavingAsOpen ? this.getOpenSaveStatus() : 'completed';
+    // Parken → parked, Zwischenspeichern → open/released/parked, sonst completed
+    const orderStatus = (this.isSavingAsParked || this.isSavingAsOpen)
+      ? this.getDraftSaveStatus()
+      : 'completed';
     const customerData: any = {
       customer_id: this.globalService.selectedCustomerForOrders.id,
       customer_number: this.globalService.selectedCustomerForOrders.customer_number,
@@ -5873,10 +5984,15 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     })
     .then(data => {
       this.isSavingOrder = false;
-      const statusLabel = this.getOpenSaveStatusLabel();
-      const statusText = this.isSavingAsOpen ? `zwischengespeichert (Status: ${statusLabel})` : 'gespeichert';
+      const statusLabel = this.getDraftSaveStatusLabel();
+      let statusText = 'gespeichert';
+      if (this.isSavingAsParked) {
+        statusText = 'geparkt (Status: Geparkt)';
+      } else if (this.isSavingAsOpen) {
+        statusText = `zwischengespeichert (Status: ${statusLabel})`;
+      }
       const successMessage = isEditMode 
-        ? `Bestellung erfolgreich aktualisiert${this.isSavingAsOpen ? ` (Status: ${statusLabel})` : ''}!` 
+        ? `Bestellung erfolgreich aktualisiert${(this.isSavingAsOpen || this.isSavingAsParked) ? ` (Status: ${statusLabel})` : ''}!` 
         : `Auftrag erfolgreich ${statusText}!`;
       alert(successMessage);
       this.closeOrderConfirmationModal();

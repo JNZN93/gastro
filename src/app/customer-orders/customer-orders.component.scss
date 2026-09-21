@@ -1471,6 +1471,13 @@
     --mat-filled-button-ripple-color: rgba(255, 255, 255, 0.16);
   }
 
+  .save-order-park-btn {
+    --mdc-filled-button-container-color: #6d28d9;
+    --mdc-filled-button-label-text-color: #fff;
+    --mat-filled-button-state-layer-color: #fff;
+    --mat-filled-button-ripple-color: rgba(255, 255, 255, 0.16);
+  }
+
   .save-order-btn {
     --mdc-filled-button-container-color: #2e7d32;
     --mdc-filled-button-label-text-color: #fff;
@@ -3998,6 +4005,45 @@
 
       .total-label {
         color: #e65100;
+      }
+    }
+  }
+
+  &.save-as-parked {
+    .order-confirmation-modal-header {
+      background: #6d28d9;
+    }
+
+    .confirm-order-btn {
+      --mdc-filled-button-container-color: #6d28d9;
+      --mdc-filled-button-label-text-color: #fff;
+      --mat-filled-button-state-layer-color: #fff;
+      --mat-filled-button-ripple-color: rgba(255, 255, 255, 0.16);
+    }
+
+    .total-section {
+      background: #f5f3ff;
+      border-color: #ddd6fe;
+
+      .total-row {
+        border-top-color: #c4b5fd;
+      }
+
+      .total-label {
+        color: #5b21b6;
+      }
+    }
+
+    .confirmation-section.info-section {
+      background: #f5f3ff;
+      border-color: #ddd6fe;
+
+      mat-icon {
+        color: #6d28d9;
+      }
+
+      .info-text {
+        color: #5b21b6;
       }
     }
   }

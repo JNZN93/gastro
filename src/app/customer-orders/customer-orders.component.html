@@ -482,6 +482,10 @@
               <mat-icon>schedule</mat-icon>
               Zwischenspeichern
             </button>
+            <button mat-flat-button type="button" (click)="confirmSaveOrderAsParked()" class="save-order-park-btn" [disabled]="isSplitMode || isPrintingOrder || isSavingOrder">
+              <mat-icon>local_parking</mat-icon>
+              Parken
+            </button>
             <button mat-flat-button type="button" (click)="saveOrder()" class="save-order-btn" [disabled]="isPrintingOrder || isSavingOrder">
               <mat-icon>save</mat-icon>
               Auftrag speichern
@@ -911,6 +915,10 @@
                 <button mat-flat-button type="button" (click)="confirmSaveOrderAsOpen()" class="save-order-open-btn" [disabled]="isSplitMode || isPrintingOrder || isSavingOrder">
                   <mat-icon>schedule</mat-icon>
                   Zwischenspeichern
+                </button>
+                <button mat-flat-button type="button" (click)="confirmSaveOrderAsParked()" class="save-order-park-btn" [disabled]="isSplitMode || isPrintingOrder || isSavingOrder">
+                  <mat-icon>local_parking</mat-icon>
+                  Parken
                 </button>
                 <button mat-flat-button type="button" (click)="saveOrder()" class="save-order-btn" [disabled]="isPrintingOrder || isSavingOrder">
                   <mat-icon>save</mat-icon>
@@ -1415,17 +1423,13 @@
 <div class="order-confirmation-modal"
      *ngIf="isOrderConfirmationModalOpen"
      [class.save-as-open]="isSavingAsOpen"
+     [class.save-as-parked]="isSavingAsParked"
      (click)="!isSavingOrder && closeOrderConfirmationModal()">
   <div class="order-confirmation-modal-content" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="order-confirmation-title">
     <div class="order-confirmation-modal-header">
       <h2 id="order-confirmation-title">
-        @if (isSavingAsOpen) {
-          <mat-icon>schedule</mat-icon>
-          Auftrag zwischenspeichern
-        } @else {
-          <mat-icon>save</mat-icon>
-          Auftrag speichern
-        }
+        <mat-icon>{{ getConfirmationIcon() }}</mat-icon>
+        {{ getConfirmationTitle() }}
       </h2>
       <button mat-icon-button type="button" class="close-order-confirmation-modal" (click)="closeOrderConfirmationModal()" [disabled]="isSavingOrder" aria-label="Schließen">
         <mat-icon>close</mat-icon>
@@ -1507,10 +1511,10 @@
             </div>
           </div>
 
-          @if (isSavingAsOpen) {
+          @if (isSavingAsOpen || isSavingAsParked) {
             <div class="confirmation-section info-section">
-              <mat-icon>info</mat-icon>
-              <p class="info-text">Der Auftrag wird mit dem Status „Offen“ gespeichert und kann später bearbeitet werden.</p>
+              <mat-icon>{{ isSavingAsParked ? 'local_parking' : 'info' }}</mat-icon>
+              <p class="info-text">{{ getConfirmationInfoText() }}</p>
             </div>
           }
         </div>
@@ -1524,17 +1528,13 @@
       <button mat-flat-button type="button" class="confirm-order-btn" (click)="confirmOrderSave()" [disabled]="isSavingOrder">
         @if (isSavingOrder) {
           <mat-icon class="spinning">hourglass_empty</mat-icon>
-        } @else if (isSavingAsOpen) {
-          <mat-icon>schedule</mat-icon>
         } @else {
-          <mat-icon>save</mat-icon>
+          <mat-icon>{{ getConfirmationIcon() }}</mat-icon>
         }
         @if (isSavingOrder) {
           Wird gespeichert...
-        } @else if (isSavingAsOpen) {
-          Zwischenspeichern
         } @else {
-          Auftrag speichern
+          {{ getConfirmationActionLabel() }}
         }
       </button>
     </div>
