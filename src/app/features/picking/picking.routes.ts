@@ -9,6 +9,13 @@ export const PICKING_ROUTES: Routes = [
       ),
   },
   {
+    path: 'combined/:firstId/:secondId',
+    loadComponent: () =>
+      import('./pages/picking-session/picking-session.component').then(
+        (m) => m.PickingSessionComponent
+      ),
+  },
+  {
     path: ':orderId',
     loadComponent: () =>
       import('./pages/picking-session/picking-session.component').then(

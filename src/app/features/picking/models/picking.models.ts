@@ -51,6 +51,8 @@ export interface PickItemState {
   parentItemKey?: string;
   isAddedLine?: boolean;
   pfandEnabled?: boolean;
+  sourceOrderId?: number;
+  originalIndex?: number;
 }
 
 export interface PickingState {
@@ -61,6 +63,8 @@ export interface PickingState {
   completedAt?: string;
   items: PickItemState[];
   originalItems?: PickingOrderItem[];
+  bundleOrderIds?: number[];
+  originalItemsByOrder?: Record<number, PickingOrderItem[]>;
 }
 
 export interface PickingProgress {

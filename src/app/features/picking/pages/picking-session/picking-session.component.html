@@ -7,12 +7,7 @@
       <div class="toolbar-main">
         @if (order) {
           <span class="toolbar-title">{{ getCustomerLabel() }}</span>
-          <span class="toolbar-sub">
-            #{{ order.order_id }} · {{ order.items.length }} Pos.
-            @if (order.picker_user_name) {
-              · {{ order.picker_user_name }}
-            }
-          </span>
+          <span class="toolbar-sub">{{ getOrderSubtitle() }}</span>
         } @else {
           <span class="toolbar-title">Kommissionierung</span>
         }
@@ -38,14 +33,27 @@
               Fertig
             </mat-chip>
           }
-          <mat-chip
-            class="meta-chip"
-            [class.delivery]="order.fulfillment_type === 'delivery'"
-            [class.pickup]="order.fulfillment_type === 'pickup'"
-          >
-            <mat-icon>{{ getFulfillmentIcon(order.fulfillment_type) }}</mat-icon>
-            {{ getFulfillmentLabel(order.fulfillment_type) }}
-          </mat-chip>
+          @if (hasSplitFulfillment()) {
+            @for (entry of bundleOrders; track entry.order_id) {
+              <mat-chip
+                class="meta-chip"
+                [class.delivery]="entry.fulfillment_type === 'delivery'"
+                [class.pickup]="entry.fulfillment_type === 'pickup'"
+              >
+                <mat-icon>{{ getFulfillmentIcon(entry.fulfillment_type) }}</mat-icon>
+                #{{ entry.order_id }} {{ getFulfillmentLabel(entry.fulfillment_type) }}
+              </mat-chip>
+            }
+          } @else {
+            <mat-chip
+              class="meta-chip"
+              [class.delivery]="order.fulfillment_type === 'delivery'"
+              [class.pickup]="order.fulfillment_type === 'pickup'"
+            >
+              <mat-icon>{{ getFulfillmentIcon(order.fulfillment_type) }}</mat-icon>
+              {{ getFulfillmentLabel(order.fulfillment_type) }}
+            </mat-chip>
+          }
           <mat-chip class="meta-chip">
             <mat-icon>event</mat-icon>
             {{ getDeliveryLabel() }}
@@ -90,7 +98,11 @@
       <mat-card class="warning-box">
         <mat-card-content>
           <p>
-            Diese Bestellung wird bereits kommissioniert
+            @if (isBundle) {
+              Diese Bestellungen werden bereits kommissioniert
+            } @else {
+              Diese Bestellung wird bereits kommissioniert
+            }
             @if (order.picker_user_name) {
               ({{ order.picker_user_name }})
             }
@@ -194,15 +206,21 @@
           type="button"
           class="item-row"
           [class]="getItemStatusClass(item.status)"
+          [class.locked]="isItemLocked(item)"
           (click)="!isReadOnlySession && openItemModal(item)"
-          [class.read-only]="isReadOnlySession"
+          [class.read-only]="isReadOnlySession || isItemLocked(item)"
           matRipple
-          [matRippleDisabled]="isReadOnlySession"
+          [matRippleDisabled]="isReadOnlySession || isItemLocked(item)"
         >
           <mat-icon class="item-status-icon">{{ getItemStatusIcon(item.status) }}</mat-icon>
           <div class="item-main">
             <strong>{{ item.productName }}</strong>
-            <span class="article-number">{{ item.articleNumber }}</span>
+            <span class="article-number">
+              @if (isBundle && item.sourceOrderId) {
+                <span class="order-badge">#{{ item.sourceOrderId }}</span>
+              }
+              {{ item.articleNumber }}
+            </span>
             @if (item.isPfandLine) {
               <span class="pfand-label">Pfand</span>
             }
@@ -499,10 +517,7 @@
     <div class="modal-card abort-modal" (click)="$event.stopPropagation()">
       <div class="sheet-handle" aria-hidden="true"></div>
       <h2>Kommissionierung abbrechen?</h2>
-      <p class="modal-sub">
-        Die ursprünglichen Mengen bleiben erhalten. Der Fortschritt auf diesem Gerät geht verloren,
-        und die Bestellung kann wieder von jemand anderem kommissioniert werden.
-      </p>
+      <p class="modal-sub">{{ getAbortDetail() }}</p>
       <div class="modal-actions">
         <button mat-stroked-button type="button" (click)="closeAbortModal()" [disabled]="isSaving">
           Weiter machen
@@ -520,7 +535,7 @@
     <div class="modal-card complete-modal" (click)="$event.stopPropagation()">
       <div class="sheet-handle" aria-hidden="true"></div>
       <h2>Kommissionierung abschließen?</h2>
-      <p class="modal-sub">Möchten Sie die Kommissionierung wirklich abschließen?</p>
+      <p class="modal-sub">{{ getCompleteDetail() }}</p>
 
       <div class="complete-print-section">
         <p class="complete-print-label">Kommissionierungsschein drucken</p>

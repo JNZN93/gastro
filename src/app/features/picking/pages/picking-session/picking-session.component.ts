@@ -28,6 +28,7 @@ import {
   PickingOrder,
   PickingOrderItem,
   PickingProgress,
+  PickingState,
   PickingSyncItem,
   ScanResultFeedback,
 } from '../../models/picking.models';
@@ -81,11 +82,15 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
   @ViewChild('stickyBar') stickyBar?: ElementRef<HTMLElement>;
 
   orderId = 0;
+  bundleOrderIds: number[] = [];
+  isBundle = false;
+  bundleOrders: PickingOrder[] = [];
   order: PickingOrder | null = null;
   stateItems: PickItemState[] = [];
   progress: PickingProgress = { done: 0, total: 0, percent: 0 };
   stickyBarHeight = 120;
   private originalItems: PickingOrderItem[] = [];
+  private originalItemsByOrder = new Map<number, PickingOrderItem[]>();
 
   isLoading = true;
   isSaving = false;
@@ -145,14 +150,41 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
 
   ngOnInit(): void {
     this.route.paramMap.subscribe((params) => {
+      const first = Number(params.get('firstId'));
+      const second = Number(params.get('secondId'));
+      if (first && second) {
+        if (first === second) {
+          this.router.navigate(['/picking', first]);
+          return;
+        }
+        const low = Math.min(first, second);
+        const high = Math.max(first, second);
+        if (first !== low || second !== high) {
+          this.router.navigate(['/picking/combined', low, high], { replaceUrl: true });
+          return;
+        }
+        this.bundleOrderIds = [low, high];
+        this.orderId = low;
+        this.isBundle = true;
+        this.loadSession();
+        return;
+      }
+
       const id = Number(params.get('orderId'));
       if (!id) {
         this.router.navigate(['/picking']);
         return;
       }
+      this.bundleOrderIds = [];
+      this.isBundle = false;
+      this.bundleOrders = [];
       this.orderId = id;
       this.loadSession();
     });
+  }
+
+  private get sessionOrders(): PickingOrder[] {
+    return this.isBundle && this.bundleOrders.length ? this.bundleOrders : this.order ? [this.order] : [];
   }
 
   ngAfterViewInit(): void {
@@ -213,10 +245,26 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
         })
       );
 
+      if (this.isBundle) {
+        const bundled = this.bundleOrderIds.map(
+          (id) => (response?.orders ?? []).find((entry) => entry.order_id === id) ?? null
+        );
+        await this.finishBundleLoad(bundled);
+        return;
+      }
+
       const order = (response?.orders ?? []).find((entry) => entry.order_id === this.orderId) ?? null;
       if (!order) {
         this.errorMessage = 'Bestellung nicht gefunden oder nicht mehr kommissionierbar.';
         this.order = null;
+        return;
+      }
+
+      const states = await this.pickingState.getAllStates();
+      const liveBundle = this.pickingState.findBundleState(states, order.order_id);
+      if (liveBundle?.bundleOrderIds && liveBundle.bundleOrderIds.length > 1) {
+        const [first, second] = [...liveBundle.bundleOrderIds].sort((a, b) => a - b);
+        await this.router.navigate(['/picking/combined', first, second]);
         return;
       }
 
@@ -269,6 +317,112 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
 
   private createReadOnlyStateItems(order: PickingOrder): PickItemState[] {
     return this.pickingState.createStateFromOrder(order, this.getStartedBy(), true).items;
+  }
+
+  private async finishBundleLoad(bundled: (PickingOrder | null)[]): Promise<void> {
+    if (bundled.some((entry) => !entry)) {
+      this.errorMessage = 'Eine der Bestellungen wurde nicht gefunden.';
+      this.order = null;
+      this.bundleOrders = [];
+      return;
+    }
+
+    const orders = bundled as PickingOrder[];
+    const customerNumbers = new Set(
+      orders.map((entry) => (entry.customer_number || '').trim()).filter(Boolean)
+    );
+    if (customerNumbers.size !== 1) {
+      this.errorMessage = 'Nur Bestellungen desselben Kunden können zusammen kommissioniert werden.';
+      this.order = orders[0];
+      this.bundleOrders = orders;
+      return;
+    }
+
+    const blocked = orders.find(
+      (entry) => !['released', 'picking', 'picked', 'completed'].includes(entry.status)
+    );
+    if (blocked) {
+      this.errorMessage = `Bestellung #${blocked.order_id} ist nicht zur Kommissionierung freigegeben.`;
+      this.order = orders[0];
+      this.bundleOrders = orders;
+      return;
+    }
+
+    const finished = orders.filter(
+      (entry) => entry.status === 'picked' || entry.status === 'completed'
+    );
+    if (finished.length === orders.length) {
+      this.errorMessage = 'Beide Bestellungen sind bereits fertig kommissioniert.';
+      this.order = orders[0];
+      this.bundleOrders = orders;
+      return;
+    }
+
+    const userId = this.globalService.getUserId();
+    const locked = orders.find(
+      (entry) =>
+        entry.status === 'picking' &&
+        entry.picker_user_id &&
+        userId &&
+        Number(entry.picker_user_id) !== Number(userId)
+    );
+    if (locked) {
+      this.errorMessage = `Bestellung #${locked.order_id} wird gerade von ${locked.picker_user_name || 'jemand anderem'} kommissioniert.`;
+      this.order = orders[0];
+      this.bundleOrders = orders;
+      return;
+    }
+
+    const empty = orders.find((entry) => !entry.items?.length);
+    if (empty) {
+      this.errorMessage = `Bestellung #${empty.order_id} enthält keine Positionen.`;
+      this.order = orders[0];
+      this.bundleOrders = orders;
+      return;
+    }
+
+    this.bundleOrders = orders;
+    this.order = orders[0];
+    this.isReadOnlySession = false;
+    await this.loadProductCatalog();
+    await this.ensureBundleState(orders);
+    this.enrichStateItemsWithProductMetadata();
+    this.refreshDisplayOrder();
+    this.refreshProgress();
+  }
+
+  private async ensureBundleState(orders: PickingOrder[]): Promise<void> {
+    const anchorId = orders[0].order_id;
+    const existing = await this.pickingState.getState(anchorId);
+    const validExisting =
+      existing?.bundleOrderIds?.length === orders.length &&
+      orders.every((entry) => existing.bundleOrderIds?.includes(entry.order_id)) &&
+      this.pickingState.isBundleFingerprintValid(existing, orders)
+        ? existing
+        : null;
+
+    if (existing && !validExisting) {
+      await this.pickingState.deleteRelatedStates(orders.map((entry) => entry.order_id));
+    }
+
+    if (validExisting) {
+      this.stateItems = validExisting.items;
+      this.captureOriginalItems(orders[0], validExisting);
+      if (orders.some((entry) => entry.status === 'released')) {
+        await this.startPicking(true, true);
+      }
+      return;
+    }
+
+    if (orders.some((entry) => entry.status === 'picking')) {
+      this.showStartWarning = true;
+      const state = this.pickingState.createBundleState(orders, this.getStartedBy(), false);
+      this.stateItems = state.items;
+      this.captureOriginalItems(orders[0], state);
+      return;
+    }
+
+    await this.startPicking(true, false);
   }
 
   openReopenModal(): void {
@@ -394,36 +548,44 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     this.showStartWarning = false;
 
     try {
-      if (updateRemoteStatus && (this.order.status === 'released' || this.order.status === 'picking')) {
-        await lastValueFrom(
-          this.orderService.updateOrderStatusOnly(this.order.order_id, 'picking', token, {
-            picker_user_name: this.getStartedBy(),
-          })
-        );
-        this.order.status = 'picking';
-        this.order.picker_user_name = this.getStartedBy();
-        this.order.picker_user_id = this.globalService.getUserId();
-      }
-
-      if (!preserveItems) {
-        const state = this.pickingState.createInitialState(this.order, this.getStartedBy());
-        this.stateItems = state.items;
-        this.captureOriginalItems(this.order, state);
-        this.enrichStateItemsWithProductMetadata();
-        await this.pickingState.saveState({ ...state, items: this.stateItems });
-      } else {
-        const existing = await this.pickingState.getState(this.order.order_id);
-        this.captureOriginalItems(this.order, existing);
-        if (existing) {
-          await this.pickingState.saveState({
-            ...existing,
-            originalItems: this.originalItems,
-            items: this.stateItems,
-          });
+      if (updateRemoteStatus) {
+        for (const current of this.sessionOrders) {
+          if (current.status !== 'released' && current.status !== 'picking') {
+            continue;
+          }
+          await lastValueFrom(
+            this.orderService.updateOrderStatusOnly(current.order_id, 'picking', token, {
+              picker_user_name: this.getStartedBy(),
+            })
+          );
+          current.status = 'picking';
+          current.picker_user_name = this.getStartedBy();
+          current.picker_user_id = this.globalService.getUserId();
         }
       }
 
-      this.setFeedback('success', 'Kommissionierung gestartet.');
+      if (!preserveItems) {
+        const state = this.isBundle
+          ? this.pickingState.createBundleState(this.bundleOrders, this.getStartedBy(), false)
+          : this.pickingState.createInitialState(this.order, this.getStartedBy());
+        if (this.isBundle) {
+          await this.pickingState.deleteRelatedStates(this.bundleOrderIds);
+        }
+        this.stateItems = state.items;
+        this.captureOriginalItems(this.order, state);
+        this.enrichStateItemsWithProductMetadata();
+        this.refreshDisplayOrder();
+        await this.pickingState.saveState(this.toStoredState(state));
+      } else {
+        const existing = await this.pickingState.getState(this.order.order_id);
+        this.captureOriginalItems(this.order, existing);
+        await this.pickingState.saveState(this.toStoredState(existing));
+      }
+
+      this.setFeedback(
+        'success',
+        this.isBundle ? 'Gemeinsame Kommissionierung gestartet.' : 'Kommissionierung gestartet.'
+      );
     } catch (error: any) {
       const message = error?.error?.error || 'Status konnte nicht gesetzt werden.';
       this.setFeedback('error', message);
@@ -435,6 +597,9 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   openItemModal(item: PickItemState): void {
+    if (this.isItemLocked(item)) {
+      return;
+    }
     this.selectedItem = item;
     this.modalProductName = item.productName;
     this.modalPickedQuantity = item.pickedQuantity > 0 ? item.pickedQuantity : item.targetQuantity;
@@ -650,10 +815,7 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
       this.selectedItem.productName = trimmedProductName;
     }
 
-    if (this.modalUnavailable) {
-      this.selectedItem.pfandEnabled = false;
-      this.removePfandLine(this.selectedItem.key);
-    } else if (this.modalAddPfand && !this.selectedItem.isPfandLine) {
+    if (!this.modalUnavailable && this.modalAddPfand && !this.selectedItem.isPfandLine) {
       const pfandProduct =
         this.modalSelectedPfand || this.getSuggestedPfandForItem(this.selectedItem);
       if (pfandProduct) {
@@ -662,7 +824,11 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
         this.selectedItem.pfandEnabled = true;
         this.upsertPfandLine(this.selectedItem, pfandProduct, pfandQuantity);
       }
-    } else if (!this.modalAddPfand && (this.selectedItem.pfandEnabled || this.findPfandLineForParent(this.selectedItem))) {
+    } else if (
+      !this.modalUnavailable &&
+      !this.modalAddPfand &&
+      (this.selectedItem.pfandEnabled || this.findPfandLineForParent(this.selectedItem))
+    ) {
       this.selectedItem.pfandEnabled = false;
       this.removePfandLine(this.selectedItem.key);
     }
@@ -685,6 +851,9 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
 
     if (this.selectedItem) {
       this.modalPickedQuantity = this.selectedItem.targetQuantity;
+      if (this.selectedItem.pfandEnabled || this.findPfandLineForParent(this.selectedItem)) {
+        this.modalAddPfand = true;
+      }
     }
     if (this.modalNote.trim() === 'Nicht verfügbar') {
       this.modalNote = '';
@@ -831,9 +1000,11 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
       category: product.category,
       customField1: product.custom_field_1,
       isAddedLine: true,
+      sourceOrderId: this.order.order_id,
     };
     newItem.status = this.pickingState.updateItemStatus(newItem);
     this.stateItems.push(newItem);
+    this.refreshDisplayOrder();
 
     const suggestedPfand = this.getSuggestedPfandForProduct(product);
     if (suggestedPfand && product.category !== 'PFAND') {
@@ -915,10 +1086,26 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     this.linkExistingPfandLines();
   }
 
+  private canLinkPfandLine(parent: PickItemState, nextItem: PickItemState): boolean {
+    if (
+      parent.sourceOrderId &&
+      nextItem.sourceOrderId &&
+      parent.sourceOrderId !== nextItem.sourceOrderId
+    ) {
+      return false;
+    }
+    if (parent.originalIndex == null || nextItem.originalIndex == null) {
+      return true;
+    }
+    return nextItem.originalIndex === parent.originalIndex + 1;
+  }
+
   private linkExistingPfandLines(): void {
+    this.pickingState.linkConsecutivePfand(this.stateItems);
+
     for (let index = 0; index < this.stateItems.length; index++) {
       const item = this.stateItems[index];
-      if (item.isPfandLine || item.parentItemKey) {
+      if (item.isPfandLine || item.parentItemKey || item.originalIndex != null) {
         continue;
       }
 
@@ -932,7 +1119,8 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
         nextItem &&
         (nextItem.isPfandLine || nextItem.category === 'PFAND') &&
         nextItem.articleNumber === customField1 &&
-        !nextItem.parentItemKey
+        !nextItem.parentItemKey &&
+        this.canLinkPfandLine(item, nextItem)
       ) {
         nextItem.parentItemKey = item.key;
         nextItem.isPfandLine = true;
@@ -997,6 +1185,13 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
         item.status === 'unavailable' ||
         !item.pfandEnabled
       ) {
+        continue;
+      }
+
+      const linkedPfand = this.stateItems.find(
+        (line) => line.parentItemKey === item.key && (line.isPfandLine || line.category === 'PFAND')
+      );
+      if (linkedPfand?.status === 'unavailable') {
         continue;
       }
 
@@ -1069,6 +1264,7 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
       category: 'PFAND',
       isPfandLine: true,
       parentItemKey: parentItem.key,
+      sourceOrderId: parentItem.sourceOrderId,
     };
 
     pfandState.status = this.pickingState.updateItemStatus(pfandState);
@@ -1084,6 +1280,7 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     if (parentIndex >= 0) {
       this.stateItems.splice(parentIndex + 1, 0, pfandState);
     }
+    this.refreshDisplayOrder();
   }
 
   private removePfandLine(parentKey: string): void {
@@ -1216,7 +1413,7 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     try {
       await this.syncOrderToServer(true);
       await this.pickingState.saveState({
-        ...stateForComplete,
+        ...this.toStoredState(existing),
         completedAt: new Date().toISOString(),
       });
       this.closeCompleteModal();
@@ -1241,13 +1438,22 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     this.isSaving = true;
 
     try {
-      if (this.order.status === 'picking') {
+      if (this.sessionOrders.some((entry) => entry.status === 'picking')) {
         await this.restoreOriginalItemsOnServer(token);
-        await lastValueFrom(
-          this.orderService.updateOrderStatusOnly(this.order.order_id, 'released', token)
-        );
+        for (const current of this.sessionOrders) {
+          if (current.status !== 'picking') {
+            continue;
+          }
+          await lastValueFrom(
+            this.orderService.updateOrderStatusOnly(current.order_id, 'released', token)
+          );
+        }
       }
-      await this.pickingState.deleteState(this.order.order_id);
+      if (this.isBundle) {
+        await this.pickingState.deleteRelatedStates(this.bundleOrderIds);
+      } else {
+        await this.pickingState.deleteState(this.order.order_id);
+      }
       this.closeAbortModal();
       this.router.navigate(['/picking']);
     } catch {
@@ -1257,10 +1463,10 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     }
   }
 
-  private buildSyncItems(): PickingSyncItem[] {
+  private buildSyncItems(source: PickItemState[] = this.stateItems): PickingSyncItem[] {
     const items: PickingSyncItem[] = [];
 
-    for (const item of this.stateItems) {
+    for (const item of source) {
       if (item.status === 'unavailable') {
         const productId = this.resolveProductId(item);
         if (!productId) {
@@ -1308,54 +1514,86 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     }
 
     this.ensurePfandLinesForSync();
+    this.refreshDisplayOrder();
 
-    await lastValueFrom(
-      this.orderService.applyPickingItems(
-        this.order.order_id,
-        this.buildSyncItems(),
-        token,
-        complete
-      )
-    );
-
-    if (complete) {
-      this.order.status = 'picked';
+    for (const current of this.sessionOrders) {
+      if (current.status !== 'picking') {
+        continue;
+      }
+      const items = this.pickingState.itemsInOriginalOrder(this.stateItems, current.order_id);
+      await lastValueFrom(
+        this.orderService.applyPickingItems(
+          current.order_id,
+          this.buildSyncItems(items),
+          token,
+          complete
+        )
+      );
+      if (complete) {
+        current.status = 'picked';
+      }
     }
   }
 
-  private captureOriginalItems(order: PickingOrder, existing?: { originalItems?: PickingOrderItem[] } | null): void {
+  private captureOriginalItems(
+    order: PickingOrder,
+    existing?: {
+      originalItems?: PickingOrderItem[];
+      originalItemsByOrder?: Record<number, PickingOrderItem[]>;
+    } | null
+  ): void {
+    this.originalItemsByOrder.clear();
+    if (this.isBundle) {
+      for (const current of this.bundleOrders) {
+        const saved = existing?.originalItemsByOrder?.[current.order_id];
+        this.originalItemsByOrder.set(
+          current.order_id,
+          saved?.length
+            ? this.pickingState.cloneOrderItems(saved)
+            : this.pickingState.cloneOrderItems(current.items)
+        );
+      }
+      this.originalItems = this.originalItemsByOrder.get(order.order_id) ?? [];
+      return;
+    }
+
     this.originalItems = existing?.originalItems?.length
       ? this.pickingState.cloneOrderItems(existing.originalItems)
       : this.pickingState.cloneOrderItems(order.items);
   }
 
   private async restoreOriginalItemsOnServer(token: string): Promise<void> {
-    if (!this.order) {
-      return;
+    for (const current of this.sessionOrders) {
+      if (current.status !== 'picking') {
+        continue;
+      }
+
+      const originalItems = this.isBundle
+        ? this.originalItemsByOrder.get(current.order_id) ??
+          this.pickingState.cloneOrderItems(current.items)
+        : this.originalItems.length
+          ? this.originalItems
+          : this.pickingState.cloneOrderItems(current.items);
+
+      if (!originalItems.length) {
+        continue;
+      }
+
+      const restoreItems: PickingSyncItem[] = originalItems.map((item) => ({
+        product_id: item.product_id,
+        quantity: Number(item.quantity),
+        price: item.price != null ? Number(item.price) : 0,
+        different_price:
+          item.different_price != null && item.different_price !== ''
+            ? Number(item.different_price)
+            : null,
+        description: item.product_name,
+      }));
+
+      await lastValueFrom(
+        this.orderService.applyPickingItems(current.order_id, restoreItems, token, false)
+      );
     }
-
-    const originalItems = this.originalItems.length
-      ? this.originalItems
-      : this.pickingState.cloneOrderItems(this.order.items);
-
-    if (!originalItems.length) {
-      return;
-    }
-
-    const restoreItems: PickingSyncItem[] = originalItems.map((item) => ({
-      product_id: item.product_id,
-      quantity: Number(item.quantity),
-      price: item.price != null ? Number(item.price) : 0,
-      different_price:
-        item.different_price != null && item.different_price !== ''
-          ? Number(item.different_price)
-          : null,
-      description: item.product_name,
-    }));
-
-    await lastValueFrom(
-      this.orderService.applyPickingItems(this.order.order_id, restoreItems, token, false)
-    );
   }
 
   private async persistState(): Promise<void> {
@@ -1364,24 +1602,65 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     }
 
     const existing = await this.pickingState.getState(this.order.order_id);
-    const originalItems = existing?.originalItems?.length
-      ? existing.originalItems
-      : this.originalItems.length
-        ? this.originalItems
-        : this.pickingState.cloneOrderItems(this.order.items);
-    this.originalItems = this.pickingState.cloneOrderItems(originalItems);
+    if (!this.isBundle) {
+      const originalItems = existing?.originalItems?.length
+        ? existing.originalItems
+        : this.originalItems.length
+          ? this.originalItems
+          : this.pickingState.cloneOrderItems(this.order.items);
+      this.originalItems = this.pickingState.cloneOrderItems(originalItems);
+    } else if (!this.originalItemsByOrder.size) {
+      this.captureOriginalItems(this.order, existing);
+    }
 
-    await this.pickingState.saveState({
-      orderId: this.order.order_id,
-      orderFingerprint:
-        existing?.orderFingerprint || this.pickingState.computeOrderFingerprint(originalItems),
-      originalItems: this.originalItems,
-      startedAt: existing?.startedAt || new Date().toISOString(),
-      startedBy: existing?.startedBy || this.getStartedBy(),
-      completedAt: existing?.completedAt,
-      items: this.stateItems,
-    });
+    await this.pickingState.saveState(this.toStoredState(existing));
     this.refreshProgress();
+  }
+
+  private toStoredState(
+    base?: {
+      orderFingerprint?: string;
+      startedAt?: string;
+      startedBy?: string;
+      completedAt?: string;
+    } | null
+  ): PickingState {
+    const fingerprintSource = this.originalItems.length
+      ? this.originalItems
+      : this.pickingState.cloneOrderItems(this.order?.items ?? []);
+
+    return {
+      orderId: this.order?.order_id ?? this.orderId,
+      orderFingerprint:
+        base?.orderFingerprint ||
+        (this.isBundle
+          ? this.pickingState.computeBundleFingerprint(this.bundleOrders)
+          : this.pickingState.computeOrderFingerprint(fingerprintSource)),
+      originalItems: this.originalItems,
+      originalItemsByOrder: this.isBundle
+        ? (Object.fromEntries(this.originalItemsByOrder.entries()) as Record<number, PickingOrderItem[]>)
+        : undefined,
+      bundleOrderIds: this.isBundle ? [...this.bundleOrderIds] : undefined,
+      startedAt: base?.startedAt || new Date().toISOString(),
+      startedBy: base?.startedBy || this.getStartedBy(),
+      completedAt: base?.completedAt,
+      items: this.stateItems,
+    };
+  }
+
+  private refreshDisplayOrder(): void {
+    if (!this.isBundle) {
+      return;
+    }
+    this.stateItems = this.pickingState.arrangeForPicking(this.stateItems);
+  }
+
+  isItemLocked(item: PickItemState): boolean {
+    if (!this.isBundle || item.sourceOrderId == null) {
+      return false;
+    }
+    const source = this.bundleOrders.find((entry) => entry.order_id === item.sourceOrderId);
+    return source?.status === 'picked' || source?.status === 'completed';
   }
 
   private refreshProgress(): void {
@@ -1465,6 +1744,13 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     return this.customerNameByNumber.get(customerNumber.trim()) || '';
   }
 
+  hasSplitFulfillment(): boolean {
+    if (!this.isBundle || this.bundleOrders.length < 2) {
+      return false;
+    }
+    return this.bundleOrders[0].fulfillment_type !== this.bundleOrders[1].fulfillment_type;
+  }
+
   getFulfillmentLabel(type?: string): string {
     if (type === 'delivery') {
       return 'Lieferung';
@@ -1476,11 +1762,58 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   getDeliveryLabel(): string {
-    return formatPickingDate(this.order?.delivery_date || this.order?.order_date);
+    const labels = [
+      ...new Set(
+        this.sessionOrders.map((entry) => formatPickingDate(entry.delivery_date || entry.order_date))
+      ),
+    ].filter((label) => label && label !== '—');
+    if (!labels.length) {
+      return formatPickingDate(this.order?.delivery_date || this.order?.order_date);
+    }
+    return labels.join(' · ');
   }
 
   getCustomerNotes(): string {
-    return (this.order?.customer_notes || '').trim();
+    const notes = this.sessionOrders
+      .map((entry) => ({
+        id: entry.order_id,
+        text: (entry.customer_notes || '').trim(),
+      }))
+      .filter((entry) => entry.text);
+
+    if (!notes.length) {
+      return '';
+    }
+    if (!this.isBundle || notes.length === 1 || notes.every((entry) => entry.text === notes[0].text)) {
+      return notes[0].text;
+    }
+    return notes.map((entry) => `#${entry.id}: ${entry.text}`).join('\n');
+  }
+
+  getOrderSubtitle(): string {
+    if (!this.order) {
+      return '';
+    }
+    const picker = this.order.picker_user_name ? ` · ${this.order.picker_user_name}` : '';
+    if (this.isBundle && this.bundleOrders.length > 1) {
+      const ids = this.bundleOrders.map((entry) => `#${entry.order_id}`).join(' + ');
+      return `${ids} · ${this.stateItems.length} Pos.${picker}`;
+    }
+    return `#${this.order.order_id} · ${this.order.items.length} Pos.${picker}`;
+  }
+
+  getAbortDetail(): string {
+    if (this.isBundle) {
+      return 'Die ursprünglichen Mengen beider Bestellungen bleiben erhalten. Der gemeinsame Fortschritt geht verloren, und beide Bestellungen können wieder einzeln kommissioniert werden.';
+    }
+    return 'Die ursprünglichen Mengen bleiben erhalten. Der Fortschritt auf diesem Gerät geht verloren, und die Bestellung kann wieder von jemand anderem kommissioniert werden.';
+  }
+
+  getCompleteDetail(): string {
+    if (this.isBundle) {
+      return 'Beide Bestellungen werden getrennt abgeschlossen. Jede Position landet wieder in ihrer ursprünglichen Bestellung und Position.';
+    }
+    return 'Möchten Sie die Kommissionierung wirklich abschließen?';
   }
 
   openPrintModal(): void {
@@ -1502,25 +1835,33 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
       return;
     }
 
-    if (mode === 'palettenschein') {
-      this.pickingPdf.generatePalettenschein(this.order, this.stateItems);
-    } else {
-      this.pickingPdf.generateKommissionierungsschein(this.order, this.stateItems, {
-        customerLabel: this.getCustomerLabel(),
-        includePalettenschein: mode === 'both',
-      });
+    for (const current of this.sessionOrders) {
+      const items = this.pickingState.itemsInOriginalOrder(this.stateItems, current.order_id);
+      if (mode === 'palettenschein') {
+        this.pickingPdf.generatePalettenschein(current, items);
+      } else {
+        this.pickingPdf.generateKommissionierungsschein(current, items, {
+          customerLabel: this.getCustomerLabel(),
+          includePalettenschein: mode === 'both',
+        });
+      }
     }
 
     if (closePrintModal) {
       this.showPrintModal = false;
     }
 
+    const sheetLabel = this.isBundle ? 'Kommissionierungsscheine' : 'Kommissionierungsschein';
     const feedbackMessage =
       mode === 'both'
-        ? 'PDF mit Palettenschein erstellt.'
+        ? this.isBundle
+          ? 'PDFs mit Palettenschein erstellt.'
+          : 'PDF mit Palettenschein erstellt.'
         : mode === 'palettenschein'
-          ? 'Palettenschein erstellt.'
-          : 'Kommissionierungsschein erstellt.';
+          ? this.isBundle
+            ? 'Palettenscheine erstellt.'
+            : 'Palettenschein erstellt.'
+          : `${sheetLabel} erstellt.`;
     this.setFeedback('success', feedbackMessage);
   }
 

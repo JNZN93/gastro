@@ -15,6 +15,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { environment } from '../../../../../environments/environment';
+import { GlobalService } from '../../../../global.service';
 import { PickingOrder } from '../../models/picking.models';
 import { PickingState, PickingProgress } from '../../models/picking.models';
 import { PickingStateService } from '../../services/picking-state.service';
@@ -66,6 +67,8 @@ export class PickingQueueComponent implements OnInit {
   statusFilter: 'pickable' | 'picking' | 'picked' | 'all' = 'all';
 
   orders: PickingOrder[] = [];
+  selectedOrderIds: number[] = [];
+  combineMessage = '';
   localStates = new Map<number, PickingState>();
   customerNameByNumber = new Map<string, string>();
   customerByNumber = new Map<string, PickingAddressCustomer>();
@@ -74,7 +77,8 @@ export class PickingQueueComponent implements OnInit {
   constructor(
     private readonly http: HttpClient,
     private readonly router: Router,
-    private readonly pickingState: PickingStateService
+    private readonly pickingState: PickingStateService,
+    private readonly globalService: GlobalService
   ) {}
 
   ngOnInit(): void {
@@ -133,11 +137,13 @@ export class PickingQueueComponent implements OnInit {
       .filter((order) => this.matchesDateFilter(order))
       .filter((order) => this.matchesSearch(order, term))
       .map((order) => {
-        const localState = this.localStates.get(order.order_id) ?? null;
+        const bundleState = this.pickingState.findBundleState(
+          [...this.localStates.values()],
+          order.order_id
+        );
+        const localState = bundleState ?? this.localStates.get(order.order_id) ?? null;
         const validState =
-          localState && this.pickingState.isFingerprintValid(localState, order)
-            ? localState
-            : null;
+          localState && this.isQueueStateValid(localState, order) ? localState : null;
 
         return {
           order,
@@ -146,6 +152,23 @@ export class PickingQueueComponent implements OnInit {
         };
       })
       .sort((a, b) => this.compareQueueEntries(a, b));
+
+    this.selectedOrderIds = this.selectedOrderIds.filter((id) =>
+      this.orders.some((order) => order.order_id === id)
+    );
+  }
+
+  private isQueueStateValid(state: PickingState, order: PickingOrder): boolean {
+    if ((state.bundleOrderIds?.length ?? 0) > 1) {
+      const bundled = (state.bundleOrderIds ?? [])
+        .map((id) => this.orders.find((entry) => entry.order_id === id))
+        .filter((entry): entry is PickingOrder => !!entry);
+      if (bundled.length !== state.bundleOrderIds?.length) {
+        return false;
+      }
+      return this.pickingState.isBundleFingerprintValid(state, bundled);
+    }
+    return this.pickingState.isFingerprintValid(state, order);
   }
 
   private matchesStatusFilter(order: PickingOrder): boolean {
@@ -169,6 +192,12 @@ export class PickingQueueComponent implements OnInit {
         total,
         percent: total > 0 ? 100 : 0,
       };
+    }
+    if (localState?.bundleOrderIds && localState.bundleOrderIds.length > 1) {
+      const items = localState.items.filter(
+        (item) => item.sourceOrderId == null || item.sourceOrderId === order.order_id
+      );
+      return this.pickingState.getProgress({ ...localState, items });
     }
     return this.pickingState.getProgress(localState);
   }
@@ -253,8 +282,159 @@ export class PickingQueueComponent implements OnInit {
     this.rebuildQueue();
   }
 
-  openOrder(orderId: number): void {
-    this.router.navigate(['/picking', orderId]);
+  onOrderClick(order: PickingOrder): void {
+    const partnerId = this.bundlePartnerId(order.order_id);
+    if (partnerId) {
+      this.openCombined(order.order_id, partnerId);
+      return;
+    }
+
+    if (!this.canSelect(order)) {
+      this.router.navigate(['/picking', order.order_id]);
+      return;
+    }
+
+    this.combineMessage = '';
+
+    if (this.isSelected(order.order_id)) {
+      this.selectedOrderIds = this.selectedOrderIds.filter((id) => id !== order.order_id);
+      return;
+    }
+
+    if (this.selectedOrderIds.length >= 2) {
+      this.combineMessage =
+        'Es können zwei Bestellungen zusammengelegt werden. Tippe eine Auswahl erneut an, um sie aufzuheben.';
+      return;
+    }
+
+    if (this.selectedOrderIds.length === 1 && !this.sameCustomerAsSelection(order)) {
+      this.combineMessage = 'Nur Bestellungen desselben Kunden können zusammengelegt werden.';
+      return;
+    }
+
+    this.selectedOrderIds = [...this.selectedOrderIds, order.order_id];
+  }
+
+  canSelect(order: PickingOrder): boolean {
+    if (this.bundlePartnerId(order.order_id)) {
+      return false;
+    }
+    if (order.status !== 'released' && order.status !== 'picking') {
+      return false;
+    }
+    if (!order.items?.length) {
+      return false;
+    }
+    const userId = this.globalService.getUserId();
+    if (
+      order.status === 'picking' &&
+      order.picker_user_id &&
+      userId &&
+      Number(order.picker_user_id) !== Number(userId)
+    ) {
+      return false;
+    }
+    return true;
+  }
+
+  isSelected(orderId: number): boolean {
+    return this.selectedOrderIds.includes(orderId);
+  }
+
+  clearSelection(): void {
+    this.selectedOrderIds = [];
+    this.combineMessage = '';
+  }
+
+  selectionSharesCustomer(): boolean {
+    const selected = this.selectedOrders();
+    if (selected.length !== 2) {
+      return false;
+    }
+    return this.ordersShareCustomer(selected[0], selected[1]);
+  }
+
+  private sameCustomerAsSelection(order: PickingOrder): boolean {
+    const selected = this.selectedOrders()[0];
+    if (!selected) {
+      return true;
+    }
+    return this.ordersShareCustomer(selected, order);
+  }
+
+  private ordersShareCustomer(left: PickingOrder, right: PickingOrder): boolean {
+    const leftNumber = (left.customer_number || '').trim();
+    const rightNumber = (right.customer_number || '').trim();
+    return !!leftNumber && leftNumber === rightNumber;
+  }
+
+  private openCombined(orderId: number, partnerId: number): void {
+    const [first, second] = [orderId, partnerId].sort((a, b) => a - b);
+    this.router.navigate(['/picking/combined', first, second]);
+  }
+
+  canStartCombined(): boolean {
+    return (
+      this.selectedOrderIds.length === 2 &&
+      this.selectionSharesCustomer() &&
+      this.selectedOrders().every((order) => this.canSelect(order))
+    );
+  }
+
+  startCombined(): void {
+    if (this.selectedOrderIds.length === 2 && !this.selectionSharesCustomer()) {
+      this.combineMessage = 'Nur Bestellungen desselben Kunden können zusammengelegt werden.';
+      return;
+    }
+    if (!this.canStartCombined()) {
+      return;
+    }
+
+    const [first, second] = [...this.selectedOrderIds].sort((a, b) => a - b);
+    const conflict = this.conflictingBundle(first, second);
+    if (conflict) {
+      this.combineMessage = `Eine Auswahl wird bereits zusammen mit #${conflict} kommissioniert.`;
+      return;
+    }
+
+    this.openCombined(first, second);
+  }
+
+  startSelected(): void {
+    if (this.selectedOrderIds.length === 1) {
+      this.router.navigate(['/picking', this.selectedOrderIds[0]]);
+      return;
+    }
+    this.startCombined();
+  }
+
+  bundlePartnerId(orderId: number): number | null {
+    const state = this.pickingState.findBundleState([...this.localStates.values()], orderId);
+    if (!state?.bundleOrderIds) {
+      return null;
+    }
+    return state.bundleOrderIds.find((id) => id !== orderId) ?? null;
+  }
+
+  private selectedOrders(): PickingOrder[] {
+    return this.selectedOrderIds
+      .map((id) => this.orders.find((order) => order.order_id === id))
+      .filter((order): order is PickingOrder => !!order);
+  }
+
+  private conflictingBundle(first: number, second: number): number | null {
+    for (const id of [first, second]) {
+      const state = this.pickingState.findBundleState([...this.localStates.values()], id);
+      if (!state?.bundleOrderIds) {
+        continue;
+      }
+      const ids = [...state.bundleOrderIds].sort((a, b) => a - b);
+      if (ids.length === 2 && ids[0] === first && ids[1] === second) {
+        continue;
+      }
+      return state.bundleOrderIds.find((orderId) => orderId !== id) ?? null;
+    }
+    return null;
   }
 
   getCustomerLabel(order: PickingOrder): string {
