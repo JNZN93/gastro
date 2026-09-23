@@ -214,9 +214,11 @@
                 Ersatz: {{ item.replacementArticleNumber }}{{ item.replacementArticleName ? ' - ' + item.replacementArticleName : '' }}
               </span>
             }
+            <!-- Notiz-Anzeige vorerst ausgeblendet.
             @if (item.note) {
               <span class="note-label">{{ item.note }}</span>
             }
+            -->
           </div>
           <div class="item-side">
             <span class="qty">{{ item.pickedQuantity }}/{{ item.targetQuantity }}</span>
@@ -257,7 +259,8 @@
 
 @if (showItemModal && selectedItem) {
   <div class="modal-overlay" (click)="closeItemModal()">
-    <div class="modal-card" (click)="$event.stopPropagation()">
+    <div class="modal-card item-modal" (click)="$event.stopPropagation()">
+      <div class="modal-body">
       <div class="sheet-handle" aria-hidden="true"></div>
       <div class="modal-header">
         <h2 class="modal-title">Position bearbeiten</h2>
@@ -279,18 +282,7 @@
       </mat-form-field>
 
       <div class="field">
-        <div class="field-label-row">
-          <span>Menge / Gewicht</span>
-          <button
-            mat-stroked-button
-            type="button"
-            class="calc-toggle-btn"
-            (click)="toggleModalCalculator()"
-            [disabled]="modalUnavailable"
-          >
-            {{ showModalCalculator ? 'Rechner aus' : 'Rechner' }}
-          </button>
-        </div>
+        <span class="field-label">Menge / Gewicht</span>
         <div class="qty-stepper">
           <button mat-mini-fab type="button" (click)="adjustModalQuantity(-1)" [disabled]="modalUnavailable" aria-label="Verringern">
             <mat-icon>remove</mat-icon>
@@ -310,7 +302,31 @@
             <mat-icon>add</mat-icon>
           </button>
         </div>
-        <small class="field-hint">Soll: {{ selectedItem.targetQuantity }}</small>
+        <div class="qty-meta">
+          <small class="field-hint">Soll: {{ selectedItem.targetQuantity }}</small>
+          <button
+            mat-icon-button
+            type="button"
+            class="calc-toggle-btn"
+            [class.active]="showModalCalculator"
+            (click)="toggleModalCalculator()"
+            [disabled]="modalUnavailable"
+            [attr.aria-pressed]="showModalCalculator"
+            [attr.aria-label]="showModalCalculator ? 'Rechner schließen' : 'Rechner öffnen'"
+          >
+            <svg class="calc-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="3.5" y="2" width="17" height="20" rx="3.2" fill="none" stroke="currentColor" stroke-width="1.7" />
+              <rect x="6.2" y="4.6" width="11.6" height="3.3" rx="1" fill="currentColor" />
+              <rect x="6.3" y="10.1" width="2.7" height="2.5" rx="0.6" fill="currentColor" />
+              <rect x="10.65" y="10.1" width="2.7" height="2.5" rx="0.6" fill="currentColor" />
+              <rect x="15" y="10.1" width="2.7" height="2.5" rx="0.6" fill="currentColor" />
+              <rect x="6.3" y="14" width="2.7" height="2.5" rx="0.6" fill="currentColor" />
+              <rect x="10.65" y="14" width="2.7" height="2.5" rx="0.6" fill="currentColor" />
+              <rect x="15" y="14" width="2.7" height="5.5" rx="0.6" fill="currentColor" />
+              <rect x="6.3" y="17.9" width="7.05" height="2.5" rx="0.6" fill="currentColor" />
+            </svg>
+          </button>
+        </div>
         @if (showModalCalculator) {
           <div class="modal-calculator">
             <div class="calc-display" [class.calc-display-error]="calcDisplay === 'Fehler'">{{ calcDisplay }}</div>
@@ -419,11 +435,14 @@
         </small>
       </div>
 
+      <!-- Notizfeld vorerst ausgeblendet, Speichern der Notiz bleibt im Code.
       <mat-form-field appearance="outline" class="full-field" subscriptSizing="dynamic">
         <mat-label>Notiz (optional)</mat-label>
         <textarea matInput [(ngModel)]="modalNote" rows="2" placeholder="z. B. nur 3 statt 5 verfügbar"></textarea>
       </mat-form-field>
+      -->
 
+      </div>
       <div class="modal-actions">
         <button mat-stroked-button type="button" (click)="closeItemModal()">Abbrechen</button>
         <button mat-flat-button color="primary" type="button" (click)="saveItemModal()" [disabled]="isSaving">Speichern</button>

@@ -35,17 +35,29 @@
         />
       </mat-form-field>
 
-      <mat-button-toggle-group
-        class="date-toggles"
-        [ngModel]="dateFilter"
-        (ngModelChange)="onDateFilterChanged($event)"
-        name="dateFilter"
-        aria-label="Termin filtern"
+      <button
+        mat-stroked-button
+        type="button"
+        class="all-dates-btn"
+        [class.active]="!selectedDate"
+        [attr.aria-pressed]="!selectedDate"
+        (click)="onAllDates()"
       >
-        <mat-button-toggle value="all">Alle</mat-button-toggle>
-        <mat-button-toggle value="today">Heute</mat-button-toggle>
-        <mat-button-toggle value="tomorrow">Morgen</mat-button-toggle>
-      </mat-button-toggle-group>
+        Alle
+      </button>
+
+      <mat-form-field appearance="outline" class="date-field" subscriptSizing="dynamic">
+        <mat-label>Datum</mat-label>
+        <input
+          #pickingDateInput
+          matInput
+          type="date"
+          name="pickingDate"
+          [ngModel]="selectedDate"
+          (ngModelChange)="onDateChanged($event)"
+        />
+        <mat-icon matSuffix (click)="openDatePicker(pickingDateInput)">calendar_today</mat-icon>
+      </mat-form-field>
 
       <mat-form-field appearance="outline" class="status-field" subscriptSizing="dynamic">
         <mat-label>Status</mat-label>

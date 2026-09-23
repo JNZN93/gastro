@@ -5,7 +5,6 @@ import { Router, RouterModule } from '@angular/router';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { lastValueFrom } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
-import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatRippleModule } from '@angular/material/core';
@@ -55,7 +54,6 @@ interface CustomerSummary {
     MatProgressBarModule,
     MatProgressSpinnerModule,
     MatRippleModule,
-    MatButtonToggleModule,
   ],
   templateUrl: './picking-queue.component.html',
   styleUrl: './picking-queue.component.scss',
@@ -64,7 +62,7 @@ export class PickingQueueComponent implements OnInit {
   isLoading = false;
   errorMessage = '';
   searchTerm = '';
-  dateFilter: 'all' | 'today' | 'tomorrow' = 'all';
+  selectedDate = this.localIso(0);
   statusFilter: 'pickable' | 'picking' | 'picked' | 'all' = 'all';
 
   orders: PickingOrder[] = [];
@@ -176,15 +174,14 @@ export class PickingQueueComponent implements OnInit {
   }
 
   private matchesDateFilter(order: PickingOrder): boolean {
-    if (this.dateFilter === 'all') {
+    if (!this.selectedDate) {
       return true;
     }
 
-    const target = this.dateFilter === 'today' ? this.todayIso() : this.tomorrowIso();
     const deliveryDate = this.normalizeDate(order.delivery_date);
     const orderDate = this.normalizeDate(order.order_date);
 
-    return deliveryDate === target || (!deliveryDate && orderDate === target);
+    return deliveryDate === this.selectedDate || (!deliveryDate && orderDate === this.selectedDate);
   }
 
   private matchesSearch(order: PickingOrder, term: string): boolean {
@@ -232,9 +229,23 @@ export class PickingQueueComponent implements OnInit {
     this.rebuildQueue();
   }
 
-  onDateFilterChanged(value: 'all' | 'today' | 'tomorrow'): void {
-    this.dateFilter = value;
+  onDateChanged(value: string): void {
+    this.selectedDate = value || '';
     this.rebuildQueue();
+  }
+
+  onAllDates(): void {
+    this.selectedDate = '';
+    this.rebuildQueue();
+  }
+
+  openDatePicker(input: HTMLInputElement): void {
+    input.focus();
+    try {
+      input.showPicker?.();
+    } catch {
+      // Der Browser öffnet den Picker über das native Datumsfeld.
+    }
   }
 
   onStatusFilterChanged(value: 'pickable' | 'picking' | 'picked' | 'all'): void {
@@ -331,14 +342,13 @@ export class PickingQueueComponent implements OnInit {
     return 'help_outline';
   }
 
-  private todayIso(): string {
-    return new Date().toISOString().slice(0, 10);
-  }
-
-  private tomorrowIso(): string {
+  private localIso(offsetDays: number): string {
     const date = new Date();
-    date.setDate(date.getDate() + 1);
-    return date.toISOString().slice(0, 10);
+    date.setDate(date.getDate() + offsetDays);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 
   private normalizeDate(value?: string): string {

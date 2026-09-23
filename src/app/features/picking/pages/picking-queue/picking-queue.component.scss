@@ -61,36 +61,53 @@
 }
 
 .filter-panel {
-  display: grid;
-  gap: 0.65rem;
-  margin-bottom: 0.85rem;
-  padding: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.55rem;
+  padding: 0.35rem 0.45rem;
   background: #fff;
-  border-radius: 16px;
+  border-radius: 12px;
   box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
 }
 
 .search-field,
-.status-field {
-  width: 100%;
+.status-field,
+.date-field {
+  flex: 1 1 160px;
+  width: auto;
+  min-width: 0;
 }
 
-.status-field select {
-  font-size: 16px;
-  min-height: 24px;
+.date-field {
+  flex: 0 1 168px;
 }
 
-.date-toggles {
-  width: 100%;
-  display: flex;
+.status-field select,
+.date-field input[type='date'] {
+  font-size: 0.82rem;
+  min-height: 0;
+}
 
-  ::ng-deep .mat-button-toggle {
-    flex: 1 1 0;
-  }
+.all-dates-btn {
+  height: 36px;
+  min-width: 64px;
+  padding: 0 0.75rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  line-height: 34px;
 
-  ::ng-deep .mat-button-toggle-button {
-    min-height: 44px;
+  &.active {
+    --mdc-outlined-button-label-text-color: #fff;
+    --mdc-outlined-button-outline-color: #1565c0;
+    background: #1565c0;
+    color: #fff;
   }
+}
+
+.date-field input[type='date']::-webkit-calendar-picker-indicator {
+  display: none;
 }
 
 .state-box {
@@ -325,13 +342,59 @@
 }
 
 ::ng-deep {
-  .filter-panel .mat-mdc-form-field-infix {
-    min-height: 48px;
-    font-size: 16px;
-  }
+  .filter-panel {
+    .mat-mdc-form-field-subscript-wrapper {
+      display: none;
+    }
 
-  .date-toggles .mat-button-toggle-button {
-    min-height: 44px;
+    .mat-mdc-text-field-wrapper {
+      height: 36px;
+      padding-left: 8px;
+      padding-right: 8px;
+    }
+
+    .mat-mdc-form-field-flex {
+      height: 36px;
+      align-items: center;
+    }
+
+    .mat-mdc-form-field-infix {
+      min-height: 0;
+      padding-top: 0;
+      padding-bottom: 0;
+      font-size: 0.85rem;
+    }
+
+    .mat-mdc-text-field-wrapper .mat-mdc-form-field-flex .mat-mdc-floating-label {
+      top: 18px;
+    }
+
+    .mat-mdc-text-field-wrapper.mdc-text-field--outlined .mdc-notched-outline--upgraded
+      .mdc-floating-label--float-above {
+      --mat-mdc-form-field-label-transform: translateY(-24.75px)
+        scale(var(--mat-mdc-form-field-floating-label-scale, 0.75));
+      transform: var(--mat-mdc-form-field-label-transform);
+    }
+
+    .mat-mdc-form-field-icon-prefix,
+    .mat-mdc-form-field-icon-suffix {
+      padding: 0 4px 0 0;
+
+      .mat-icon {
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+      }
+    }
+
+    .mat-mdc-form-field-icon-suffix {
+      padding: 0 0 0 4px;
+      cursor: pointer;
+    }
+
+    .mdc-floating-label {
+      font-size: 0.82rem;
+    }
   }
 
   .queue-card .mdc-linear-progress {
@@ -347,7 +410,7 @@
   }
 
   .filter-panel {
-    padding: 0.65rem;
+    padding: 0.3rem 0.35rem;
   }
 
   .queue-card h2 {
@@ -361,14 +424,19 @@
   }
 
   .filter-panel {
-    grid-template-columns: minmax(0, 2fr) auto minmax(220px, 1fr);
-    align-items: start;
-    padding: 1rem;
+    padding: 0.4rem 0.55rem;
   }
 
-  .date-toggles {
-    width: auto;
-    align-self: stretch;
+  .search-field {
+    flex: 1.4 1 180px;
+  }
+
+  .status-field {
+    flex: 1 1 180px;
+  }
+
+  .date-field {
+    flex: 0 1 180px;
   }
 
   .queue-grid {
