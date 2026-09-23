@@ -3049,8 +3049,15 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     }, 0);
   }
 
+  canEditPrices(): boolean {
+    return this.globalService.getUserRole() === 'admin';
+  }
+
   // Neue Methode für Input-Event - nur Gesamtsumme aktualisieren, keine Validierung
   onPriceInput(item: any): void {
+    if (!this.canEditPrices()) {
+      return;
+    }
     // Nur die Gesamtsumme aktualisieren, ohne Validierung
     // Das verhindert, dass unvollständige Eingaben gelöscht werden
     console.log('📝 [PRICE-INPUT] Preis-Eingabe:', item.different_price);
@@ -3081,6 +3088,10 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
 
   // Arrow key navigation for price input fields
   onPriceKeyDown(event: KeyboardEvent, item: any, itemIndex: number): void {
+    if (!this.canEditPrices()) {
+      event.preventDefault();
+      return;
+    }
     // Prevent default arrow key behavior (increment/decrement)
     if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
       event.preventDefault();
@@ -3196,6 +3207,9 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
 
   // Neue Methode für Blur-Event - vollständige Validierung
   validateAndUpdatePrice(item: any): void {
+    if (!this.canEditPrices()) {
+      return;
+    }
     console.log('💰 [VALIDATE-PRICE] Validiere Preis für Artikel:', item.article_text);
     console.log('💰 [VALIDATE-PRICE] Eingabe:', item.different_price);
     
@@ -3464,10 +3478,13 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       this.customerNotes1 = '';
       this.customerNotes2 = '';
       
-      // Im Bearbeitungsmodus: Navigiere zur Order-Overview
+      // Im Bearbeitungsmodus: Admin zur Übersicht, Mitarbeiter zum Dashboard
       if (this.isEditMode) {
-        console.log('🔄 [SPLIT-EDIT] Navigiere zur Order-Overview...');
-        this.router.navigate(['/order-overview']);
+        const targetRoute = this.globalService.getUserRole() === 'admin'
+          ? ['/order-overview']
+          : ['/admin'];
+        console.log('🔄 [SPLIT-EDIT] Navigiere nach Speichern...', targetRoute);
+        this.router.navigate(targetRoute);
       }
     } catch (error) {
       console.error('Fehler beim Speichern der Aufträge:', error);
@@ -4197,6 +4214,9 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   }
 
   async toggleEditMode() {
+    if (!this.canEditPrices()) {
+      return;
+    }
     if (this.isEditingArticlePrices) {
       this.isEditingArticlePrices = false;
       console.log('🔧 [ARTICLE-PRICES-MODAL] Bearbeitungsmodus deaktiviert');
@@ -4232,6 +4252,9 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   }
 
   async deleteCustomerArticlePrice(articlePrice: any) {
+    if (!this.canEditPrices()) {
+      return;
+    }
     if (!articlePrice.id) {
       console.error('❌ [DELETE-ARTICLE-PRICE] Keine ID gefunden');
       alert('Fehler: Artikel-Preis ID nicht gefunden.');
@@ -4270,6 +4293,9 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   }
 
   async saveCustomerArticlePrice(articlePrice: any) {
+    if (!this.canEditPrices()) {
+      return;
+    }
     if (!articlePrice.id) {
       console.error('❌ [UPDATE-ARTICLE-PRICE] Keine ID gefunden');
       alert('Fehler: Artikel-Preis ID nicht gefunden.');

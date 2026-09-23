@@ -12,7 +12,7 @@
     </div>
   </div>
 
-  <div class="stats-grid">
+  <div class="stats-grid" *ngIf="isAdmin()">
     <div class="stat-card">
       <div class="stat-icon orders-icon">
         <mat-icon>description</mat-icon>
@@ -57,7 +57,7 @@
   <div class="quick-actions">
     <h2 class="section-title">Schnellzugriff</h2>
     <div class="actions-grid">
-      <button type="button" class="action-card action-orders" routerLink="/order-overview">
+      <button type="button" class="action-card action-orders" routerLink="/order-overview" *ngIf="isAdmin()">
         <div class="action-icon">
           <mat-icon>receipt_long</mat-icon>
         </div>
@@ -92,28 +92,28 @@
         <span>Etikettendruck</span>
       </button>
 
-      <button type="button" class="action-card action-routes" routerLink="/route-planning">
+      <button type="button" class="action-card action-routes" routerLink="/route-planning" *ngIf="isAdmin()">
         <div class="action-icon">
           <mat-icon>map</mat-icon>
         </div>
         <span>Routenplanung</span>
       </button>
 
-      <button type="button" class="action-card action-inventory" routerLink="/inventory" *ngIf="isAdmin()">
+      <button type="button" class="action-card action-inventory" routerLink="/inventory" *ngIf="canAccessInventory()">
         <div class="action-icon">
           <mat-icon>warehouse</mat-icon>
         </div>
         <span>Lagerbestand / Inventur</span>
       </button>
 
-      <button type="button" class="action-card action-employees" routerLink="/employees">
+      <button type="button" class="action-card action-employees" routerLink="/employees" *ngIf="isAdmin()">
         <div class="action-icon">
           <mat-icon>groups</mat-icon>
         </div>
         <span>Mitarbeiteransicht</span>
       </button>
 
-      <button type="button" class="action-card action-planning" routerLink="/mitarbeiterplanung">
+      <button type="button" class="action-card action-planning" routerLink="/mitarbeiterplanung" *ngIf="isAdmin()">
         <div class="action-icon">
           <mat-icon>calendar_month</mat-icon>
         </div>
@@ -134,7 +134,7 @@
         <span>Produktverwaltung</span>
       </button>
 
-      <button type="button" class="action-card action-offers" routerLink="/offers">
+      <button type="button" class="action-card action-offers" routerLink="/offers" *ngIf="isAdmin()">
         <div class="action-icon">
           <mat-icon>percent</mat-icon>
         </div>
@@ -148,7 +148,7 @@
         <span>Kundenpreise Übersicht</span>
       </button>
 
-      <button type="button" class="action-card action-reports" routerLink="/reports">
+      <button type="button" class="action-card action-reports" routerLink="/reports" *ngIf="isAdmin()">
         <div class="action-icon">
           <mat-icon>analytics</mat-icon>
         </div>
@@ -162,7 +162,7 @@
         <span>User Management</span>
       </button>
 
-      <button type="button" class="action-card action-tracking" routerLink="/device-tracking">
+      <button type="button" class="action-card action-tracking" routerLink="/device-tracking" *ngIf="isAdmin()">
         <div class="action-icon">
           <mat-icon>location_on</mat-icon>
         </div>
@@ -178,7 +178,7 @@
     </div>
   </div>
 
-  @if (hasActiveOrders()) {
+  @if (isAdmin() && hasActiveOrders()) {
   <div class="orders-section">
     <div class="section-header">
       <h2 class="section-title">Bestellungen</h2>
@@ -236,7 +236,7 @@
                 <mat-icon>visibility</mat-icon>
                 Anzeigen
               </button>
-              <button mat-flat-button type="button" class="load-order-btn" routerLink="/order-overview" *ngIf="canCreateOrders()">
+              <button mat-flat-button type="button" class="load-order-btn" routerLink="/order-overview" *ngIf="isAdmin()">
                 <mat-icon>add</mat-icon>
                 Auftrag einlesen
               </button>
@@ -287,7 +287,7 @@
             <mat-icon>visibility</mat-icon>
             Anzeigen
           </button>
-          <button mat-flat-button type="button" class="load-order-btn" routerLink="/order-overview" *ngIf="canCreateOrders()">
+          <button mat-flat-button type="button" class="load-order-btn" routerLink="/order-overview" *ngIf="isAdmin()">
             <mat-icon>add</mat-icon>
             Auftrag einlesen
           </button>

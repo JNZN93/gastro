@@ -1361,6 +1361,26 @@
 
   .price-edit {
     width: 60px;
+
+    &.price-locked,
+    &[readonly] {
+      pointer-events: none;
+      cursor: default;
+      background-color: #f4f4f4;
+      border-style: dashed;
+      box-shadow: none;
+
+      &:focus {
+        border-color: #ddd;
+        box-shadow: none;
+      }
+
+      &::-webkit-inner-spin-button,
+      &::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+    }
   }
 
   .cost-price {

@@ -8,10 +8,12 @@
         Zurück
       </button>
 
-      <button mat-flat-button type="button" class="order-overview-button" (click)="goToOrderOverview()">
-        <mat-icon>view_list</mat-icon>
-        Auftragsübersicht
-      </button>
+      @if (globalService.getUserRole() === 'admin') {
+        <button mat-flat-button type="button" class="order-overview-button" (click)="goToOrderOverview()">
+          <mat-icon>view_list</mat-icon>
+          Auftragsübersicht
+        </button>
+      }
     </div>
 
     <div class="back-header-right">
@@ -224,6 +226,8 @@
                              step="0.01" 
                              class="price-edit offer-price" 
                              [class.custom-price]="isCustomPrice(item)"
+                             [class.price-locked]="!canEditPrices()"
+                             [readonly]="!canEditPrices()"
                              (input)="onPriceInput(item)"
                              (change)="updateItemTotal(item)"
                              (blur)="validateAndUpdatePrice(item)"
@@ -236,6 +240,8 @@
                              step="0.01" 
                              class="price-edit" 
                              [class.custom-price]="isCustomPrice(item)"
+                             [class.price-locked]="!canEditPrices()"
+                             [readonly]="!canEditPrices()"
                              (input)="onPriceInput(item)"
                              (change)="updateItemTotal(item)"
                              (blur)="validateAndUpdatePrice(item)"
@@ -834,6 +840,8 @@
                                step="0.01" 
                                class="price-edit" 
                                [class.custom-price]="isCustomPrice(item)"
+                               [class.price-locked]="!canEditPrices()"
+                               [readonly]="!canEditPrices()"
                                (input)="onPriceInput(item)"
                                (change)="updateItemTotal(item)"
                                (blur)="validateAndUpdatePrice(item)"
@@ -1327,18 +1335,20 @@
           <mat-icon>print</mat-icon>
           Drucken
         </button>
-        <button mat-flat-button type="button" (click)="toggleEditMode()" class="edit-article-prices-btn" [class.active]="isEditingArticlePrices" [disabled]="isLoadingArticlePrices" title="Artikel-Preise bearbeiten">
-          @if (isLoadingArticlePrices) {
-            <mat-icon class="spinning">refresh</mat-icon>
-          } @else {
-            <mat-icon>{{ isEditingArticlePrices ? 'edit' : 'edit_off' }}</mat-icon>
-          }
-          @if (isLoadingArticlePrices) {
-            Preise werden geladen…
-          } @else {
-            {{ isEditingArticlePrices ? 'Bearbeitung beenden' : 'Bearbeiten' }}
-          }
-        </button>
+        @if (canEditPrices()) {
+          <button mat-flat-button type="button" (click)="toggleEditMode()" class="edit-article-prices-btn" [class.active]="isEditingArticlePrices" [disabled]="isLoadingArticlePrices" title="Artikel-Preise bearbeiten">
+            @if (isLoadingArticlePrices) {
+              <mat-icon class="spinning">refresh</mat-icon>
+            } @else {
+              <mat-icon>{{ isEditingArticlePrices ? 'edit' : 'edit_off' }}</mat-icon>
+            }
+            @if (isLoadingArticlePrices) {
+              Preise werden geladen…
+            } @else {
+              {{ isEditingArticlePrices ? 'Bearbeitung beenden' : 'Bearbeiten' }}
+            }
+          </button>
+        }
       </div>
     </div>
   </div>

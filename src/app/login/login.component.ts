@@ -50,7 +50,7 @@ export class LoginComponent {
             return
           }
           else if (response?.role == 'employee') {
-            this.router.navigate(['/employees']);
+            this.router.navigate(['/admin']);
             return
           }
 

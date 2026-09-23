@@ -32,7 +32,7 @@ export class LoadingScreenComponent implements OnInit {
           if(response?.user.role == "admin") {
           this.router.navigate(['/admin']);
           }else if(response?.user.role == "employee"){
-            this.router.navigate(['/employees']);
+            this.router.navigate(['/admin']);
           }else {
             this.router.navigate(['/products']);
           }
