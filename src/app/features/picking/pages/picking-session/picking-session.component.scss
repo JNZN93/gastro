@@ -380,16 +380,18 @@
   gap: 0.08rem;
   min-width: 0;
   flex: 1 1 auto;
-  overflow: hidden;
+  overflow: visible;
 
   strong {
     display: block;
     font-size: 0.84rem;
     color: #1c1b1f;
     line-height: 1.25;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow: visible;
+    text-overflow: unset;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
 }
 
@@ -424,9 +426,11 @@
 .note-label {
   font-size: 0.7rem;
   font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow: visible;
+  text-overflow: unset;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .replacement-label {
@@ -605,6 +609,16 @@
 .full-field {
   width: 100%;
   margin-bottom: 0.35rem;
+}
+
+.article-name-field {
+  textarea {
+    font-size: 0.78rem;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    resize: none;
+  }
 }
 
 .field {
@@ -886,10 +900,17 @@
 ::ng-deep {
   .article-search-field .mat-mdc-form-field-infix,
   .article-qty-field .mat-mdc-form-field-infix,
-  .full-field .mat-mdc-form-field-infix,
+  .full-field:not(.article-name-field) .mat-mdc-form-field-infix,
   .qty-field .mat-mdc-form-field-infix {
     min-height: 44px;
     font-size: 16px;
+  }
+
+  .article-name-field .mat-mdc-form-field-infix {
+    min-height: 0;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    font-size: 0.78rem;
   }
 
   .progress-inline .mdc-linear-progress {
@@ -952,7 +973,6 @@
 
   .item-main strong {
     font-size: 0.95rem;
-    white-space: normal;
   }
 
   .items-list {
