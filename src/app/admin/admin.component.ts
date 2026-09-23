@@ -784,7 +784,12 @@ formatDate(dateString: string): string {
 
   // Methode zum Prüfen, ob Benutzer Aufträge erstellen darf
   canCreateOrders(): boolean {
-    return this.isAdmin();
+    return this.isAdmin() || this.isEmployee();
+  }
+
+  // Methode zum Prüfen, ob Benutzer Lagerbestand / Inventur nutzen darf
+  canAccessInventory(): boolean {
+    return this.isAdmin() || this.isEmployee();
   }
 
   // Methode zum Prüfen, ob Benutzer User Management nutzen darf
