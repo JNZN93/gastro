@@ -19,11 +19,16 @@ export class MyDialogComponent {
       isConfirmation?: boolean;
       confirmLabel?: string;
       cancelLabel?: string;
+      choices?: Array<{ label: string; value: string }>;
     }
   ) {}
 
   close(): void {
     this.dialogRef.close();
+  }
+
+  choose(value: string): void {
+    this.dialogRef.close(value);
   }
 
   confirm(): void {

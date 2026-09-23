@@ -18,6 +18,12 @@ import { OffersService, OfferWithProducts, OfferProduct } from '../offers.servic
 import { RecentImagesModalComponent } from '../recent-images-modal/recent-images-modal.component';
 import { environment } from '../../environments/environment';
 import { readApiJson } from '../utils/order-payload.util';
+import {
+  HaehnkeuleSize,
+  isSameOrderArticle,
+  needsHaehnkeuleSizeChoice,
+  withHaehnkeuleSize,
+} from '../utils/haehnkeule-variant.util';
 
 @Component({
   selector: 'app-employees',
@@ -1592,9 +1598,40 @@ export class EmployeesComponent implements OnInit, OnDestroy {
     this.dragOverIndex = -1;
   }
 
+  private promptHaehnkeuleSize(onSize: (size: HaehnkeuleSize) => void): void {
+    const dialogRef = this.dialog.open(MyDialogComponent, {
+      width: '440px',
+      data: {
+        title: 'Hähnkeule',
+        message: 'Größe wählen. (15289) im Artikeltext wird durch (groß) oder (klein) ersetzt.',
+        choices: [
+          { label: 'Groß', value: 'groß' },
+          { label: 'Klein', value: 'klein' }
+        ]
+      }
+    });
+
+    dialogRef.afterClosed().subscribe((result: string | boolean | undefined) => {
+      if (result === 'groß' || result === 'klein') {
+        onSize(result);
+      }
+    });
+  }
+
   addToOrder(event: Event, artikel: any): void {
     if (!this.globalService.selectedCustomerForOrders) {
       alert('Bitte wählen Sie zuerst einen Kunden aus.');
+      return;
+    }
+
+    if (needsHaehnkeuleSizeChoice(artikel)) {
+      this.promptHaehnkeuleSize((size) => {
+        const sized = withHaehnkeuleSize({ ...artikel }, size);
+        if (this.editingItemIndex === -1) {
+          artikel.quantity = '';
+        }
+        this.addToOrder(event, sized);
+      });
       return;
     }
 
@@ -1627,7 +1664,7 @@ export class EmployeesComponent implements OnInit, OnDestroy {
     } else {
       // Normale Behandlung für alle anderen Kategorien: Summieren wenn gleiche Artikelnummer
       const existingItem = this.orderItems.find(
-        (item) => item.article_number == artikel.article_number
+        (item) => isSameOrderArticle(item, artikel)
       );
 
       if (existingItem) {
@@ -2489,7 +2526,7 @@ export class EmployeesComponent implements OnInit, OnDestroy {
       console.log('   - Globaler Artikel:', artikel);
       console.log('   - Globaler Text:', globalText);
 
-      if (modalText && globalText && modalText !== globalText) {
+      if (!customerPrice._haehnkeuleResolved && modalText && globalText && modalText !== globalText) {
         console.warn('⚠️ [ARTICLE-TEXT-MISMATCH] Unterschiedlicher Artikeltext gefunden:', {
           modal: modalText,
           global: globalText,
@@ -2513,12 +2550,28 @@ export class EmployeesComponent implements OnInit, OnDestroy {
         console.log('✅ [ARTICLE-TEXT-MISMATCH] Benutzer hat Fortfahren bestätigt');
       }
       
+      if (!customerPrice._haehnkeuleResolved && needsHaehnkeuleSizeChoice(artikel)) {
+        this.promptHaehnkeuleSize((size) => {
+          const sized = withHaehnkeuleSize(artikel, size);
+          this.addArticleFromPricesModal({
+            ...customerPrice,
+            _haehnkeuleResolved: true,
+            article_text: sized.article_text
+          });
+        });
+        return;
+      }
+
+      const catalogArtikel = customerPrice._haehnkeuleResolved
+        ? { ...artikel, article_text: customerPrice.article_text, description: customerPrice.article_text }
+        : artikel;
+
       // Verwende die eingegebene Menge oder Standard 1
       const quantity = customerPrice.tempQuantity && customerPrice.tempQuantity > 0 ? parseInt(customerPrice.tempQuantity) : 1;
       
       // Erstelle einen neuen Auftrag-Artikel mit Standard-Preisen (keine manuellen Preisänderungen in Employees-Komponente)
       const orderItem = {
-        ...artikel,
+        ...catalogArtikel,
         quantity: quantity
         // Kein different_price - verwende immer Standard-Preis
       };
@@ -2529,7 +2582,7 @@ export class EmployeesComponent implements OnInit, OnDestroy {
       } else {
         // Normale Behandlung für alle anderen Kategorien: Summieren wenn gleiche Artikelnummer
         const existingItem = this.orderItems.find(
-          (item) => item.article_number == artikel.article_number
+          (item) => isSameOrderArticle(item, orderItem)
         );
 
         if (existingItem) {
@@ -2563,10 +2616,10 @@ export class EmployeesComponent implements OnInit, OnDestroy {
       console.log('✅ [ARTICLE-PRICES-MODAL] Artikel erfolgreich zum Auftrag hinzugefügt');
       
       // Zeige Benachrichtigung
-      this.showArticlePricesNotification(artikel.article_text || artikel.article_name || 'Unbekannter Artikel', quantity);
+      this.showArticlePricesNotification(orderItem.article_text || artikel.article_name || 'Unbekannter Artikel', quantity);
       
       // Zeige Toast-Nachricht
-      this.showToastMessage(`Artikel "${artikel.article_text || artikel.article_name || 'Unbekannter Artikel'}" wurde zum Auftrag hinzugefügt`, 'success');
+      this.showToastMessage(`Artikel "${orderItem.article_text || artikel.article_name || 'Unbekannter Artikel'}" wurde zum Auftrag hinzugefügt`, 'success');
       
       // Setze die temporäre Menge zurück
       customerPrice.tempQuantity = null;

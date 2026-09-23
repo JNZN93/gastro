@@ -3,7 +3,12 @@
   <p>{{ data.message }}</p>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
-  @if (data.isConfirmation) {
+  @if (data.choices?.length) {
+    <button mat-button type="button" (click)="cancel()">Abbrechen</button>
+    @for (choice of data.choices; track choice.value) {
+      <button mat-flat-button color="primary" type="button" (click)="choose(choice.value)">{{ choice.label }}</button>
+    }
+  } @else if (data.isConfirmation) {
     <button mat-button (click)="cancel()">{{ data.cancelLabel || 'Abbrechen' }}</button>
     <button mat-button color="warn" (click)="confirm()">{{ data.confirmLabel || 'Bestätigen' }}</button>
   } @else {
