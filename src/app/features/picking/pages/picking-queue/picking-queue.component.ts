@@ -111,6 +111,7 @@ export class PickingQueueComponent implements OnInit {
         (order) =>
           order.status === 'released' ||
           order.status === 'picking' ||
+          order.status === 'partially_picked' ||
           order.status === 'picked' ||
           order.status === 'completed'
       );
@@ -176,15 +177,24 @@ export class PickingQueueComponent implements OnInit {
       return true;
     }
     if (this.statusFilter === 'picking') {
-      return order.status === 'picking';
+      return order.status === 'picking' || order.status === 'partially_picked';
     }
     if (this.statusFilter === 'picked') {
       return order.status === 'picked' || order.status === 'completed';
     }
-    return order.status === 'released' || order.status === 'picking';
+    return order.status === 'released' || order.status === 'picking' || order.status === 'partially_picked';
   }
 
   private getQueueProgress(order: PickingOrder, localState: PickingState | null): PickingProgress {
+    if (order.status === 'partially_picked' && !localState) {
+      const total = order.items?.length ?? 0;
+      const done = (order.items ?? []).filter((item) => item.picking_status === 'picked').length;
+      return {
+        done,
+        total,
+        percent: total > 0 ? Math.round((done / total) * 100) : 0,
+      };
+    }
     if (order.status === 'picked' || order.status === 'completed') {
       const total = order.items?.length ?? 0;
       return {
@@ -238,7 +248,7 @@ export class PickingQueueComponent implements OnInit {
 
   private compareQueueEntries(a: QueueEntry, b: QueueEntry): number {
     const statusWeight = (status: string) => {
-      if (status === 'picking') return 0;
+      if (status === 'picking' || status === 'partially_picked') return 0;
       if (status === 'released') return 1;
       if (status === 'picked') return 2;
       return 3;
@@ -482,6 +492,8 @@ export class PickingQueueComponent implements OnInit {
         return 'Freigegeben';
       case 'picking':
         return 'Wird kommissioniert';
+      case 'partially_picked':
+        return 'Teilweise kommissioniert';
       case 'picked':
       case 'completed':
         return 'Fertig';
@@ -504,6 +516,8 @@ export class PickingQueueComponent implements OnInit {
         return 'task_alt';
       case 'picking':
         return 'hourglass_top';
+      case 'partially_picked':
+        return 'schedule';
       case 'picked':
       case 'completed':
         return 'check_circle';

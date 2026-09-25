@@ -110,6 +110,8 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
   modalPickedQuantity = 0;
   modalNote = '';
   modalUnavailable = false;
+  modalLater = false;
+  private resumedFromPartial = false;
   modalReplacementSearch = '';
   modalReplacementResults: CatalogArticle[] = [];
   showReplacementSearchDropdown = false;
@@ -270,6 +272,8 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
         return;
       }
 
+      this.resumedFromPartial = order.status === 'partially_picked';
+
       if (order.status === 'picked' || order.status === 'completed') {
         this.isReadOnlySession = true;
         this.order = order;
@@ -282,7 +286,7 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
 
       this.isReadOnlySession = false;
 
-      if (order.status !== 'released' && order.status !== 'picking') {
+      if (order.status !== 'released' && order.status !== 'picking' && order.status !== 'partially_picked') {
         this.errorMessage = 'Diese Bestellung ist nicht zur Kommissionierung freigegeben.';
         this.order = order;
         return;
@@ -341,7 +345,7 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     }
 
     const blocked = orders.find(
-      (entry) => !['released', 'picking', 'picked', 'completed'].includes(entry.status)
+      (entry) => !['released', 'picking', 'partially_picked', 'picked', 'completed'].includes(entry.status)
     );
     if (blocked) {
       this.errorMessage = `Bestellung #${blocked.order_id} ist nicht zur Kommissionierung freigegeben.`;
@@ -410,7 +414,7 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     if (validExisting) {
       this.stateItems = validExisting.items;
       this.captureOriginalItems(orders[0], validExisting);
-      if (orders.some((entry) => entry.status === 'released')) {
+      if (orders.some((entry) => entry.status === 'released' || entry.status === 'partially_picked')) {
         await this.startPicking(true, true);
       }
       return;
@@ -518,7 +522,7 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     if (validExisting) {
       this.stateItems = validExisting.items;
       this.captureOriginalItems(order, validExisting);
-      if (order.status === 'released') {
+      if (order.status === 'released' || order.status === 'partially_picked') {
         await this.startPicking(true, true);
       }
       return;
@@ -552,7 +556,7 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     try {
       if (updateRemoteStatus) {
         for (const current of this.sessionOrders) {
-          if (current.status !== 'released' && current.status !== 'picking') {
+          if (current.status !== 'released' && current.status !== 'picking' && current.status !== 'partially_picked') {
             continue;
           }
           await lastValueFrom(
@@ -627,7 +631,7 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   private itemNeedsModal(item: PickItemState): boolean {
-    if (item.status === 'partial' || item.status === 'unavailable') {
+    if (item.status === 'partial' || item.status === 'unavailable' || item.status === 'later') {
       return true;
     }
     if (item.replacementArticleNumber) {
@@ -689,6 +693,7 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     this.modalPickedQuantity = item.pickedQuantity > 0 ? item.pickedQuantity : item.targetQuantity;
     this.modalNote = item.note || '';
     this.modalUnavailable = item.status === 'unavailable';
+    this.modalLater = item.status === 'later';
     this.modalReplacementSearch = '';
     this.modalReplacementResults = [];
     this.showReplacementSearchDropdown = false;
@@ -732,6 +737,8 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     this.modalPfandSearch = '';
     this.modalPfandResults = [];
     this.modalSelectedPfand = null;
+    this.modalUnavailable = false;
+    this.modalLater = false;
   }
 
   adjustModalQuantity(delta: number): void {
@@ -876,7 +883,11 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
       return;
     }
 
-    if (this.modalUnavailable) {
+    if (this.modalLater) {
+      this.selectedItem.status = 'later';
+      this.selectedItem.note = this.modalNote.trim() || undefined;
+      this.selectedItem.pickedQuantity = 0;
+    } else if (this.modalUnavailable) {
       this.selectedItem.status = 'unavailable';
       this.selectedItem.note = this.modalNote.trim() || 'Nicht verfügbar';
       this.selectedItem.pickedQuantity = 0;
@@ -885,7 +896,7 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
         Math.max(0, Number(this.modalPickedQuantity) || 0)
       );
       this.selectedItem.note = this.modalNote.trim() || undefined;
-      if (this.selectedItem.status === 'unavailable') {
+      if (this.selectedItem.status === 'unavailable' || this.selectedItem.status === 'later') {
         this.selectedItem.status = 'pending';
       }
       this.selectedItem.status = this.pickingState.updateItemStatus(this.selectedItem);
@@ -899,7 +910,7 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
       this.selectedItem.productName = trimmedProductName;
     }
 
-    if (!this.modalUnavailable && this.modalAddPfand && !this.selectedItem.isPfandLine) {
+    if (!this.modalUnavailable && !this.modalLater && this.modalAddPfand && !this.selectedItem.isPfandLine) {
       const pfandProduct =
         this.modalSelectedPfand || this.getSuggestedPfandForItem(this.selectedItem);
       if (pfandProduct) {
@@ -910,6 +921,7 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
       }
     } else if (
       !this.modalUnavailable &&
+      !this.modalLater &&
       !this.modalAddPfand &&
       (this.selectedItem.pfandEnabled || this.findPfandLineForParent(this.selectedItem))
     ) {
@@ -924,12 +936,17 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
   onModalUnavailableChange(unavailable: boolean): void {
     this.modalUnavailable = unavailable;
     if (unavailable) {
+      this.modalLater = false;
       this.modalPickedQuantity = 0;
       this.modalAddPfand = false;
       this.showModalCalculator = false;
       if (!this.modalNote.trim()) {
         this.modalNote = 'Nicht verfügbar';
       }
+      return;
+    }
+
+    if (this.modalLater) {
       return;
     }
 
@@ -941,6 +958,50 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     }
     if (this.modalNote.trim() === 'Nicht verfügbar') {
       this.modalNote = '';
+    }
+  }
+
+  onModalLaterChange(later: boolean): void {
+    this.modalLater = later;
+    if (!later) {
+      if (this.selectedItem && this.modalPickedQuantity <= 0) {
+        this.modalPickedQuantity = this.selectedItem.targetQuantity;
+      }
+      return;
+    }
+    this.modalUnavailable = false;
+    this.modalPickedQuantity = 0;
+    this.modalAddPfand = false;
+    this.showModalCalculator = false;
+    if (this.modalNote.trim() === 'Nicht verfügbar') {
+      this.modalNote = '';
+    }
+  }
+
+  onItemLaterClick(event: Event, item: PickItemState): Promise<void> | void {
+    event.stopPropagation();
+    if (this.isReadOnlySession || this.isItemLocked(item) || this.isSaving) {
+      return;
+    }
+    if (item.status === 'later') {
+      item.status = 'pending';
+      item.pickedQuantity = 0;
+    } else {
+      item.status = 'later';
+      item.pickedQuantity = 0;
+      item.note = item.note === 'Nicht verfügbar' ? undefined : item.note;
+    }
+    return this.persistItemChange();
+  }
+
+  private async persistItemChange(): Promise<void> {
+    this.isSaving = true;
+    try {
+      await this.persistState();
+    } catch {
+      this.setFeedback('error', 'Position konnte nicht gespeichert werden.');
+    } finally {
+      this.isSaving = false;
     }
   }
 
@@ -1496,10 +1557,19 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
 
     try {
       await this.syncOrderToServer(true);
-      await this.pickingState.saveState({
-        ...this.toStoredState(existing),
-        completedAt: new Date().toISOString(),
-      });
+      const hasLater = this.stateItems.some((item) => item.status === 'later');
+      if (hasLater) {
+        if (this.isBundle) {
+          await this.pickingState.deleteRelatedStates(this.bundleOrderIds);
+        } else {
+          await this.pickingState.deleteState(this.order.order_id);
+        }
+      } else {
+        await this.pickingState.saveState({
+          ...this.toStoredState(existing),
+          completedAt: new Date().toISOString(),
+        });
+      }
       this.closeCompleteModal();
       this.router.navigate(['/picking']);
     } catch (error: any) {
@@ -1529,7 +1599,11 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
             continue;
           }
           await lastValueFrom(
-            this.orderService.updateOrderStatusOnly(current.order_id, 'released', token)
+            this.orderService.updateOrderStatusOnly(
+              current.order_id,
+              this.resumedFromPartial ? 'partially_picked' : 'released',
+              token
+            )
           );
         }
       }
@@ -1551,6 +1625,22 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     const items: PickingSyncItem[] = [];
 
     for (const item of source) {
+      if (item.status === 'later') {
+        const productId = this.resolveProductId(item);
+        if (!productId) {
+          continue;
+        }
+        items.push({
+          product_id: productId,
+          quantity: item.targetQuantity,
+          price: item.price,
+          different_price: item.differentPrice ?? null,
+          description: item.productName,
+          defer: true,
+        });
+        continue;
+      }
+
       if (item.status === 'unavailable') {
         const productId = this.resolveProductId(item);
         if (!productId) {
@@ -1614,7 +1704,8 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
         )
       );
       if (complete) {
-        current.status = 'picked';
+        const orderItems = this.pickingState.itemsInOriginalOrder(this.stateItems, current.order_id);
+        current.status = orderItems.some((item) => item.status === 'later') ? 'partially_picked' : 'picked';
       }
     }
   }
@@ -1672,6 +1763,7 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
             ? Number(item.different_price)
             : null,
         description: item.product_name,
+        picking_status: item.picking_status ?? null,
       }));
 
       await lastValueFrom(
@@ -1894,10 +1986,27 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   getCompleteDetail(): string {
+    if (this.hasLaterItems()) {
+      return 'Die markierten Positionen bleiben im Auftrag und können später kommissioniert werden. Der Auftrag wird als teilweise kommissioniert angezeigt.';
+    }
     if (this.isBundle) {
       return 'Beide Bestellungen werden getrennt abgeschlossen. Jede Position landet wieder in ihrer ursprünglichen Bestellung und Position.';
     }
     return 'Möchten Sie die Kommissionierung wirklich abschließen?';
+  }
+
+  hasLaterItems(): boolean {
+    return this.stateItems.some((item) => item.status === 'later');
+  }
+
+  canFinishPicking(): boolean {
+    return this.pickingState.canComplete({
+      orderId: this.orderId,
+      orderFingerprint: '',
+      startedAt: '',
+      startedBy: '',
+      items: this.stateItems,
+    });
   }
 
   openPrintModal(): void {
@@ -1957,6 +2066,8 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
         return 'Teilweise';
       case 'unavailable':
         return 'Nicht verfügbar';
+      case 'later':
+        return 'Später';
       default:
         return 'Offen';
     }
@@ -1974,6 +2085,8 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
         return 'timelapse';
       case 'unavailable':
         return 'cancel';
+      case 'later':
+        return 'radio_button_unchecked';
       default:
         return 'radio_button_unchecked';
     }

@@ -48,12 +48,16 @@ export class PickingStateService {
       different_price: item.different_price ?? null,
       product_name: item.product_name,
       product_article_number: item.product_article_number,
+      picking_status: item.picking_status ?? null,
     }));
   }
 
   computeOrderFingerprint(items: PickingOrderItem[]): string {
     return items
-      .map((item, index) => `${index}:${item.product_id}:${item.product_article_number}:${item.quantity}`)
+      .map(
+        (item, index) =>
+          `${index}:${item.product_id}:${item.product_article_number}:${item.quantity}:${item.picking_status || ''}`
+      )
       .join('|');
   }
 
@@ -75,14 +79,15 @@ export class PickingStateService {
       originalItems,
       items: originalItems.map((item, index) => {
         const quantity = Number(item.quantity);
+        const alreadyPicked = markAsPicked || item.picking_status === 'picked';
         return {
           key: this.buildItemKey(item, index),
           productId: item.product_id,
           articleNumber: item.product_article_number,
           productName: item.product_name,
           targetQuantity: quantity,
-          pickedQuantity: markAsPicked ? quantity : 0,
-          status: (markAsPicked ? 'picked' : 'pending') as PickItemStatus,
+          pickedQuantity: alreadyPicked ? quantity : 0,
+          status: (alreadyPicked ? 'picked' : 'pending') as PickItemStatus,
           price: item.price != null ? Number(item.price) : 0,
           differentPrice:
             item.different_price != null && item.different_price !== ''
@@ -276,7 +281,7 @@ export class PickingStateService {
     }
 
     const total = state.items.length;
-    const done = state.items.filter((item) => item.status !== 'pending').length;
+    const done = state.items.filter((item) => item.status !== 'pending' && item.status !== 'later').length;
 
     return {
       done,
@@ -292,6 +297,9 @@ export class PickingStateService {
   updateItemStatus(item: PickItemState): PickItemStatus {
     if (item.status === 'unavailable') {
       return 'unavailable';
+    }
+    if (item.status === 'later') {
+      return 'later';
     }
     if (item.pickedQuantity <= 0) {
       return 'pending';

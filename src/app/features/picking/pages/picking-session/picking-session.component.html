@@ -235,6 +235,9 @@
             @if (item.isAddedLine) {
               <span class="added-label">Neu</span>
             }
+            @if (item.category === 'TIEFKÜHL') {
+              <span class="frozen-label">Tiefkühl</span>
+            }
             @if (item.replacementArticleNumber) {
               <span class="replacement-label">
                 Ersatz: {{ item.replacementArticleNumber }}{{ item.replacementArticleName ? ' - ' + item.replacementArticleName : '' }}
@@ -251,6 +254,15 @@
             <span class="status-pill">{{ getItemStatusLabel(item.status) }}</span>
           </div>
           @if (!isReadOnlySession && !isItemLocked(item)) {
+            <button
+              type="button"
+              class="item-later-btn"
+              (click)="onItemLaterClick($event, item)"
+              [disabled]="isSaving"
+              [attr.aria-pressed]="item.status === 'later'"
+            >
+              {{ item.status === 'later' ? 'Jetzt' : 'Später' }}
+            </button>
             <button
               type="button"
               class="item-edit-btn"
@@ -284,10 +296,10 @@
           type="button"
           class="complete-btn"
           (click)="openCompleteModal()"
-          [disabled]="isSaving || progress.done < progress.total"
+          [disabled]="isSaving || !canFinishPicking()"
         >
           <mat-icon>check</mat-icon>
-          Abschließen
+          {{ hasLaterItems() ? 'Teilweise abschließen' : 'Abschließen' }}
         </button>
       }
     </footer>
@@ -465,6 +477,15 @@
           <small class="field-hint">Menge entspricht der kommissionierten Menge des Artikels.</small>
         </div>
       }
+
+      <div class="field unavailable-toggle">
+        <mat-checkbox [(ngModel)]="modalLater" (ngModelChange)="onModalLaterChange($event)">
+          Später kommissionieren
+        </mat-checkbox>
+        <small class="field-hint">
+          Zum Beispiel Tiefkühlware. Der Rest kann abgeschlossen werden, diese Position bleibt offen.
+        </small>
+      </div>
 
       <div class="field unavailable-toggle">
         <mat-checkbox [(ngModel)]="modalUnavailable" (ngModelChange)="onModalUnavailableChange($event)">

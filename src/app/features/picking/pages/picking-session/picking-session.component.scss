@@ -391,6 +391,30 @@
   margin-left: -0.35rem;
 }
 
+.item-later-btn {
+  border: 1px solid #90caf9;
+  background: #e3f2fd;
+  color: #1565c0;
+  border-radius: 999px;
+  padding: 0.2rem 0.45rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.2;
+  flex-shrink: 0;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+}
+
+.item-later .item-later-btn {
+  background: #1565c0;
+  color: #fff;
+  border-color: #1565c0;
+}
+
 .item-edit-btn {
   width: 32px;
   height: 32px;
@@ -540,6 +564,25 @@
   .status-pill {
     background: #fff9c4;
   }
+}
+
+.item-later {
+  background: #e3f2fd;
+
+  .item-status-icon,
+  .status-pill {
+    color: #1565c0;
+  }
+
+  .status-pill {
+    background: #bbdefb;
+  }
+}
+
+.frozen-label {
+  color: #0277bd;
+  font-size: 0.7rem;
+  font-weight: 600;
 }
 
 .item-unavailable {

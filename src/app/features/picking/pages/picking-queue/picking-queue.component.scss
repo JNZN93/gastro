@@ -293,6 +293,11 @@
     color: #e65100 !important;
   }
 
+  &.partial {
+    background: #e3f2fd !important;
+    color: #1565c0 !important;
+  }
+
   &.picked,
   &.completed {
     background: #e8f5e9 !important;

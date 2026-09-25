@@ -1,4 +1,4 @@
-export type PickItemStatus = 'pending' | 'partial' | 'picked' | 'unavailable';
+export type PickItemStatus = 'pending' | 'partial' | 'picked' | 'unavailable' | 'later';
 
 export interface PickingOrderItem {
   product_id: number;
@@ -7,6 +7,7 @@ export interface PickingOrderItem {
   different_price?: string | null;
   product_name: string;
   product_article_number: string;
+  picking_status?: 'picked' | 'later' | null;
 }
 
 export interface PickingOrder {
@@ -87,4 +88,6 @@ export interface PickingSyncItem {
   remove?: boolean;
   replacement_article_number?: string;
   replacement_article_name?: string;
+  defer?: boolean;
+  picking_status?: 'picked' | 'later' | null;
 }

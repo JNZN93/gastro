@@ -569,6 +569,7 @@ export class OrderOverviewComponent implements OnInit {
       case 'released': return 'status-released';
       case 'in_progress': return 'status-progress';
       case 'picking': return 'status-picking';
+      case 'partially_picked': return 'status-picking';
       case 'picked': return 'status-picked';
       case 'delivered': return 'status-delivered';
       case 'completed': return 'status-completed';
@@ -584,6 +585,7 @@ export class OrderOverviewComponent implements OnInit {
       case 'released': return 'Freigegeben';
       case 'in_progress': return 'In Bearbeitung';
       case 'picking': return 'Wird kommissioniert';
+      case 'partially_picked': return 'Teilweise kommissioniert';
       case 'picked': return 'Fertig kommissioniert';
       case 'delivered': return 'Ausgeliefert';
       case 'completed': return 'Abgeschlossen';

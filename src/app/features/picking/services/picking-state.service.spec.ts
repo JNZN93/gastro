@@ -97,6 +97,18 @@ describe('PickingStateService', () => {
     item.status = 'unavailable';
     item.pickedQuantity = 0;
     expect(service.updateItemStatus(item)).toBe('unavailable');
+
+    item.status = 'later';
+    expect(service.updateItemStatus(item)).toBe('later');
+  });
+
+  it('allows completion when remaining items are deferred', () => {
+    const state = service.createInitialState(sampleOrder, 'Max');
+    state.items[0].status = 'picked';
+    state.items[0].pickedQuantity = 5;
+    state.items[1].status = 'later';
+    expect(service.canComplete(state)).toBeTrue();
+    expect(service.getProgress(state)).toEqual({ done: 1, total: 2, percent: 50 });
   });
 
   it('groups the same article from two orders without merging quantities', () => {
