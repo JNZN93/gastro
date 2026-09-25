@@ -598,6 +598,88 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     }
   }
 
+  onItemRowClick(item: PickItemState): void {
+    this.activateItem(item);
+  }
+
+  onItemCheckClick(event: Event, item: PickItemState): void {
+    event.stopPropagation();
+    this.activateItem(item);
+  }
+
+  onItemEditClick(event: Event, item: PickItemState): void {
+    event.stopPropagation();
+    if (this.isReadOnlySession || this.isItemLocked(item) || this.isSaving) {
+      return;
+    }
+    this.openItemModal(item);
+  }
+
+  private activateItem(item: PickItemState): void {
+    if (this.isReadOnlySession || this.isItemLocked(item) || this.isSaving) {
+      return;
+    }
+    if (this.itemNeedsModal(item)) {
+      this.openItemModal(item);
+      return;
+    }
+    void this.toggleItemChecked(item);
+  }
+
+  private itemNeedsModal(item: PickItemState): boolean {
+    if (item.status === 'partial' || item.status === 'unavailable') {
+      return true;
+    }
+    if (item.replacementArticleNumber) {
+      return true;
+    }
+    if (item.pickedQuantity > 0 && item.pickedQuantity < item.targetQuantity) {
+      return true;
+    }
+    const originalName = this.getOriginalProductName(item);
+    return !!originalName && item.productName.trim() !== originalName.trim();
+  }
+
+  private getOriginalProductName(item: PickItemState): string {
+    if (item.isAddedLine) {
+      return '';
+    }
+    const originals = item.sourceOrderId
+      ? (this.originalItemsByOrder.get(item.sourceOrderId) ?? [])
+      : this.originalItems;
+    if (item.originalIndex != null && originals[item.originalIndex]) {
+      return originals[item.originalIndex].product_name || '';
+    }
+    const match = originals.find(
+      (entry) =>
+        entry.product_id === item.productId || entry.product_article_number === item.articleNumber
+    );
+    return match?.product_name || '';
+  }
+
+  private async toggleItemChecked(item: PickItemState): Promise<void> {
+    const fullyPicked = item.status === 'picked' && item.pickedQuantity >= item.targetQuantity;
+    if (fullyPicked) {
+      item.pickedQuantity = 0;
+      item.status = 'pending';
+    } else {
+      item.pickedQuantity = item.targetQuantity;
+      if (item.status === 'unavailable') {
+        item.status = 'pending';
+      }
+      item.status = this.pickingState.updateItemStatus(item);
+    }
+
+    this.isSaving = true;
+    try {
+      await this.persistState();
+    } catch {
+      this.setFeedback('error', 'Position konnte nicht gespeichert werden.');
+    } finally {
+      this.isSaving = false;
+    }
+  }
+
   openItemModal(item: PickItemState): void {
     if (this.isItemLocked(item)) {
       return;

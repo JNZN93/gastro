@@ -366,6 +366,44 @@
   background: #f7f9fc;
 }
 
+.item-check-btn,
+.item-edit-btn {
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  color: inherit;
+  -webkit-tap-highlight-color: transparent;
+
+  &:disabled {
+    cursor: default;
+  }
+}
+
+.item-check-btn {
+  width: 36px;
+  height: 36px;
+  margin-left: -0.35rem;
+}
+
+.item-edit-btn {
+  width: 32px;
+  height: 32px;
+  margin-right: -0.2rem;
+  color: #5f6368;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+}
+
 .item-status-icon {
   flex-shrink: 0;
   font-size: 22px;

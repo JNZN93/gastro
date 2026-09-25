@@ -202,17 +202,25 @@
 
     <section class="items-list">
       @for (item of stateItems; track item.key) {
-        <button
-          type="button"
+        <div
           class="item-row"
           [class]="getItemStatusClass(item.status)"
           [class.locked]="isItemLocked(item)"
-          (click)="!isReadOnlySession && openItemModal(item)"
           [class.read-only]="isReadOnlySession || isItemLocked(item)"
+          (click)="onItemRowClick(item)"
           matRipple
           [matRippleDisabled]="isReadOnlySession || isItemLocked(item)"
         >
-          <mat-icon class="item-status-icon">{{ getItemStatusIcon(item.status) }}</mat-icon>
+          <button
+            type="button"
+            class="item-check-btn"
+            (click)="onItemCheckClick($event, item)"
+            [disabled]="isReadOnlySession || isItemLocked(item) || isSaving"
+            [attr.aria-pressed]="item.status === 'picked'"
+            [attr.aria-label]="item.status === 'picked' ? 'Position zurücksetzen' : 'Position abhaken'"
+          >
+            <mat-icon class="item-status-icon">{{ getItemStatusIcon(item.status) }}</mat-icon>
+          </button>
           <div class="item-main">
             <strong>{{ item.productName }}</strong>
             <span class="article-number">
@@ -242,7 +250,18 @@
             <span class="qty">{{ item.pickedQuantity }}/{{ item.targetQuantity }}</span>
             <span class="status-pill">{{ getItemStatusLabel(item.status) }}</span>
           </div>
-        </button>
+          @if (!isReadOnlySession && !isItemLocked(item)) {
+            <button
+              type="button"
+              class="item-edit-btn"
+              (click)="onItemEditClick($event, item)"
+              [disabled]="isSaving"
+              aria-label="Position ändern"
+            >
+              <mat-icon>edit</mat-icon>
+            </button>
+          }
+        </div>
       }
     </section>
 
