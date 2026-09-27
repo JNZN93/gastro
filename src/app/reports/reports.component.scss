@@ -28,27 +28,10 @@
   border-bottom: 2px solid #e5e7eb;
 
   .back-button {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 16px;
-    background: #f3f4f6;
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
-    color: #374151;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-
-    &:hover {
-      background: #e5e7eb;
-      border-color: #9ca3af;
-    }
-
-    svg {
-      width: 20px;
-      height: 20px;
-    }
+    --mdc-outlined-button-label-text-color: #455a64;
+    --mdc-outlined-button-outline-color: #90a4ae;
+    --mat-outlined-button-state-layer-color: #455a64;
+    --mat-outlined-button-ripple-color: rgba(69, 90, 100, 0.12);
   }
 
   .reports-title {
@@ -279,31 +262,15 @@
 
   .product-details {
     .export-section {
+      display: flex;
+      justify-content: flex-end;
       margin-bottom: 30px;
-      text-align: right;
 
-      .export-button {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 12px 20px;
-        background: #10b981;
-        color: white;
-        border: none;
-        border-radius: 8px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s ease;
-
-        &:hover {
-          background: #059669;
-          transform: translateY(-1px);
-        }
-
-        svg {
-          width: 20px;
-          height: 20px;
-        }
+      .export-all-btn {
+        --mdc-filled-button-container-color: #1565c0;
+        --mdc-filled-button-label-text-color: #fff;
+        --mat-filled-button-state-layer-color: #fff;
+        --mat-filled-button-ripple-color: rgba(255, 255, 255, 0.16);
       }
     }
 
@@ -334,29 +301,56 @@
           border-bottom: none;
         }
 
-        .toggle-button {
-          background: none;
-          border: none;
-          cursor: pointer;
-          padding: 8px;
-          border-radius: 6px;
-          transition: all 0.2s ease;
+        .section-actions {
           display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
           align-items: center;
-          justify-content: center;
+        }
 
-          &:hover {
-            background: #e5e7eb;
-          }
+        .pdf-gemuese-btn {
+          --mdc-outlined-button-label-text-color: #2e7d32;
+          --mdc-outlined-button-outline-color: #a5d6a7;
+          --mat-outlined-button-state-layer-color: #2e7d32;
+          --mat-outlined-button-ripple-color: rgba(46, 125, 50, 0.12);
+        }
 
-          svg {
-            width: 20px;
-            height: 20px;
-            color: #6b7280;
+        .pdf-obst-btn {
+          --mdc-outlined-button-label-text-color: #ef6c00;
+          --mdc-outlined-button-outline-color: #ffcc80;
+          --mat-outlined-button-state-layer-color: #ef6c00;
+          --mat-outlined-button-ripple-color: rgba(239, 108, 0, 0.12);
+        }
+
+        .pdf-divers-btn {
+          --mdc-outlined-button-label-text-color: #6d28d9;
+          --mdc-outlined-button-outline-color: #d8b4fe;
+          --mat-outlined-button-state-layer-color: #6d28d9;
+          --mat-outlined-button-ripple-color: rgba(109, 40, 217, 0.12);
+        }
+
+        .pdf-haehnchen-btn {
+          --mdc-outlined-button-label-text-color: #b45309;
+          --mdc-outlined-button-outline-color: #fcd34d;
+          --mat-outlined-button-state-layer-color: #b45309;
+          --mat-outlined-button-ripple-color: rgba(180, 83, 9, 0.12);
+        }
+
+        .pdf-kundenliste-btn {
+          --mdc-filled-button-container-color: #b45309;
+          --mdc-filled-button-label-text-color: #fff;
+          --mat-filled-button-state-layer-color: #fff;
+          --mat-filled-button-ripple-color: rgba(255, 255, 255, 0.16);
+        }
+
+        .toggle-button {
+          color: #6b7280;
+
+          mat-icon {
             transition: transform 0.2s ease;
           }
 
-          &.collapsed svg {
+          &.collapsed mat-icon {
             transform: rotate(-90deg);
           }
         }
@@ -712,6 +706,31 @@
   font-weight: bold;
 }
 
+.haehnchen-customer-list {
+  margin-top: 1.5rem;
+  padding: 1rem 1.25rem;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-radius: 8px;
+
+  h3 {
+    margin: 0 0 0.75rem 0;
+    color: #92400e;
+    font-size: 1.05rem;
+  }
+
+  ul {
+    margin: 0;
+    padding-left: 1.25rem;
+  }
+
+  li {
+    margin: 0.35rem 0;
+    color: #1f2937;
+    line-height: 1.45;
+  }
+}
+
 .no-products-hint {
   padding: 1rem 0;
   color: #6b7280;
@@ -801,13 +820,7 @@
     }
 
     .back-button {
-      padding: 8px 12px;
-      font-size: 14px;
-      
-      svg {
-        width: 18px;
-        height: 18px;
-      }
+      align-self: flex-start;
     }
   }
 
@@ -862,14 +875,11 @@
 
   .product-details {
     .export-section {
-      text-align: center;
+      justify-content: stretch;
       margin-bottom: 20px;
 
-      .export-button {
+      .export-all-btn {
         width: 100%;
-        justify-content: center;
-        padding: 14px 20px;
-        font-size: 14px;
       }
     }
 
@@ -958,14 +968,7 @@
     }
 
     .back-button {
-      padding: 6px 10px;
-      font-size: 13px;
-      gap: 6px;
-      
-      svg {
-        width: 16px;
-        height: 16px;
-      }
+      align-self: flex-start;
     }
   }
 
@@ -1018,11 +1021,6 @@
   .product-details {
     .export-section {
       margin-bottom: 15px;
-
-      .export-button {
-        padding: 12px 16px;
-        font-size: 13px;
-      }
     }
 
     .customer-summary, .product-category {

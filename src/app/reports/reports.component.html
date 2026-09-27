@@ -2,10 +2,8 @@
 <div class="reports-container">
   <!-- Header -->
   <div class="reports-header">
-    <button class="back-button" (click)="goBack()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-      </svg>
+    <button mat-stroked-button type="button" class="back-button" (click)="goBack()">
+      <mat-icon>arrow_back</mat-icon>
       Zurück zum Admin
     </button>
     <h1 class="reports-title">
@@ -112,10 +110,8 @@
     <div class="product-details" *ngIf="filteredOrders.length > 0">
       <!-- Export-Bereich (alle Kategorien) -->
       <div class="export-section">
-        <button class="export-button" (click)="exportToPDF('ALL')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-          </svg>
+        <button mat-flat-button type="button" class="export-all-btn" (click)="exportToPDF('ALL')">
+          <mat-icon>picture_as_pdf</mat-icon>
           Alle Kategorien als PDF
         </button>
       </div>
@@ -124,10 +120,8 @@
       <div class="customer-summary" *ngIf="reportData.customerSummary.length > 0">
         <div class="section-header" (click)="toggleCustomerSummary()">
           <h2>Kunden-Zusammenfassung</h2>
-          <button class="toggle-button" [class.collapsed]="isCustomerSummaryCollapsed">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-            </svg>
+          <button mat-icon-button type="button" class="toggle-button" [class.collapsed]="isCustomerSummaryCollapsed" aria-label="Kunden-Zusammenfassung ein- oder ausklappen">
+            <mat-icon>expand_more</mat-icon>
           </button>
         </div>
         <div class="customer-table-container" [class.collapsed]="isCustomerSummaryCollapsed">
@@ -167,19 +161,20 @@
         <div class="section-header">
           <h2 (click)="toggleProductCategory()">OBST, GEMÜSE & DIVERS Produkte</h2>
           <div class="section-actions">
-            <button class="export-button small" type="button" (click)="exportToPDF('GEMUESE')">
+            <button mat-stroked-button type="button" class="pdf-gemuese-btn" (click)="exportToPDF('GEMUESE')">
+              <mat-icon>picture_as_pdf</mat-icon>
               GEMÜSE PDF
             </button>
-            <button class="export-button small" type="button" (click)="exportToPDF('OBST')">
+            <button mat-stroked-button type="button" class="pdf-obst-btn" (click)="exportToPDF('OBST')">
+              <mat-icon>picture_as_pdf</mat-icon>
               OBST PDF
             </button>
-            <button class="export-button small" type="button" (click)="exportToPDF('DIVERS')">
+            <button mat-stroked-button type="button" class="pdf-divers-btn" (click)="exportToPDF('DIVERS')">
+              <mat-icon>picture_as_pdf</mat-icon>
               DIVERS PDF
             </button>
-            <button class="toggle-button" type="button" [class.collapsed]="isProductCategoryCollapsed">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-              </svg>
+            <button mat-icon-button type="button" class="toggle-button" [class.collapsed]="isProductCategoryCollapsed" (click)="toggleProductCategory()" aria-label="Produktliste ein- oder ausklappen">
+              <mat-icon>expand_more</mat-icon>
             </button>
           </div>
         </div>
@@ -250,9 +245,16 @@
       <div class="product-category frische-haehnchen-section">
         <div class="section-header">
           <h2>FRISCHE HÄHNCHEN</h2>
-          <button class="export-button small" type="button" (click)="exportToPDF('FRISCHE_HAEHNCHEN')">
-            FRISCHE HÄHNCHEN PDF
-          </button>
+          <div class="section-actions">
+            <button mat-stroked-button type="button" class="pdf-haehnchen-btn" (click)="exportToPDF('FRISCHE_HAEHNCHEN')">
+              <mat-icon>picture_as_pdf</mat-icon>
+              FRISCHE HÄHNCHEN PDF
+            </button>
+            <button mat-flat-button type="button" class="pdf-kundenliste-btn" (click)="exportHaehnchenKundenPdf()">
+              <mat-icon>picture_as_pdf</mat-icon>
+              Kundenliste PDF
+            </button>
+          </div>
         </div>
         <div class="category-table-container">
           <p class="no-products-hint" *ngIf="reportData.frischeHaehnchenProductList.length === 0">
@@ -286,6 +288,15 @@
               </tr>
             </tbody>
           </table>
+
+          <div class="haehnchen-customer-list" *ngIf="reportData.frischeHaehnchenByCustomer.length > 0">
+            <h3>Hähnchen je Kunde</h3>
+            <ul>
+              <li *ngFor="let entry of reportData.frischeHaehnchenByCustomer">
+                <strong>{{ entry.customerName }}:</strong> {{ entry.itemsLabel }}
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
 
