@@ -169,15 +169,15 @@
                 </p>
               }
 
-              @if (entry.order.picker_user_name) {
+              @if (getPickerDisplayName(entry.order)) {
                 <p class="picker-hint">
                   <mat-icon>person</mat-icon>
                   @if (entry.order.status === 'picking') {
-                    Wird kommissioniert von {{ entry.order.picker_user_name }}
+                    Wird kommissioniert von {{ getPickerDisplayName(entry.order) }}
                   } @else if (entry.order.status === 'partially_picked') {
-                    Teilweise kommissioniert von {{ entry.order.picker_user_name }}
+                    Teilweise kommissioniert von {{ getPickerDisplayName(entry.order) }}
                   } @else {
-                    Kommissioniert von {{ entry.order.picker_user_name }}
+                    Kommissioniert von {{ getPickerDisplayName(entry.order) }}
                   }
                 </p>
               }
@@ -226,6 +226,37 @@
             Kommissionieren
           }
         </button>
+      </div>
+    </div>
+  }
+
+  @if (showPickerNameModal) {
+    <div class="modal-overlay picker-name-overlay">
+      <div class="modal-card picker-name-modal" (click)="$event.stopPropagation()">
+        <h2>Wer kommissioniert?</h2>
+        <p class="modal-sub">Bitte den Namen der Person eingeben, die diese Bestellung kommissioniert.</p>
+        <mat-form-field appearance="outline" class="picker-name-field" subscriptSizing="dynamic">
+          <mat-label>Name</mat-label>
+          <input
+            matInput
+            type="text"
+            name="pickerName"
+            [(ngModel)]="pickerNameInput"
+            (ngModelChange)="pickerNameError = ''"
+            (keydown.enter)="confirmPickerName()"
+            autocomplete="name"
+            maxlength="80"
+          />
+        </mat-form-field>
+        @if (pickerNameError) {
+          <p class="picker-name-error">{{ pickerNameError }}</p>
+        }
+        <div class="modal-actions">
+          <button mat-stroked-button type="button" (click)="closePickerNameModal()">Abbrechen</button>
+          <button mat-flat-button color="primary" type="button" (click)="confirmPickerName()">
+            Kommissionieren
+          </button>
+        </div>
       </div>
     </div>
   }

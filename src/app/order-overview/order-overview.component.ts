@@ -691,13 +691,21 @@ export class OrderOverviewComponent implements OnInit {
     return '-'; // Keine Anzeige für normale Kunden in der Sachbearbeiter-Spalte
   }
 
+  getPickerDisplayName(order: Order): string {
+    const name = String(order?.picker_user_name || '').trim();
+    if (!name || name.includes('@')) {
+      return '';
+    }
+    return name;
+  }
+
   /** Last editor name for hover tooltip (explicit editor, else picker as fallback). */
   getOrderEditorName(order: Order): string {
     const editor = String(order?.updated_by_name || '').trim();
     if (editor) {
       return editor;
     }
-    const picker = String(order?.picker_user_name || '').trim();
+    const picker = this.getPickerDisplayName(order);
     if (picker) {
       return picker;
     }

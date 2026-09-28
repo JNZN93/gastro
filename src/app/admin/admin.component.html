@@ -228,8 +228,8 @@
                 <option value="delivered">Ausgeliefert</option>
                 <option value="completed">Fertig</option>
               </select>
-              @if (order.picker_user_name) {
-                <div class="picker-hint">{{ order.picker_user_name }}</div>
+              @if (getPickerDisplayName(order)) {
+                <div class="picker-hint">{{ getPickerDisplayName(order) }}</div>
               }
             </td>
             <td class="actions-cell">
@@ -275,8 +275,8 @@
               <option value="delivered">Ausgeliefert</option>
               <option value="completed">Fertig</option>
             </select>
-            @if (order.picker_user_name) {
-              <div class="picker-hint">{{ order.picker_user_name }}</div>
+            @if (getPickerDisplayName(order)) {
+              <div class="picker-hint">{{ getPickerDisplayName(order) }}</div>
             }
           </div>
         </div>

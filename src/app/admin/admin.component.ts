@@ -235,10 +235,18 @@ export class AdminComponent implements OnInit, OnDestroy {
       return editor;
     }
     const picker = String(order?.picker_user_name || '').trim();
-    if (picker) {
+    if (picker && !picker.includes('@')) {
       return picker;
     }
     return '';
+  }
+
+  getPickerDisplayName(order: any): string {
+    const name = String(order?.picker_user_name || '').trim();
+    if (name.length < 2 || name.includes('@')) {
+      return '';
+    }
+    return name;
   }
 
   /** Hover-only audit info for last edit — only when we know who. */

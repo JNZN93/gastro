@@ -103,13 +103,13 @@
             } @else {
               Diese Bestellung wird bereits kommissioniert
             }
-            @if (order.picker_user_name) {
-              ({{ order.picker_user_name }})
+            @if (getPickerDisplayName(order.picker_user_name)) {
+              ({{ getPickerDisplayName(order.picker_user_name) }})
             }
             , aber auf diesem Gerät gibt es keinen gespeicherten Fortschritt. Möchten Sie hier fortsetzen?
           </p>
           <div class="warning-actions">
-            <button mat-flat-button color="primary" type="button" (click)="startPicking(true)" [disabled]="isSaving">
+            <button mat-flat-button color="primary" type="button" (click)="continuePickingFromWarning()" [disabled]="isSaving">
               Hier fortsetzen
             </button>
             <button mat-stroked-button type="button" routerLink="/picking">Abbrechen</button>
@@ -131,7 +131,7 @@
       </div>
     }
 
-    @if (!showStartWarning && !isReadOnlySession) {
+    @if (!showStartWarning && !showPickerNameModal && !isReadOnlySession) {
       <section class="add-article-section">
         @if (!selectedArticleToAdd) {
           <mat-form-field appearance="outline" class="article-search-field" subscriptSizing="dynamic">
@@ -200,6 +200,7 @@
       </section>
     }
 
+    @if (!showPickerNameModal) {
     <section class="items-list">
       @for (item of stateItems; track item.key) {
         <div
@@ -303,6 +304,7 @@
         </button>
       }
     </footer>
+    }
   }
 </div>
 
@@ -512,6 +514,40 @@
   </div>
 }
 
+@if (showPickerNameModal) {
+  <div class="modal-overlay picker-name-overlay">
+    <div class="modal-card picker-name-modal" (click)="$event.stopPropagation()">
+      <div class="sheet-handle" aria-hidden="true"></div>
+      <h2>Wer kommissioniert?</h2>
+      <p class="modal-sub">Bitte den Namen der Person eingeben, die diese Bestellung kommissioniert.</p>
+      <mat-form-field appearance="outline" class="full-field" subscriptSizing="dynamic">
+        <mat-label>Name</mat-label>
+        <input
+          matInput
+          type="text"
+          name="pickerName"
+          [(ngModel)]="pickerNameInput"
+          (ngModelChange)="pickerNameError = ''"
+          (keydown.enter)="confirmPickerName()"
+          autocomplete="name"
+          maxlength="80"
+        />
+      </mat-form-field>
+      @if (pickerNameError) {
+        <p class="picker-name-error">{{ pickerNameError }}</p>
+      }
+      <div class="modal-actions">
+        <button mat-stroked-button type="button" (click)="closePickerNameModal()" [disabled]="isSaving">
+          Abbrechen
+        </button>
+        <button mat-flat-button color="primary" type="button" (click)="confirmPickerName()" [disabled]="isSaving">
+          {{ isSaving ? 'Wird gestartet…' : 'Kommissionieren' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
 @if (showPrintModal) {
   <div class="modal-overlay" (click)="closePrintModal()">
     <div class="modal-card print-modal" (click)="$event.stopPropagation()">
@@ -547,7 +583,7 @@
         <button mat-stroked-button type="button" (click)="closeReopenModal()" [disabled]="isSaving">
           Abbrechen
         </button>
-        <button mat-flat-button color="primary" type="button" (click)="confirmReopenPicking()" [disabled]="isSaving">
+        <button mat-flat-button color="primary" type="button" (click)="requestReopenWithPickerName()" [disabled]="isSaving">
           {{ isSaving ? 'Wird geöffnet…' : 'Erneut bearbeiten' }}
         </button>
       </div>

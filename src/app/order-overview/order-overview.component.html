@@ -198,8 +198,8 @@
                 </td>
                 <td class="status-cell" (click)="$event.stopPropagation()">
                   <ng-container *ngTemplateOutlet="orderStatusSelect; context: { $implicit: order }"></ng-container>
-                  @if (order.picker_user_name) {
-                    <span class="picker-name">{{ order.picker_user_name }}</span>
+                  @if (getPickerDisplayName(order)) {
+                    <span class="picker-name">{{ getPickerDisplayName(order) }}</span>
                   }
                 </td>
                 <td class="total-price">{{ getOrderTotalGross(order) | currency:'EUR':'symbol':'1.2-2' }}</td>
@@ -255,17 +255,17 @@
             </div>
             <div class="status-cell" (click)="$event.stopPropagation()">
               <ng-container *ngTemplateOutlet="orderStatusSelect; context: { $implicit: order }"></ng-container>
-              @if (order.picker_user_name) {
-                <span class="picker-name">{{ order.picker_user_name }}</span>
+              @if (getPickerDisplayName(order)) {
+                <span class="picker-name">{{ getPickerDisplayName(order) }}</span>
               }
             </div>
           </div>
           
           <div class="card-body">
-            @if (order.picker_user_name) {
+            @if (getPickerDisplayName(order)) {
               <div class="info-row">
                 <span class="info-label">Kommissioniert von:</span>
-                <span class="info-value">{{ order.picker_user_name }}</span>
+                <span class="info-value">{{ getPickerDisplayName(order) }}</span>
               </div>
             }
             <div class="info-row">
@@ -529,8 +529,8 @@
                 <span class="detail-label">Status:</span>
                 <span class="detail-value status-detail">
                   <ng-container *ngTemplateOutlet="orderStatusSelect; context: { $implicit: selectedOrder }"></ng-container>
-                  @if (selectedOrder.picker_user_name) {
-                    <span class="picker-name">{{ selectedOrder.picker_user_name }}</span>
+                  @if (getPickerDisplayName(selectedOrder)) {
+                    <span class="picker-name">{{ getPickerDisplayName(selectedOrder) }}</span>
                   }
                 </span>
               </div>

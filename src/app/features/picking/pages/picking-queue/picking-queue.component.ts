@@ -21,6 +21,13 @@ import { PickingState, PickingProgress } from '../../models/picking.models';
 import { PickingStateService } from '../../services/picking-state.service';
 import { formatPickingDate } from '../../utils/picking-date.util';
 import { formatPickingAddress, PickingAddressCustomer } from '../../utils/picking-address.util';
+import {
+  displayPickerName,
+  getStoredPickerName,
+  isUsablePickerName,
+  markPickerNameConfirmed,
+  saveStoredPickerName,
+} from '../../utils/picking-picker-name.util';
 
 interface QueueEntry {
   order: PickingOrder;
@@ -73,6 +80,10 @@ export class PickingQueueComponent implements OnInit {
   customerNameByNumber = new Map<string, string>();
   customerByNumber = new Map<string, PickingAddressCustomer>();
   queueEntries: QueueEntry[] = [];
+  showPickerNameModal = false;
+  pickerNameInput = '';
+  pickerNameError = '';
+  private pendingPickingRoute: any[] | null = null;
 
   constructor(
     private readonly http: HttpClient,
@@ -407,15 +418,47 @@ export class PickingQueueComponent implements OnInit {
       return;
     }
 
-    this.openCombined(first, second);
+    this.askPickerNameThenNavigate(['/picking/combined', first, second]);
   }
 
   startSelected(): void {
     if (this.selectedOrderIds.length === 1) {
-      this.router.navigate(['/picking', this.selectedOrderIds[0]]);
+      this.askPickerNameThenNavigate(['/picking', this.selectedOrderIds[0]]);
       return;
     }
     this.startCombined();
+  }
+
+  private askPickerNameThenNavigate(route: any[]): void {
+    this.pendingPickingRoute = route;
+    this.pickerNameInput = getStoredPickerName();
+    this.pickerNameError = '';
+    this.showPickerNameModal = true;
+  }
+
+  closePickerNameModal(): void {
+    this.showPickerNameModal = false;
+    this.pickerNameError = '';
+    this.pendingPickingRoute = null;
+  }
+
+  confirmPickerName(): void {
+    const name = this.pickerNameInput.trim();
+    if (!isUsablePickerName(name)) {
+      this.pickerNameError = name.includes('@')
+        ? 'Bitte den Namen eingeben, nicht die E-Mail.'
+        : 'Bitte den Namen der kommissionierenden Person eingeben.';
+      return;
+    }
+
+    saveStoredPickerName(name);
+    markPickerNameConfirmed();
+    this.showPickerNameModal = false;
+    const route = this.pendingPickingRoute;
+    this.pendingPickingRoute = null;
+    if (route) {
+      this.router.navigate(route);
+    }
   }
 
   bundlePartnerId(orderId: number): number | null {
@@ -473,6 +516,10 @@ export class PickingQueueComponent implements OnInit {
 
   getCustomerNotes(order: PickingOrder): string {
     return (order.customer_notes || '').trim();
+  }
+
+  getPickerDisplayName(order: PickingOrder): string {
+    return displayPickerName(order.picker_user_name);
   }
 
   getFullAddress(order: PickingOrder): string {

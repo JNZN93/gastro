@@ -25,6 +25,12 @@ import { PickingStateService } from '../../services/picking-state.service';
 import { PickingPdfService } from '../../services/picking-pdf.service';
 import { formatPickingDate } from '../../utils/picking-date.util';
 import {
+  consumePickerNameConfirmation,
+  getStoredPickerName,
+  isUsablePickerName,
+  saveStoredPickerName,
+} from '../../utils/picking-picker-name.util';
+import {
   PickItemState,
   PickingOrder,
   PickingOrderItem,
@@ -106,6 +112,9 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
   showCompleteModal = false;
   showReopenModal = false;
   showAbortModal = false;
+  showPickerNameModal = false;
+  pickerNameInput = '';
+  pickerNameError = '';
   selectedItem: PickItemState | null = null;
   modalPickedQuantity = 0;
   modalNote = '';
@@ -138,6 +147,8 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
 
   private feedbackTimer: ReturnType<typeof setTimeout> | null = null;
   private stickyResizeObserver: ResizeObserver | null = null;
+  private pendingStart: { updateRemoteStatus: boolean; preserveItems: boolean } | null = null;
+  private pendingReopen = false;
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -415,7 +426,7 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
       this.stateItems = validExisting.items;
       this.captureOriginalItems(orders[0], validExisting);
       if (orders.some((entry) => entry.status === 'released' || entry.status === 'partially_picked')) {
-        await this.startPicking(true, true);
+        this.requestPickerNameThenStart(true, true);
       }
       return;
     }
@@ -428,7 +439,7 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
       return;
     }
 
-    await this.startPicking(true, false);
+    this.requestPickerNameThenStart(true, false);
   }
 
   openReopenModal(): void {
@@ -436,6 +447,16 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
       return;
     }
     this.showReopenModal = true;
+  }
+
+  requestReopenWithPickerName(): void {
+    if (!this.order || !this.isReadOnlySession || this.isSaving) {
+      return;
+    }
+    this.showReopenModal = false;
+    this.pendingStart = null;
+    this.pendingReopen = true;
+    this.openPickerNameModal();
   }
 
   closeReopenModal(): void {
@@ -523,7 +544,7 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
       this.stateItems = validExisting.items;
       this.captureOriginalItems(order, validExisting);
       if (order.status === 'released' || order.status === 'partially_picked') {
-        await this.startPicking(true, true);
+        this.requestPickerNameThenStart(true, true);
       }
       return;
     }
@@ -536,7 +557,7 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
       return;
     }
 
-    await this.startPicking(true, false);
+    this.requestPickerNameThenStart(true, false);
   }
 
   async startPicking(updateRemoteStatus: boolean, preserveItems = false): Promise<void> {
@@ -1859,7 +1880,84 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   private getStartedBy(): string {
-    return this.globalService.getUserName() || 'Unbekannt';
+    const entered = this.pickerNameInput.trim();
+    if (isUsablePickerName(entered)) {
+      return entered;
+    }
+    const stored = getStoredPickerName();
+    if (stored) {
+      return stored;
+    }
+    const current = (this.order?.picker_user_name || '').trim();
+    if (isUsablePickerName(current)) {
+      return current;
+    }
+    return 'Unbekannt';
+  }
+
+  getPickerDisplayName(name?: string | null): string {
+    return isUsablePickerName(name) ? String(name).trim() : '';
+  }
+
+  private getPreferredPickerName(): string {
+    return getStoredPickerName()
+      || (isUsablePickerName(this.order?.picker_user_name) ? String(this.order?.picker_user_name).trim() : '');
+  }
+
+  private requestPickerNameThenStart(updateRemoteStatus: boolean, preserveItems = false): void {
+    if (consumePickerNameConfirmation()) {
+      this.pickerNameInput = getStoredPickerName();
+      void this.startPicking(updateRemoteStatus, preserveItems);
+      return;
+    }
+    this.pendingStart = { updateRemoteStatus, preserveItems };
+    this.pendingReopen = false;
+    this.openPickerNameModal();
+  }
+
+  continuePickingFromWarning(): void {
+    this.requestPickerNameThenStart(true, false);
+  }
+
+  openPickerNameModal(): void {
+    this.pickerNameInput = this.getPreferredPickerName();
+    this.pickerNameError = '';
+    this.showPickerNameModal = true;
+  }
+
+  closePickerNameModal(): void {
+    this.showPickerNameModal = false;
+    this.pickerNameError = '';
+    this.pendingStart = null;
+    this.pendingReopen = false;
+    this.router.navigate(['/picking']);
+  }
+
+  confirmPickerName(): void {
+    const name = this.pickerNameInput.trim();
+    if (!isUsablePickerName(name)) {
+      this.pickerNameError = name.includes('@')
+        ? 'Bitte den Namen eingeben, nicht die E-Mail.'
+        : 'Bitte den Namen der kommissionierenden Person eingeben.';
+      return;
+    }
+
+    saveStoredPickerName(name);
+    this.pickerNameInput = name;
+    this.pickerNameError = '';
+    this.showPickerNameModal = false;
+
+    if (this.pendingReopen) {
+      this.pendingReopen = false;
+      void this.confirmReopenPicking();
+      return;
+    }
+
+    const pending = this.pendingStart;
+    this.pendingStart = null;
+    if (pending) {
+      void this.startPicking(pending.updateRemoteStatus, pending.preserveItems);
+    }
   }
 
   private setFeedback(type: ScanResultFeedback['type'], message: string): void {
@@ -1970,7 +2068,8 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     if (!this.order) {
       return '';
     }
-    const picker = this.order.picker_user_name ? ` · ${this.order.picker_user_name}` : '';
+    const pickerName = this.getPickerDisplayName(this.order.picker_user_name);
+    const picker = pickerName ? ` · ${pickerName}` : '';
     if (this.isBundle && this.bundleOrders.length > 1) {
       const ids = this.bundleOrders.map((entry) => `#${entry.order_id}`).join(' + ');
       return `${ids} · ${this.stateItems.length} Pos.${picker}`;
