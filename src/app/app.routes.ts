@@ -50,7 +50,7 @@ export const routes: Routes = [
     { path: 'employees', component: EmployeesComponent, canActivate: [AdminAuthGuard] },
     { path: 'label-management', component: LabelManagementComponent, canActivate: [AuthGuard] },
     { path: 'customer-orders', component: CustomerOrdersComponent, canActivate: [AuthGuard] },
-    { path: 'order-overview', component: OrderOverviewComponent, canActivate: [AdminAuthGuard] },
+    { path: 'order-overview', component: OrderOverviewComponent, canActivate: [AuthGuard] },
     { path: 'user-management', component: UserManagementComponent, canActivate: [AdminAuthGuard] },
     { path: 'route-planning', component: RoutePlanningComponent, canActivate: [AdminAuthGuard] },
     { path: 'reports', component: ReportsComponent, canActivate: [AdminAuthGuard] },

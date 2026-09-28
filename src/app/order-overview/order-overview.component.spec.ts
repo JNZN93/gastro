@@ -70,6 +70,7 @@ describe('OrderOverviewComponent', () => {
 
     const fixture = TestBed.createComponent(OrderOverviewComponent);
     component = fixture.componentInstance;
+    component.userRole = 'admin';
     component.orders = [{ ...openOrder }];
     spyOn(localStorage, 'getItem').and.returnValue('token-1');
     spyOn(window, 'alert');
@@ -179,6 +180,20 @@ describe('OrderOverviewComponent', () => {
 
       expect(component.showParkedOnly).toBeTrue();
       expect(component.filteredOrders.map((order) => order.order_id)).toEqual([13]);
+    });
+
+    it('shows employees only orders from Gastro01 to Gastro04', () => {
+      component.userRole = 'employee';
+      component.orders = [
+        { ...openOrder, order_id: 1, name: 'Gastro01', status: 'open' },
+        { ...openOrder, order_id: 2, name: 'gastro02', status: 'open' },
+        { ...openOrder, order_id: 3, name: 'Gastro03', status: 'open' },
+        { ...openOrder, order_id: 4, name: 'Gastro04', status: 'open' },
+        { ...openOrder, order_id: 5, name: 'Lars', status: 'open' },
+        { ...openOrder, order_id: 6, name: 'Sedat', status: 'open' }
+      ];
+
+      expect(component.filteredOrders.map((order) => order.order_id)).toEqual([4, 3, 2, 1]);
     });
 
     it('can release parked orders', () => {

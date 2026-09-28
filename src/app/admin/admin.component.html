@@ -57,7 +57,7 @@
   <div class="quick-actions">
     <h2 class="section-title">Schnellzugriff</h2>
     <div class="actions-grid">
-      <button type="button" class="action-card action-orders" routerLink="/order-overview" *ngIf="isAdmin()">
+      <button type="button" class="action-card action-orders" routerLink="/order-overview" *ngIf="isAdmin() || isEmployee()">
         <div class="action-icon">
           <mat-icon>receipt_long</mat-icon>
         </div>

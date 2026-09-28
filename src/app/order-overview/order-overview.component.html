@@ -229,9 +229,11 @@
                     <button mat-icon-button type="button" class="print-btn" (click)="printAfterReload(order)" matTooltip="Drucken" aria-label="Drucken">
                       <mat-icon>print</mat-icon>
                     </button>
-                    <button mat-icon-button type="button" class="delete-btn" (click)="deleteOrder(order)" matTooltip="Löschen" aria-label="Löschen">
-                      <mat-icon>delete</mat-icon>
-                    </button>
+                    @if (isAdmin()) {
+                      <button mat-icon-button type="button" class="delete-btn" (click)="deleteOrder(order)" matTooltip="Löschen" aria-label="Löschen">
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    }
                   </div>
                 </td>
               </tr>
@@ -320,10 +322,12 @@
                 Bearbeiten
               </button>
             }
-            <button mat-stroked-button type="button" class="delete-btn" (click)="deleteOrder(order)">
-              <mat-icon>delete</mat-icon>
-              Löschen
-            </button>
+            @if (isAdmin()) {
+              <button mat-stroked-button type="button" class="delete-btn" (click)="deleteOrder(order)">
+                <mat-icon>delete</mat-icon>
+                Löschen
+              </button>
+            }
           </div>
         </div>
         }

@@ -98,6 +98,9 @@ export class OrderOverviewComponent implements OnInit {
     'parked',
     'completed'
   ] as const;
+
+  /** Mitarbeiter sehen nur Bestellungen dieser Sachbearbeiter. */
+  private readonly employeeClerkNames = new Set(['gastro01', 'gastro02', 'gastro03', 'gastro04']);
   
   // Warnung für bereits bearbeitete Bestellungen
   showProcessingWarning = false;
@@ -189,7 +192,11 @@ export class OrderOverviewComponent implements OnInit {
       return of({ orders: [] });
     }
 
-    return this.orderService.getAllOrdersWithItems(token, { excludeArchived, includeItems }).pipe(
+    return this.orderService.getAllOrdersWithItems(token, {
+      excludeArchived,
+      includeItems,
+      officeClerksOnly: true
+    }).pipe(
       tap((response) => {
         const freshOrders = (response.orders || []).map((order) => this.normalizeOrder(order));
         if (excludeArchived) {
@@ -313,6 +320,12 @@ export class OrderOverviewComponent implements OnInit {
 
   get filteredOrders(): Order[] {
     let filtered = this.orders;
+
+    // Solange die Rolle unbekannt ist, dieselbe Einschränkung wie für Mitarbeiter.
+    // Admins sehen alle Bestellungen, sobald die Rolle feststeht.
+    if (this.userRole !== 'admin') {
+      filtered = filtered.filter(order => this.isEmployeeClerkOrder(order));
+    }
     
     if (this.showParkedOnly) {
       filtered = filtered.filter(order => order.status === 'parked');
@@ -615,6 +628,11 @@ export class OrderOverviewComponent implements OnInit {
 
   isEmployee(order: Order): boolean {
     return order.role === 'admin' || order.role === 'employee';
+  }
+
+  private isEmployeeClerkOrder(order: Order): boolean {
+    const name = (order.name || '').trim().toLowerCase();
+    return this.employeeClerkNames.has(name);
   }
 
   isAdmin(): boolean {

@@ -8,7 +8,7 @@
         Zurück
       </button>
 
-      @if (globalService.getUserRole() === 'admin') {
+      @if (globalService.getUserRole() === 'admin' || globalService.getUserRole() === 'employee') {
         <button mat-flat-button type="button" class="order-overview-button" (click)="goToOrderOverview()">
           <mat-icon>view_list</mat-icon>
           Auftragsübersicht

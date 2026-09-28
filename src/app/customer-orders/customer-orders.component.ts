@@ -3478,11 +3478,9 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       this.customerNotes1 = '';
       this.customerNotes2 = '';
       
-      // Im Bearbeitungsmodus: Admin zur Übersicht, Mitarbeiter zum Dashboard
+      // Im Bearbeitungsmodus zurück zur Bestellungsübersicht
       if (this.isEditMode) {
-        const targetRoute = this.globalService.getUserRole() === 'admin'
-          ? ['/order-overview']
-          : ['/admin'];
+        const targetRoute = ['/order-overview'];
         console.log('🔄 [SPLIT-EDIT] Navigiere nach Speichern...', targetRoute);
         this.router.navigate(targetRoute);
       }

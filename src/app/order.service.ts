@@ -122,7 +122,7 @@ export class OrderService {
 
   getAllOrdersWithItems(
     token: string | null,
-    options: { excludeArchived?: boolean; includeItems?: boolean } = {}
+    options: { excludeArchived?: boolean; includeItems?: boolean; officeClerksOnly?: boolean } = {}
   ): Observable<{ orders: any[] }> {
     const headers = new HttpHeaders({
       'Authorization': `Bearer ${token}`,
@@ -135,6 +135,9 @@ export class OrderService {
     }
     if (options.includeItems === false) {
       params.push('includeItems=false');
+    }
+    if (options.officeClerksOnly) {
+      params.push('officeClerksOnly=true');
     }
     const query = params.length ? `?${params.join('&')}` : '';
 
