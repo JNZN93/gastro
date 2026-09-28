@@ -112,6 +112,8 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
   showCompleteModal = false;
   showReopenModal = false;
   showAbortModal = false;
+  showResetItemModal = false;
+  pendingResetItem: PickItemState | null = null;
   showPickerNameModal = false;
   pickerNameInput = '';
   pickerNameError = '';
@@ -685,24 +687,39 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
   private async toggleItemChecked(item: PickItemState): Promise<void> {
     const fullyPicked = item.status === 'picked' && item.pickedQuantity >= item.targetQuantity;
     if (fullyPicked) {
-      item.pickedQuantity = 0;
-      item.status = 'pending';
-    } else {
-      item.pickedQuantity = item.targetQuantity;
-      if (item.status === 'unavailable') {
-        item.status = 'pending';
-      }
-      item.status = this.pickingState.updateItemStatus(item);
+      this.pendingResetItem = item;
+      this.showResetItemModal = true;
+      return;
     }
 
-    this.isSaving = true;
-    try {
-      await this.persistState();
-    } catch {
-      this.setFeedback('error', 'Position konnte nicht gespeichert werden.');
-    } finally {
-      this.isSaving = false;
+    item.pickedQuantity = item.targetQuantity;
+    if (item.status === 'unavailable') {
+      item.status = 'pending';
     }
+    item.status = this.pickingState.updateItemStatus(item);
+
+    await this.persistItemChange();
+  }
+
+  closeResetItemModal(): void {
+    if (this.isSaving) {
+      return;
+    }
+    this.showResetItemModal = false;
+    this.pendingResetItem = null;
+  }
+
+  async confirmResetItem(): Promise<void> {
+    const item = this.pendingResetItem;
+    if (!item || this.isSaving) {
+      return;
+    }
+
+    item.pickedQuantity = 0;
+    item.status = 'pending';
+    this.showResetItemModal = false;
+    this.pendingResetItem = null;
+    await this.persistItemChange();
   }
 
   openItemModal(item: PickItemState): void {

@@ -591,6 +591,27 @@
   </div>
 }
 
+@if (showResetItemModal && pendingResetItem) {
+  <div class="modal-overlay" (click)="closeResetItemModal()">
+    <div class="modal-card reset-item-modal" (click)="$event.stopPropagation()">
+      <div class="sheet-handle" aria-hidden="true"></div>
+      <h2>Position zurücksetzen?</h2>
+      <p class="modal-sub">
+        Möchten Sie „{{ pendingResetItem.productName }}“ wirklich wieder öffnen?
+        Der bisherige Stand wird zurückgesetzt und die Position ist wieder offen.
+      </p>
+      <div class="modal-actions">
+        <button mat-stroked-button type="button" (click)="closeResetItemModal()" [disabled]="isSaving">
+          Abbrechen
+        </button>
+        <button mat-flat-button color="warn" type="button" (click)="confirmResetItem()" [disabled]="isSaving">
+          {{ isSaving ? 'Wird zurückgesetzt…' : 'Ja, zurücksetzen' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
 @if (showAbortModal) {
   <div class="modal-overlay" (click)="closeAbortModal()">
     <div class="modal-card abort-modal" (click)="$event.stopPropagation()">
