@@ -123,6 +123,8 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
   modalUnavailable = false;
   modalLater = false;
   private resumedFromPartial = false;
+  private allowLeave = false;
+  private leaveDecision: ((allow: boolean) => void) | null = null;
   modalReplacementSearch = '';
   modalReplacementResults: CatalogArticle[] = [];
   showReplacementSearchDropdown = false;
@@ -1556,7 +1558,42 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   closeAbortModal(): void {
+    if (this.isSaving) {
+      return;
+    }
     this.showAbortModal = false;
+    this.rejectLeave();
+  }
+
+  confirmLeave(): boolean | Promise<boolean> {
+    if (
+      this.allowLeave ||
+      this.isLoading ||
+      this.isReadOnlySession ||
+      this.showStartWarning ||
+      !this.order ||
+      this.errorMessage
+    ) {
+      return true;
+    }
+    if (this.isSaving) {
+      return false;
+    }
+    if (this.leaveDecision) {
+      this.showAbortModal = true;
+      return new Promise((resolve) => {
+        const previous = this.leaveDecision;
+        this.leaveDecision = (allow) => {
+          previous?.(allow);
+          resolve(allow);
+        };
+      });
+    }
+
+    this.showAbortModal = true;
+    return new Promise((resolve) => {
+      this.leaveDecision = resolve;
+    });
   }
 
   onBackClick(): void {
@@ -1567,6 +1604,7 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
       this.openAbortModal();
       return;
     }
+    this.allowLeave = true;
     this.router.navigate(['/picking']);
   }
 
@@ -1609,6 +1647,7 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
         });
       }
       this.closeCompleteModal();
+      this.allowLeave = true;
       this.router.navigate(['/picking']);
     } catch (error: any) {
       this.setFeedback('error', error?.error?.error || 'Abschluss fehlgeschlagen.');
@@ -1619,11 +1658,17 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
 
   async releasePicking(): Promise<void> {
     if (!this.order) {
+      this.showAbortModal = false;
+      this.rejectLeave();
       return;
     }
 
     const token = localStorage.getItem('token');
     if (!token) {
+      this.showAbortModal = false;
+      this.rejectLeave();
+      this.allowLeave = true;
+      this.router.navigate(['/login']);
       return;
     }
 
@@ -1650,8 +1695,12 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
       } else {
         await this.pickingState.deleteState(this.order.order_id);
       }
-      this.closeAbortModal();
-      this.router.navigate(['/picking']);
+      const continuingNavigation = !!this.leaveDecision;
+      this.showAbortModal = false;
+      this.acceptLeave();
+      if (!continuingNavigation) {
+        this.router.navigate(['/picking']);
+      }
     } catch {
       this.setFeedback('error', 'Kommissionierung konnte nicht abgebrochen werden.');
     } finally {
@@ -1947,7 +1996,21 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     this.pickerNameError = '';
     this.pendingStart = null;
     this.pendingReopen = false;
+    this.allowLeave = true;
     this.router.navigate(['/picking']);
+  }
+
+  private rejectLeave(): void {
+    const decide = this.leaveDecision;
+    this.leaveDecision = null;
+    decide?.(false);
+  }
+
+  private acceptLeave(): void {
+    this.allowLeave = true;
+    const decide = this.leaveDecision;
+    this.leaveDecision = null;
+    decide?.(true);
   }
 
   confirmPickerName(): void {

@@ -1,4 +1,8 @@
-import { Routes } from '@angular/router';
+import { CanDeactivateFn, Routes } from '@angular/router';
+
+const canLeavePickingSession: CanDeactivateFn<{ confirmLeave: () => boolean | Promise<boolean> }> = (
+  component
+) => component.confirmLeave();
 
 export const PICKING_ROUTES: Routes = [
   {
@@ -14,6 +18,7 @@ export const PICKING_ROUTES: Routes = [
       import('./pages/picking-session/picking-session.component').then(
         (m) => m.PickingSessionComponent
       ),
+    canDeactivate: [canLeavePickingSession],
   },
   {
     path: ':orderId',
@@ -21,5 +26,6 @@ export const PICKING_ROUTES: Routes = [
       import('./pages/picking-session/picking-session.component').then(
         (m) => m.PickingSessionComponent
       ),
+    canDeactivate: [canLeavePickingSession],
   },
 ];
