@@ -258,11 +258,20 @@ export class PickingQueueComponent implements OnInit {
   }
 
   private compareQueueEntries(a: QueueEntry, b: QueueEntry): number {
+    const finishedDiff = Number(this.isFinished(a.order)) - Number(this.isFinished(b.order));
+    if (finishedDiff !== 0) {
+      return finishedDiff;
+    }
+
     const recencyDiff = this.orderTimestamp(b.order) - this.orderTimestamp(a.order);
     if (recencyDiff !== 0) {
       return recencyDiff;
     }
     return b.order.order_id - a.order.order_id;
+  }
+
+  private isFinished(order: PickingOrder): boolean {
+    return order.status === 'picked' || order.status === 'completed';
   }
 
   private orderTimestamp(order: PickingOrder): number {
