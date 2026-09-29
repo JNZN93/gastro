@@ -258,20 +258,17 @@ export class PickingQueueComponent implements OnInit {
   }
 
   private compareQueueEntries(a: QueueEntry, b: QueueEntry): number {
-    const statusWeight = (status: string) => {
-      if (status === 'picking' || status === 'partially_picked') return 0;
-      if (status === 'released') return 1;
-      if (status === 'picked') return 2;
-      return 3;
-    };
-    const statusDiff = statusWeight(a.order.status) - statusWeight(b.order.status);
-    if (statusDiff !== 0) {
-      return statusDiff;
+    const recencyDiff = this.orderTimestamp(b.order) - this.orderTimestamp(a.order);
+    if (recencyDiff !== 0) {
+      return recencyDiff;
     }
+    return b.order.order_id - a.order.order_id;
+  }
 
-    const dateA = a.order.delivery_date || a.order.order_date || '';
-    const dateB = b.order.delivery_date || b.order.order_date || '';
-    return dateA.localeCompare(dateB);
+  private orderTimestamp(order: PickingOrder): number {
+    const raw = String(order.created_at || order.order_date || '').trim().replace(' ', 'T');
+    const time = Date.parse(raw);
+    return Number.isNaN(time) ? 0 : time;
   }
 
   onSearchChanged(value: string): void {
