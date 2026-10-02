@@ -415,6 +415,16 @@ export class PlanningTableComponent implements OnChanges, AfterViewInit {
     return '—';
   }
 
+  onAbsenceSelectChange(day: WorkDay, dayIndex: number, event: Event): void {
+    const key = this.cellId(dayIndex, 'absence');
+    this.onAbsenceChange(day, event);
+    this.cellDrafts.delete(key);
+    if (this.focusedCellKey === key) {
+      this.focusedCellKey = null;
+    }
+    this.refreshScheduleData(true);
+  }
+
   onAbsenceChange(day: WorkDay, event: Event): void {
     if (!this.viewSchedule) {
       return;

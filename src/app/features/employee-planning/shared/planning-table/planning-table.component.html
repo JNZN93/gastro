@@ -62,6 +62,7 @@
                   [value]="absenceSelectValue(row.dayIndex, row.day)"
                   (focus)="onCellFocus($event, row.dayIndex, 'absence', row.day)"
                   (input)="onCellInput(row.dayIndex, 'absence', $event)"
+                  (change)="onAbsenceSelectChange(row.day, row.dayIndex, $event)"
                   (blur)="onCellBlur(row.day, row.dayIndex, 'absence', $event)"
                   (keydown)="onCellKeydown($event, row.day, row.dayIndex, 'absence')"
                   [attr.aria-label]="'Abwesenheit für ' + formatDate(row.day.date)"

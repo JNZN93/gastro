@@ -374,19 +374,15 @@ export class PlanningService {
     };
   }
 
-  /** Synchronisiert Abwesenheiten aus dem Vacation-Service in die Planung. */
+  /**
+   * Übernimmt geänderte Abwesenheiten in die bestehende Planung.
+   * Bereits verteilte Tage bleiben erhalten; nur die Flags und Zeiten
+   * der betroffenen Tage werden angepasst.
+   */
   syncScheduleAbsences(employee: Employee, schedule: EmployeeSchedule): EmployeeSchedule {
     const synced = this.applyVacationToSchedule(schedule);
-    const hasPlannedHours = synced.workDays.some((day) => day.plannedHours > 0);
-
-    if (!hasPlannedHours) {
-      return this.saveSchedule(synced);
-    }
-
-    const redistributed = this.distributeHours(employee, synced.workDays);
-    const withFree = this.markUnplannedDaysAsFree(employee.id, redistributed);
-    const enriched = withFree.map((day) =>
-      this.timeCalculation.enrichWorkDay(day, employee.defaultStartTime)
+    const enriched = synced.workDays.map((day) =>
+      this.timeCalculation.recalculateWorkDay(day, employee.defaultStartTime)
     );
     return this.saveSchedule({ ...schedule, workDays: enriched });
   }
@@ -416,7 +412,7 @@ export class PlanningService {
     return { schedule: updated, result };
   }
 
-  /** Ändert die Abwesenheit eines Tages und verteilt die Monatsstunden neu. */
+  /** Ändert die Abwesenheit eines Tages, ohne die übrigen Tage neu zu verteilen. */
   updateDayAbsence(
     employee: Employee,
     schedule: EmployeeSchedule,
