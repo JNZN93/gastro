@@ -419,7 +419,7 @@ export class PickingQueueComponent implements OnInit, OnDestroy {
         matching.map(async (hint) => {
           const response = await lastValueFrom(
             this.http.get<{ order: PickingOrder }>(
-              `${environment.apiUrl}/api/orders/${hint.order_id}/with-items`,
+              `${environment.apiUrl}/api/orders/${hint.order_id}/with-items?scope=picking`,
               { headers }
             )
           );

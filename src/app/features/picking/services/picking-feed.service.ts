@@ -131,7 +131,19 @@ export class PickingFeedService {
         return;
       }
       void this.poll();
-    }, POLL_MS);
+    }, this.pollEvery());
+  }
+
+  private pollEvery(): number {
+    try {
+      const value = Number(localStorage.getItem('gastro.feedPollMs'));
+      if (Number.isFinite(value) && value >= 1000 && value <= 60_000) {
+        return value;
+      }
+    } catch {
+      /* normaler Abstand */
+    }
+    return POLL_MS;
   }
 
   private clearTimer(): void {
