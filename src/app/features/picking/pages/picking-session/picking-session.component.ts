@@ -15,13 +15,14 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { TextFieldModule } from '@angular/cdk/text-field';
-import { lastValueFrom } from 'rxjs';
+import { lastValueFrom, Subscription } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import { OrderService } from '../../../../order.service';
 import { GlobalService } from '../../../../global.service';
 import { ArtikelDataService } from '../../../../artikel-data.service';
 import { ArticleSearchService } from '../../../../services/article-search.service';
 import { PickingStateService } from '../../services/picking-state.service';
+import { PickingFeedService } from '../../services/picking-feed.service';
 import { PickingPdfService } from '../../services/picking-pdf.service';
 import { formatPickingDate } from '../../utils/picking-date.util';
 import {
@@ -102,6 +103,7 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
 
   isLoading = true;
   isSaving = false;
+  waitingCount = 0;
   isReadOnlySession = false;
   errorMessage = '';
   scanFeedback: ScanResultFeedback | null = null;
@@ -165,9 +167,18 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     private readonly pickingState: PickingStateService,
     private readonly pickingPdf: PickingPdfService,
     private readonly ngZone: NgZone,
+    private readonly pickingFeed: PickingFeedService,
   ) {}
 
+  private feedSubscription?: Subscription;
+  private latestIncoming: { order_id: number }[] = [];
+
   ngOnInit(): void {
+    this.pickingFeed.retain();
+    this.feedSubscription = this.pickingFeed.updates$.subscribe((update) => {
+      this.latestIncoming = update.incoming;
+      this.refreshWaitingCount();
+    });
     this.route.paramMap.subscribe((params) => {
       const first = Number(params.get('firstId'));
       const second = Number(params.get('secondId'));
@@ -185,6 +196,7 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
         this.bundleOrderIds = [low, high];
         this.orderId = low;
         this.isBundle = true;
+        this.refreshWaitingCount();
         this.loadSession();
         return;
       }
@@ -198,8 +210,14 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
       this.isBundle = false;
       this.bundleOrders = [];
       this.orderId = id;
+      this.refreshWaitingCount();
       this.loadSession();
     });
+  }
+
+  private refreshWaitingCount(): void {
+    const openIds = new Set<number>([this.orderId, ...this.bundleOrderIds]);
+    this.waitingCount = this.latestIncoming.filter((order) => !openIds.has(order.order_id)).length;
   }
 
   private get sessionOrders(): PickingOrder[] {
@@ -214,6 +232,8 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     if (this.feedbackTimer) {
       clearTimeout(this.feedbackTimer);
     }
+    this.feedSubscription?.unsubscribe();
+    this.pickingFeed.release();
     this.stickyResizeObserver?.disconnect();
     this.stickyResizeObserver = null;
   }

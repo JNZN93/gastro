@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { lastValueFrom } from 'rxjs';
+import { lastValueFrom, Subscription } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
@@ -29,6 +29,12 @@ import {
   saveStoredPickerName,
 } from '../../utils/picking-picker-name.util';
 import { PushUiStatus, WebPushService } from '../../../../pwa/web-push.service';
+import { PickingFeedService } from '../../services/picking-feed.service';
+import {
+  feedCustomerLabel,
+  feedMatchesQueue,
+  PickingFeedOrder,
+} from '../../services/picking-feed';
 
 interface QueueEntry {
   order: PickingOrder;
@@ -87,19 +93,29 @@ export class PickingQueueComponent implements OnInit, OnDestroy {
   showPickerNameModal = false;
   pickerNameInput = '';
   pickerNameError = '';
+  incoming: PickingFeedOrder[] = [];
+  revealing = false;
+  freshOrderIds = new Set<number>();
   private pendingPickingRoute: any[] | null = null;
+  private feedSubscription?: Subscription;
 
   constructor(
     private readonly http: HttpClient,
     private readonly router: Router,
     private readonly pickingState: PickingStateService,
     private readonly globalService: GlobalService,
-    private readonly webPush: WebPushService
+    private readonly webPush: WebPushService,
+    private readonly pickingFeed: PickingFeedService
   ) {}
 
   ngOnInit(): void {
     window.addEventListener('online', this.onConnectivity);
     window.addEventListener('offline', this.onConnectivity);
+    this.pickingFeed.retain();
+    this.feedSubscription = this.pickingFeed.updates$.subscribe((update) => {
+      this.incoming = update.incoming;
+      this.patchKnownOrders(update.orders);
+    });
     this.loadQueue();
     void this.refreshPush();
   }
@@ -107,6 +123,8 @@ export class PickingQueueComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     window.removeEventListener('online', this.onConnectivity);
     window.removeEventListener('offline', this.onConnectivity);
+    this.feedSubscription?.unsubscribe();
+    this.pickingFeed.release();
   }
 
   get pushIcon(): string {
@@ -191,6 +209,8 @@ export class PickingQueueComponent implements OnInit, OnDestroy {
 
       const states = await this.pickingState.getAllStates();
       this.localStates = new Map(states.map((state) => [state.orderId, state]));
+      this.freshOrderIds = new Set();
+      this.pickingFeed.acknowledge(this.orders.map((order) => order.order_id));
       this.rebuildQueue();
     } catch {
       this.errorMessage = this.offline
@@ -340,6 +360,122 @@ export class PickingQueueComponent implements OnInit, OnDestroy {
     const raw = String(order.created_at || order.order_date || '').trim().replace(' ', 'T');
     const time = Date.parse(raw);
     return Number.isNaN(time) ? 0 : time;
+  }
+
+  matchingIncoming(): PickingFeedOrder[] {
+    return this.incoming.filter((order) =>
+      feedMatchesQueue(order, {
+        statusFilter: this.statusFilter,
+        selectedDate: this.selectedDate,
+        searchTerm: this.searchTerm,
+        extraName: this.getCustomerNameFromMasterData(order.customer_number),
+      })
+    );
+  }
+
+  incomingHiddenCount(): number {
+    return Math.max(0, this.incoming.length - this.matchingIncoming().length);
+  }
+
+  incomingLabel(): string {
+    const matching = this.matchingIncoming();
+    const hidden = this.incomingHiddenCount();
+    if (matching.length === 1 && hidden === 0) {
+      const order = matching[0];
+      return `Neu: #${order.order_id} · ${feedCustomerLabel(order)}`;
+    }
+    if (matching.length > 0 && hidden === 0) {
+      return `${matching.length} neue Freigaben`;
+    }
+    if (matching.length > 0) {
+      return `${matching.length} neue Freigaben · ${hidden} außerhalb des Filters`;
+    }
+    if (hidden === 1) {
+      return '1 neue Freigabe passt nicht zum aktuellen Filter';
+    }
+    return `${hidden} neue Freigaben passen nicht zum aktuellen Filter`;
+  }
+
+  isFresh(orderId: number): boolean {
+    return this.freshOrderIds.has(orderId);
+  }
+
+  async revealIncoming(): Promise<void> {
+    const matching = this.matchingIncoming();
+    if (!matching.length || this.revealing) {
+      return;
+    }
+    const token = localStorage.getItem('token');
+    if (!token) {
+      return;
+    }
+    this.revealing = true;
+    try {
+      const headers = new HttpHeaders({
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      });
+      const loaded = await Promise.all(
+        matching.map(async (hint) => {
+          const response = await lastValueFrom(
+            this.http.get<{ order: PickingOrder }>(
+              `${environment.apiUrl}/api/orders/${hint.order_id}/with-items`,
+              { headers }
+            )
+          );
+          return response?.order ?? null;
+        })
+      );
+      const fresh = loaded.filter((order): order is PickingOrder => !!order?.order_id);
+      for (const order of fresh) {
+        order.order_id = Number(order.order_id);
+        if (!Array.isArray(order.items)) {
+          order.items = [];
+        }
+      }
+      if (!fresh.length) {
+        return;
+      }
+      const freshIds = fresh.map((order) => order.order_id);
+      this.orders = [...fresh.filter((order) => !this.orders.some((existing) => existing.order_id === order.order_id)), ...this.orders];
+      const entries = fresh.map((order) => this.toQueueEntry(order));
+      const freshIdSet = new Set(freshIds);
+      this.queueEntries = [...entries, ...this.queueEntries.filter((entry) => !freshIdSet.has(entry.order.order_id))];
+      this.freshOrderIds = new Set([...this.freshOrderIds, ...freshIds]);
+      this.pickingFeed.acknowledge(freshIds);
+      this.errorMessage = '';
+      const firstId = freshIds[0];
+      queueMicrotask(() => {
+        document.getElementById(`order-card-${firstId}`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      });
+    } catch {
+      /* Hinweis bleibt stehen, die bestehende Liste auch. */
+    } finally {
+      this.revealing = false;
+    }
+  }
+
+  private patchKnownOrders(feedOrders: PickingFeedOrder[]): void {
+    for (const hint of feedOrders) {
+      const local = this.orders.find((order) => order.order_id === hint.order_id);
+      if (!local) {
+        continue;
+      }
+      local.status = hint.status;
+      local.picker_user_id = hint.picker_user_id;
+      local.picker_user_name = hint.picker_user_name ?? local.picker_user_name;
+    }
+  }
+
+  private toQueueEntry(order: PickingOrder): QueueEntry {
+    const bundleState = this.pickingState.findBundleState([...this.localStates.values()], order.order_id);
+    const localState = bundleState ?? this.localStates.get(order.order_id) ?? null;
+    const validState = localState && this.isQueueStateValid(localState, order) ? localState : null;
+    return {
+      order,
+      localState: validState,
+      progress: this.getQueueProgress(order, validState),
+    };
   }
 
   onSearchChanged(value: string): void {

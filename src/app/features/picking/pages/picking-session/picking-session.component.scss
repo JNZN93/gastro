@@ -31,6 +31,15 @@
   pointer-events: none;
 }
 
+.waiting-note {
+  margin: 0;
+  padding: 0.4rem 0.85rem;
+  background: #e8f5e9;
+  color: #1b5e20;
+  font-size: 0.82rem;
+  line-height: 1.3;
+}
+
 .session-toolbar {
   padding-top: env(safe-area-inset-top);
   min-height: calc(56px + env(safe-area-inset-top));

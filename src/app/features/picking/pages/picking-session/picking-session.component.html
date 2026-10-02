@@ -24,6 +24,12 @@
       }
     </mat-toolbar>
 
+    @if (waitingCount > 0) {
+      <p class="waiting-note" aria-live="polite">
+        {{ waitingCount === 1 ? '1 neuer Auftrag wartet in der Liste.' : waitingCount + ' neue Aufträge warten in der Liste.' }}
+      </p>
+    }
+
     @if (order && !isLoading && !errorMessage) {
       <div class="sticky-body">
         <mat-chip-set class="order-meta">

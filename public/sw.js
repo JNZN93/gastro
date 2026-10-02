@@ -173,8 +173,25 @@ self.addEventListener('push', (event) => {
     renotify: true,
     data: payload.data || { url: payload.url || '/picking' },
   };
-  event.waitUntil(self.registration.showNotification(title, options));
+  event.waitUntil(
+    (async () => {
+      const windowClients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      for (const client of windowClients) {
+        client.postMessage({ type: 'PICKING_FEED' });
+      }
+      await self.registration.showNotification(title, options);
+    })()
+  );
 });
+
+function isPickingPath(url) {
+  try {
+    const path = new URL(url).pathname;
+    return path === '/picking' || path.startsWith('/picking/');
+  } catch {
+    return false;
+  }
+}
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
@@ -182,8 +199,14 @@ self.addEventListener('notificationclick', (event) => {
   const target = new URL(targetPath, self.location.origin).href;
   event.waitUntil(
     (async () => {
-      const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-      for (const client of clients) {
+      const windowClients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      const openPicking = windowClients.find((client) => isPickingPath(client.url));
+      if (openPicking && 'focus' in openPicking) {
+        await openPicking.focus();
+        openPicking.postMessage({ type: 'PICKING_FEED' });
+        return;
+      }
+      for (const client of windowClients) {
         if (client.url.startsWith(self.location.origin) && 'focus' in client) {
           await client.focus();
           client.postMessage({ type: 'NAVIGATE', url: targetPath });

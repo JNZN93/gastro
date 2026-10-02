@@ -91,6 +91,23 @@
       </mat-form-field>
     </section>
 
+    @if (incoming.length > 0) {
+      @if (matchingIncoming().length > 0) {
+        <button
+          type="button"
+          class="incoming-bar"
+          (click)="revealIncoming()"
+          [disabled]="revealing"
+          aria-live="polite"
+        >
+          <mat-icon>playlist_add</mat-icon>
+          <span>{{ incomingLabel() }}</span>
+        </button>
+      } @else {
+        <p class="incoming-note" aria-live="polite">{{ incomingLabel() }}</p>
+      }
+    }
+
     @if (isLoading) {
       <div class="state-box">
         <mat-spinner diameter="36"></mat-spinner>
@@ -115,10 +132,12 @@
         @for (entry of queueEntries; track entry.order.order_id) {
           <mat-card
             class="queue-card"
+            [id]="'order-card-' + entry.order.order_id"
             [class.is-open]="entry.order.status === 'released'"
             [class.is-picking]="entry.order.status === 'picking' || entry.order.status === 'partially_picked'"
             [class.is-picked]="entry.order.status === 'picked' || entry.order.status === 'completed'"
             [class.is-selected]="isSelected(entry.order.order_id)"
+            [class.is-fresh]="isFresh(entry.order.order_id)"
             matRipple
             (click)="onOrderClick(entry.order)"
             role="button"
