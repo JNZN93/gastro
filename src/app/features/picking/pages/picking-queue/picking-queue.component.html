@@ -36,6 +36,10 @@
     <p class="offline-note">Offline. Angezeigt wird die zuletzt geladene Auftragsliste dieses Geräts.</p>
   }
 
+  @if (pushHint) {
+    <p class="push-hint" role="status">{{ pushHint }}</p>
+  }
+
   <div class="picking-content" [class.has-selection]="selectedOrderIds.length > 0">
     <section class="filter-panel">
       <mat-form-field appearance="outline" class="search-field" subscriptSizing="dynamic">

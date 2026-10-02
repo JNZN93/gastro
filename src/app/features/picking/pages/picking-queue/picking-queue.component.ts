@@ -28,7 +28,7 @@ import {
   markPickerNameConfirmed,
   saveStoredPickerName,
 } from '../../utils/picking-picker-name.util';
-import { PushUiStatus, WebPushService } from '../../../../pwa/web-push.service';
+import { PUSH_DENIED_HINT, PushUiStatus, WebPushService } from '../../../../pwa/web-push.service';
 import { PickingFeedService } from '../../services/picking-feed.service';
 import {
   feedCustomerLabel,
@@ -79,6 +79,7 @@ export class PickingQueueComponent implements OnInit, OnDestroy {
   offline = typeof navigator !== 'undefined' ? !navigator.onLine : false;
   pushStatus: PushUiStatus = 'off';
   pushBusy = false;
+  pushHint = '';
   searchTerm = '';
   selectedDate = this.localIso(0);
   statusFilter: 'pickable' | 'picking' | 'picked' | 'all' = 'all';
@@ -138,6 +139,9 @@ export class PickingQueueComponent implements OnInit, OnDestroy {
     if (this.pushStatus === 'ios-install') {
       return 'Zuerst zum Home-Bildschirm hinzufügen';
     }
+    if (this.pushStatus === 'denied') {
+      return 'Mitteilungen sind blockiert';
+    }
     return 'Mitteilungen für freigegebene Bestellungen';
   }
 
@@ -145,7 +149,12 @@ export class PickingQueueComponent implements OnInit, OnDestroy {
     if (this.pushBusy) {
       return;
     }
+    if (this.pushStatus === 'denied') {
+      this.pushHint = PUSH_DENIED_HINT;
+      return;
+    }
     this.pushBusy = true;
+    this.pushHint = '';
     try {
       if (this.pushStatus === 'on') {
         await this.webPush.disable();
@@ -154,7 +163,11 @@ export class PickingQueueComponent implements OnInit, OnDestroy {
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Mitteilungen konnten nicht geändert werden.';
-      alert(message);
+      if (message === PUSH_DENIED_HINT) {
+        this.pushHint = PUSH_DENIED_HINT;
+      } else {
+        alert(message);
+      }
     } finally {
       this.pushBusy = false;
       await this.refreshPush();

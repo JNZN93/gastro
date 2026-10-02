@@ -6,6 +6,9 @@ import { PwaService } from './pwa.service';
 
 const ENABLED_KEY = 'gastro.pushEnabled';
 
+export const PUSH_DENIED_HINT =
+  'Mitteilungen sind blockiert. In Chrome das Schloss neben der Adresse antippen, Berechtigungen öffnen und Benachrichtigungen auf Zulassen stellen. Liegt die App auf dem Home-Bildschirm, die App gedrückt halten, App-Info öffnen und Benachrichtigungen zulassen. Danach hier noch einmal auf die Glocke tippen.';
+
 export type PushUiStatus = 'on' | 'off' | 'denied' | 'unsupported' | 'ios-install' | 'missing-key';
 
 @Injectable({
@@ -54,7 +57,13 @@ export class WebPushService {
     if (!vapidPublicKey) {
       throw new Error('Push ist auf dem Server noch nicht eingerichtet.');
     }
+    if (Notification.permission === 'denied') {
+      throw new Error(PUSH_DENIED_HINT);
+    }
     const permission = await Notification.requestPermission();
+    if (permission === 'denied') {
+      throw new Error(PUSH_DENIED_HINT);
+    }
     if (permission !== 'granted') {
       throw new Error('Mitteilungen wurden nicht erlaubt.');
     }
