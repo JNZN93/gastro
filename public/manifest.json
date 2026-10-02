@@ -24,6 +24,14 @@
     }
   ],
   "categories": ["business", "food", "shopping"],
+  "shortcuts": [
+    {
+      "name": "Kommissionierung",
+      "short_name": "Picking",
+      "url": "/picking",
+      "description": "Freigegebene Aufträge"
+    }
+  ],
   "screenshots": [
     {
       "src": "hero-background_gastro.webp",

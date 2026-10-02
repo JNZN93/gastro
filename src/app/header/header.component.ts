@@ -10,6 +10,8 @@ import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { WarenkorbComponent } from '../warenkorb/warenkorb.component';
 import { environment } from '../../environments/environment';
+import { WebPushService } from '../pwa/web-push.service';
+import { clearStoredRole } from '../pwa/session-role';
 
 @Component({
   selector: 'app-header',
@@ -48,7 +50,8 @@ export class HeaderComponent implements OnInit {
     private authService: AuthService,
     private dialog: MatDialog,
     private ngZone: NgZone,
-    private http: HttpClient
+    private http: HttpClient,
+    private webPush: WebPushService
   ) {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
@@ -227,7 +230,9 @@ export class HeaderComponent implements OnInit {
   }
 
   logOut() {
+    void this.webPush.disable();
     localStorage.removeItem('token');
+    clearStoredRole();
     localStorage.removeItem('warenkorb');
     this.globalService.clearSelectedCustomer();
     this.globalService.setUserLoggedIn(false);

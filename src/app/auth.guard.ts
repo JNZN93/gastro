@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { CanActivate, Router } from '@angular/router';
 import { AuthService } from './authentication.service';
 import { Observable, map, catchError, of } from 'rxjs';
+import { readStoredRole, storeRole } from './pwa/session-role';
 
 @Injectable({
   providedIn: 'root'
@@ -26,6 +27,7 @@ export class AuthGuard implements CanActivate {
         
         // Erlaube Zugriff nur für admin und employee
         if (userRole === 'admin' || userRole === 'employee') {
+          storeRole(userRole);
           return true;
         } else {
           this.router.navigate(['/login']);
@@ -33,6 +35,12 @@ export class AuthGuard implements CanActivate {
         }
       }),
       catchError((error) => {
+        if (!error?.status) {
+          const role = readStoredRole();
+          if (role === 'admin' || role === 'employee') {
+            return of(true);
+          }
+        }
         console.error('Auth Guard Error:', error);
         this.router.navigate(['/login']);
         return of(false);

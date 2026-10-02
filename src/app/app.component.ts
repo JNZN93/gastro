@@ -7,6 +7,7 @@ import { GlobalService } from './global.service';
 import { FooterComponent } from "./footer/footer.component";
 import { ProductCatalogComponent } from "./product-catalog/product-catalog.component";
 import { filter, Subscription } from 'rxjs';
+import { PwaService } from './pwa/pwa.service';
 
 @Component({
   selector: 'app-root',
@@ -21,10 +22,18 @@ export class AppComponent implements OnInit, OnDestroy {
   shouldHideHeader = false;
   private isEmployeesRoute = false;
   private routerSubscription?: Subscription;
+  offline = typeof navigator !== 'undefined' ? !navigator.onLine : false;
 
-  constructor(public globalService: GlobalService, private router: Router) {}
+  constructor(
+    public globalService: GlobalService,
+    private router: Router,
+    private pwa: PwaService
+  ) {}
 
   ngOnInit() {
+    this.pwa.start();
+    window.addEventListener('online', this.onConnectivity);
+    window.addEventListener('offline', this.onConnectivity);
     // Initial state on load
     this.isEmployeesRoute = this.router.url.includes('/employees');
     this.shouldHideFooter = this.isFooterHiddenForUrl(this.router.url);
@@ -86,9 +95,15 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    window.removeEventListener('online', this.onConnectivity);
+    window.removeEventListener('offline', this.onConnectivity);
     if (this.routerSubscription) {
       this.routerSubscription.unsubscribe();
     }
     this.updatePickingBodyClass('');
   }
+
+  private onConnectivity = (): void => {
+    this.offline = !navigator.onLine;
+  };
 }

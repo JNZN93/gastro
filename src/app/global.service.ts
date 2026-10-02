@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { AuthService } from './authentication.service';
 import { ToggleCartService } from './toggle-cart.service';
 import { FavoritesService } from './favorites.service';
+import { clearStoredRole, readStoredRole, storeRole } from './pwa/session-role';
 
 @Injectable({
   providedIn: 'root'
@@ -45,6 +46,7 @@ export class GlobalService {
           console.log('🔄 [GLOBAL-VALIDATE] Token gültig:', response);
           this.isUserLoggedIn = true;
           this.userRole = response.user.role;
+          storeRole(response.user.role);
           this.userName = response.user.name || response.user.email || 'Benutzer';
           this.userId = response.user.id != null ? Number(response.user.id) : null;
           console.log('🔄 [GLOBAL-VALIDATE] Login-Status gesetzt:', this.isUserLoggedIn, 'Rolle:', this.userRole, 'Name:', this.userName);
@@ -53,6 +55,11 @@ export class GlobalService {
           this.onUserLogin();
         },
         error: (error) => {
+          if (!error?.status) {
+            this.isUserLoggedIn = true;
+            this.userRole = readStoredRole();
+            return;
+          }
           console.error('🔄 [GLOBAL-VALIDATE] Token ungültig:', error);
           this.clearLoginData();
         }
@@ -70,6 +77,7 @@ export class GlobalService {
     this.userName = '';
     this.userId = null;
     localStorage.removeItem('token');
+    clearStoredRole();
     console.log('🔄 [GLOBAL-CLEAR] Login-Daten gelöscht');
   }
 

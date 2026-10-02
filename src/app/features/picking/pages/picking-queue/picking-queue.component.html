@@ -13,6 +13,17 @@
     <button
       mat-icon-button
       type="button"
+      (click)="togglePush()"
+      [disabled]="pushBusy"
+      [title]="pushLabel"
+      [attr.aria-label]="pushLabel"
+      [attr.aria-pressed]="pushStatus === 'on'"
+    >
+      <mat-icon>{{ pushIcon }}</mat-icon>
+    </button>
+    <button
+      mat-icon-button
+      type="button"
       (click)="loadQueue()"
       [disabled]="isLoading"
       aria-label="Aktualisieren"
@@ -20,6 +31,10 @@
       <mat-icon>refresh</mat-icon>
     </button>
   </mat-toolbar>
+
+  @if (offline) {
+    <p class="offline-note">Offline. Angezeigt wird die zuletzt geladene Auftragsliste dieses Geräts.</p>
+  }
 
   <div class="picking-content" [class.has-selection]="selectedOrderIds.length > 0">
     <section class="filter-panel">

@@ -2,3 +2,14 @@
 app-footer {
   display: block;
 }
+
+.offline-banner {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  padding: 0.45rem 0.8rem;
+  background: #fff4e5;
+  color: #7a4e00;
+  font-size: 0.85rem;
+  text-align: center;
+}

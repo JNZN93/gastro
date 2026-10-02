@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -28,6 +28,7 @@ import {
   markPickerNameConfirmed,
   saveStoredPickerName,
 } from '../../utils/picking-picker-name.util';
+import { PushUiStatus, WebPushService } from '../../../../pwa/web-push.service';
 
 interface QueueEntry {
   order: PickingOrder;
@@ -66,9 +67,12 @@ interface CustomerSummary {
   templateUrl: './picking-queue.component.html',
   styleUrl: './picking-queue.component.scss',
 })
-export class PickingQueueComponent implements OnInit {
+export class PickingQueueComponent implements OnInit, OnDestroy {
   isLoading = false;
   errorMessage = '';
+  offline = typeof navigator !== 'undefined' ? !navigator.onLine : false;
+  pushStatus: PushUiStatus = 'off';
+  pushBusy = false;
   searchTerm = '';
   selectedDate = this.localIso(0);
   statusFilter: 'pickable' | 'picking' | 'picked' | 'all' = 'all';
@@ -89,12 +93,68 @@ export class PickingQueueComponent implements OnInit {
     private readonly http: HttpClient,
     private readonly router: Router,
     private readonly pickingState: PickingStateService,
-    private readonly globalService: GlobalService
+    private readonly globalService: GlobalService,
+    private readonly webPush: WebPushService
   ) {}
 
   ngOnInit(): void {
+    window.addEventListener('online', this.onConnectivity);
+    window.addEventListener('offline', this.onConnectivity);
     this.loadQueue();
+    void this.refreshPush();
   }
+
+  ngOnDestroy(): void {
+    window.removeEventListener('online', this.onConnectivity);
+    window.removeEventListener('offline', this.onConnectivity);
+  }
+
+  get pushIcon(): string {
+    return this.pushStatus === 'on' ? 'notifications_active' : 'notifications_off';
+  }
+
+  get pushLabel(): string {
+    if (this.pushStatus === 'on') {
+      return 'Mitteilungen ausschalten';
+    }
+    if (this.pushStatus === 'ios-install') {
+      return 'Zuerst zum Home-Bildschirm hinzufügen';
+    }
+    return 'Mitteilungen für freigegebene Bestellungen';
+  }
+
+  async togglePush(): Promise<void> {
+    if (this.pushBusy) {
+      return;
+    }
+    this.pushBusy = true;
+    try {
+      if (this.pushStatus === 'on') {
+        await this.webPush.disable();
+      } else {
+        await this.webPush.enable();
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Mitteilungen konnten nicht geändert werden.';
+      alert(message);
+    } finally {
+      this.pushBusy = false;
+      await this.refreshPush();
+    }
+  }
+
+  private async refreshPush(): Promise<void> {
+    await this.webPush.refreshIfEnabled();
+    this.pushStatus = await this.webPush.status();
+  }
+
+  private onConnectivity = (): void => {
+    const wasOffline = this.offline;
+    this.offline = !navigator.onLine;
+    if (wasOffline && navigator.onLine) {
+      void this.loadQueue();
+    }
+  };
 
   async loadQueue(): Promise<void> {
     const token = localStorage.getItem('token');
@@ -133,7 +193,9 @@ export class PickingQueueComponent implements OnInit {
       this.localStates = new Map(states.map((state) => [state.orderId, state]));
       this.rebuildQueue();
     } catch {
-      this.errorMessage = 'Bestellungen konnten nicht geladen werden.';
+      this.errorMessage = this.offline
+        ? 'Offline und noch keine Aufträge auf diesem Gerät gespeichert.'
+        : 'Bestellungen konnten nicht geladen werden.';
       this.orders = [];
       this.queueEntries = [];
     } finally {
