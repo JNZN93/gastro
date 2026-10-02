@@ -30,11 +30,7 @@ import {
 } from '../../utils/picking-picker-name.util';
 import { PUSH_DENIED_HINT, PushUiStatus, WebPushService } from '../../../../pwa/web-push.service';
 import { PickingFeedService } from '../../services/picking-feed.service';
-import {
-  feedCustomerLabel,
-  feedMatchesQueue,
-  PickingFeedOrder,
-} from '../../services/picking-feed';
+import { feedMatchesQueue, PickingFeedOrder } from '../../services/picking-feed';
 
 interface QueueEntry {
   order: PickingOrder;
@@ -97,6 +93,8 @@ export class PickingQueueComponent implements OnInit, OnDestroy {
   incoming: PickingFeedOrder[] = [];
   revealing = false;
   freshOrderIds = new Set<number>();
+  private freshTimers = new Map<number, ReturnType<typeof setTimeout>>();
+  private revealQueued = false;
   private pendingPickingRoute: any[] | null = null;
   private feedSubscription?: Subscription;
 
@@ -116,6 +114,7 @@ export class PickingQueueComponent implements OnInit, OnDestroy {
     this.feedSubscription = this.pickingFeed.updates$.subscribe((update) => {
       this.incoming = update.incoming;
       this.patchKnownOrders(update.orders);
+      void this.revealIncoming();
     });
     this.loadQueue();
     void this.refreshPush();
@@ -124,6 +123,7 @@ export class PickingQueueComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     window.removeEventListener('online', this.onConnectivity);
     window.removeEventListener('offline', this.onConnectivity);
+    this.clearFresh();
     this.feedSubscription?.unsubscribe();
     this.pickingFeed.release();
   }
@@ -222,7 +222,7 @@ export class PickingQueueComponent implements OnInit, OnDestroy {
 
       const states = await this.pickingState.getAllStates();
       this.localStates = new Map(states.map((state) => [state.orderId, state]));
-      this.freshOrderIds = new Set();
+      this.clearFresh();
       this.pickingFeed.acknowledge(this.orders.map((order) => order.order_id));
       this.rebuildQueue();
     } catch {
@@ -386,36 +386,17 @@ export class PickingQueueComponent implements OnInit, OnDestroy {
     );
   }
 
-  incomingHiddenCount(): number {
-    return Math.max(0, this.incoming.length - this.matchingIncoming().length);
-  }
-
-  incomingLabel(): string {
-    const matching = this.matchingIncoming();
-    const hidden = this.incomingHiddenCount();
-    if (matching.length === 1 && hidden === 0) {
-      const order = matching[0];
-      return `Neu: #${order.order_id} · ${feedCustomerLabel(order)}`;
-    }
-    if (matching.length > 0 && hidden === 0) {
-      return `${matching.length} neue Freigaben`;
-    }
-    if (matching.length > 0) {
-      return `${matching.length} neue Freigaben · ${hidden} außerhalb des Filters`;
-    }
-    if (hidden === 1) {
-      return '1 neue Freigabe passt nicht zum aktuellen Filter';
-    }
-    return `${hidden} neue Freigaben passen nicht zum aktuellen Filter`;
-  }
-
   isFresh(orderId: number): boolean {
     return this.freshOrderIds.has(orderId);
   }
 
   async revealIncoming(): Promise<void> {
     const matching = this.matchingIncoming();
-    if (!matching.length || this.revealing) {
+    if (!matching.length) {
+      return;
+    }
+    if (this.revealing) {
+      this.revealQueued = true;
       return;
     }
     const token = localStorage.getItem('token');
@@ -454,7 +435,7 @@ export class PickingQueueComponent implements OnInit, OnDestroy {
       const entries = fresh.map((order) => this.toQueueEntry(order));
       const freshIdSet = new Set(freshIds);
       this.queueEntries = [...entries, ...this.queueEntries.filter((entry) => !freshIdSet.has(entry.order.order_id))];
-      this.freshOrderIds = new Set([...this.freshOrderIds, ...freshIds]);
+      this.markFresh(freshIds);
       this.pickingFeed.acknowledge(freshIds);
       this.errorMessage = '';
       const firstId = freshIds[0];
@@ -462,10 +443,46 @@ export class PickingQueueComponent implements OnInit, OnDestroy {
         document.getElementById(`order-card-${firstId}`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       });
     } catch {
-      /* Hinweis bleibt stehen, die bestehende Liste auch. */
+      /* Die bestehende Liste bleibt. Der nächste Lauf versucht es erneut. */
     } finally {
       this.revealing = false;
+      if (this.revealQueued) {
+        this.revealQueued = false;
+        void this.revealIncoming();
+      }
     }
+  }
+
+  private markFresh(ids: number[]): void {
+    const next = new Set(this.freshOrderIds);
+    for (const id of ids) {
+      next.add(id);
+      const existing = this.freshTimers.get(id);
+      if (existing) {
+        clearTimeout(existing);
+      }
+      this.freshTimers.set(
+        id,
+        setTimeout(() => {
+          this.freshTimers.delete(id);
+          if (!this.freshOrderIds.has(id)) {
+            return;
+          }
+          const updated = new Set(this.freshOrderIds);
+          updated.delete(id);
+          this.freshOrderIds = updated;
+        }, 3000)
+      );
+    }
+    this.freshOrderIds = next;
+  }
+
+  private clearFresh(): void {
+    for (const timer of this.freshTimers.values()) {
+      clearTimeout(timer);
+    }
+    this.freshTimers.clear();
+    this.freshOrderIds = new Set();
   }
 
   private patchKnownOrders(feedOrders: PickingFeedOrder[]): void {
@@ -494,16 +511,19 @@ export class PickingQueueComponent implements OnInit, OnDestroy {
   onSearchChanged(value: string): void {
     this.searchTerm = value;
     this.rebuildQueue();
+    void this.revealIncoming();
   }
 
   onDateChanged(value: string): void {
     this.selectedDate = value || '';
     this.rebuildQueue();
+    void this.revealIncoming();
   }
 
   onAllDates(): void {
     this.selectedDate = '';
     this.rebuildQueue();
+    void this.revealIncoming();
   }
 
   openDatePicker(input: HTMLInputElement): void {
@@ -518,6 +538,7 @@ export class PickingQueueComponent implements OnInit, OnDestroy {
   onStatusFilterChanged(value: 'pickable' | 'picking' | 'picked' | 'all'): void {
     this.statusFilter = value;
     this.rebuildQueue();
+    void this.revealIncoming();
   }
 
   onOrderClick(order: PickingOrder): void {

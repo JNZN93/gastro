@@ -67,15 +67,11 @@ test('Neue Freigabe erscheint in der offenen Kommissionierung', async ({ page })
       if (!order) {
         return null;
       }
-      return {
-        id: Number(order.order_id),
-        label: order.company || order.name || order.customer_number || `Bestellung #${order.order_id}`,
-      };
+      return { id: Number(order.order_id) };
     });
 
     expect(candidate, 'Keine geparkte oder offene Bestellung für heute').toBeTruthy();
     const orderId = candidate!.id;
-    const bannerText = `Neu: #${orderId} · ${candidate!.label}`;
 
     const firstFeed = page.waitForResponse(
       (response) => response.url().includes('/api/orders/picking-feed') && response.ok()
@@ -91,16 +87,13 @@ test('Neue Freigabe erscheint in der offenen Kommissionierung', async ({ page })
     await setStatus(page, orderId, 'released');
     releasedId = orderId;
 
-    const banner = page.getByRole('button', { name: bannerText });
-    await expect(banner).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByText('Bestellungen werden geladen…')).toBeHidden();
-    await page.waitForTimeout(1200);
-    await banner.click();
-
     const card = page.locator(`#order-card-${orderId}`);
-    await expect(card).toBeVisible();
+    await expect(card).toBeVisible({ timeout: 15_000 });
+    await expect(card).toHaveClass(/is-fresh/);
     await expect(card.getByText('Freigegeben')).toBeVisible();
-    await page.waitForTimeout(1500);
+    await expect(page.locator('.incoming-bar, .incoming-note')).toHaveCount(0);
+    await expect(page.getByText('Bestellungen werden geladen…')).toBeHidden();
+    await expect(card).not.toHaveClass(/is-fresh/, { timeout: 6_000 });
   } finally {
     if (releasedId) {
       await setStatus(page, releasedId, 'parked').catch(() => undefined);
