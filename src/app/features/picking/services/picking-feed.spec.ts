@@ -1,4 +1,10 @@
-import { PickingFeedOrder, PickingFeedTracker, feedMatchesQueue } from './picking-feed';
+import {
+  PickingFeedOrder,
+  PickingFeedTracker,
+  boardColumn,
+  feedMatchesQueue,
+  isBoardOrderForDate,
+} from './picking-feed';
 
 function order(partial: Partial<PickingFeedOrder> & Pick<PickingFeedOrder, 'order_id'>): PickingFeedOrder {
   return {
@@ -63,5 +69,26 @@ describe('feedMatchesQueue', () => {
         searchTerm: 'kebab',
       })
     ).toBeFalse();
+  });
+});
+
+describe('boardColumn', () => {
+  it('maps the three monitor statuses', () => {
+    expect(boardColumn('released')).toBe('released');
+    expect(boardColumn('picking')).toBe('picking');
+    expect(boardColumn('partially_picked')).toBe('picking');
+    expect(boardColumn('picked')).toBe('done');
+    expect(boardColumn('completed')).toBe('done');
+    expect(boardColumn('open')).toBeNull();
+  });
+});
+
+describe('isBoardOrderForDate', () => {
+  it('keeps an order whose delivery date is today', () => {
+    expect(isBoardOrderForDate(order({ order_id: 1, delivery_date: '2026-10-05' }), '2026-10-05')).toBeTrue();
+  });
+
+  it('hides an order from another day', () => {
+    expect(isBoardOrderForDate(order({ order_id: 2, delivery_date: '2026-10-04' }), '2026-10-05')).toBeFalse();
   });
 });

@@ -51,6 +51,31 @@ export class PickingFeedTracker {
   }
 }
 
+export type BoardColumnKey = 'released' | 'picking' | 'done';
+
+/** Verkaufsmonitor: nur die drei Status, die im Raum sichtbar sein sollen. */
+export function boardColumn(status: string): BoardColumnKey | null {
+  if (status === 'released') {
+    return 'released';
+  }
+  if (status === 'picking' || status === 'partially_picked') {
+    return 'picking';
+  }
+  if (status === 'picked' || status === 'completed') {
+    return 'done';
+  }
+  return null;
+}
+
+/** Gleiche Datumsregel wie die Kommissionierung: Lieferdatum, sonst Bestelldatum. */
+export function isBoardOrderForDate(order: PickingFeedOrder, selectedDate: string): boolean {
+  return feedMatchesQueue(order, {
+    statusFilter: 'all',
+    selectedDate,
+    searchTerm: '',
+  });
+}
+
 export function feedCustomerLabel(order: PickingFeedOrder): string {
   return (
     order.company ||

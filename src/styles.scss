@@ -11,6 +11,11 @@ html:has(body.picking-mode) {
   overflow-x: clip;
 }
 
+html:has(body.picking-board-mode) {
+  height: 100dvh;
+  overflow: hidden;
+}
+
 // Globale box-sizing Regel für alle Elemente
 * {
     box-sizing: border-box;
@@ -29,6 +34,12 @@ body {
       // clip avoids creating a scroll container that breaks sticky/fixed
       overflow-x: clip;
       overflow-y: auto;
+    }
+
+    &.picking-board-mode {
+      height: 100dvh;
+      max-height: 100dvh;
+      overflow: hidden;
     }
 }
 

@@ -1,0 +1,42 @@
+<section class="board">
+  <header class="board-header">
+    <div class="title-block">
+      <h1>Bestellungen</h1>
+    </div>
+    <div class="today" aria-live="polite">
+      <span class="today-kicker">Heute</span>
+      <strong>{{ dateLabel }}</strong>
+      <span class="clock">{{ timeLabel }}</span>
+    </div>
+  </header>
+
+  @if (errorMessage) {
+    <p class="board-error" role="alert">{{ errorMessage }}</p>
+  }
+
+  @if (!loaded) {
+    <p class="board-loading">Bestellungen werden geladen …</p>
+  } @else {
+    <div class="columns">
+      @for (column of columns; track column.key) {
+        <section class="column" [attr.data-status]="column.key">
+          <header class="column-head">
+            <h2>{{ column.title }}</h2>
+            <span class="count">{{ column.orders.length }}</span>
+          </header>
+          <div class="cards">
+            @for (order of column.orders; track order.order_id) {
+              <article class="card">
+                <p class="order-no">#{{ order.order_id }}</p>
+                <p class="customer">{{ customerName(order) }}</p>
+                <p class="status">{{ column.title }}</p>
+              </article>
+            } @empty {
+              <p class="empty">Keine Bestellungen</p>
+            }
+          </div>
+        </section>
+      }
+    </div>
+  }
+</section>

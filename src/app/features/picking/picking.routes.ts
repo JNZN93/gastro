@@ -13,6 +13,11 @@ export const PICKING_ROUTES: Routes = [
       ),
   },
   {
+    path: 'monitor',
+    loadComponent: () =>
+      import('./pages/picking-board/picking-board.component').then((m) => m.PickingBoardComponent),
+  },
+  {
     path: 'combined/:firstId/:secondId',
     loadComponent: () =>
       import('./pages/picking-session/picking-session.component').then(
