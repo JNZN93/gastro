@@ -435,6 +435,9 @@
           [disabled]="modalUnavailable"
         />
       </mat-form-field>
+      @if (!isSelectedItemPfand()) {
+        <small class="field-hint">Pfandartikel sind als Ersatz nicht erlaubt.</small>
+      }
       @if (showReplacementSearchDropdown && modalReplacementResults.length > 0) {
         <div class="article-search-results">
           @for (article of modalReplacementResults; track article.article_number) {

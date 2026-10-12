@@ -962,6 +962,14 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
       this.selectedItem.status = this.pickingState.updateItemStatus(this.selectedItem);
     }
 
+    if (!this.isReplacementSelectionAllowed()) {
+      this.setFeedback(
+        'warning',
+        'Pfandartikel können nur andere Pfandartikel ersetzen.'
+      );
+      return;
+    }
+
     this.selectedItem.replacementArticleNumber = this.modalReplacementArticleNumber || undefined;
     this.selectedItem.replacementArticleName = this.modalReplacementArticleName || undefined;
 
@@ -1512,14 +1520,45 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
     };
   }
 
+  isSelectedItemPfand(): boolean {
+    return !!(
+      this.selectedItem &&
+      (this.selectedItem.isPfandLine || this.selectedItem.category === 'PFAND')
+    );
+  }
+
+  private isReplacementSelectionAllowed(): boolean {
+    if (!this.modalReplacementArticleNumber || this.isSelectedItemPfand()) {
+      return true;
+    }
+
+    const replacement = this.productByArticleNumber.get(this.modalReplacementArticleNumber);
+    return replacement?.category !== 'PFAND';
+  }
+
+  private getReplacementSearchCatalog(): CatalogArticle[] {
+    if (this.isSelectedItemPfand()) {
+      return this.searchableArtikels;
+    }
+
+    return this.searchableArtikels.filter((article) => article.category !== 'PFAND');
+  }
+
   searchReplacementArticles(): void {
-    this.articleSearch.filterArticles(this.searchableArtikels, this.modalReplacementSearch).subscribe((state) => {
-      this.modalReplacementResults = state.results;
-      this.showReplacementSearchDropdown = state.showDropdown;
-    });
+    this.articleSearch
+      .filterArticles(this.getReplacementSearchCatalog(), this.modalReplacementSearch)
+      .subscribe((state) => {
+        this.modalReplacementResults = state.results;
+        this.showReplacementSearchDropdown = state.showDropdown;
+      });
   }
 
   selectReplacementArticle(article: CatalogArticle): void {
+    if (article.category === 'PFAND' && !this.isSelectedItemPfand()) {
+      this.setFeedback('warning', 'Pfandartikel können nur andere Pfandartikel ersetzen.');
+      return;
+    }
+
     this.modalReplacementArticleNumber = article.article_number;
     this.modalReplacementArticleName = article.article_text;
     this.modalReplacementSearch = `${article.article_number} - ${article.article_text}`;
