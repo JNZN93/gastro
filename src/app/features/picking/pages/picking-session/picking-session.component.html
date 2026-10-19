@@ -212,6 +212,7 @@
         <div
           class="item-row"
           [class]="getItemStatusClass(item.status)"
+          [class.multi-qty]="item.targetQuantity > 1"
           [class.locked]="isItemLocked(item)"
           [class.read-only]="isReadOnlySession || isItemLocked(item)"
           (click)="onItemRowClick(item)"
