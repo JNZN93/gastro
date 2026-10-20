@@ -103,7 +103,8 @@
                (click)="toggleCategory(category)"
                [ngClass]="{
                  'new-category': category === 'NEU HINZUGEFÜGT',
-                 'offers-category': category === 'Aktuelle Angebote'
+                 'offers-category': category === 'Aktuelle Angebote',
+                 'main-articles-category': category === 'Hauptartikel'
                }">
             <div class="category-title">
               <span class="category-name">{{ category }}</span>
@@ -198,7 +199,8 @@
                (click)="toggleCategory(category)"
                [ngClass]="{
                  'new-category': category === 'NEU HINZUGEFÜGT',
-                 'offers-category': category === 'Aktuelle Angebote'
+                 'offers-category': category === 'Aktuelle Angebote',
+                 'main-articles-category': category === 'Hauptartikel'
                }">
             <div class="category-title">
               <span class="category-name">{{ category }}</span>

@@ -108,6 +108,8 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   isEditingArticlePrices: boolean = false;
   /** Wird true während auf die Kunden-Artikel-Preise gewartet wird (z. B. beim Klick auf Bearbeiten). */
   isLoadingArticlePrices: boolean = false;
+  articlePricesMainFilter: 'all' | 'main' | 'other' = 'all';
+  isSavingMainArticles: boolean = false;
   
   // Notification properties for article prices modal
   isArticlePricesNotificationVisible: boolean = false;
@@ -3730,6 +3732,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     
     // 3. Leere die kundenspezifischen Preise
     this.customerArticlePrices = [];
+    this.articlePricesMainFilter = 'all';
     
     // 4. Leere Anmerkungen für Split-Modus
     this.customerNotes1 = '';
@@ -3745,11 +3748,11 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     this.setDefaultDates();
     console.log('✅ [CLEAR-ALL-ORDER] Datumsfelder auf heute zurückgesetzt');
     
-    // 6. Setze alle Artikel auf Standard-Preise zurück
     this.globalArtikels = this.globalArtikels.map(artikel => ({
       ...artikel,
       different_price: undefined,
-      original_price: undefined
+      original_price: undefined,
+      is_main_article: false
     }));
     
     // 7. Bearbeitungsmodus zurücksetzen
@@ -4170,6 +4173,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     console.log('🗑️ [CLEAR-CUSTOMER] Auftrag zurückgesetzt');
     
     this.customerArticlePrices = []; // Lösche auch die Kunden-Artikel-Preise
+    this.articlePricesMainFilter = 'all';
     console.log('🗑️ [CLEAR-CUSTOMER] customerArticlePrices zurückgesetzt');
     
     // Lösche den geänderten Firmennamen
@@ -4449,7 +4453,114 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       });
     }
 
+    if (this.articlePricesMainFilter === 'main') {
+      filtered = filtered.filter((customerPrice) => this.isMainArticle(customerPrice));
+    } else if (this.articlePricesMainFilter === 'other') {
+      filtered = filtered.filter((customerPrice) => !this.isMainArticle(customerPrice));
+    }
+
     this.filteredArticlePrices = this.articleSearchService.sortArticles(filtered, query);
+  }
+
+  get mainArticlePrices(): any[] {
+    return this.customerArticlePrices.filter((price) => this.isMainArticle(price));
+  }
+
+  isMainArticle(price: any): boolean {
+    const flag = price?.is_main_article;
+    return flag === true || flag === 1 || flag === '1';
+  }
+
+  setArticlePricesMainFilter(filter: 'all' | 'main' | 'other'): void {
+    this.articlePricesMainFilter = filter;
+    this.filterArticlePrices();
+  }
+
+  async toggleMainArticle(price: any): Promise<void> {
+    const id = Number(price?.id);
+    if (!Number.isInteger(id) || id <= 0 || this.isSavingMainArticles) {
+      return;
+    }
+    await this.persistMainArticleFlags([id], !this.isMainArticle(price));
+  }
+
+  private applyMainArticleFlags(ids: number[], isMain: boolean): Map<number, boolean> {
+    const previous = new Map<number, boolean>();
+    const idSet = new Set(ids);
+    for (const price of this.customerArticlePrices) {
+      const id = Number(price?.id);
+      if (!idSet.has(id)) {
+        continue;
+      }
+      previous.set(id, this.isMainArticle(price));
+      price.is_main_article = isMain;
+    }
+    this.syncMainArticleFlagsToCatalog();
+    return previous;
+  }
+
+  private syncMainArticleFlagsToCatalog(): void {
+    const apply = (artikel: any) => {
+      const isMain = this.catalogArticleIsMain(artikel);
+      if (this.isMainArticle(artikel) === isMain) {
+        return artikel;
+      }
+      return { ...artikel, is_main_article: isMain };
+    };
+    this.globalArtikels = this.globalArtikels.map(apply);
+    this.artikelData = this.artikelData.map(apply);
+    this.filteredArtikels = this.filteredArtikels.map(apply);
+  }
+
+  private catalogArticleIsMain(artikel: any): boolean {
+    if (!artikel || !this.customerArticlePrices?.length) {
+      return false;
+    }
+    const keys = [artikel.article_number, artikel.product_id, artikel.ean]
+      .filter((value) => value != null && String(value).trim() !== '')
+      .map((value) => String(value).trim().toLowerCase());
+    if (keys.length === 0) {
+      return false;
+    }
+    return this.customerArticlePrices.some((price) => {
+      if (!this.isMainArticle(price)) {
+        return false;
+      }
+      const priceKeys = [price.product_id, price.article_number, price.ean]
+        .filter((value) => value != null && String(value).trim() !== '')
+        .map((value) => String(value).trim().toLowerCase());
+      return priceKeys.some((key) => keys.includes(key));
+    });
+  }
+
+  private async persistMainArticleFlags(ids: number[], isMain: boolean): Promise<boolean> {
+    const previous = this.applyMainArticleFlags(ids, isMain);
+    this.filterArticlePrices();
+    this.isSavingMainArticles = true;
+    try {
+      const token = localStorage.getItem('token');
+      await firstValueFrom(this.http.put(`${environment.apiUrl}/api/customer-article-prices/main-flags`, {
+        ids,
+        is_main_article: isMain
+      }, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      }));
+      return true;
+    } catch (error: any) {
+      for (const price of this.customerArticlePrices) {
+        const id = Number(price?.id);
+        if (previous.has(id)) {
+          price.is_main_article = previous.get(id);
+        }
+      }
+      this.syncMainArticleFlagsToCatalog();
+      this.filterArticlePrices();
+      const message = error?.error?.error || error?.message || 'Unbekannter Fehler';
+      alert(`Hauptartikel konnten nicht gespeichert werden: ${message}`);
+      return false;
+    } finally {
+      this.isSavingMainArticles = false;
+    }
   }
 
   isArticlePricesSearchPending(): boolean {
@@ -4726,12 +4837,17 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       const p1 = prices[i];
       const p2 = prices[i + 1];
 
+      const articleLabel = (price: any) => {
+        const name = price.article_text || '-';
+        return this.isMainArticle(price) ? `* ${name}` : name;
+      };
+
       const row = [
-        p1 ? (p1.article_text || '-') : '',
+        p1 ? articleLabel(p1) : '',
         p1 ? (p1.article_number || p1.product_id || '-') : '',
         '',  // Menge 1 (zum Ausfüllen)
         '',  // Leer-Spalte als Abstand zwischen Block 1 und 2
-        p2 ? (p2.article_text || '-') : '',
+        p2 ? articleLabel(p2) : '',
         p2 ? (p2.article_number || p2.product_id || '-') : '',
         ''   // Menge 2 (zum Ausfüllen)
       ];
@@ -5457,6 +5573,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       if (customerNumber === '10.022' || customerNumber === '10.003') {
         console.log('⚠️ [CUSTOMER-ARTICLE-PRICES-ASYNC] Spezielle Behandlung');
         this.customerArticlePrices = [];
+        this.filterArticlePrices();
         this.updateArtikelsWithCustomerPrices();
         resolve();
         return;
@@ -5478,6 +5595,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
           ? this.dedupeCustomerArticlePrices(data.filter((price: any) => this.isArticleAvailableInGlobal(price)))
           : [];
         this.customerArticlePrices = filtered;
+        this.filterArticlePrices();
         this.updateArtikelsWithCustomerPrices();
         console.log('✅ [CUSTOMER-ARTICLE-PRICES-ASYNC] Geladen:', filtered.length);
         resolve();
@@ -5485,6 +5603,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       .catch(error => {
         console.error('❌ [CUSTOMER-ARTICLE-PRICES-ASYNC] Fehler:', error);
         this.customerArticlePrices = [];
+        this.filterArticlePrices();
         resolve(); // Auch bei Fehler auflösen
       });
     });
@@ -5497,6 +5616,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     if (customerNumber === '10.022' || customerNumber === '10.003') {
       console.log('⚠️ [CUSTOMER-ARTICLE-PRICES] Spezielle Behandlung für Kunde:', customerNumber, '- leeres Array zurückgeben');
       this.customerArticlePrices = [];
+      this.filterArticlePrices();
       console.log('💾 [CUSTOMER-ARTICLE-PRICES] Leeres Array für Kunde', customerNumber, 'gespeichert');
       this.updateArtikelsWithCustomerPrices();
       return;
@@ -5564,6 +5684,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
         : [];
 
       this.customerArticlePrices = filteredCustomerPrices;
+      this.filterArticlePrices();
       console.log('💾 [CUSTOMER-ARTICLE-PRICES] Gefilterte Daten gespeichert', {
         originalCount: Array.isArray(data) ? data.length : 0,
         filteredCount: filteredCustomerPrices.length,
@@ -5586,6 +5707,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
         name: error.name
       });
       this.customerArticlePrices = [];
+      this.filterArticlePrices();
       console.log('🔄 [CUSTOMER-ARTICLE-PRICES] customerArticlePrices zurückgesetzt');
     });
   }
@@ -5644,15 +5766,17 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
           updatedCount++;
           return {
             ...artikel,
-            different_price: customerNetPrice, // Füge den kundenspezifischen Preis als different_price hinzu
-            original_price: originalPrice // Behalte den ursprünglichen Preis
+            different_price: customerNetPrice,
+            original_price: originalPrice,
+            is_main_article: this.isMainArticle(customerPrice)
           };
         } else {
           unchangedCount++;
           return {
             ...artikel,
-            different_price: undefined, // Stelle sicher, dass keine alten kundenspezifischen Preise übrig bleiben
-            original_price: undefined
+            different_price: undefined,
+            original_price: undefined,
+            is_main_article: false
           };
         }
       });
@@ -5691,7 +5815,8 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       this.globalArtikels = this.globalArtikels.map(artikel => ({
         ...artikel,
         different_price: undefined,
-        original_price: undefined
+        original_price: undefined,
+        is_main_article: false
       }));
       
       // Aktualisiere auch die artikelData

@@ -3324,6 +3324,17 @@
     width: 48px;
   }
 
+  .col-main-select,
+  .main-select {
+    width: 44px;
+    overflow: visible;
+    text-align: center;
+  }
+
+  .article-price-row.main-article {
+    background-color: #fff8e8;
+  }
+
   .col-article,
   .article-name {
     width: auto;
@@ -7669,6 +7680,81 @@
     opacity: 1;
     transform: translateY(0) scale(1);
   }
+}
+
+.main-article-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 8px 0 12px;
+}
+
+.main-article-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.main-filter-btn {
+  border: 1px solid #d7e0e6;
+  background: #fff;
+  color: #2f4a5c;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
+
+  &.active {
+    background: #ef6c00;
+    border-color: #ef6c00;
+    color: #fff;
+  }
+}
+
+.main-article-star {
+  color: #90a4ae;
+  width: 28px !important;
+  height: 28px !important;
+  padding: 0 !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  &.active {
+    color: #ef6c00;
+  }
+
+  .material-icons,
+  mat-icon,
+  .mat-icon {
+    color: inherit;
+    font-size: 18px !important;
+    width: 18px !important;
+    height: 18px !important;
+    line-height: 18px;
+  }
+}
+
+.article-dropdown-item.main-article,
+.mobile-article-dropdown-item.main-article {
+  background-color: #fff3e0;
+
+  &:hover,
+  &.selected {
+    background-color: #ffe0b2;
+  }
+}
+
+.article-dropdown-item.offer-item.main-article,
+.mobile-article-dropdown-item.offer-item.main-article {
+  background-color: #fef3c7;
+}
+
+.mobile-article-price-card.main-article,
+.article-price-card.main-article {
+  background: #fff8e8;
+  border-color: #ffe0b2;
 }
 
 

@@ -176,7 +176,7 @@ export class CustomerOrderPublicComponent implements OnInit {
     if (!trimmedTerm) {
       // Wenn Suchfeld leer ist, alle Kategorien schließen
       this.orderedCategories.forEach(category => {
-        this.categoryStates[category] = false;
+        this.categoryStates[category] = category === 'Hauptartikel';
       });
       this.filteredGroupedArticles = {};
       this.filteredOrderedCategories = [];
@@ -1143,6 +1143,11 @@ export class CustomerOrderPublicComponent implements OnInit {
     return (name ?? '').toString().trim();
   }
 
+  private isMainArticle(article: any): boolean {
+    const flag = article?.is_main_article;
+    return flag === true || flag === 1 || flag === '1';
+  }
+
   private getCategoryForArticle(article: any): string {
     // Eigene (neu hinzugefügte) Artikel in eigene Kategorie
     if (article?.isCustom || (typeof article?.product_id === 'string' && article.product_id.startsWith('custom_'))) {
@@ -1159,6 +1164,10 @@ export class CustomerOrderPublicComponent implements OnInit {
       return 'Aktuelle Angebote';
     }
 
+    if (this.isMainArticle(article)) {
+      return 'Hauptartikel';
+    }
+
     const category = this.normalizeCategoryName(article?.product_category || article?.category || 'Sonstiges');
     return category || 'Sonstiges';
   }
@@ -1171,30 +1180,22 @@ export class CustomerOrderPublicComponent implements OnInit {
       groups[category].push(article);
     }
 
-    // Kategorien sortieren (Aktuelle Angebote zuerst, dann alphabetisch, Eigene Artikel zuletzt)
+    // Kategorien sortieren (Angebote, dann Hauptartikel, dann alphabetisch, Eigene Artikel zuletzt)
     const allCategories = Object.keys(groups).sort((a, b) => a.localeCompare(b, 'de', { sensitivity: 'base' }));
     const NEW_CAT = 'Eigene Artikel';
     const OFFERS_CAT = 'Aktuelle Angebote';
-    
-    // Aktuelle Angebote zuerst, dann alphabetisch sortiert, Eigene Artikel zuletzt
-    if (groups[OFFERS_CAT] && groups[OFFERS_CAT].length > 0) {
-      if (groups[NEW_CAT] && groups[NEW_CAT].length > 0) {
-        this.orderedCategories = [OFFERS_CAT, ...allCategories.filter(c => c !== OFFERS_CAT && c !== NEW_CAT), NEW_CAT];
-      } else {
-        this.orderedCategories = [OFFERS_CAT, ...allCategories.filter(c => c !== OFFERS_CAT)];
-      }
-    } else if (groups[NEW_CAT] && groups[NEW_CAT].length > 0) {
-      this.orderedCategories = allCategories.filter(c => c !== NEW_CAT).concat(NEW_CAT);
-    } else {
-      this.orderedCategories = allCategories;
-    }
+    const MAIN_CAT = 'Hauptartikel';
+    const leading = [OFFERS_CAT, MAIN_CAT].filter((category) => groups[category]?.length);
+    const middle = allCategories.filter((category) => category !== OFFERS_CAT && category !== MAIN_CAT && category !== NEW_CAT);
+    const trailing = groups[NEW_CAT]?.length ? [NEW_CAT] : [];
+    this.orderedCategories = [...leading, ...middle, ...trailing];
     
     this.groupedArticles = groups;
     
     // Kategorien-States erhalten, neue initial schließen
     this.orderedCategories.forEach(category => {
       if (this.categoryStates[category] === undefined) {
-        this.categoryStates[category] = false;
+        this.categoryStates[category] = category === 'Hauptartikel';
       }
     });
   }

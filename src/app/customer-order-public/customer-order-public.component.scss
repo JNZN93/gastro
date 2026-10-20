@@ -627,6 +627,14 @@
       background: linear-gradient(135deg, #5a6fd8, #6a4190);
     }
   }
+
+  &.main-articles-category .category-title {
+    background: linear-gradient(135deg, #ef6c00, #e65100);
+
+    &:hover {
+      background: linear-gradient(135deg, #e65100, #d84315);
+    }
+  }
 }
 
 
