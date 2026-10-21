@@ -234,7 +234,7 @@
 
     .picking-charts {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
       gap: 16px;
       margin-bottom: 20px;
     }
@@ -355,6 +355,7 @@
 
     .day-fill {
       width: 100%;
+      height: var(--bar, 0%);
       min-height: 2px;
       border-radius: 8px 8px 4px 4px;
     }
@@ -1289,6 +1290,205 @@
 
 @media (max-width: 480px) {
   .reports-page {
+    padding: 0.5rem 0.4rem 1rem;
+    overflow-x: hidden;
+  }
+
+  .reports-container {
+    padding: 0.85rem 0.65rem 1rem;
+    border-radius: 12px;
+  }
+
+  .reports-header {
+    gap: 12px;
+    margin-bottom: 14px;
+
+    .reports-title {
+      font-size: 18px;
+      flex-wrap: wrap;
+      line-height: 1.2;
+
+      .reports-icon {
+        width: 22px;
+        height: 22px;
+      }
+    }
+
+    .back-button {
+      max-width: 100%;
+    }
+  }
+
+  .reports-content {
+    .reports-nav,
+    .reports-subnav {
+      gap: 4px;
+      margin-bottom: 14px;
+      padding: 3px;
+
+      button {
+        font-size: 12px;
+        line-height: 1.2;
+        padding: 8px 6px;
+        white-space: normal;
+      }
+    }
+
+    .reports-nav {
+      top: 70px;
+    }
+
+    .reports-subnav button {
+      flex: 1 1 calc(50% - 4px);
+    }
+
+    .picking-stats {
+      h2 {
+        font-size: 18px;
+      }
+
+      .picking-controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+      }
+
+      .period-toggle {
+        width: 100%;
+
+        button {
+          flex: 1;
+          padding: 8px 10px;
+        }
+      }
+
+      .picking-date,
+      .date-input {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+      }
+
+      .picking-pdf-btn {
+        margin-left: 0;
+        width: 100%;
+      }
+
+      .picking-charts {
+        grid-template-columns: 1fr;
+      }
+
+      .chart-card {
+        padding: 12px;
+      }
+
+      .bar-row {
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 6px 8px;
+      }
+
+      .bar-track {
+        grid-column: 1 / -1;
+      }
+
+      .bar-label,
+      .bar-value {
+        font-size: 12px;
+      }
+
+      .bar-value {
+        min-width: 0;
+      }
+
+      .day-bars {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        min-width: 0;
+      }
+
+      .day-col {
+        display: grid;
+        grid-template-columns: 28px minmax(0, 1fr) auto;
+        grid-template-areas:
+          "label count amount"
+          "track track track";
+        align-items: center;
+        column-gap: 8px;
+        row-gap: 4px;
+        width: 100%;
+      }
+
+      .day-label {
+        grid-area: label;
+      }
+
+      .day-count {
+        grid-area: count;
+        justify-self: start;
+      }
+
+      .day-amount {
+        grid-area: amount;
+        justify-self: end;
+        font-size: 11px;
+        text-align: right;
+      }
+
+      .day-track {
+        grid-area: track;
+        width: 100%;
+        max-width: none;
+        height: 12px;
+        border-radius: 999px;
+      }
+
+      .day-fill {
+        width: var(--bar, 0%);
+        height: 100%;
+        min-height: 0;
+        min-width: 2px;
+        border-radius: 999px;
+      }
+
+      .picking-table {
+        min-width: 360px;
+
+        th, td {
+          padding: 8px;
+          font-size: 12px;
+        }
+
+        th {
+          font-size: 11px;
+          letter-spacing: 0;
+        }
+      }
+    }
+  }
+
+  .date-selection {
+    .date-input {
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+  }
+
+  .product-details {
+    .section-header .section-actions {
+      width: 100%;
+
+      button {
+        width: 100%;
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .reports-page {
     padding: 0.65rem 0.55rem 1.25rem;
   }
 
@@ -1424,17 +1624,37 @@
 }
 
 @media (max-width: 360px) {
+  .reports-page {
+    padding: 0.35rem 0.25rem 0.85rem;
+  }
+
   .reports-container {
-    padding: 0.85rem 0.7rem 1rem;
+    padding: 0.65rem 0.45rem 0.8rem;
+    border-radius: 10px;
   }
 
   .reports-header {
     .reports-title {
-      font-size: 18px;
-      
+      font-size: 16px;
+
       .reports-icon {
-        width: 22px;
-        height: 22px;
+        width: 20px;
+        height: 20px;
+      }
+    }
+  }
+
+  .reports-content {
+    .reports-nav button,
+    .reports-subnav button {
+      font-size: 11px;
+      padding: 7px 4px;
+    }
+
+    .picking-stats {
+      .day-amount,
+      .bar-value {
+        font-size: 10px;
       }
     }
   }

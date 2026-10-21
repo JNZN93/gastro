@@ -131,7 +131,7 @@
               <div class="day-track">
                 <div
                   class="day-fill"
-                  [style.height.%]="barPercent(day.order_count, maxDayOrders)"
+                  [style.--bar]="barPercent(day.order_count, maxDayOrders) + '%'"
                 ></div>
               </div>
               <span class="day-label">{{ weekdayLabel(day.date) }}</span>
