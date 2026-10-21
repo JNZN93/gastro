@@ -42,6 +42,30 @@ interface OrdersResponse {
   orders: Order[];
 }
 
+interface PickingStatRow {
+  picker_user_id: number | null;
+  picker_user_name: string;
+  order_count: number;
+  total_amount: number;
+}
+
+interface PickingDayStat {
+  date: string;
+  order_count: number;
+  total_amount: number;
+}
+
+interface PickingStatsResponse {
+  from: string;
+  to: string;
+  totals: {
+    orders: number;
+    amount: number;
+  };
+  pickers: PickingStatRow[];
+  days: PickingDayStat[];
+}
+
 @Component({
   selector: 'app-reports',
   standalone: true,
@@ -57,6 +81,20 @@ export class ReportsComponent implements OnInit {
   isVisible: boolean = true;
   isCustomerSummaryCollapsed: boolean = true; // Initially collapsed
   isProductCategoryCollapsed: boolean = false; // Initially expanded
+
+  activeSection: 'picking' | 'products' = 'products';
+  productSection: 'overview' | 'customers' | 'assortment' | 'chicken' = 'overview';
+  pickingPeriod: 'day' | 'week' = 'day';
+  pickingDate: string = '';
+  pickingStatsLoading: boolean = false;
+  pickingStatsError: string = '';
+  pickingStats: PickingStatsResponse = {
+    from: '',
+    to: '',
+    totals: { orders: 0, amount: 0 },
+    pickers: [],
+    days: []
+  };
   
   // Artikel-Daten für echte Kategorien
   globalArtikels: any[] = [];
@@ -163,6 +201,8 @@ export class ReportsComponent implements OnInit {
     this.loadArtikels();
     this.loadCustomers();
     this.selectedDate = this.getTodayDate();
+    this.pickingDate = this.getLocalToday();
+    this.loadPickingStats();
   }
 
   loadArtikels() {
@@ -197,6 +237,173 @@ export class ReportsComponent implements OnInit {
   getTodayDate(): string {
     const today = new Date();
     return today.toISOString().split('T')[0];
+  }
+
+  private getLocalToday(): string {
+    return this.formatIsoDate(new Date());
+  }
+
+  private formatIsoDate(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  private parseIsoDate(value: string): Date {
+    const [year, month, day] = value.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  }
+
+  formatGermanDate(value: string): string {
+    if (!value) {
+      return '';
+    }
+    const [year, month, day] = value.split('-');
+    return `${day}.${month}.${year}`;
+  }
+
+  get maxPickerOrders(): number {
+    return this.pickingStats.pickers.reduce((max, picker) => Math.max(max, picker.order_count), 0);
+  }
+
+  get maxPickerAmount(): number {
+    return this.pickingStats.pickers.reduce((max, picker) => Math.max(max, picker.total_amount), 0);
+  }
+
+  get maxDayOrders(): number {
+    return this.pickingStats.days.reduce((max, day) => Math.max(max, day.order_count), 0);
+  }
+
+  barPercent(value: number, max: number): number {
+    if (!max) {
+      return 0;
+    }
+    return Math.max(0, Math.min(100, (Number(value) / max) * 100));
+  }
+
+  weekdayLabel(value: string): string {
+    const labels = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+    return labels[this.parseIsoDate(value).getDay()] || '';
+  }
+
+  formatAmount(value: number): string {
+    return new Intl.NumberFormat('de-DE', {
+      style: 'currency',
+      currency: 'EUR'
+    }).format(Number(value) || 0);
+  }
+
+  get pickingFrom(): string {
+    if (this.pickingPeriod === 'week') {
+      return this.startOfWeek(this.pickingDate);
+    }
+    return this.pickingDate;
+  }
+
+  get pickingTo(): string {
+    if (this.pickingPeriod === 'week') {
+      return this.endOfWeek(this.pickingDate);
+    }
+    return this.pickingDate;
+  }
+
+  get pickingRangeLabel(): string {
+    if (this.pickingPeriod === 'week') {
+      return `${this.formatGermanDate(this.pickingFrom)} – ${this.formatGermanDate(this.pickingTo)}`;
+    }
+    return this.formatGermanDate(this.pickingDate);
+  }
+
+  setActiveSection(section: 'picking' | 'products'): void {
+    this.activeSection = section;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  setProductSection(section: 'overview' | 'customers' | 'assortment' | 'chicken'): void {
+    this.productSection = section;
+    if (section === 'customers') {
+      this.isCustomerSummaryCollapsed = false;
+    }
+    if (section === 'assortment') {
+      this.isProductCategoryCollapsed = false;
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  setPickingPeriod(period: 'day' | 'week'): void {
+    if (this.pickingPeriod === period) {
+      return;
+    }
+    this.pickingPeriod = period;
+    this.loadPickingStats();
+  }
+
+  onPickingDateChange(): void {
+    this.loadPickingStats();
+  }
+
+  private startOfWeek(value: string): string {
+    const date = this.parseIsoDate(value);
+    const day = date.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    date.setDate(date.getDate() + diff);
+    return this.formatIsoDate(date);
+  }
+
+  private endOfWeek(value: string): string {
+    const date = this.parseIsoDate(this.startOfWeek(value));
+    date.setDate(date.getDate() + 6);
+    return this.formatIsoDate(date);
+  }
+
+  loadPickingStats(): void {
+    const token = localStorage.getItem('token');
+    if (!token || !this.pickingDate) {
+      return;
+    }
+
+    this.pickingStatsLoading = true;
+    this.pickingStatsError = '';
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`
+    });
+    const from = this.pickingFrom;
+    const to = this.pickingTo;
+
+    this.http.get<PickingStatsResponse>(
+      `${environment.apiUrl}/api/orders/picking-stats`,
+      { headers, params: { from, to } }
+    ).subscribe({
+      next: (response) => {
+        this.pickingStats = {
+          from: response?.from || from,
+          to: response?.to || to,
+          totals: {
+            orders: Number(response?.totals?.orders) || 0,
+            amount: Number(response?.totals?.amount) || 0
+          },
+          pickers: response?.pickers || [],
+          days: (response?.days || []).map((day) => ({
+            date: day.date,
+            order_count: Number(day.order_count) || 0,
+            total_amount: Number(day.total_amount) || 0
+          }))
+        };
+        this.pickingStatsLoading = false;
+      },
+      error: () => {
+        this.pickingStats = {
+          from,
+          to,
+          totals: { orders: 0, amount: 0 },
+          pickers: [],
+          days: []
+        };
+        this.pickingStatsError = 'Die Kommissionierung konnte nicht geladen werden.';
+        this.pickingStatsLoading = false;
+      }
+    });
   }
 
   /** Kategorie-String normalisieren für Vergleiche (Umlaute, Leerzeichen, Unicode). */
@@ -669,6 +876,18 @@ export class ReportsComponent implements OnInit {
     });
   }
 
+  exportPickingPdf() {
+    if (this.pickingStatsLoading || this.pickingStatsError) {
+      return;
+    }
+
+    import('jspdf').then(({ default: jsPDF }) => {
+      import('jspdf-autotable').then(({ default: autoTable }) => {
+        this.generatePickingPdf(jsPDF, autoTable);
+      });
+    });
+  }
+
   exportHaehnchenKundenPdf() {
     if (!this.filteredOrders.length) return;
 
@@ -677,6 +896,259 @@ export class ReportsComponent implements OnInit {
         this.generateHaehnchenKundenPdf(jsPDF, autoTable);
       });
     });
+  }
+
+  private generatePickingPdf(jsPDF: any, autoTable: any) {
+    const doc = new jsPDF({ orientation: 'portrait', format: 'a4' });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 14;
+    const contentWidth = pageWidth - margin * 2;
+    const periodLabel = this.pickingPeriod === 'week' ? 'Woche' : 'Tag';
+    const rows = this.pickingStats.pickers;
+    let y = 18;
+
+    doc.setTextColor(17, 24, 39);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.text('Kommissionierung', margin, y);
+    y += 8;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(75, 85, 99);
+    doc.text(`${periodLabel}: ${this.pickingRangeLabel}`, margin, y);
+    y += 6;
+    doc.text(
+      `Summe: ${this.pickingStats.totals.orders} Bestellungen, ${this.formatPdfAmount(this.pickingStats.totals.amount)}`,
+      margin,
+      y
+    );
+    y += 10;
+
+    if (rows.length > 0) {
+      const gap = 8;
+      const columnWidth = (contentWidth - gap) / 2;
+      const orderItems = rows.map((picker) => ({
+        label: this.pdfText(picker.picker_user_name),
+        value: picker.order_count,
+        text: String(picker.order_count)
+      }));
+      const amountItems = rows.map((picker) => ({
+        label: this.pdfText(picker.picker_user_name),
+        value: picker.total_amount,
+        text: this.formatPdfAmount(picker.total_amount)
+      }));
+      const chartHeight = Math.max(
+        this.measurePdfBarChart(orderItems.length),
+        this.measurePdfBarChart(amountItems.length)
+      );
+      y = this.ensurePdfSpace(doc, y, chartHeight, pageHeight, margin);
+      this.drawPdfBarChart(doc, {
+        x: margin,
+        y,
+        width: columnWidth,
+        title: 'Bestellungen',
+        color: [21, 101, 192],
+        items: orderItems
+      });
+      this.drawPdfBarChart(doc, {
+        x: margin + columnWidth + gap,
+        y,
+        width: columnWidth,
+        title: 'Betrag',
+        color: [5, 150, 105],
+        items: amountItems
+      });
+      y += chartHeight + 8;
+    }
+
+    if (this.pickingPeriod === 'week' && this.pickingStats.totals.orders > 0) {
+      const dayHeight = 62;
+      y = this.ensurePdfSpace(doc, y, dayHeight, pageHeight, margin);
+      this.drawPdfDayChart(doc, {
+        x: margin,
+        y,
+        width: contentWidth,
+        days: this.pickingStats.days
+      });
+      y += dayHeight + 6;
+    }
+
+    const body = rows.length === 0
+      ? [['Keine Kommissionierungen in diesem Zeitraum', '', '']]
+      : rows.map((picker) => [
+          this.pdfText(picker.picker_user_name),
+          String(picker.order_count),
+          this.formatPdfAmount(picker.total_amount)
+        ]);
+
+    if (rows.length > 0) {
+      body.push([
+        'Gesamt',
+        String(this.pickingStats.totals.orders),
+        this.formatPdfAmount(this.pickingStats.totals.amount)
+      ]);
+    }
+
+    doc.setTextColor(17, 24, 39);
+    autoTable(doc, {
+      head: [['Mitarbeiter', 'Anzahl Bestellungen', 'Betrag']],
+      body,
+      startY: y,
+      margin: { left: margin, right: margin },
+      styles: {
+        fontSize: 10,
+        cellPadding: 3,
+        overflow: 'linebreak',
+        valign: 'middle',
+        textColor: [17, 24, 39]
+      },
+      headStyles: {
+        fillColor: [21, 101, 192],
+        textColor: 255,
+        fontStyle: 'bold'
+      },
+      columnStyles: {
+        1: { halign: 'right' },
+        2: { halign: 'right' }
+      },
+      didParseCell: (data: { row: { index: number }; section: string; cell: { styles: { fontStyle: string; fillColor: number[] } } }) => {
+        if (rows.length > 0 && data.section === 'body' && data.row.index === body.length - 1) {
+          data.cell.styles.fontStyle = 'bold';
+          data.cell.styles.fillColor = [239, 246, 255];
+        }
+      }
+    });
+
+    const blob = doc.output('blob');
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  }
+
+  private measurePdfBarChart(rowCount: number): number {
+    return 8 + Math.max(rowCount, 1) * 8;
+  }
+
+  private ensurePdfSpace(doc: any, y: number, needed: number, pageHeight: number, margin: number): number {
+    if (y + needed <= pageHeight - margin) {
+      return y;
+    }
+    doc.addPage();
+    return margin + 6;
+  }
+
+  private drawPdfBarChart(
+    doc: any,
+    options: {
+      x: number;
+      y: number;
+      width: number;
+      title: string;
+      color: [number, number, number];
+      items: Array<{ label: string; value: number; text: string }>;
+    }
+  ): number {
+    const { x, y, width, title, color, items } = options;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(17, 24, 39);
+    doc.text(title, x, y + 4);
+
+    const max = items.reduce((highest, item) => Math.max(highest, item.value), 0);
+    const labelWidth = 24;
+    const valueWidth = 34;
+    const barX = x + labelWidth;
+    const barWidth = Math.max(8, width - labelWidth - valueWidth);
+    let rowY = y + 8;
+
+    items.forEach((item) => {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(17, 24, 39);
+      doc.text(this.fitPdfText(doc, item.label, labelWidth - 2), x, rowY + 4);
+
+      doc.setFillColor(243, 244, 246);
+      doc.roundedRect(barX, rowY + 1, barWidth, 3.2, 1, 1, 'F');
+      const fillWidth = max > 0 ? Math.max(item.value > 0 ? 1.2 : 0, (item.value / max) * barWidth) : 0;
+      if (fillWidth > 0) {
+        doc.setFillColor(color[0], color[1], color[2]);
+        doc.roundedRect(barX, rowY + 1, fillWidth, 3.2, 1, 1, 'F');
+      }
+
+      doc.setFontSize(8);
+      doc.text(item.text, x + width, rowY + 4, { align: 'right' });
+      rowY += 8;
+    });
+
+    return this.measurePdfBarChart(items.length);
+  }
+
+  private drawPdfDayChart(
+    doc: any,
+    options: {
+      x: number;
+      y: number;
+      width: number;
+      days: Array<{ date: string; order_count: number; total_amount: number }>;
+    }
+  ): void {
+    const { x, y, width, days } = options;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(17, 24, 39);
+    doc.text('Verlauf der Woche', x, y + 4);
+
+    const max = days.reduce((highest, day) => Math.max(highest, day.order_count), 0);
+    const slot = width / Math.max(days.length, 1);
+    const barMaxHeight = 32;
+    const baseY = y + 44;
+
+    days.forEach((day, index) => {
+      const center = x + slot * index + slot / 2;
+      const barWidth = Math.min(10, slot - 4);
+      const barHeight = max > 0 ? (day.order_count / max) * barMaxHeight : 0;
+      doc.setFillColor(243, 244, 246);
+      doc.roundedRect(center - barWidth / 2, baseY - barMaxHeight, barWidth, barMaxHeight, 1, 1, 'F');
+      if (barHeight > 0) {
+        doc.setFillColor(21, 101, 192);
+        doc.roundedRect(center - barWidth / 2, baseY - barHeight, barWidth, barHeight, 1, 1, 'F');
+      }
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(17, 24, 39);
+      doc.text(String(day.order_count), center, baseY - barMaxHeight - 2, { align: 'center' });
+      doc.text(this.weekdayLabel(day.date), center, baseY + 5, { align: 'center' });
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(6.5);
+      doc.setTextColor(107, 114, 128);
+      doc.text(this.formatPdfAmount(day.total_amount), center, baseY + 9, { align: 'center' });
+    });
+  }
+
+  private fitPdfText(doc: any, value: string, maxWidth: number): string {
+    if (doc.getTextWidth(value) <= maxWidth) {
+      return value;
+    }
+    let trimmed = value;
+    while (trimmed.length > 1 && doc.getTextWidth(`${trimmed}...`) > maxWidth) {
+      trimmed = trimmed.slice(0, -1);
+    }
+    return `${trimmed}...`;
+  }
+
+  private formatPdfAmount(value: number): string {
+    const formatted = new Intl.NumberFormat('de-DE', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(Number(value) || 0);
+    return `${formatted} EUR`;
+  }
+
+  private pdfText(value: string): string {
+    const text = String(value || '').replace(/[^\u0000-\u00ff]/g, '').trim();
+    return text || 'Unbekannt';
   }
 
   private generatePDF(jsPDF: any, autoTable: any, category: 'ALL' | 'GEMUESE' | 'OBST' | 'DIVERS' | 'FRISCHE_HAEHNCHEN') {

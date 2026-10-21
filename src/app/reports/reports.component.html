@@ -22,6 +22,151 @@
 
   <!-- Main Content -->
   <div class="reports-content" *ngIf="!isLoading">
+    <nav class="reports-nav" aria-label="Report-Bereiche">
+      <button type="button" [class.active]="activeSection === 'picking'" (click)="setActiveSection('picking')">
+        Kommissionierung
+      </button>
+      <button type="button" [class.active]="activeSection === 'products'" (click)="setActiveSection('products')">
+        Produkte
+      </button>
+    </nav>
+
+    <section class="picking-stats" *ngIf="activeSection === 'picking'">
+      <h2>Kommissionierung</h2>
+      <div class="picking-controls">
+        <div class="period-toggle" role="group" aria-label="Zeitraum">
+          <button type="button" [class.active]="pickingPeriod === 'day'" (click)="setPickingPeriod('day')">Tag</button>
+          <button type="button" [class.active]="pickingPeriod === 'week'" (click)="setPickingPeriod('week')">Woche</button>
+        </div>
+        <div class="picking-date">
+          <label for="pickingDate" class="date-label">Datum</label>
+          <input
+            type="date"
+            id="pickingDate"
+            [(ngModel)]="pickingDate"
+            (change)="onPickingDateChange()"
+            class="date-input"
+          >
+        </div>
+        <p class="picking-range">{{ pickingRangeLabel }}</p>
+        <button
+          mat-flat-button
+          type="button"
+          class="picking-pdf-btn"
+          (click)="exportPickingPdf()"
+          [disabled]="pickingStatsLoading || !!pickingStatsError"
+        >
+          <mat-icon>picture_as_pdf</mat-icon>
+          Als PDF
+        </button>
+      </div>
+
+      <div class="picking-loading" *ngIf="pickingStatsLoading">
+        <div class="loading-spinner"></div>
+        <p>Lade Kommissionierung...</p>
+      </div>
+
+      <p class="picking-error" *ngIf="!pickingStatsLoading && pickingStatsError">{{ pickingStatsError }}</p>
+
+      <ng-container *ngIf="!pickingStatsLoading && !pickingStatsError">
+        <div class="summary-grid picking-summary">
+          <div class="summary-card total-orders">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+              </svg>
+            </div>
+            <div class="card-content">
+              <h3>{{ pickingStats.totals.orders }}</h3>
+              <p>Kommissionierte Bestellungen</p>
+            </div>
+          </div>
+          <div class="summary-card total-products">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+            </div>
+            <div class="card-content">
+              <h3>{{ formatAmount(pickingStats.totals.amount) }}</h3>
+              <p>Gesamtbetrag</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="picking-charts" *ngIf="pickingStats.pickers.length > 0">
+          <div class="chart-card">
+            <h3>Bestellungen</h3>
+            <div class="bar-row" *ngFor="let picker of pickingStats.pickers">
+              <span class="bar-label">{{ picker.picker_user_name }}</span>
+              <div class="bar-track">
+                <div
+                  class="bar-fill orders"
+                  [style.width.%]="barPercent(picker.order_count, maxPickerOrders)"
+                ></div>
+              </div>
+              <span class="bar-value">{{ picker.order_count }}</span>
+            </div>
+          </div>
+          <div class="chart-card">
+            <h3>Betrag</h3>
+            <div class="bar-row" *ngFor="let picker of pickingStats.pickers">
+              <span class="bar-label">{{ picker.picker_user_name }}</span>
+              <div class="bar-track">
+                <div
+                  class="bar-fill amount"
+                  [style.width.%]="barPercent(picker.total_amount, maxPickerAmount)"
+                ></div>
+              </div>
+              <span class="bar-value">{{ formatAmount(picker.total_amount) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="chart-card day-chart" *ngIf="pickingPeriod === 'week' && pickingStats.totals.orders > 0">
+          <h3>Verlauf der Woche</h3>
+          <div class="day-bars">
+            <div class="day-col" *ngFor="let day of pickingStats.days">
+              <span class="day-count">{{ day.order_count }}</span>
+              <div class="day-track">
+                <div
+                  class="day-fill"
+                  [style.height.%]="barPercent(day.order_count, maxDayOrders)"
+                ></div>
+              </div>
+              <span class="day-label">{{ weekdayLabel(day.date) }}</span>
+              <span class="day-amount">{{ formatAmount(day.total_amount) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="no-data picking-empty" *ngIf="pickingStats.pickers.length === 0">
+          <h3>Keine Kommissionierungen</h3>
+          <p>Im gewählten Zeitraum wurde keine Bestellung fertig kommissioniert.</p>
+        </div>
+
+        <div class="picking-table-container" *ngIf="pickingStats.pickers.length > 0">
+          <table class="picking-table">
+            <thead>
+              <tr>
+                <th>Mitarbeiter</th>
+                <th>Anzahl Bestellungen</th>
+                <th>Betrag</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let picker of pickingStats.pickers">
+                <td>{{ picker.picker_user_name }}</td>
+                <td>{{ picker.order_count }}</td>
+                <td>{{ formatAmount(picker.total_amount) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </ng-container>
+    </section>
+
+    <div class="product-report" *ngIf="activeSection === 'products'">
     <!-- Date Selection -->
     <div class="date-selection">
       <label for="datePicker" class="date-label">Datum auswählen:</label>
@@ -34,8 +179,15 @@
       >
     </div>
 
+    <nav class="reports-subnav" aria-label="Produktauswertung">
+      <button type="button" [class.active]="productSection === 'overview'" (click)="setProductSection('overview')">Übersicht</button>
+      <button type="button" [class.active]="productSection === 'customers'" (click)="setProductSection('customers')">Kunden</button>
+      <button type="button" [class.active]="productSection === 'assortment'" (click)="setProductSection('assortment')">Sortiment</button>
+      <button type="button" [class.active]="productSection === 'chicken'" (click)="setProductSection('chicken')">Hähnchen</button>
+    </nav>
+
     <!-- Summary Cards -->
-    <div class="summary-grid" *ngIf="filteredOrders.length > 0">
+    <div class="summary-grid" *ngIf="productSection === 'overview' && filteredOrders.length > 0">
       <div class="summary-card total-orders">
         <div class="card-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -98,7 +250,7 @@
     </div>
 
     <!-- No Data Message -->
-    <div class="no-data" *ngIf="selectedDate && filteredOrders.length === 0">
+    <div class="no-data" *ngIf="selectedDate && filteredOrders.length === 0 && productSection === 'overview'">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
       </svg>
@@ -109,7 +261,7 @@
     <!-- Product Details -->
     <div class="product-details" *ngIf="filteredOrders.length > 0">
       <!-- Export-Bereich (alle Kategorien) -->
-      <div class="export-section">
+      <div class="export-section" *ngIf="productSection === 'overview'">
         <button mat-flat-button type="button" class="export-all-btn" (click)="exportToPDF('ALL')">
           <mat-icon>picture_as_pdf</mat-icon>
           Alle Kategorien als PDF
@@ -117,7 +269,7 @@
       </div>
 
       <!-- Customer Summary -->
-      <div class="customer-summary" *ngIf="reportData.customerSummary.length > 0">
+      <div class="customer-summary" *ngIf="productSection === 'customers' && reportData.customerSummary.length > 0">
         <div class="section-header" (click)="toggleCustomerSummary()">
           <h2>Kunden-Zusammenfassung</h2>
           <button mat-icon-button type="button" class="toggle-button" [class.collapsed]="isCustomerSummaryCollapsed" aria-label="Kunden-Zusammenfassung ein- oder ausklappen">
@@ -157,7 +309,7 @@
       </div>
 
       <!-- GEMÜSE & OBST Products -->
-      <div class="product-category" *ngIf="reportData.gemueseProductList.length > 0 || reportData.obstProductList.length > 0 || reportData.schnellverkaufProductList.length > 0">
+      <div class="product-category" *ngIf="productSection === 'assortment' && (reportData.gemueseProductList.length > 0 || reportData.obstProductList.length > 0 || reportData.schnellverkaufProductList.length > 0)">
         <div class="section-header">
           <h2 (click)="toggleProductCategory()">OBST, GEMÜSE & DIVERS Produkte</h2>
           <div class="section-actions">
@@ -242,7 +394,7 @@
       </div>
 
       <!-- FRISCHE HÄHNCHEN – eigene Kategorie (nicht in OBST/GEMÜSE/DIVERS) -->
-      <div class="product-category frische-haehnchen-section">
+      <div class="product-category frische-haehnchen-section" *ngIf="productSection === 'chicken'">
         <div class="section-header">
           <h2>FRISCHE HÄHNCHEN</h2>
           <div class="section-actions">
@@ -345,6 +497,7 @@
         </div>
       </div>
       -->
+    </div>
     </div>
   </div>
 </div>

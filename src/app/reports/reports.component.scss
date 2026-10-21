@@ -82,6 +82,349 @@
 }
 
 .reports-content {
+  .reports-nav,
+  .reports-subnav {
+    display: flex;
+    width: 100%;
+    box-sizing: border-box;
+    gap: 8px;
+    margin-bottom: 24px;
+    padding: 4px;
+    background: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+
+    button {
+      flex: 1 1 0;
+      min-width: 0;
+      border: 0;
+      background: transparent;
+      color: #374151;
+      font-family: 'Poppins', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      padding: 12px 16px;
+      border-radius: 9px;
+      cursor: pointer;
+
+      &.active {
+        background: #1565c0;
+        color: #fff;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+      }
+    }
+  }
+
+  .reports-nav {
+    position: sticky;
+    top: 78px;
+    z-index: 6;
+  }
+
+  .reports-subnav {
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+
+    button {
+      font-size: 14px;
+      padding: 8px 12px;
+    }
+  }
+
+  .picking-stats {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: 0;
+
+    h2 {
+      margin: 0 0 16px;
+      font-size: 22px;
+      font-weight: 700;
+      color: #111827;
+    }
+
+    .picking-controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .period-toggle {
+      display: inline-flex;
+      padding: 4px;
+      background: #f3f4f6;
+      border-radius: 10px;
+      border: 1px solid #e5e7eb;
+
+      button {
+        border: 0;
+        background: transparent;
+        color: #374151;
+        font-family: 'Poppins', sans-serif;
+        font-size: 14px;
+        font-weight: 600;
+        padding: 8px 16px;
+        border-radius: 8px;
+        cursor: pointer;
+
+        &.active {
+          background: #1565c0;
+          color: #fff;
+        }
+      }
+    }
+
+    .picking-date {
+      .date-label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        color: #374151;
+        letter-spacing: 0.025em;
+        text-transform: uppercase;
+      }
+
+      .date-input {
+        padding: 12px 16px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 500;
+        font-family: 'Poppins', sans-serif;
+        background: white;
+        color: #111827;
+      }
+    }
+
+    .picking-range {
+      margin: 0 0 6px;
+      color: #4b5563;
+      font-weight: 600;
+    }
+
+    .picking-pdf-btn {
+      margin-left: auto;
+      --mdc-filled-button-container-color: #1565c0;
+      --mdc-filled-button-label-text-color: #fff;
+      --mat-filled-button-state-layer-color: #fff;
+      --mat-filled-button-ripple-color: rgba(255, 255, 255, 0.16);
+    }
+
+    .picking-loading {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: #6b7280;
+
+      .loading-spinner {
+        width: 22px;
+        height: 22px;
+        margin: 0;
+      }
+    }
+
+    .picking-error {
+      margin: 0;
+      color: #b91c1c;
+      font-weight: 600;
+    }
+
+    .picking-charts {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .chart-card {
+      margin-bottom: 20px;
+      padding: 16px 18px;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+
+      h3 {
+        margin: 0 0 14px;
+        font-size: 15px;
+        font-weight: 700;
+        color: #111827;
+      }
+    }
+
+    .picking-charts .chart-card {
+      margin-bottom: 0;
+    }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: minmax(72px, 110px) 1fr auto;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+
+    .bar-label,
+    .bar-value {
+      font-size: 13px;
+      color: #111827;
+      white-space: nowrap;
+    }
+
+    .bar-label {
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .bar-value {
+      min-width: 72px;
+      text-align: right;
+      font-weight: 600;
+    }
+
+    .bar-track,
+    .day-track {
+      background: #f3f4f6;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .bar-track {
+      height: 12px;
+    }
+
+    .bar-fill,
+    .day-fill {
+      background: #1565c0;
+      border-radius: 999px;
+    }
+
+    .bar-fill {
+      height: 100%;
+      min-width: 2px;
+
+      &.amount {
+        background: #059669;
+      }
+    }
+
+    .day-bars {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 8px;
+      align-items: end;
+    }
+
+    .day-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .day-count,
+    .day-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #111827;
+    }
+
+    .day-amount {
+      font-size: 11px;
+      color: #6b7280;
+      text-align: center;
+      line-height: 1.2;
+    }
+
+    .day-track {
+      width: 100%;
+      max-width: 36px;
+      height: 120px;
+      display: flex;
+      align-items: flex-end;
+      border-radius: 8px;
+    }
+
+    .day-fill {
+      width: 100%;
+      min-height: 2px;
+      border-radius: 8px 8px 4px 4px;
+    }
+
+    .picking-summary {
+      margin-bottom: 20px;
+
+      .card-content h3 {
+        font-size: 24px;
+      }
+    }
+
+    .picking-empty {
+      padding: 28px 20px;
+
+      svg {
+        display: none;
+      }
+    }
+
+    .picking-table-container {
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      overflow-x: auto;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .picking-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 480px;
+
+      th, td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #e5e7eb;
+        white-space: nowrap;
+      }
+
+      th {
+        background: #f9fafb;
+        font-weight: 600;
+        color: #374151;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      td {
+        color: #111827;
+        font-size: 14px;
+      }
+
+      td:nth-child(2),
+      td:nth-child(3),
+      th:nth-child(2),
+      th:nth-child(3) {
+        text-align: right;
+      }
+
+      tbody tr:hover {
+        background: #e0f2fe;
+      }
+
+      tbody tr:last-child td {
+        border-bottom: none;
+      }
+    }
+  }
+
   .date-selection {
     margin-bottom: 30px;
     padding: 20px;
