@@ -34,7 +34,7 @@
   <nav class="sidebar-nav">
     @for (item of items; track item.route) {
       <a
-        class="sidebar-link"
+        class="sidebar-link icon-{{ item.tone }}"
         [routerLink]="item.route"
         routerLinkActive="active"
         [routerLinkActiveOptions]="{ exact: !!item.exact }"

@@ -94,6 +94,21 @@
   min-height: 0;
   overflow-y: auto;
   padding: 4px 10px 20px;
+  scrollbar-width: thin;
+  scrollbar-color: #c5d4e0 transparent;
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #c5d4e0;
+    border-radius: 999px;
+  }
 }
 
 .sidebar-link {
@@ -129,11 +144,26 @@
   &.active {
     background: #e3f2fd;
     color: #1565c0;
-
-    mat-icon {
-      color: #1565c0;
-    }
   }
+
+  &.icon-dashboard mat-icon { color: #5b8fb8; }
+  &.icon-orders mat-icon { color: #1565c0; }
+  &.icon-picking mat-icon { color: #00838f; }
+  &.icon-create mat-icon { color: #2e7d32; }
+  &.icon-invoices mat-icon { color: #c62828; }
+  &.icon-labels mat-icon { color: #9e9d24; }
+  &.icon-routes mat-icon { color: #3949ab; }
+  &.icon-inventory mat-icon { color: #6d4c41; }
+  &.icon-employees mat-icon { color: #ef6c00; }
+  &.icon-planning mat-icon { color: #5e35b1; }
+  &.icon-shop mat-icon { color: #00695c; }
+  &.icon-products mat-icon { color: #8e24aa; }
+  &.icon-offers mat-icon { color: #d84315; }
+  &.icon-prices mat-icon { color: #f9a825; }
+  &.icon-reports mat-icon { color: #546e7a; }
+  &.icon-users mat-icon { color: #c2185b; }
+  &.icon-tracking mat-icon { color: #558b2f; }
+  &.icon-board mat-icon { color: #5e35b1; }
 
   &:focus-visible {
     outline: 2px solid #1565c0;
