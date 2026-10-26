@@ -120,9 +120,18 @@
 
       <!-- Date and Notes -->
       <div class="form-section">
-        <h3 class="form-title">{{ isDelivery ? 'Lieferdatum' : 'Abholdatum' }}</h3>
+        <h3 class="form-title">{{ isDelivery ? 'Lieferdatum' : 'Abholdatum' }} <span class="required-mark" aria-hidden="true">*</span></h3>
         <div class="form-group">
-          <input [(ngModel)]="delivery_date" type="date" class="form-input">
+          <input [(ngModel)]="delivery_date"
+                 (ngModelChange)="onDeliveryDateChange()"
+                 type="date"
+                 class="form-input"
+                 [class.form-input-invalid]="dateInvalid && !delivery_date"
+                 required
+                 aria-required="true">
+          @if (dateInvalid && !delivery_date) {
+            <p class="date-required-hint">{{ isDelivery ? 'Lieferdatum' : 'Abholdatum' }} ist ein Pflichtfeld.</p>
+          }
         </div>
         
         <h3 class="form-title">Anmerkungen</h3>

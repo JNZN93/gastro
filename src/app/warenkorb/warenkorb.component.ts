@@ -22,6 +22,7 @@ export class WarenkorbComponent implements OnInit {
   zipCode: string | null = localStorage.getItem('zipcode') ? localStorage.getItem('zipcode') : '';
   city: string | null= localStorage.getItem('city') ? localStorage.getItem('city') : '';
   delivery_date: string | null = '';
+  dateInvalid = false;
   customer_notes: string | null = '';
   combinedValue: string = '';
   
@@ -55,7 +56,28 @@ export class WarenkorbComponent implements OnInit {
      }
   }
 
+  onDeliveryDateChange(): void {
+    if (this.delivery_date?.trim()) {
+      this.dateInvalid = false;
+    }
+  }
+
   sendOrder() {
+    if (!this.delivery_date?.trim()) {
+      this.dateInvalid = true;
+      const label = this.isDelivery ? 'Lieferdatum' : 'Abholdatum';
+      this.dialog.open(MyDialogComponent, {
+        data: {
+          title: 'Datum fehlt',
+          message: `Bitte ein ${label} angeben. Das Datum ist ein Pflichtfeld.`,
+          buttonLabel: 'OK'
+        },
+        maxWidth: '400px',
+        minWidth: '300px',
+      });
+      return;
+    }
+
     this.dialog.open(MyDialogComponent, {
       data: {
         title: 'Bestellung bestätigen',

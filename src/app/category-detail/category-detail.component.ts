@@ -775,7 +775,22 @@ export class CategoryDetailComponent implements OnInit, OnDestroy {
     window.dispatchEvent(event);
   }
 
+  // Artikeltexte aus der DB enthalten teils geschützte Leerzeichen, die einen Zeilenumbruch verhindern
+  displayTitle(text: string | null | undefined): string {
+    return (text ?? '').replace(/\u00a0/g, ' ');
+  }
+
   // Warenkorb-Methoden
+  incrementQuantity(artikel: any): void {
+    const current = Number(artikel.quantity) || 1;
+    artikel.quantity = artikel.quantity ? current + 1 : 2;
+  }
+
+  decrementQuantity(artikel: any): void {
+    const current = Number(artikel.quantity) || 1;
+    artikel.quantity = Math.max(1, current - 1);
+  }
+
   addToCart(event: Event, artikel: any): void {
     if (!artikel.quantity || isNaN(Number(artikel.quantity)) || Number(artikel.quantity) < 1) {
       artikel.quantity = 1;

@@ -650,6 +650,11 @@ h6 {
   margin: 0 0 0.75rem 0;
 }
 
+.required-mark {
+  color: #e53e3e;
+  font-weight: 700;
+}
+
 .form-grid {
   display: grid;
   gap: 0.75rem;
@@ -680,6 +685,19 @@ h6 {
   &::placeholder {
     color: #a0aec0;
   }
+
+  &.form-input-invalid {
+    border-color: #e53e3e;
+    background: #fff5f5;
+    box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.12);
+  }
+}
+
+.date-required-hint {
+  margin: 0.4rem 0 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #e53e3e;
 }
 
 .form-textarea {
