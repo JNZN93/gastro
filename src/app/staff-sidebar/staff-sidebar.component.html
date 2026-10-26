@@ -1,0 +1,49 @@
+@if (mobileOpen) {
+  <button type="button" class="sidebar-backdrop" (click)="closeMobile()" aria-label="Menü schließen"></button>
+}
+
+<button
+  type="button"
+  class="sidebar-toggle"
+  [class.flush-top]="!belowHeader"
+  [class.hidden]="mobileOpen"
+  (click)="toggleMobile()"
+  [attr.aria-expanded]="mobileOpen"
+  aria-label="Bereiche öffnen"
+>
+  <mat-icon>menu</mat-icon>
+</button>
+
+<aside class="staff-sidebar" [class.open]="mobileOpen" [class.collapsed]="collapsed" [class.flush-top]="!belowHeader" aria-label="Bereiche">
+  <div class="sidebar-head">
+    <span class="sidebar-title">Bereiche</span>
+    <button
+      type="button"
+      class="sidebar-collapse"
+      (click)="toggleCollapsed()"
+      [attr.aria-expanded]="!collapsed"
+      [attr.aria-label]="collapsed ? 'Sidebar ausklappen' : 'Sidebar einklappen'"
+      [attr.title]="collapsed ? 'Ausklappen' : 'Einklappen'"
+    >
+      <mat-icon>{{ collapsed ? 'chevron_right' : 'chevron_left' }}</mat-icon>
+    </button>
+    <button type="button" class="sidebar-close" (click)="closeMobile()" aria-label="Menü schließen">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+  <nav class="sidebar-nav">
+    @for (item of items; track item.route) {
+      <a
+        class="sidebar-link"
+        [routerLink]="item.route"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: !!item.exact }"
+        [attr.aria-label]="item.label"
+        [attr.title]="collapsed ? item.label : null"
+      >
+        <mat-icon aria-hidden="true">{{ item.icon }}</mat-icon>
+        <span>{{ item.label }}</span>
+      </a>
+    }
+  </nav>
+</aside>

@@ -1,4 +1,9 @@
 <div class="offline-banner" *ngIf="offline">Keine Verbindung. Gespeicherte Seiten und die letzte Kommissionierliste bleiben verfügbar.</div>
 <app-header *ngIf="!shouldHideHeader"></app-header>
-<router-outlet></router-outlet>
-<app-footer *ngIf="!shouldHideFooter"></app-footer>
+@if (showStaffSidebar) {
+  <app-staff-sidebar [belowHeader]="!shouldHideHeader"></app-staff-sidebar>
+}
+<div class="app-content" [class.with-staff-sidebar]="showStaffSidebar">
+  <router-outlet></router-outlet>
+  <app-footer *ngIf="!shouldHideFooter"></app-footer>
+</div>

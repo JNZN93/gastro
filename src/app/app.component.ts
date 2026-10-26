@@ -8,10 +8,13 @@ import { FooterComponent } from "./footer/footer.component";
 import { ProductCatalogComponent } from "./product-catalog/product-catalog.component";
 import { filter, Subscription } from 'rxjs';
 import { PwaService } from './pwa/pwa.service';
+import { readStoredRole } from './pwa/session-role';
+import { StaffSidebarComponent } from './staff-sidebar/staff-sidebar.component';
+import { isPickingQueueUrl, isStaffWorkspaceUrl, STAFF_SIDEBAR_DESKTOP_MIN } from './staff-sidebar/staff-nav';
 
 @Component({
   selector: 'app-root',
-  imports: [CommonModule, RouterOutlet, HeaderComponent, FooterComponent],
+  imports: [CommonModule, RouterOutlet, HeaderComponent, FooterComponent, StaffSidebarComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })
@@ -21,6 +24,7 @@ export class AppComponent implements OnInit, OnDestroy {
   shouldHideFooter = false;
   shouldHideHeader = false;
   private isEmployeesRoute = false;
+  private isDesktopViewport = typeof window === 'undefined' || window.innerWidth >= STAFF_SIDEBAR_DESKTOP_MIN;
   private routerSubscription?: Subscription;
   offline = typeof navigator !== 'undefined' ? !navigator.onLine : false;
 
@@ -55,6 +59,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   @HostListener('window:resize')
   onResize() {
+    this.isDesktopViewport = window.innerWidth >= STAFF_SIDEBAR_DESKTOP_MIN;
     this.updateHeaderVisibility();
   }
 
@@ -106,4 +111,18 @@ export class AppComponent implements OnInit, OnDestroy {
   private onConnectivity = (): void => {
     this.offline = !navigator.onLine;
   };
+
+  get showStaffSidebar(): boolean {
+    const role = this.globalService.getUserRole() || readStoredRole();
+    if (role !== 'admin' && role !== 'employee') {
+      return false;
+    }
+    if (!isStaffWorkspaceUrl(this.router.url)) {
+      return false;
+    }
+    if (isPickingQueueUrl(this.router.url) && !this.isDesktopViewport) {
+      return false;
+    }
+    return true;
+  }
 }

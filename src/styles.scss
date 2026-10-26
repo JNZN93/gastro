@@ -1,4 +1,12 @@
 
+:root {
+    --staff-sidebar-width: 252px;
+}
+
+body.staff-sidebar-collapsed {
+    --staff-sidebar-width: 72px;
+}
+
 body, html{
     margin: 0;
     padding: 0;
