@@ -117,6 +117,14 @@
             </svg>
           </button>
         </div>
+        <div class="saved-inventory-toolbar" *ngIf="savedInventoryEntries.length > 0" (click)="$event.stopPropagation()">
+          <button
+            class="clear-saved-btn"
+            type="button"
+            (click)="clearAllSavedEntries()">
+            Alle gespeicherten Einträge löschen
+          </button>
+        </div>
         <div class="saved-inventory-content" [class.collapsed]="!isSavedInventoryExpanded">
           <div class="saved-inventory-list" *ngIf="!isLoadingSavedData">
             <div 
@@ -462,10 +470,35 @@
           <p>Möchten Sie wirklich alle <strong>{{ savedInventoryEntries.length }}</strong> gespeicherten Inventur-Einträge aus der Datenbank löschen?</p>
           <p class="warning-text">Diese Aktion kann nicht rückgängig gemacht werden.</p>
         </div>
+        <div class="password-confirm-section">
+          <label for="clearAllPasswordFirst">Passwort</label>
+          <input
+            id="clearAllPasswordFirst"
+            class="password-input"
+            type="password"
+            autocomplete="off"
+            [(ngModel)]="clearAllPasswordFirst"
+            (ngModelChange)="clearAllPasswordError = ''"
+            placeholder="Passwort eingeben">
+          <label for="clearAllPasswordSecond">Passwort wiederholen</label>
+          <input
+            id="clearAllPasswordSecond"
+            class="password-input"
+            type="password"
+            autocomplete="off"
+            [(ngModel)]="clearAllPasswordSecond"
+            (ngModelChange)="clearAllPasswordError = ''"
+            placeholder="Passwort erneut eingeben"
+            (keyup.enter)="confirmClearAllSavedEntries()">
+          <p class="password-error" *ngIf="clearAllPasswordError">{{ clearAllPasswordError }}</p>
+        </div>
       </div>
       <div class="modal-footer">
         <button class="btn-cancel" (click)="cancelClearAllSavedEntries()">Abbrechen</button>
-        <button class="btn-confirm btn-danger" (click)="confirmClearAllSavedEntries()">
+        <button
+          class="btn-confirm btn-danger"
+          (click)="confirmClearAllSavedEntries()"
+          [disabled]="!isClearAllPasswordValid()">
           Alle löschen
         </button>
       </div>

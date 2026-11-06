@@ -359,6 +359,43 @@
   }
 }
 
+.password-confirm-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+
+  label {
+    margin-top: 0.25rem;
+    font-weight: 500;
+    color: #374151;
+    font-size: 0.875rem;
+  }
+
+  .password-input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 1rem;
+    box-sizing: border-box;
+    transition: border-color 0.2s ease;
+
+    &:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+  }
+
+  .password-error {
+    margin: 0.25rem 0 0;
+    color: #dc2626;
+    font-size: 0.8125rem;
+    font-weight: 500;
+  }
+}
+
 // Scanner Modal Styles
 .scanner-modal {
   position: fixed;

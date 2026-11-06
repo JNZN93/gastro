@@ -70,6 +70,10 @@ export class InventoryComponent implements OnInit {
   showConfirmDeleteModal: boolean = false;
   selectedEntryToDelete: InventoryEntry | null = null;
   showConfirmClearAllSavedModal: boolean = false;
+  clearAllPasswordFirst: string = '';
+  clearAllPasswordSecond: string = '';
+  clearAllPasswordError: string = '';
+  private readonly clearAllPassword = '1212';
   showConfirmRemoveModal: boolean = false;
   selectedEntryToRemove: InventoryEntry | null = null;
   showConfirmSaveModal: boolean = false;
@@ -640,12 +644,24 @@ export class InventoryComponent implements OnInit {
     if (this.savedInventoryEntries.length === 0) {
       return;
     }
+    this.resetClearAllPassword();
     this.showConfirmClearAllSavedModal = true;
   }
 
+  isClearAllPasswordValid(): boolean {
+    return this.clearAllPasswordFirst === this.clearAllPassword
+      && this.clearAllPasswordSecond === this.clearAllPassword;
+  }
+
   confirmClearAllSavedEntries(): void {
+    if (!this.isClearAllPasswordValid()) {
+      this.clearAllPasswordError = 'Beide Passwörter müssen korrekt und identisch sein.';
+      return;
+    }
+
     this.isLoadingSavedData = true;
     this.showConfirmClearAllSavedModal = false;
+    this.resetClearAllPassword();
     
     this.http.delete(`${environment.apiUrl}/api/inventory`, { headers: this.getAuthHeaders() }).subscribe({
       next: (response) => {
@@ -675,6 +691,13 @@ export class InventoryComponent implements OnInit {
 
   cancelClearAllSavedEntries(): void {
     this.showConfirmClearAllSavedModal = false;
+    this.resetClearAllPassword();
+  }
+
+  private resetClearAllPassword(): void {
+    this.clearAllPasswordFirst = '';
+    this.clearAllPasswordSecond = '';
+    this.clearAllPasswordError = '';
   }
 
   trackByArticleNumber(index: number, article: Article): string {
