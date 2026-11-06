@@ -498,6 +498,15 @@ mat-icon.spinning {
     border-radius: 4px;
     transition: all 0.2s ease;
 
+    &[type='date'] {
+      min-width: 9.5rem;
+
+      &::-webkit-calendar-picker-indicator {
+        cursor: pointer;
+        opacity: 1;
+      }
+    }
+
     &:focus,
     &.focused {
       outline: none;
@@ -1325,6 +1334,16 @@ mat-icon.spinning {
     font-size: 0.75rem;
     background: rgba(255, 255, 255, 0.9);
     text-align: right;
+
+    &[type='date'] {
+      min-width: 9.5rem;
+      text-align: left;
+
+      &::-webkit-calendar-picker-indicator {
+        cursor: pointer;
+        opacity: 1;
+      }
+    }
 
     &:focus {
       outline: none;
@@ -2798,6 +2817,25 @@ mat-icon.spinning {
       width: 100%;
       --mdc-outlined-text-field-outline-color: #cfd8dc;
       --mdc-outlined-text-field-focus-outline-color: #1565c0;
+
+      input[type='date'] {
+        cursor: pointer;
+
+        &::-webkit-calendar-picker-indicator {
+          display: none;
+        }
+      }
+
+      ::ng-deep .mat-mdc-form-field-icon-suffix {
+        cursor: pointer;
+        padding: 0 8px 0 0;
+      }
+
+      ::ng-deep .mat-icon {
+        cursor: pointer;
+        color: #1565c0;
+        pointer-events: auto;
+      }
     }
 
     .date-hint {
@@ -2957,8 +2995,20 @@ mat-icon.spinning {
   box-sizing: border-box;
 }
 
+.paid-modal-root {
+  position: fixed;
+  inset: 0;
+  z-index: 11000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.55);
+}
+
 .paid-status-modal {
   max-width: min(500px, calc(100vw - 24px));
+  animation: none;
 }
 
 .card-actions {

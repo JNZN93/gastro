@@ -160,14 +160,14 @@
             </td>
 
             <td class="invoice-cell">
-              <input type="date"
+              <input type="date" (click)="openDateInput($any($event.target), $event)"
                      [(ngModel)]="newInvoiceRow.date"
                      class="editable-input"
                      (input)="onDateInput($event, 'new', 'date')">
             </td>
 
             <td class="invoice-cell">
-              <input type="date"
+              <input type="date" (click)="openDateInput($any($event.target), $event)"
                      [(ngModel)]="newInvoiceRow.due_date"
                      class="editable-input"
                      (input)="onDateInput($event, 'new', 'due_date')">
@@ -242,7 +242,7 @@
 
             <td class="invoice-cell">
               <span *ngIf="!isInvoiceEditing(invoice)" class="display-text">{{ formatDate(invoice.date) }}</span>
-              <input *ngIf="isInvoiceEditing(invoice)" type="date"
+              <input *ngIf="isInvoiceEditing(invoice)" type="date" (click)="openDateInput($any($event.target), $event)"
                      [(ngModel)]="invoice.date"
                      class="editable-input"
                      (input)="onDateInput($event, invoice, 'date')"
@@ -251,7 +251,7 @@
 
             <td class="invoice-cell">
               <span *ngIf="!isInvoiceEditing(invoice)" class="display-text">{{ formatDate(invoice.due_date) }}</span>
-              <input *ngIf="isInvoiceEditing(invoice)" type="date"
+              <input *ngIf="isInvoiceEditing(invoice)" type="date" (click)="openDateInput($any($event.target), $event)"
                      [(ngModel)]="invoice.due_date"
                      class="editable-input"
                      (input)="onDateInput($event, invoice, 'due_date')"
@@ -269,10 +269,11 @@
             </td>
 
             <td class="status-cell">
-              <select [ngModel]="invoice.status"
+              <select #statusSelect
+                      [ngModel]="invoice.status"
                       class="status-select"
                       [class]="getStatusClass(invoice.status)"
-                      (ngModelChange)="onStatusSelectChange(invoice, $event)">
+                      (ngModelChange)="onStatusSelectChange(invoice, $event, statusSelect)">
                 <option value="open">Offen</option>
                 <option value="paid">Bezahlt</option>
                 <option value="sepa">SEPA</option>
@@ -397,7 +398,7 @@
             <div class="card-row half-width">
               <div class="card-label">Datum:</div>
               <div class="card-value">
-                <input type="date"
+                <input type="date" (click)="openDateInput($any($event.target), $event)"
                        [(ngModel)]="newInvoiceRow.date"
                        class="editable-input"
                        (input)="onDateInput($event, 'new', 'date')">
@@ -407,7 +408,7 @@
             <div class="card-row half-width">
               <div class="card-label">Fälligkeitsdatum:</div>
               <div class="card-value">
-                <input type="date"
+                <input type="date" (click)="openDateInput($any($event.target), $event)"
                        [(ngModel)]="newInvoiceRow.due_date"
                        class="editable-input"
                        (input)="onDateInput($event, 'new', 'due_date')">
@@ -458,10 +459,11 @@
                    (input)="updateInvoiceFieldLocally(invoice, 'supplier_name', $any($event.target).value)">
           </div>
           <div class="card-status">
-            <select [ngModel]="invoice.status"
+            <select #statusSelect
+                    [ngModel]="invoice.status"
                     class="status-select"
                     [class]="getStatusClass(invoice.status)"
-                    (ngModelChange)="onStatusSelectChange(invoice, $event)">
+                    (ngModelChange)="onStatusSelectChange(invoice, $event, statusSelect)">
               <option value="open">Offen</option>
               <option value="paid">Bezahlt</option>
               <option value="sepa">SEPA</option>
@@ -503,7 +505,7 @@
               <div class="card-label">Datum:</div>
               <div class="card-value">
                 <span *ngIf="!isInvoiceEditing(invoice)" class="display-text">{{ formatDate(invoice.date) }}</span>
-                <input *ngIf="isInvoiceEditing(invoice)" type="date"
+                <input *ngIf="isInvoiceEditing(invoice)" type="date" (click)="openDateInput($any($event.target), $event)"
                        [(ngModel)]="invoice.date"
                        class="editable-input"
                        (input)="onDateInput($event, invoice, 'date')"
@@ -515,7 +517,7 @@
               <div class="card-label">Fälligkeitsdatum:</div>
               <div class="card-value">
                 <span *ngIf="!isInvoiceEditing(invoice)" class="display-text">{{ formatDate(invoice.due_date) }}</span>
-                <input *ngIf="isInvoiceEditing(invoice)" type="date"
+                <input *ngIf="isInvoiceEditing(invoice)" type="date" (click)="openDateInput($any($event.target), $event)"
                        [(ngModel)]="invoice.due_date"
                        class="editable-input"
                        (input)="onDateInput($event, invoice, 'due_date')"
@@ -709,7 +711,7 @@
     </div>
   </div>
 
-  <div *ngIf="showPaidStatusModal" class="modal-overlay active" [ngStyle]="{opacity: '1', visibility: 'visible', display: 'flex'}">
+  <div *ngIf="showPaidStatusModal" class="paid-modal-root">
     <div class="modal-content paid-status-modal" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h3 class="modal-title">
@@ -748,8 +750,8 @@
         <div class="date-selection">
           <mat-form-field appearance="outline" class="date-field" subscriptSizing="dynamic">
             <mat-label>Bezahldatum</mat-label>
-            <input matInput type="date" [(ngModel)]="paidDate" name="paidDate" [max]="getTodayDate()">
-            <mat-icon matSuffix>calendar_today</mat-icon>
+            <input #paidDateInput matInput type="date" [(ngModel)]="paidDate" name="paidDate" [max]="getTodayDate()" (click)="openDateInput(paidDateInput)">
+            <mat-icon matSuffix (click)="openDateInput(paidDateInput)">calendar_today</mat-icon>
           </mat-form-field>
           <p class="date-hint">Das gewählte Datum wird für die HiDrive-Ordnerstruktur verwendet.</p>
         </div>

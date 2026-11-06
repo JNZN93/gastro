@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild, OnInit, HostListener, ChangeDetectorRef } from '@angular/core';
+import { Component, ElementRef, ViewChild, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
@@ -155,7 +155,7 @@ export class OpenInvoicesComponent implements OnInit {
   // Scroll state for hiding dashboard title
   isScrolled: boolean = false;
 
-  constructor(private http: HttpClient, private router: Router, private cdr: ChangeDetectorRef) {}
+  constructor(private http: HttpClient, private router: Router) {}
 
 
   ngOnInit() {
@@ -1569,26 +1569,57 @@ export class OpenInvoicesComponent implements OnInit {
   }
 
   // Handle status select changes without mutating model first
-  onStatusSelectChange(invoice: Invoice, newStatus: 'open' | 'paid' | 'overdue' | 'sepa') {
-    // Open modal immediately for 'paid'
-    if (newStatus === 'paid') {
-      console.log('[StatusSelect] paid chosen for', invoice.invoice_number);
-      const oldStatus = invoice.status;
-      // Defer modal open to next tick to avoid closing by same click event
-      setTimeout(() => {
-        console.log('[StatusSelect] opening paid modal now for', invoice.invoice_number);
-        this.pendingPaidInvoice = invoice;
-        this.paidDate = this.getTodayDate();
-        this.showPaidStatusModal = true;
-        this.cdr.detectChanges();
-      }, 0);
-      // Ensure UI shows original status in the select
-      invoice.status = oldStatus;
+  onStatusSelectChange(
+    invoice: Invoice,
+    newStatus: 'open' | 'paid' | 'overdue' | 'sepa',
+    select?: HTMLSelectElement
+  ) {
+    // Selecting the current value, or the select snapping back, must not open a confirm dialog.
+    if (!newStatus || newStatus === invoice.status) {
       return;
     }
 
-    // Other statuses go through the existing confirmation flow
+    if (select) {
+      select.value = invoice.status;
+    }
+
+    if (newStatus === 'paid') {
+      this.pendingPaidInvoice = invoice;
+      this.paidDate = this.getTodayDate();
+      this.showPaidStatusModal = true;
+      return;
+    }
+
     this.confirmStatusChange(invoice, newStatus);
+  }
+
+  openDateInput(input: HTMLInputElement | null, event?: Event): void {
+    if (!input) {
+      return;
+    }
+
+    // Clicks on the date text keep the native segment editor.
+    // Clicks on the calendar icon open the picker.
+    if (event instanceof MouseEvent && event.currentTarget === input) {
+      const rect = input.getBoundingClientRect();
+      const onIndicator = event.clientX >= rect.right - 32;
+      if (!onIndicator) {
+        return;
+      }
+      event.preventDefault();
+    }
+
+    input.focus();
+    const pickerInput = input as HTMLInputElement & { showPicker?: () => void };
+    if (typeof pickerInput.showPicker !== 'function') {
+      return;
+    }
+
+    try {
+      pickerInput.showPicker();
+    } catch {
+      // showPicker can fail if the picker is already opening.
+    }
   }
 
   // Update invoice via API
