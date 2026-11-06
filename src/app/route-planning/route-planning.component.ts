@@ -13,6 +13,29 @@ declare global {
   }
 }
 
+interface DeliveryAddress {
+  id: number;
+  customer_id: number;
+  label: string | null;
+  street: string;
+  postal_code: string;
+  city: string;
+  country: string;
+  latitude: number;
+  longitude: number;
+  is_default: boolean;
+}
+
+interface AddressSuggestion {
+  label: string;
+  street: string;
+  postalCode: string;
+  city: string;
+  country: string;
+  longitude: number;
+  latitude: number;
+}
+
 interface Customer {
   id: number;
   name: string;
@@ -29,6 +52,7 @@ interface Customer {
   phone?: string;
   customer_number?: string;
   selected?: boolean;
+  deliveryAddresses?: DeliveryAddress[];
 }
 
 interface CustomerConstraint {
@@ -44,6 +68,16 @@ interface RouteWaypoint {
   location: [number, number]; // [longitude, latitude]
   name: string;
   customerId: number;
+}
+
+interface ExtraRouteStop {
+  id: number;
+  label: string;
+  street: string;
+  postalCode: string;
+  city: string;
+  longitude: number;
+  latitude: number;
 }
 
 // RouteResponse Interface wurde entfernt, da wir die echte API-Struktur verwenden
@@ -81,6 +115,34 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
   
   // Neue Eigenschaften für das Bestätigungsmodal
   showDeselectConfirmModal: boolean = false;
+
+  viewMode: 'route' | 'addresses' = 'route';
+  addressSearchTerm: string = '';
+  addressFilteredCustomers: Customer[] = [];
+  deliveryAddresses: DeliveryAddress[] = [];
+  addressLoadError: string = '';
+  editingCustomerId: number | null = null;
+  addressQuery: string = '';
+  addressSuggestions: AddressSuggestion[] = [];
+  selectedAddressSuggestion: AddressSuggestion | null = null;
+  addressLabel: string = '';
+  isSearchingAddresses: boolean = false;
+  isSavingAddress: boolean = false;
+  addressActionError: string = '';
+  private addressSearchTimer: ReturnType<typeof setTimeout> | null = null;
+  private addressSearchSeq = 0;
+
+  extraStops: ExtraRouteStop[] = [];
+  extraStopsOpen = false;
+  extraStopQuery = '';
+  extraStopLabel = '';
+  extraStopSuggestions: AddressSuggestion[] = [];
+  selectedExtraSuggestion: AddressSuggestion | null = null;
+  isSearchingExtraStops = false;
+  extraStopError = '';
+  private extraStopSearchTimer: ReturnType<typeof setTimeout> | null = null;
+  private extraStopSearchSeq = 0;
+  private nextExtraStopId = -1;
   
   // Neue Eigenschaften für schrittweise Navigation
   currentStep: number = 1;
@@ -114,6 +176,12 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
   ngOnDestroy(): void {
     this.showFooter();
     this.destroyMap();
+    if (this.addressSearchTimer) {
+      clearTimeout(this.addressSearchTimer);
+    }
+    if (this.extraStopSearchTimer) {
+      clearTimeout(this.extraStopSearchTimer);
+    }
   }
 
   private hideFooter(): void {
@@ -233,7 +301,7 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
     // Kundenstandorte markieren (Koordinaten umkehren: [lng, lat] -> [lat, lng])
     const customerMarkers: any[] = [];
     this.optimalOrder.forEach((stop, index) => {
-      const waypoint = this.waypoints.find(wp => wp.customerId === stop.customer.id);
+        const waypoint = this.waypoints.find(wp => wp.customerId === (stop.stopId ?? stop.customer?.id));
       if (waypoint) {
         const customerCoords: [number, number] = [waypoint.location[1], waypoint.location[0]];
         const marker = L.marker(customerCoords, { icon: customerIcon(index + 1, stop.name) })
@@ -381,10 +449,13 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
     .then(data => {
       this.customers = data.map((customer: any) => ({
         ...customer,
-        selected: false
+        selected: false,
+        deliveryAddresses: []
       }));
-      this.filteredCustomers = [...this.customers];
+      this.filterCustomers();
+      this.filterAddressCustomers();
       this.isLoadingCustomers = false;
+      this.loadDeliveryAddresses();
     })
     .catch(error => {
       console.error('Fehler beim Laden der Kunden:', error);
@@ -393,50 +464,53 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
   }
 
   filterCustomers() {
-    if (!this.searchTerm.trim()) {
-      this.filteredCustomers = [...this.customers];
-    } else {
-      // Normalisiere Suchbegriff: Leerzeichen entfernen, Kleinbuchstaben, Umlaute normalisieren
-      const normalizedSearchTerm = this.normalizeSearchTerm(this.searchTerm);
-      
-      this.filteredCustomers = this.customers.filter(customer => {
-        // Normalisiere alle Kundendaten für den Vergleich
-        const normalizedName = this.normalizeSearchTerm(customer.name || '');
-        const normalizedAddress = this.normalizeSearchTerm(customer.address || '');
-        const normalizedCity = this.normalizeSearchTerm(customer.city || '');
-        const normalizedPostalCode = this.normalizeSearchTerm(customer.postal_code || '');
-        const normalizedCountry = this.normalizeSearchTerm(customer.country || '');
-        const normalizedCompany = this.normalizeSearchTerm(customer.last_name_company || '');
-        const normalizedAddition = this.normalizeSearchTerm(customer.name_addition || '');
-        const normalizedStreet = this.normalizeSearchTerm(customer.street || '');
-        const normalizedEmail = this.normalizeSearchTerm(customer.email || '');
-        const normalizedPhone = this.normalizeSearchTerm(customer.phone || '');
-        const normalizedCustomerNumber = this.normalizeSearchTerm(customer.customer_number || '');
-        
-        // Direkte Übereinstimmung
-        const directMatches = 
-          normalizedName.includes(normalizedSearchTerm) ||
-          normalizedAddress.includes(normalizedSearchTerm) ||
-          normalizedCity.includes(normalizedSearchTerm) ||
-          normalizedPostalCode.includes(normalizedSearchTerm) ||
-          normalizedCountry.includes(normalizedSearchTerm) ||
-          normalizedCompany.includes(normalizedSearchTerm) ||
-          normalizedAddition.includes(normalizedSearchTerm) ||
-          normalizedStreet.includes(normalizedSearchTerm) ||
-          normalizedEmail.includes(normalizedSearchTerm) ||
-          normalizedPhone.includes(normalizedSearchTerm) ||
-          normalizedCustomerNumber.includes(normalizedSearchTerm);
-        
-        // Wort-für-Wort Suche (mehr Toleranz)
-        const wordMatches = 
-          this.hasWordMatch(normalizedName, normalizedSearchTerm) ||
-          this.hasWordMatch(normalizedCompany, normalizedSearchTerm) ||
-          this.hasWordMatch(normalizedAddress, normalizedSearchTerm) ||
-          this.hasWordMatch(normalizedCity, normalizedSearchTerm);
-        
-        return directMatches || wordMatches;
-      });
+    this.filteredCustomers = this.applyCustomerFilter(this.searchTerm);
+  }
+
+  filterAddressCustomers() {
+    this.addressFilteredCustomers = this.applyCustomerFilter(this.addressSearchTerm);
+  }
+
+  private applyCustomerFilter(rawTerm: string): Customer[] {
+    if (!rawTerm.trim()) {
+      return [...this.customers];
     }
+
+    const normalizedSearchTerm = this.normalizeSearchTerm(rawTerm);
+    return this.customers.filter(customer => {
+      const normalizedName = this.normalizeSearchTerm(customer.name || '');
+      const normalizedAddress = this.normalizeSearchTerm(customer.address || '');
+      const normalizedCity = this.normalizeSearchTerm(customer.city || '');
+      const normalizedPostalCode = this.normalizeSearchTerm(customer.postal_code || '');
+      const normalizedCountry = this.normalizeSearchTerm(customer.country || '');
+      const normalizedCompany = this.normalizeSearchTerm(customer.last_name_company || '');
+      const normalizedAddition = this.normalizeSearchTerm(customer.name_addition || '');
+      const normalizedStreet = this.normalizeSearchTerm(customer.street || '');
+      const normalizedEmail = this.normalizeSearchTerm(customer.email || '');
+      const normalizedPhone = this.normalizeSearchTerm(customer.phone || '');
+      const normalizedCustomerNumber = this.normalizeSearchTerm(customer.customer_number || '');
+
+      const directMatches =
+        normalizedName.includes(normalizedSearchTerm) ||
+        normalizedAddress.includes(normalizedSearchTerm) ||
+        normalizedCity.includes(normalizedSearchTerm) ||
+        normalizedPostalCode.includes(normalizedSearchTerm) ||
+        normalizedCountry.includes(normalizedSearchTerm) ||
+        normalizedCompany.includes(normalizedSearchTerm) ||
+        normalizedAddition.includes(normalizedSearchTerm) ||
+        normalizedStreet.includes(normalizedSearchTerm) ||
+        normalizedEmail.includes(normalizedSearchTerm) ||
+        normalizedPhone.includes(normalizedSearchTerm) ||
+        normalizedCustomerNumber.includes(normalizedSearchTerm);
+
+      const wordMatches =
+        this.hasWordMatch(normalizedName, normalizedSearchTerm) ||
+        this.hasWordMatch(normalizedCompany, normalizedSearchTerm) ||
+        this.hasWordMatch(normalizedAddress, normalizedSearchTerm) ||
+        this.hasWordMatch(normalizedCity, normalizedSearchTerm);
+
+      return directMatches || wordMatches;
+    });
   }
 
   // Normalisiert Suchbegriffe für bessere Toleranz
@@ -516,16 +590,23 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
   }
 
   openConstraintsModal(): void {
-    // Constraints für alle ausgewählten Kunden initialisieren
-    this.customerConstraints = this.selectedCustomers.map(customer => ({
+    const customerEntries = this.selectedCustomers.map(customer => ({
       customerId: customer.id,
       customerName: customer.last_name_company || customer.name,
-      timeWindowStart: '', // Leer - kein Standard-Zeitfenster
-      timeWindowEnd: '',   // Leer - kein Standard-Zeitfenster
-              priority: 'medium', // Standard-Priorität
-              duration: 15 // Standard-Aufenthaltsdauer
+      timeWindowStart: '',
+      timeWindowEnd: '',
+      priority: 'medium',
+      duration: 15
     }));
-    
+    const extraEntries = this.extraStops.map(stop => ({
+      customerId: stop.id,
+      customerName: stop.label || `${stop.street}, ${stop.city}`,
+      timeWindowStart: '',
+      timeWindowEnd: '',
+      priority: 'medium',
+      duration: 15
+    }));
+    this.customerConstraints = [...customerEntries, ...extraEntries];
     this.showConstraintsModal = true;
   }
 
@@ -554,13 +635,12 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
   }
 
   async calculateRoute() {
-    if (this.selectedCustomers.length < 1) {
-      alert('Bitte wählen Sie mindestens 1 Kunden aus.');
+    if (this.selectedCustomers.length + this.extraStops.length < 1) {
+      alert('Bitte wählen Sie mindestens einen Kunden oder einen zusätzlichen Stopp.');
       return;
     }
 
-    // Bei mehreren Kunden: Modal für Constraints öffnen
-    if (this.selectedCustomers.length > 1) {
+    if (this.selectedCustomers.length + this.extraStops.length > 1) {
       this.openConstraintsModal();
       return;
     }
@@ -586,7 +666,17 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
       
       for (const customer of this.selectedCustomers) {
         const customerName = customer.last_name_company || customer.name;
-        const address = `${customer.street || customer.address}, ${customer.postal_code} ${customer.city}`;
+        const delivery = this.getDefaultDeliveryAddress(customer);
+        if (delivery) {
+          waypoints.push({
+            location: [Number(delivery.longitude), Number(delivery.latitude)],
+            name: customerName,
+            customerId: customer.id
+          });
+          continue;
+        }
+
+        const address = this.masterAddressLine(customer);
         console.log(`Geocoding für: ${customerName} - ${address}`);
         
         const coordinates = await this.geocodeAddress(customer);
@@ -601,6 +691,14 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
           console.warn(`Keine Koordinaten gefunden für: ${customerName} - ${address}`);
           failedCustomers.push(`${customerName} (${address})`);
         }
+      }
+
+      for (const stop of this.extraStops) {
+        waypoints.push({
+          location: [stop.longitude, stop.latitude],
+          name: stop.label || `${stop.street}, ${stop.postalCode} ${stop.city}`,
+          customerId: stop.id
+        });
       }
 
       // Warnung anzeigen wenn Kunden nicht geocodiert werden konnten
@@ -644,7 +742,7 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
   }
 
   private async geocodeAddress(customer: Customer): Promise<[number, number] | null> {
-    const street = customer.street || customer.address;
+    const street = [customer.street || customer.address, customer.house_number].filter(Boolean).join(' ').trim();
     const postalCode = customer.postal_code;
     const city = customer.city;
     const country = customer.country || 'Deutschland';
@@ -855,16 +953,15 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
       console.log('Original steps from API:', steps);
       
       // Filtere nur die Schritte, die zu unseren Kunden gehören (nicht Start/End)
-      const customerSteps = steps.filter(step => {
-        const customer = this.getCustomerByLocation(step.location);
-        return customer !== null;
-      });
+      const customerSteps = steps.filter(step => this.getWaypointByLocation(step.location) !== null);
 
       console.log('Filtered customer steps:', customerSteps);
 
-              // Bei nur einem Kunden: Start -> Kunde -> Start
-        if (this.selectedCustomers.length === 1) {
-          const customer = this.selectedCustomers[0];
+              // Bei nur einem Stopp: Start -> Stopp -> Start
+        if (this.waypoints.length === 1) {
+          const onlyStop = this.waypoints[0];
+          const described = this.describeWaypoint(onlyStop.customerId);
+          const customer = described.customer;
           const [hours, minutes] = this.startTime.split(':').map(Number);
           const startTime = new Date();
           startTime.setHours(hours, minutes, 0, 0);
@@ -872,7 +969,7 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
           let currentTime = new Date(startTime.getTime());
 
         // Berechne Fahrzeit basierend auf der tatsächlichen Distanz
-        const customerConstraint = this.customerConstraints.find(c => c.customerId === customer.id);
+        const customerConstraint = this.customerConstraints.find(c => c.customerId === onlyStop.customerId);
               const customerStayDuration = customerConstraint?.duration || 15;
       const totalTravelTime = this.totalDuration - (customerStayDuration * 60); // Gesamt - Aufenthalt
         const travelTime = Math.max(600, totalTravelTime / 2); // mindestens 10 Minuten, geteilt durch Hin- und Rückfahrt
@@ -885,9 +982,10 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
         this.optimalOrder = [{
           position: 1,
           customer: customer,
-          name: customer.last_name_company || customer.name,
-          customerNumber: customer.customer_number,
-          address: `${customer.street || customer.address}, ${customer.postal_code} ${customer.city}`,
+          stopId: described.stopId,
+          name: described.name,
+          customerNumber: described.customerNumber,
+          address: described.address,
           arrivalTime: arrivalTime,
           departureTime: departureTime,
           travelTime: travelTime,
@@ -920,7 +1018,9 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
       console.log('Job steps:', jobSteps);
       
       this.optimalOrder = customerSteps.map((step, index) => {
-        const customer = this.getCustomerByLocation(step.location);
+        const matchedWaypoint = this.getWaypointByLocation(step.location);
+        const described = matchedWaypoint ? this.describeWaypoint(matchedWaypoint.customerId) : null;
+        const customer = described?.customer || null;
         
         // Berechne die echte Segment-Fahrzeit (nicht kumulativ)
         let travelTimeToThisStop = 0;
@@ -944,7 +1044,7 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
         console.log(`Customer ${index + 1} arrival time: ${arrivalTime.toLocaleTimeString()}`);
         
         // Aufenthaltsdauer aus Constraints verwenden oder Standard
-        const constraint = this.customerConstraints.find(c => c.customerId === customer?.id);
+        const constraint = this.customerConstraints.find(c => c.customerId === matchedWaypoint?.customerId);
         const stayDurationMinutes = constraint?.duration || 15;
         const stayDurationMs = stayDurationMinutes * 60 * 1000;
         currentTime = new Date(currentTime.getTime() + stayDurationMs);
@@ -957,9 +1057,10 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
         return {
           position: index + 1,
           customer: customer,
-          name: customer ? (customer.last_name_company || customer.name) : 'Unbekannter Kunde',
-          customerNumber: customer?.customer_number,
-          address: customer ? `${customer.street || customer.address}, ${customer.postal_code} ${customer.city}` : 'Unbekannte Adresse',
+          stopId: described?.stopId,
+          name: described?.name || 'Unbekannter Stopp',
+          customerNumber: described?.customerNumber,
+          address: described?.address || 'Unbekannte Adresse',
           arrivalTime: arrivalTime,
           departureTime: departureTime,
           travelTime: travelTimeToThisStop,
@@ -982,19 +1083,53 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
     }
   }
 
-  private getCustomerByLocation(location: [number, number]): Customer | null {
-    const waypoint = this.waypoints.find(wp => 
-      wp.location[0] === location[0] && wp.location[1] === location[1]
-    );
-    if (waypoint) {
-      return this.selectedCustomers.find(c => c.id === waypoint.customerId) || null;
+  private getWaypointByLocation(location: [number, number]): RouteWaypoint | null {
+    if (!location) {
+      return null;
     }
-    return null;
+    return this.waypoints.find(wp =>
+      Math.abs(wp.location[0] - location[0]) < 0.00001 &&
+      Math.abs(wp.location[1] - location[1]) < 0.00001
+    ) || null;
+  }
+
+  private describeWaypoint(stopId: number): {
+    stopId: number;
+    customer: Customer | null;
+    name: string;
+    customerNumber?: string;
+    address: string;
+  } {
+    const customer = this.selectedCustomers.find(item => item.id === stopId) || null;
+    if (customer) {
+      return {
+        stopId,
+        customer,
+        name: customer.last_name_company || customer.name,
+        customerNumber: customer.customer_number,
+        address: this.routeStopAddress(customer)
+      };
+    }
+    const extra = this.extraStops.find(item => item.id === stopId);
+    if (extra) {
+      return {
+        stopId,
+        customer: null,
+        name: extra.label || extra.street,
+        address: `${extra.street}, ${extra.postalCode} ${extra.city}`
+      };
+    }
+    return {
+      stopId,
+      customer: null,
+      name: 'Unbekannter Stopp',
+      address: 'Unbekannte Adresse'
+    };
   }
 
   private getCustomerNameByLocation(location: [number, number]): string {
-    const customer = this.getCustomerByLocation(location);
-    return customer ? (customer.last_name_company || customer.name) : 'Unbekannter Kunde';
+    const waypoint = this.getWaypointByLocation(location);
+    return waypoint ? this.describeWaypoint(waypoint.customerId).name : 'Unbekannter Stopp';
   }
 
   private calculateOptimalOrder(wayPoints: number[]) {
@@ -1006,7 +1141,7 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
           customer: customer,
           name: customer.last_name_company || customer.name,
           customerNumber: customer.customer_number,
-          address: `${customer.street || customer.address}, ${customer.postal_code} ${customer.city}`
+          address: this.routeStopAddress(customer)
         };
       });
     }
@@ -1275,7 +1410,7 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
   canProceedToNextStep(): boolean {
     switch (this.currentStep) {
       case 1: // Kunden auswählen
-        return this.selectedCustomers.length > 0;
+        return this.selectedCustomers.length + this.extraStops.length > 0;
       case 2: // Route berechnen
         return this.routeData !== null;
       default:
@@ -1302,5 +1437,400 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
 
   startNewRoute(): void {
     this.resetToFirstStep();
+  }
+
+  setViewMode(mode: 'route' | 'addresses'): void {
+    this.viewMode = mode;
+    if (mode === 'addresses') {
+      this.filterAddressCustomers();
+    }
+  }
+
+  getDefaultDeliveryAddress(customer: Customer): DeliveryAddress | null {
+    const addresses = customer.deliveryAddresses || [];
+    return addresses.find(address => address.is_default) || addresses[0] || null;
+  }
+
+  masterAddressLine(customer: Customer): string {
+    const street = [customer.street || customer.address, customer.house_number].filter(Boolean).join(' ').trim();
+    const cityLine = `${customer.postal_code || ''} ${customer.city || ''}`.trim();
+    return [street, cityLine].filter(Boolean).join(', ');
+  }
+
+  private routeStopAddress(customer: Customer): string {
+    const delivery = this.getDefaultDeliveryAddress(customer);
+    if (!delivery) {
+      return this.masterAddressLine(customer);
+    }
+    const label = delivery.label ? `${delivery.label}: ` : '';
+    return `${label}${delivery.street}, ${delivery.postal_code} ${delivery.city}`;
+  }
+
+  startAddressEdit(customer: Customer): void {
+    this.editingCustomerId = customer.id;
+    this.addressQuery = '';
+    this.addressSuggestions = [];
+    this.selectedAddressSuggestion = null;
+    this.addressLabel = '';
+    this.addressActionError = '';
+  }
+
+  cancelAddressEdit(): void {
+    this.editingCustomerId = null;
+    this.addressQuery = '';
+    this.addressSuggestions = [];
+    this.selectedAddressSuggestion = null;
+    this.addressLabel = '';
+    this.addressActionError = '';
+  }
+
+  useMasterAddressQuery(customer: Customer): void {
+    this.addressQuery = this.masterAddressLine(customer);
+    this.selectedAddressSuggestion = null;
+    this.searchAddressSuggestions();
+  }
+
+  onAddressQueryInput(): void {
+    this.selectedAddressSuggestion = null;
+    this.addressActionError = '';
+    if (this.addressSearchTimer) {
+      clearTimeout(this.addressSearchTimer);
+    }
+    this.addressSearchTimer = setTimeout(() => {
+      this.searchAddressSuggestions();
+    }, 300);
+  }
+
+  selectAddressSuggestion(suggestion: AddressSuggestion): void {
+    this.selectedAddressSuggestion = suggestion;
+    this.addressQuery = suggestion.label;
+    this.addressSuggestions = [];
+    this.addressActionError = '';
+  }
+
+  async saveDeliveryAddress(customer: Customer): Promise<void> {
+    const suggestion = this.selectedAddressSuggestion;
+    if (!suggestion) {
+      this.addressActionError = 'Bitte einen Adressvorschlag auswählen. Freitext wird nicht gespeichert.';
+      return;
+    }
+
+    this.isSavingAddress = true;
+    this.addressActionError = '';
+    try {
+      const response = await fetch(`${environment.apiUrl}/api/customers/${customer.id}/delivery-addresses`, {
+        method: 'POST',
+        headers: this.authHeaders(),
+        body: JSON.stringify({
+          label: this.addressLabel.trim() || null,
+          street: suggestion.street,
+          postal_code: suggestion.postalCode,
+          city: suggestion.city,
+          country: suggestion.country,
+          latitude: suggestion.latitude,
+          longitude: suggestion.longitude
+        })
+      });
+      if (!response.ok) {
+        throw new Error(await this.readApiError(response));
+      }
+      const created = this.normalizeDeliveryAddress(await response.json());
+      this.upsertCustomerAddress(customer.id, created, false);
+      this.cancelAddressEdit();
+    } catch (error) {
+      this.addressActionError = error instanceof Error ? error.message : 'Lieferadresse konnte nicht gespeichert werden.';
+    } finally {
+      this.isSavingAddress = false;
+    }
+  }
+
+  async makeDefaultDeliveryAddress(address: DeliveryAddress): Promise<void> {
+    this.addressActionError = '';
+    try {
+      const response = await fetch(`${environment.apiUrl}/api/customers/delivery-addresses/${address.id}/default`, {
+        method: 'PATCH',
+        headers: this.authHeaders()
+      });
+      if (!response.ok) {
+        throw new Error(await this.readApiError(response));
+      }
+      this.markDefaultAddress(address.customer_id, address.id);
+    } catch (error) {
+      this.addressActionError = error instanceof Error ? error.message : 'Standardadresse konnte nicht gesetzt werden.';
+    }
+  }
+
+  async removeDeliveryAddress(address: DeliveryAddress): Promise<void> {
+    if (!confirm('Diese Lieferadresse wirklich entfernen?')) {
+      return;
+    }
+    this.addressActionError = '';
+    try {
+      const response = await fetch(`${environment.apiUrl}/api/customers/delivery-addresses/${address.id}`, {
+        method: 'DELETE',
+        headers: this.authHeaders()
+      });
+      if (!response.ok) {
+        throw new Error(await this.readApiError(response));
+      }
+      this.removeCustomerAddress(address);
+    } catch (error) {
+      this.addressActionError = error instanceof Error ? error.message : 'Lieferadresse konnte nicht entfernt werden.';
+    }
+  }
+
+  private loadDeliveryAddresses(): void {
+    this.addressLoadError = '';
+    fetch(`${environment.apiUrl}/api/customers/delivery-addresses`, {
+      headers: this.authHeaders()
+    })
+      .then(async response => {
+        if (!response.ok) {
+          throw new Error(await this.readApiError(response));
+        }
+        return response.json();
+      })
+      .then((rows: any[]) => {
+        this.deliveryAddresses = (rows || []).map(row => this.normalizeDeliveryAddress(row));
+        this.attachDeliveryAddresses();
+      })
+      .catch(error => {
+        console.error('Fehler beim Laden der Lieferadressen:', error);
+        this.addressLoadError = 'Lieferadressen konnten nicht geladen werden.';
+      });
+  }
+
+  private attachDeliveryAddresses(): void {
+    const grouped = new Map<number, DeliveryAddress[]>();
+    for (const address of this.deliveryAddresses) {
+      const list = grouped.get(address.customer_id) || [];
+      list.push(address);
+      grouped.set(address.customer_id, list);
+    }
+    for (const customer of this.customers) {
+      customer.deliveryAddresses = (grouped.get(customer.id) || [])
+        .sort((a, b) => Number(b.is_default) - Number(a.is_default));
+    }
+  }
+
+  private upsertCustomerAddress(customerId: number, address: DeliveryAddress, replaceExisting: boolean): void {
+    const others = this.deliveryAddresses.filter(item => item.customer_id !== customerId || (!replaceExisting && item.id !== address.id));
+    const sameCustomer = others.filter(item => item.customer_id === customerId);
+    if (address.is_default) {
+      sameCustomer.forEach(item => item.is_default = false);
+    }
+    this.deliveryAddresses = [...others.filter(item => item.customer_id !== customerId), ...sameCustomer, address];
+    this.attachDeliveryAddresses();
+  }
+
+  private markDefaultAddress(customerId: number, addressId: number): void {
+    this.deliveryAddresses = this.deliveryAddresses.map(address => {
+      if (address.customer_id !== customerId) {
+        return address;
+      }
+      return { ...address, is_default: address.id === addressId };
+    });
+    this.attachDeliveryAddresses();
+  }
+
+  private removeCustomerAddress(address: DeliveryAddress): void {
+    const remaining = this.deliveryAddresses.filter(item => item.id !== address.id);
+    const stillDefault = remaining.some(item => item.customer_id === address.customer_id && item.is_default);
+    if (!stillDefault) {
+      const next = [...remaining].reverse().find(item => item.customer_id === address.customer_id);
+      if (next) {
+        next.is_default = true;
+      }
+    }
+    this.deliveryAddresses = remaining;
+    this.attachDeliveryAddresses();
+  }
+
+  private normalizeDeliveryAddress(row: any): DeliveryAddress {
+    return {
+      id: Number(row.id),
+      customer_id: Number(row.customer_id),
+      label: row.label || null,
+      street: row.street,
+      postal_code: row.postal_code,
+      city: row.city,
+      country: row.country || 'Deutschland',
+      latitude: Number(row.latitude),
+      longitude: Number(row.longitude),
+      is_default: Boolean(row.is_default)
+    };
+  }
+
+  private async searchAddressSuggestions(): Promise<void> {
+    const query = this.addressQuery.trim();
+    const requestId = ++this.addressSearchSeq;
+    this.addressSuggestions = [];
+    if (query.length < 3) {
+      this.isSearchingAddresses = false;
+      return;
+    }
+
+    this.isSearchingAddresses = true;
+    try {
+      const url = `https://api.openrouteservice.org/geocode/autocomplete?api_key=${this.OPENROUTE_API_KEY}&text=${encodeURIComponent(query)}&boundary.country=DE&layers=address&size=6`;
+      const response = await fetch(url);
+      if (requestId !== this.addressSearchSeq) {
+        return;
+      }
+      if (!response.ok) {
+        throw new Error('Adressvorschläge sind gerade nicht erreichbar.');
+      }
+      const data = await response.json();
+      const suggestions = (data.features || [])
+        .map((feature: any) => this.toAddressSuggestion(feature))
+        .filter((suggestion: AddressSuggestion | null): suggestion is AddressSuggestion => suggestion !== null);
+      if (requestId !== this.addressSearchSeq) {
+        return;
+      }
+      this.addressSuggestions = suggestions;
+      this.addressActionError = suggestions.length === 0
+        ? 'Keine Hausadresse gefunden. Bitte Straße und Hausnummer genauer eingeben.'
+        : '';
+    } catch (error) {
+      if (requestId !== this.addressSearchSeq) {
+        return;
+      }
+      this.addressActionError = error instanceof Error ? error.message : 'Adressvorschläge sind gerade nicht erreichbar.';
+    } finally {
+      if (requestId === this.addressSearchSeq) {
+        this.isSearchingAddresses = false;
+      }
+    }
+  }
+
+  onExtraStopQueryInput(): void {
+    this.selectedExtraSuggestion = null;
+    this.extraStopError = '';
+    if (this.extraStopSearchTimer) {
+      clearTimeout(this.extraStopSearchTimer);
+    }
+    this.extraStopSearchTimer = setTimeout(() => {
+      this.searchExtraStopSuggestions();
+    }, 300);
+  }
+
+  selectExtraSuggestion(suggestion: AddressSuggestion): void {
+    this.selectedExtraSuggestion = suggestion;
+    this.extraStopQuery = suggestion.label;
+    this.extraStopSuggestions = [];
+    this.extraStopError = '';
+  }
+
+  addExtraStop(): void {
+    const suggestion = this.selectedExtraSuggestion;
+    if (!suggestion) {
+      this.extraStopError = 'Bitte einen Adressvorschlag auswählen.';
+      return;
+    }
+    this.extraStops = [...this.extraStops, {
+      id: this.nextExtraStopId--,
+      label: this.extraStopLabel.trim(),
+      street: suggestion.street,
+      postalCode: suggestion.postalCode,
+      city: suggestion.city,
+      longitude: suggestion.longitude,
+      latitude: suggestion.latitude
+    }];
+    this.extraStopQuery = '';
+    this.extraStopLabel = '';
+    this.selectedExtraSuggestion = null;
+    this.extraStopSuggestions = [];
+    this.extraStopError = '';
+  }
+
+  removeExtraStop(stopId: number): void {
+    this.extraStops = this.extraStops.filter(stop => stop.id !== stopId);
+  }
+
+  private async searchExtraStopSuggestions(): Promise<void> {
+    const query = this.extraStopQuery.trim();
+    const requestId = ++this.extraStopSearchSeq;
+    this.extraStopSuggestions = [];
+    if (query.length < 3) {
+      this.isSearchingExtraStops = false;
+      return;
+    }
+
+    this.isSearchingExtraStops = true;
+    try {
+      const url = `https://api.openrouteservice.org/geocode/autocomplete?api_key=${this.OPENROUTE_API_KEY}&text=${encodeURIComponent(query)}&boundary.country=DE&layers=address&size=6`;
+      const response = await fetch(url);
+      if (requestId !== this.extraStopSearchSeq) {
+        return;
+      }
+      if (!response.ok) {
+        throw new Error('Adressvorschläge sind gerade nicht erreichbar.');
+      }
+      const data = await response.json();
+      const suggestions = (data.features || [])
+        .map((feature: any) => this.toAddressSuggestion(feature))
+        .filter((suggestion: AddressSuggestion | null): suggestion is AddressSuggestion => suggestion !== null);
+      if (requestId !== this.extraStopSearchSeq) {
+        return;
+      }
+      this.extraStopSuggestions = suggestions;
+      this.extraStopError = suggestions.length === 0
+        ? 'Keine Hausadresse gefunden. Bitte Straße und Hausnummer genauer eingeben.'
+        : '';
+    } catch (error) {
+      if (requestId !== this.extraStopSearchSeq) {
+        return;
+      }
+      this.extraStopError = error instanceof Error ? error.message : 'Adressvorschläge sind gerade nicht erreichbar.';
+    } finally {
+      if (requestId === this.extraStopSearchSeq) {
+        this.isSearchingExtraStops = false;
+      }
+    }
+  }
+
+  private toAddressSuggestion(feature: any): AddressSuggestion | null {
+    const props = feature?.properties || {};
+    const coordinates = feature?.geometry?.coordinates;
+    if (!Array.isArray(coordinates) || coordinates.length < 2) {
+      return null;
+    }
+    if (props.layer && props.layer !== 'address') {
+      return null;
+    }
+    const streetName = String(props.street || '').trim();
+    const houseNumber = String(props.housenumber || '').trim();
+    const postalCode = String(props.postalcode || '').trim();
+    const city = String(props.locality || props.county || '').trim();
+    if (!streetName || !houseNumber || !postalCode || !city) {
+      return null;
+    }
+    const street = `${streetName} ${houseNumber}`.trim();
+    return {
+      label: String(props.label || `${street}, ${postalCode} ${city}`),
+      street,
+      postalCode,
+      city,
+      country: String(props.country || 'Deutschland'),
+      longitude: Number(coordinates[0]),
+      latitude: Number(coordinates[1])
+    };
+  }
+
+  private authHeaders(): HeadersInit {
+    const token = localStorage.getItem('token');
+    return {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    };
+  }
+
+  private async readApiError(response: Response): Promise<string> {
+    try {
+      const data = await response.json();
+      return data?.error || 'Anfrage fehlgeschlagen.';
+    } catch {
+      return 'Anfrage fehlgeschlagen.';
+    }
   }
 } 

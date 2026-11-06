@@ -13,11 +13,177 @@
       </svg>
       Routenplanung
     </h1>
+    <div class="view-toggle">
+      <button type="button" [class.active]="viewMode === 'route'" (click)="setViewMode('route')">
+        Route planen
+      </button>
+      <button type="button" [class.active]="viewMode === 'addresses'" (click)="setViewMode('addresses')">
+        Lieferadressen
+      </button>
+    </div>
   </div>
 
   <!-- Step Navigation - ausgeblendet -->
 
-  <div class="content">
+  <div class="content" [class.content-addresses]="viewMode === 'addresses'">
+    @if (viewMode === 'addresses') {
+      <div class="address-manager-section">
+        <div class="section-header">
+          <h2>Lieferadressen</h2>
+          <p class="step-description">
+            Hier können Sie Lieferadressen im Voraus hinterlegen. Gespeichert wird nur ein Vorschlag aus der Adresssuche, inklusive Hausnummer.
+            Die Route nutzt die als Standard markierte Adresse. Ohne Lieferadresse bleibt die Stammdatenadresse.
+          </p>
+        </div>
+
+        <div class="search-container">
+          <div class="search-box">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+            <input
+              type="text"
+              placeholder="Kunden durchsuchen..."
+              [(ngModel)]="addressSearchTerm"
+              (ngModelChange)="filterAddressCustomers()"
+              class="search-input"
+            >
+          </div>
+        </div>
+
+        @if (addressLoadError) {
+          <p class="address-error">{{ addressLoadError }}</p>
+        }
+        @if (addressActionError && editingCustomerId === null) {
+          <p class="address-error">{{ addressActionError }}</p>
+        }
+
+        @if (isLoadingCustomers) {
+          <div class="loading-container">
+            <div class="loading-spinner"></div>
+            <p>Lade Kunden...</p>
+          </div>
+        } @else {
+          <div class="address-customer-list">
+            @for (customer of addressFilteredCustomers; track customer.id) {
+              <div class="address-customer-card">
+                <div class="address-customer-head">
+                  <div>
+                    <h3>
+                      {{ customer.last_name_company || customer.name }}
+                      @if (customer.customer_number) {
+                        <span class="customer-number">({{ customer.customer_number }})</span>
+                      }
+                    </h3>
+                    <p class="master-address">Stammdaten: {{ masterAddressLine(customer) || 'keine Adresse' }}</p>
+                  </div>
+                  @if (editingCustomerId !== customer.id) {
+                    <button type="button" class="btn btn-primary" (click)="startAddressEdit(customer)">
+                      Adresse hinzufügen
+                    </button>
+                  }
+                </div>
+
+                @if (customer.deliveryAddresses?.length) {
+                  <div class="saved-address-list">
+                    @for (address of customer.deliveryAddresses; track address.id) {
+                      <div class="saved-address" [class.is-default]="address.is_default">
+                        <div>
+                          @if (address.label) {
+                            <strong>{{ address.label }}</strong>
+                          }
+                          <p>{{ address.street }}, {{ address.postal_code }} {{ address.city }}</p>
+                          @if (address.is_default) {
+                            <span class="delivery-badge">Standard für die Route</span>
+                          }
+                        </div>
+                        <div class="saved-address-actions">
+                          @if (!address.is_default) {
+                            <button type="button" class="btn btn-secondary" (click)="makeDefaultDeliveryAddress(address)">
+                              Als Standard
+                            </button>
+                          }
+                          <button type="button" class="btn btn-deselect-all" (click)="removeDeliveryAddress(address)">
+                            Entfernen
+                          </button>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                } @else {
+                  <p class="no-delivery-address">Noch keine Lieferadresse hinterlegt.</p>
+                }
+
+                @if (editingCustomerId === customer.id) {
+                  <div class="address-editor">
+                    <label for="address-query">Adresse suchen</label>
+                    <div class="address-query-row">
+                      <input
+                        id="address-query"
+                        type="text"
+                        class="search-input address-query-input"
+                        placeholder="Straße, Hausnummer, PLZ, Ort"
+                        [(ngModel)]="addressQuery"
+                        (ngModelChange)="onAddressQueryInput()"
+                        autocomplete="off"
+                      >
+                      <button type="button" class="btn btn-secondary" (click)="useMasterAddressQuery(customer)">
+                        Stammdaten prüfen
+                      </button>
+                    </div>
+                    @if (isSearchingAddresses) {
+                      <p class="address-hint">Suche Vorschläge...</p>
+                    }
+                    @if (addressSuggestions.length > 0) {
+                      <div class="suggestion-list">
+                        @for (suggestion of addressSuggestions; track suggestion.label) {
+                          <button type="button" class="suggestion-item" (click)="selectAddressSuggestion(suggestion)">
+                            {{ suggestion.label }}
+                          </button>
+                        }
+                      </div>
+                    }
+                    @if (selectedAddressSuggestion) {
+                      <div class="selected-suggestion">
+                        <strong>Ausgewählt:</strong>
+                        {{ selectedAddressSuggestion.street }},
+                        {{ selectedAddressSuggestion.postalCode }} {{ selectedAddressSuggestion.city }}
+                      </div>
+                    }
+                    <label for="address-label">Bezeichnung (optional)</label>
+                    <input
+                      id="address-label"
+                      type="text"
+                      class="search-input address-query-input"
+                      maxlength="80"
+                      placeholder="z. B. Rampe, Hintereingang"
+                      [(ngModel)]="addressLabel"
+                    >
+                    @if (addressActionError) {
+                      <p class="address-error">{{ addressActionError }}</p>
+                    }
+                    <div class="address-editor-actions">
+                      <button type="button" class="btn btn-secondary" (click)="cancelAddressEdit()">Abbrechen</button>
+                      <button
+                        type="button"
+                        class="btn btn-primary"
+                        (click)="saveDeliveryAddress(customer)"
+                        [disabled]="!selectedAddressSuggestion || isSavingAddress"
+                      >
+                        {{ isSavingAddress ? 'Speichert...' : 'Lieferadresse speichern' }}
+                      </button>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+            @if (addressFilteredCustomers.length === 0) {
+              <p class="no-delivery-address">Keine Kunden gefunden.</p>
+            }
+          </div>
+        }
+      </div>
+    } @else {
     <!-- Step 1: Customer Selection -->
     @if (currentStep === 1) {
       <div class="customer-selection-section">
@@ -35,6 +201,8 @@
             </button>
           </div>
         </div>
+
+        <ng-container *ngTemplateOutlet="extraStopsPanel"></ng-container>
 
         <!-- Search -->
         <div class="search-container">
@@ -84,7 +252,12 @@
                       <p class="customer-addition">{{ customer.name_addition }}</p>
                     }
                     <p class="customer-address">
-                      {{ customer.street }} {{ customer.house_number }}, {{ customer.postal_code }} {{ customer.city }}
+                      @if (getDefaultDeliveryAddress(customer); as delivery) {
+                        <span class="delivery-badge">Lieferadresse</span>
+                        {{ delivery.street }}, {{ delivery.postal_code }} {{ delivery.city }}
+                      } @else {
+                        {{ customer.street }} {{ customer.house_number }}, {{ customer.postal_code }} {{ customer.city }}
+                      }
                     </p>
                   </div>
                 </div>
@@ -112,8 +285,6 @@
             </div>
           </div>
         }
-
-        <!-- Next Step Button - entfernt (Navigation ist im Footer) -->
       </div>
     }
 
@@ -122,7 +293,7 @@
       <div class="route-section">
         <div class="section-header">
           <h2>Route berechnen</h2>
-          <p class="step-description">Berechnen Sie die optimale Route für Ihre ausgewählten Kunden.</p>
+          <p class="step-description">Berechnen Sie die optimale Route für die ausgewählten Kunden und zusätzlichen Stopps.</p>
           <div class="route-controls">
             <div class="start-time-input">
               <label for="startTime">Startzeit:</label>
@@ -136,7 +307,7 @@
             <button 
               class="btn btn-primary" 
               (click)="calculateRoute()"
-              [disabled]="selectedCustomers.length < 1 || isLoading"
+              [disabled]="selectedCustomers.length + extraStops.length < 1 || isLoading"
             >
               @if (isLoading) {
                 <div class="btn-spinner"></div>
@@ -145,6 +316,8 @@
             </button>
           </div>
         </div>
+
+        <ng-container *ngTemplateOutlet="extraStopsPanel"></ng-container>
 
         <!-- Constraints Modal -->
         @if (showConstraintsModal) {
@@ -282,8 +455,8 @@
               </svg>
             </div>
             <div class="stat-content">
-              <h3>{{ selectedCustomers.length }}</h3>
-              <p>Kunden</p>
+              <h3>{{ selectedCustomers.length + extraStops.length }}</h3>
+              <p>Stopps</p>
             </div>
           </div>
         </div>
@@ -381,9 +554,95 @@
         }
       </div>
     }
+
+    <ng-template #extraStopsPanel>
+      <div class="extra-stops">
+        <button
+          type="button"
+          class="extra-stops-toggle"
+          (click)="extraStopsOpen = !extraStopsOpen"
+          [attr.aria-expanded]="extraStopsOpen"
+        >
+          <span>Zusätzliche Stopps@if (extraStops.length > 0) { ({{ extraStops.length }}) }</span>
+          <span class="extra-stops-chevron">{{ extraStopsOpen ? '▾' : '▸' }}</span>
+        </button>
+        @if (extraStopsOpen) {
+        <p class="step-description">
+          Adressen ohne Kunden, zum Beispiel eine Abholung oder eine weitere Fahrt.
+          Gespeichert wird nur ein Vorschlag aus der Adresssuche, und nur für diese Route.
+        </p>
+        <div class="address-editor">
+          <label for="extra-stop-query">Adresse suchen</label>
+          <input
+            id="extra-stop-query"
+            type="text"
+            class="search-input address-query-input"
+            placeholder="Straße, Hausnummer, PLZ, Ort"
+            [(ngModel)]="extraStopQuery"
+            (ngModelChange)="onExtraStopQueryInput()"
+            autocomplete="off"
+          >
+          @if (isSearchingExtraStops) {
+            <p class="address-hint">Suche Vorschläge...</p>
+          }
+          @if (extraStopSuggestions.length > 0) {
+            <div class="suggestion-list">
+              @for (suggestion of extraStopSuggestions; track suggestion.label) {
+                <button type="button" class="suggestion-item" (click)="selectExtraSuggestion(suggestion)">
+                  {{ suggestion.label }}
+                </button>
+              }
+            </div>
+          }
+          @if (selectedExtraSuggestion) {
+            <div class="selected-suggestion">
+              <strong>Ausgewählt:</strong>
+              {{ selectedExtraSuggestion.street }},
+              {{ selectedExtraSuggestion.postalCode }} {{ selectedExtraSuggestion.city }}
+            </div>
+          }
+          <label for="extra-stop-label">Bezeichnung (optional)</label>
+          <input
+            id="extra-stop-label"
+            type="text"
+            class="search-input address-query-input"
+            maxlength="80"
+            placeholder="z. B. Abholung, Werkstatt"
+            [(ngModel)]="extraStopLabel"
+          >
+          @if (extraStopError) {
+            <p class="address-error">{{ extraStopError }}</p>
+          }
+          <div class="address-editor-actions">
+            <button
+              type="button"
+              class="btn btn-primary"
+              (click)="addExtraStop()"
+              [disabled]="!selectedExtraSuggestion"
+            >
+              Stopp hinzufügen
+            </button>
+          </div>
+        </div>
+        @if (extraStops.length > 0) {
+          <div class="selected-customers extra-stop-tags">
+            @for (stop of extraStops; track stop.id) {
+              <span class="selected-customer-tag">
+                {{ stop.label || stop.street }}
+                <span class="tag-customer-number">{{ stop.postalCode }} {{ stop.city }}</span>
+                <button type="button" class="remove-btn" (click)="removeExtraStop(stop.id)">×</button>
+              </span>
+            }
+          </div>
+        }
+        }
+      </div>
+    </ng-template>
+    }
   </div>
 
   <!-- Fixed Step Navigation Footer - Always Visible -->
+  @if (viewMode === 'route') {
   <div class="step-navigation-footer">
     @if (currentStep === 1) {
       <button 
@@ -433,6 +692,7 @@
       </div>
     }
   </div>
+  }
 
   <!-- Bestätigungsmodal für "Alle abwählen" -->
   @if (showDeselectConfirmModal) {
