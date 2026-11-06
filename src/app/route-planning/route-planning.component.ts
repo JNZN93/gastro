@@ -34,6 +34,7 @@ interface AddressSuggestion {
   country: string;
   longitude: number;
   latitude: number;
+  placeName?: string;
 }
 
 interface Customer {
@@ -1514,6 +1515,10 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
       this.addressActionError = 'Bitte einen Adressvorschlag auswählen. Freitext wird nicht gespeichert.';
       return;
     }
+    if (!suggestion.postalCode) {
+      this.addressActionError = 'Dieser Vorschlag hat keine Postleitzahl und kann nicht als Lieferadresse gespeichert werden.';
+      return;
+    }
 
     this.isSavingAddress = true;
     this.addressActionError = '';
@@ -1522,7 +1527,7 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
         method: 'POST',
         headers: this.authHeaders(),
         body: JSON.stringify({
-          label: this.addressLabel.trim() || null,
+          label: this.addressLabel.trim() || suggestion.placeName || null,
           street: suggestion.street,
           postal_code: suggestion.postalCode,
           city: suggestion.city,
@@ -1672,7 +1677,7 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
 
     this.isSearchingAddresses = true;
     try {
-      const url = `https://api.openrouteservice.org/geocode/autocomplete?api_key=${this.OPENROUTE_API_KEY}&text=${encodeURIComponent(query)}&boundary.country=DE&layers=address&size=6`;
+      const url = this.suggestionSearchUrl(query);
       const response = await fetch(url);
       if (requestId !== this.addressSearchSeq) {
         return;
@@ -1689,7 +1694,7 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
       }
       this.addressSuggestions = suggestions;
       this.addressActionError = suggestions.length === 0
-        ? 'Keine Hausadresse gefunden. Bitte Straße und Hausnummer genauer eingeben.'
+        ? 'Keine Adresse und kein Geschäft gefunden.'
         : '';
     } catch (error) {
       if (requestId !== this.addressSearchSeq) {
@@ -1729,7 +1734,7 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
     }
     this.extraStops = [...this.extraStops, {
       id: this.nextExtraStopId--,
-      label: this.extraStopLabel.trim(),
+      label: this.extraStopLabel.trim() || suggestion.placeName || '',
       street: suggestion.street,
       postalCode: suggestion.postalCode,
       city: suggestion.city,
@@ -1758,7 +1763,7 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
 
     this.isSearchingExtraStops = true;
     try {
-      const url = `https://api.openrouteservice.org/geocode/autocomplete?api_key=${this.OPENROUTE_API_KEY}&text=${encodeURIComponent(query)}&boundary.country=DE&layers=address&size=6`;
+      const url = this.suggestionSearchUrl(query);
       const response = await fetch(url);
       if (requestId !== this.extraStopSearchSeq) {
         return;
@@ -1775,7 +1780,7 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
       }
       this.extraStopSuggestions = suggestions;
       this.extraStopError = suggestions.length === 0
-        ? 'Keine Hausadresse gefunden. Bitte Straße und Hausnummer genauer eingeben.'
+        ? 'Keine Adresse und kein Geschäft gefunden.'
         : '';
     } catch (error) {
       if (requestId !== this.extraStopSearchSeq) {
@@ -1789,31 +1794,56 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
     }
   }
 
+  private suggestionSearchUrl(query: string): string {
+    return `https://api.openrouteservice.org/geocode/autocomplete?api_key=${this.OPENROUTE_API_KEY}&text=${encodeURIComponent(query)}&boundary.country=DE&layers=venue,address&size=8`;
+  }
+
   private toAddressSuggestion(feature: any): AddressSuggestion | null {
     const props = feature?.properties || {};
     const coordinates = feature?.geometry?.coordinates;
     if (!Array.isArray(coordinates) || coordinates.length < 2) {
       return null;
     }
-    if (props.layer && props.layer !== 'address') {
+    const layer = String(props.layer || '');
+    if (layer !== 'address' && layer !== 'venue') {
       return null;
     }
+    const longitude = Number(coordinates[0]);
+    const latitude = Number(coordinates[1]);
+    if (!Number.isFinite(longitude) || !Number.isFinite(latitude)) {
+      return null;
+    }
+
     const streetName = String(props.street || '').trim();
     const houseNumber = String(props.housenumber || '').trim();
     const postalCode = String(props.postalcode || '').trim();
-    const city = String(props.locality || props.county || '').trim();
-    if (!streetName || !houseNumber || !postalCode || !city) {
+    const city = String(props.locality || props.localadmin || props.county || '').trim();
+    const placeName = layer === 'venue' ? String(props.name || '').trim() : '';
+    const streetLine = [streetName, houseNumber].filter(Boolean).join(' ').trim();
+    if (!city) {
       return null;
     }
-    const street = `${streetName} ${houseNumber}`.trim();
+    if (layer === 'address' && (!streetName || !houseNumber || !postalCode)) {
+      return null;
+    }
+    if (layer === 'venue' && !placeName) {
+      return null;
+    }
+
+    const street = streetLine || placeName;
+    const location = [streetLine, `${postalCode} ${city}`.trim()].filter(Boolean).join(', ');
+    const label = placeName && streetLine
+      ? `${placeName}, ${location}`
+      : String(props.label || location);
     return {
-      label: String(props.label || `${street}, ${postalCode} ${city}`),
+      label,
       street,
       postalCode,
       city,
       country: String(props.country || 'Deutschland'),
-      longitude: Number(coordinates[0]),
-      latitude: Number(coordinates[1])
+      longitude,
+      latitude,
+      placeName: placeName || undefined
     };
   }
 
