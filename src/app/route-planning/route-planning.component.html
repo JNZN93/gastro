@@ -184,12 +184,33 @@
         }
       </div>
     } @else {
+    @if (currentStep < 3) {
+      <div class="hardware-scan-status">
+        <input
+          #hardwareScanInput
+          class="hardware-scan-capture"
+          type="text"
+          autocomplete="off"
+          autocapitalize="off"
+          spellcheck="false"
+          aria-label="Scannereingabe"
+          inputmode="none"
+          (input)="onHardwareScanInput()"
+        >
+        <p>Scanner bereit. Palettenschein mit dem Gerätescanner erfassen, der Kunde wird der Route hinzugefügt.</p>
+        @if (qrScanMessage) {
+          <p class="scanner-result" [class.success]="qrScanStatus === 'success'" [class.info]="qrScanStatus === 'info'" [class.error]="qrScanStatus === 'error'">
+            {{ qrScanMessage }}
+          </p>
+        }
+      </div>
+    }
     <!-- Step 1: Customer Selection -->
     @if (currentStep === 1) {
       <div class="customer-selection-section">
         <div class="section-header">
           <h2>Kunden auswählen</h2>
-          <p class="step-description">Wählen Sie die Kunden aus, die Sie besuchen möchten.</p>
+          <p class="step-description">Wählen Sie die Kunden aus, die Sie besuchen möchten, oder scannen Sie die Palettenscheine mit dem Gerätescanner.</p>
           <div class="selection-controls">
             @if (!areAllFilteredCustomersSelected()) {
               <button class="btn btn-select-all" (click)="selectAllCustomers()">

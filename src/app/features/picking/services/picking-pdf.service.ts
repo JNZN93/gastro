@@ -28,25 +28,29 @@ export class PickingPdfService {
     items: PickItemState[],
     options: { customerLabel: string; includePalettenschein?: boolean } = { customerLabel: '' }
   ): void {
-    void this.ensureData().then(() => {
-      const pdfOrder = this.buildPdfOrder(order, items);
-      this.kommissionierungPdf.generate(pdfOrder, !!options.includePalettenschein, {
-        customerNameByNumber: this.customerNameByNumber,
-        customersByNumber: this.customersByNumber,
-        allArtikels: this.allArtikels,
-      });
-    });
+    void this.ensureData()
+      .then(() => {
+        const pdfOrder = this.buildPdfOrder(order, items);
+        return this.kommissionierungPdf.generate(pdfOrder, !!options.includePalettenschein, {
+          customerNameByNumber: this.customerNameByNumber,
+          customersByNumber: this.customersByNumber,
+          allArtikels: this.allArtikels,
+        });
+      })
+      .catch((error) => console.error('PDF-Erstellung fehlgeschlagen:', error));
   }
 
   generatePalettenschein(order: PickingOrder, items: PickItemState[]): void {
-    void this.ensureData().then(() => {
-      const pdfOrder = this.buildPdfOrder(order, items);
-      this.kommissionierungPdf.generatePalettenscheinOnly(pdfOrder, {
-        customerNameByNumber: this.customerNameByNumber,
-        customersByNumber: this.customersByNumber,
-        allArtikels: this.allArtikels,
-      });
-    });
+    void this.ensureData()
+      .then(() => {
+        const pdfOrder = this.buildPdfOrder(order, items);
+        return this.kommissionierungPdf.generatePalettenscheinOnly(pdfOrder, {
+          customerNameByNumber: this.customerNameByNumber,
+          customersByNumber: this.customersByNumber,
+          allArtikels: this.allArtikels,
+        });
+      })
+      .catch((error) => console.error('PDF-Erstellung fehlgeschlagen:', error));
   }
 
   private async ensureData(): Promise<void> {

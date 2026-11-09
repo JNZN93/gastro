@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, AfterViewInit } from '@angular/core';
+import { Component, ElementRef, HostListener, OnInit, OnDestroy, AfterViewInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders, HttpClientModule } from '@angular/common/http';
@@ -144,6 +144,18 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
   private extraStopSearchTimer: ReturnType<typeof setTimeout> | null = null;
   private extraStopSearchSeq = 0;
   private nextExtraStopId = -1;
+
+  @ViewChild('hardwareScanInput') hardwareScanInput?: ElementRef<HTMLInputElement>;
+  qrScanMessage = '';
+  qrScanStatus: 'success' | 'info' | 'error' = 'info';
+  private lastQrValue = '';
+  private lastQrAt = 0;
+  private qrSeq = 0;
+  private scanBuffer = '';
+  private scanStartedAt = 0;
+  private lastScanKeyAt = 0;
+  private scanIsHardware = false;
+  private scanIdleTimer: ReturnType<typeof setTimeout> | null = null;
   
   // Neue Eigenschaften für schrittweise Navigation
   currentStep: number = 1;
@@ -175,6 +187,9 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
   }
 
   ngOnDestroy(): void {
+    if (this.scanIdleTimer) {
+      clearTimeout(this.scanIdleTimer);
+    }
     this.showFooter();
     this.destroyMap();
     if (this.addressSearchTimer) {
@@ -200,7 +215,7 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
   }
 
   ngAfterViewInit(): void {
-    // Map wird später initialisiert
+    this.focusScanCapture();
   }
 
   toggleMap(): void {
@@ -1443,7 +1458,319 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
   setViewMode(mode: 'route' | 'addresses'): void {
     this.viewMode = mode;
     if (mode === 'addresses') {
+      this.resetScanBuffer();
       this.filterAddressCustomers();
+      return;
+    }
+    setTimeout(() => this.focusScanCapture());
+  }
+
+  /** Eingabe des integrierten Scanners. Die Geräte senden den Code als Tastaturfolge und schließen mit Enter ab. */
+  @HostListener('document:keydown', ['$event'])
+  onHardwareScanKey(event: KeyboardEvent): void {
+    if (!this.hardwareScanActive() || event.ctrlKey || event.metaKey || event.altKey || event.isComposing) {
+      return;
+    }
+
+    if (event.key === 'Enter' || event.key === 'Tab' || event.key === 'NumpadEnter') {
+      this.commitHardwareScan(event);
+      return;
+    }
+
+    if (event.key === 'Escape') {
+      this.resetScanBuffer();
+      return;
+    }
+
+    if (event.key.length !== 1) {
+      return;
+    }
+
+    const now = performance.now();
+    if (now - this.lastScanKeyAt > 100) {
+      this.scanBuffer = '';
+      this.scanStartedAt = now;
+      this.scanIsHardware = false;
+    }
+    this.lastScanKeyAt = now;
+    this.scanBuffer += event.key;
+
+    const elapsed = now - this.scanStartedAt;
+    if (this.scanBuffer.length >= 6 && elapsed / this.scanBuffer.length < 80) {
+      this.scanIsHardware = true;
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
+    if (this.scanIdleTimer) {
+      clearTimeout(this.scanIdleTimer);
+    }
+    this.scanIdleTimer = setTimeout(() => this.commitHardwareScan(), 120);
+  }
+
+  onHardwareScanInput(): void {
+    const value = this.hardwareScanInput?.nativeElement.value || '';
+    if (value.trim().length < 12 || !this.hardwareScanActive()) {
+      return;
+    }
+    this.scanIsHardware = true;
+    this.scanBuffer = value.trim();
+    if (this.scanIdleTimer) {
+      clearTimeout(this.scanIdleTimer);
+    }
+    this.scanIdleTimer = setTimeout(() => this.commitHardwareScan(), 120);
+  }
+
+  private hardwareScanActive(): boolean {
+    return this.viewMode === 'route' && this.currentStep < 3;
+  }
+
+  private commitHardwareScan(event?: KeyboardEvent): void {
+    if (this.scanIdleTimer) {
+      clearTimeout(this.scanIdleTimer);
+      this.scanIdleTimer = null;
+    }
+
+    const fieldValue = this.hardwareScanInput?.nativeElement.value.trim() || '';
+    const bufferValue = this.scanBuffer.trim();
+    const candidate = fieldValue.length >= bufferValue.length ? fieldValue : bufferValue;
+    const fastEnough = this.scanIsHardware && candidate.length >= 12;
+    this.resetScanBuffer();
+
+    if (!fastEnough || !this.looksLikeAddressQr(candidate)) {
+      return;
+    }
+
+    event?.preventDefault();
+    event?.stopPropagation();
+    this.removeScanFromFocusedField(candidate);
+    if (this.hardwareScanInput) {
+      this.hardwareScanInput.nativeElement.value = '';
+    }
+    void this.handleScannedQr(candidate);
+    setTimeout(() => this.focusScanCapture(true));
+  }
+
+  private looksLikeAddressQr(value: string): boolean {
+    return /google\.com\/maps|destination=|maps\/dir/i.test(value)
+      || (/^https?:\/\//i.test(value) && /\b\d{5}\b/.test(value))
+      || (/\b\d{5}\b/.test(value) && value.includes(',') && value.length >= 16);
+  }
+
+  private resetScanBuffer(): void {
+    this.scanBuffer = '';
+    this.scanStartedAt = 0;
+    this.scanIsHardware = false;
+  }
+
+  private removeScanFromFocusedField(value: string): void {
+    const el = document.activeElement;
+    if (!(el instanceof HTMLInputElement) && !(el instanceof HTMLTextAreaElement)) {
+      return;
+    }
+    if (el === this.hardwareScanInput?.nativeElement) {
+      el.value = '';
+      return;
+    }
+    const current = el.value;
+    for (let length = Math.min(current.length, value.length); length > 0; length--) {
+      if (value.startsWith(current.slice(-length))) {
+        el.value = current.slice(0, -length);
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        return;
+      }
+    }
+  }
+
+  private focusScanCapture(force = false): void {
+    if (!this.hardwareScanActive()) {
+      return;
+    }
+    const input = this.hardwareScanInput?.nativeElement;
+    const active = document.activeElement;
+    if (!input || active === input) {
+      return;
+    }
+    if (!force && (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement || active instanceof HTMLSelectElement)) {
+      return;
+    }
+    input.focus();
+  }
+
+  private cleanScanPayload(value: string): string {
+    return value
+      .replace(/[\u0000-\u001f\u007f]/g, '')
+      .replace(/^\][A-Za-z]\d/, '')
+      .trim();
+  }
+
+  private async handleScannedQr(raw: string): Promise<void> {
+    const value = this.cleanScanPayload(String(raw || ''));
+    if (!value) {
+      return;
+    }
+    const now = Date.now();
+    if (value === this.lastQrValue && now - this.lastQrAt < 2500) {
+      return;
+    }
+    this.lastQrValue = value;
+    this.lastQrAt = now;
+    const seq = ++this.qrSeq;
+
+    const address = this.extractAddressFromQr(value);
+    if (!address) {
+      this.qrScanStatus = 'error';
+      this.qrScanMessage = 'Dieser QR-Code enthält keine Adresse.';
+      return;
+    }
+
+    const customer = this.findCustomerByAddress(address);
+    if (customer) {
+      const name = customer.last_name_company || customer.name || 'Kunde';
+      if (!customer.selected) {
+        customer.selected = true;
+        this.updateSelectedCustomers();
+        this.qrScanStatus = 'success';
+        this.qrScanMessage = `${name} wurde zur Route hinzugefügt.`;
+      } else {
+        this.qrScanStatus = 'info';
+        this.qrScanMessage = `${name} ist bereits in der Route.`;
+      }
+      return;
+    }
+
+    this.qrScanStatus = 'info';
+    this.qrScanMessage = 'Kein Kunde mit dieser Adresse. Stopp wird gesucht…';
+    const stop = await this.geocodeScannedAddress(address);
+    if (seq !== this.qrSeq) {
+      return;
+    }
+    if (!stop) {
+      this.qrScanStatus = 'error';
+      this.qrScanMessage = `Kein Kunde für „${address}“ gefunden.`;
+      return;
+    }
+
+    const stopKey = this.addressKey(`${stop.street} ${stop.postalCode} ${stop.city}`);
+    const alreadyAdded = this.extraStops.some(existing =>
+      this.addressKey(`${existing.street} ${existing.postalCode} ${existing.city}`) === stopKey
+    );
+    if (alreadyAdded) {
+      this.qrScanStatus = 'info';
+      this.qrScanMessage = `${stop.street}, ${stop.postalCode} ${stop.city} ist bereits ein Stopp.`;
+      return;
+    }
+
+    this.extraStops = [...this.extraStops, stop];
+    this.extraStopsOpen = true;
+    this.qrScanStatus = 'success';
+    this.qrScanMessage = `Stopp hinzugefügt: ${stop.street}, ${stop.postalCode} ${stop.city}`;
+  }
+
+  private extractAddressFromQr(raw: string): string {
+    const text = raw.trim();
+    try {
+      const url = new URL(text);
+      const destination = url.searchParams.get('destination')
+        || url.searchParams.get('query')
+        || url.searchParams.get('q');
+      if (destination) {
+        return destination.trim();
+      }
+    } catch {
+      // Kein URL, weiter als Klartext prüfen.
+    }
+
+    const geoMatch = text.match(/^geo:[^?]*\?q=([^&]+)/i);
+    if (geoMatch) {
+      return decodeURIComponent(geoMatch[1]).trim();
+    }
+
+    if (/\d{5}/.test(text) && !/^https?:/i.test(text)) {
+      return text;
+    }
+    return '';
+  }
+
+  private findCustomerByAddress(address: string): Customer | null {
+    const matches = this.customers.filter(customer => this.customerMatchesAddress(customer, address));
+    if (matches.length === 0) {
+      return null;
+    }
+    return matches.find(customer => !customer.selected) || matches[0];
+  }
+
+  private customerMatchesAddress(customer: Customer, address: string): boolean {
+    const scannedKey = this.addressKey(address);
+    const candidates = this.customerAddressLines(customer);
+    if (candidates.some(line => this.addressKey(line) === scannedKey)) {
+      return true;
+    }
+
+    const postal = (address.match(/\b(\d{5})\b/) || [])[1] || '';
+    const scannedStreet = this.addressKey(address.replace(/\b\d{5}\b/, ''));
+    if (!postal || scannedStreet.length < 4) {
+      return false;
+    }
+    return candidates.some(line => {
+      const candidateKey = this.addressKey(line);
+      if (!candidateKey.includes(postal)) {
+        return false;
+      }
+      const candidateStreet = this.addressKey(line.replace(/\b\d{5}\b/, ''));
+      return candidateStreet === scannedStreet
+        || candidateStreet.includes(scannedStreet)
+        || scannedStreet.includes(candidateStreet);
+    });
+  }
+
+  private customerAddressLines(customer: Customer): string[] {
+    const lines = [this.masterAddressLine(customer)];
+    for (const delivery of customer.deliveryAddresses || []) {
+      lines.push(`${delivery.street}, ${delivery.postal_code} ${delivery.city}`);
+    }
+    return lines.map(line => line.trim()).filter(Boolean);
+  }
+
+  private addressKey(value: string): string {
+    return this.normalizeSearchTerm(value).replace(/[\s-]+/g, '');
+  }
+
+  private async geocodeScannedAddress(address: string): Promise<ExtraRouteStop | null> {
+    try {
+      const response = await fetch(
+        `https://api.openrouteservice.org/geocode/search?api_key=${this.OPENROUTE_API_KEY}&text=${encodeURIComponent(address)}&boundary.country=DE&size=1`
+      );
+      if (!response.ok) {
+        return null;
+      }
+      const data = await response.json();
+      const feature = data.features?.[0];
+      const coordinates = feature?.geometry?.coordinates;
+      if (!Array.isArray(coordinates) || coordinates.length < 2) {
+        return null;
+      }
+      const longitude = Number(coordinates[0]);
+      const latitude = Number(coordinates[1]);
+      if (!Number.isFinite(longitude) || !Number.isFinite(latitude)) {
+        return null;
+      }
+      const props = feature.properties || {};
+      const street = [props.street, props.housenumber].filter(Boolean).join(' ').trim()
+        || String(props.name || address).trim();
+      const postalCode = String(props.postalcode || (address.match(/\b(\d{5})\b/) || [])[1] || '').trim();
+      const city = String(props.locality || props.localadmin || props.county || '').trim();
+      return {
+        id: this.nextExtraStopId--,
+        label: '',
+        street,
+        postalCode,
+        city,
+        longitude,
+        latitude
+      };
+    } catch {
+      return null;
     }
   }
 

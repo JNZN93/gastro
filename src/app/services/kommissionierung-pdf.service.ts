@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { jsPDF } from 'jspdf';
+import * as QRCode from 'qrcode';
 
 export interface KommissionierungPdfItem {
   product_id?: number;
@@ -35,7 +36,7 @@ export interface KommissionierungPdfContext {
 
 @Injectable({ providedIn: 'root' })
 export class KommissionierungPdfService {
-  generate(order: KommissionierungPdfOrder, includePalettenschein: boolean, context: KommissionierungPdfContext): void {
+  async generate(order: KommissionierungPdfOrder, includePalettenschein: boolean, context: KommissionierungPdfContext): Promise<void> {
     const doc = new jsPDF();
     let pageCount = 1;
     let totalPages = 1; // Wird später berechnet
@@ -425,7 +426,7 @@ export class KommissionierungPdfService {
     if (includePalettenschein) {
       doc.addPage();
       pageCount++;
-      const extraPalettenscheinPages = this.drawPalettenschein(doc, order, colors, context);
+      const extraPalettenscheinPages = await this.drawPalettenschein(doc, order, colors, context);
       pageCount += extraPalettenscheinPages;
     }
 
@@ -447,7 +448,7 @@ export class KommissionierungPdfService {
     window.open(pdfUrl, '_blank');
   }
 
-  generatePalettenscheinOnly(order: KommissionierungPdfOrder, context: KommissionierungPdfContext): void {
+  async generatePalettenscheinOnly(order: KommissionierungPdfOrder, context: KommissionierungPdfContext): Promise<void> {
     const doc = new jsPDF();
     const colors = {
       primary: [41, 128, 185],
@@ -466,7 +467,7 @@ export class KommissionierungPdfService {
     };
 
     let pageCount = 1;
-    const extraPalettenscheinPages = this.drawPalettenschein(doc, order, colors, context);
+    const extraPalettenscheinPages = await this.drawPalettenschein(doc, order, colors, context);
     pageCount += extraPalettenscheinPages;
     const totalPages = pageCount;
 
@@ -548,12 +549,15 @@ export class KommissionierungPdfService {
     });
   }
 
-  private drawPalettenschein(doc: jsPDF, order: KommissionierungPdfOrder, colors: { [key: string]: number[] }, context: KommissionierungPdfContext): number {
+  private async drawPalettenschein(doc: jsPDF, order: KommissionierungPdfOrder, colors: { [key: string]: number[] }, context: KommissionierungPdfContext): Promise<number> {
     const pageWidth = 210;
     const pageHeight = 297;
     const footerReserve = 30; // Mindestabstand zum unteren Seitenrand (für Footer)
     const pageBottomLimit = pageHeight - footerReserve;
     let extraPages = 0;
+
+    const addressForQr = this.getCustomerPostalAddress(order, context);
+    const qrDataUrl = addressForQr ? await this.createAddressQrDataUrl(addressForQr) : null;
 
     // Footer am unteren Seitenrand der aktuellen Seite zeichnen
     const drawFooter = () => {
@@ -705,8 +709,9 @@ export class KommissionierungPdfService {
       addressLines.push(fullCustomer.name_addition);
     }
     if (fullCustomer) {
-      if (fullCustomer.street) {
-        addressLines.push(fullCustomer.street);
+      const streetLine = this.formatStreetLine(fullCustomer);
+      if (streetLine) {
+        addressLines.push(streetLine);
       }
       if (fullCustomer.postal_code || fullCustomer.city) {
         const cityLine = `${fullCustomer.postal_code || ''} ${fullCustomer.city || ''}`.trim();
@@ -722,21 +727,33 @@ export class KommissionierungPdfService {
     const addressFontSize = 14;
     const addressLineHeight = 7;
     const customerCardWidth = leftCardWidth + rightCardWidth + cardSpacing;
+    const qrSize = 32;
+    const qrCaptionHeight = 5;
+    const qrBlockWidth = qrDataUrl ? qrSize + 14 : 0;
+    const textMaxWidth = customerCardWidth - 10 - qrBlockWidth;
 
     // Höhe dynamisch: Header + sehr großer Name (ggf. mehrzeilig) + Kundennummer + Adresszeilen
     const nameFontSize = 26;
     const nameLineSpacing = 11; // vertikaler Abstand zwischen mehrzeiligem Namen
     const customerNumberHeight = customerNumber ? 9 : 0;
-    const addressBlockHeight = addressLines.length * addressLineHeight;
+    doc.setFontSize(addressFontSize);
+    doc.setFont('helvetica', 'normal');
+    const wrappedAddressLines = addressLines.reduce((count, line) => {
+      if (!line || !line.trim()) {
+        return count;
+      }
+      return count + doc.splitTextToSize(line, textMaxWidth).length;
+    }, 0);
+    const addressBlockHeight = wrappedAddressLines * addressLineHeight;
 
     // Anzahl Zeilen für den Namen vorab berechnen, damit die Karte hoch genug ist
     doc.setFontSize(nameFontSize);
     doc.setFont('helvetica', 'bold');
-    const nameLines = doc.splitTextToSize(customerName || '-', customerCardWidth - 10);
+    const nameLines = doc.splitTextToSize(customerName || '-', textMaxWidth);
     const nameBlockHeight = Math.max(nameFontSize * 0.5, nameLines.length * nameLineSpacing);
 
     const customerCardHeight = Math.max(
-      55,
+      qrDataUrl ? qrSize + qrCaptionHeight + 18 : 55,
       14 + nameBlockHeight + 6 + customerNumberHeight + addressBlockHeight + 8
     );
 
@@ -781,13 +798,29 @@ export class KommissionierungPdfService {
     doc.setTextColor(colors['dark'][0], colors['dark'][1], colors['dark'][2]);
     addressLines.forEach((line) => {
       if (line && line.trim()) {
-        const splitLines = doc.splitTextToSize(line, customerCardWidth - 10);
+        const splitLines = doc.splitTextToSize(line, textMaxWidth);
         splitLines.forEach((splitLine: string) => {
           doc.text(splitLine, 20, textY);
           textY += addressLineHeight;
         });
       }
     });
+
+    if (qrDataUrl) {
+      const qrX = 15 + customerCardWidth - qrSize - 8;
+      const qrBlockHeight = qrSize + qrCaptionHeight;
+      const qrY = yPos + Math.max(8, (customerCardHeight - qrBlockHeight) / 2);
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(qrX - 2, qrY - 2, qrSize + 4, qrBlockHeight + 3, 1.5, 1.5, 'F');
+      doc.setDrawColor(colors['primary'][0], colors['primary'][1], colors['primary'][2]);
+      doc.setLineWidth(0.4);
+      doc.roundedRect(qrX - 2, qrY - 2, qrSize + 4, qrBlockHeight + 3, 1.5, 1.5);
+      doc.addImage(qrDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
+      doc.setFontSize(6.5);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(colors['secondary'][0], colors['secondary'][1], colors['secondary'][2]);
+      doc.text('ADRESSE', qrX + qrSize / 2, qrY + qrSize + 3.5, { align: 'center' });
+    }
 
     yPos += customerCardHeight + 14;
 
@@ -955,6 +988,51 @@ export class KommissionierungPdfService {
     drawFooter();
 
     return extraPages;
+  }
+
+  /** Postanschrift des Kunden, dieselbe Adresse wie auf dem Palettenschein. */
+  private getCustomerPostalAddress(order: KommissionierungPdfOrder, context: KommissionierungPdfContext): string {
+    const customerKey = String(order.customer_number || '').trim();
+    const fullCustomer = customerKey ? context.customersByNumber[customerKey] : null;
+
+    if (fullCustomer) {
+      const street = this.formatStreetLine(fullCustomer);
+      const cityLine = `${fullCustomer.postal_code || ''} ${fullCustomer.city || ''}`.trim();
+      return [street, cityLine].filter(Boolean).join(', ');
+    }
+
+    return String(order.shipping_address || '')
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .join(', ');
+  }
+
+  private formatStreetLine(customer: { street?: string; house_number?: string }): string {
+    const street = String(customer.street || '').trim();
+    const houseNumber = String(customer.house_number || '').trim();
+    if (!houseNumber || street.endsWith(houseNumber)) {
+      return street;
+    }
+    return `${street} ${houseNumber}`.trim();
+  }
+
+  /** QR-Code, der beim Scannen die Kundenadresse in Google Maps öffnet. */
+  private async createAddressQrDataUrl(address: string): Promise<string | null> {
+    const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`;
+    try {
+      return await QRCode.toDataURL(mapsUrl, {
+        width: 400,
+        margin: 1,
+        errorCorrectionLevel: 'M',
+        color: {
+          dark: '#2c3e50',
+          light: '#ffffff',
+        },
+      });
+    } catch {
+      return null;
+    }
   }
 
   private formatDate(dateString?: string): string {

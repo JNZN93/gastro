@@ -557,10 +557,13 @@ export class OrderOverviewComponent implements OnInit {
   }
 
   generatePdf(order: Order, includePalettenschein: boolean = false) {
-    this.kommissionierungPdfService.generate(order, includePalettenschein, {
+    void this.kommissionierungPdfService.generate(order, includePalettenschein, {
       customerNameByNumber: this.customerNameByNumber,
       customersByNumber: this.customersByNumber,
       allArtikels: this.allArtikels,
+    }).catch((error) => {
+      console.error('PDF-Erstellung fehlgeschlagen:', error);
+      alert('Fehler bei der PDF-Generierung. Bitte versuchen Sie es erneut.');
     });
   }
 

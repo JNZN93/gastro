@@ -6740,7 +6740,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     try {
       const orderId = await this.saveOrderAsOpenBeforePrint();
       this.showPalettenscheinModal = false;
-      this.generateOrderPDFInternal(includePalettenschein, orderId);
+      await this.generateOrderPDFInternal(includePalettenschein, orderId);
       await this.enterEditModeAfterPrint(orderId);
     } catch (error: any) {
       console.error('❌ [PRINT-ORDER] Speichern vor Druck fehlgeschlagen:', error);
@@ -6897,7 +6897,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   }
 
   /** Druckt über denselben Service wie die Bestellübersicht. */
-  private generateOrderPDFInternal(includePalettenschein: boolean = false, orderId?: number | null): void {
+  private async generateOrderPDFInternal(includePalettenschein: boolean = false, orderId?: number | null): Promise<void> {
     if (!orderId) {
       alert('Keine Bestellnummer vorhanden. Druck abgebrochen.');
       return;
@@ -6965,7 +6965,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
         };
       }
 
-      this.kommissionierungPdfService.generate(pdfOrder, includePalettenschein, {
+      await this.kommissionierungPdfService.generate(pdfOrder, includePalettenschein, {
         customerNameByNumber,
         customersByNumber,
         allArtikels: this.globalArtikels || [],
