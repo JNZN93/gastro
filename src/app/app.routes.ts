@@ -52,7 +52,7 @@ export const routes: Routes = [
     { path: 'customer-orders', component: CustomerOrdersComponent, canActivate: [AuthGuard] },
     { path: 'order-overview', component: OrderOverviewComponent, canActivate: [AuthGuard] },
     { path: 'user-management', component: UserManagementComponent, canActivate: [AdminAuthGuard] },
-    { path: 'route-planning', component: RoutePlanningComponent, canActivate: [AdminAuthGuard] },
+    { path: 'route-planning', component: RoutePlanningComponent, canActivate: [AuthGuard] },
     { path: 'reports', component: ReportsComponent, canActivate: [AdminAuthGuard] },
     { path: 'offers', component: OffersComponent, canActivate: [AdminAuthGuard] },
     { path: 'offers/:id/flyer', component: OfferFlyerComponent, canActivate: [AdminAuthGuard] },

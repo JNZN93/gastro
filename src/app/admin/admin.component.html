@@ -92,7 +92,7 @@
         <span>Etikettendruck</span>
       </button>
 
-      <button type="button" class="action-card action-routes" routerLink="/route-planning" *ngIf="isAdmin()">
+      <button type="button" class="action-card action-routes" routerLink="/route-planning" *ngIf="isAdmin() || isEmployee()">
         <div class="action-icon">
           <mat-icon>map</mat-icon>
         </div>

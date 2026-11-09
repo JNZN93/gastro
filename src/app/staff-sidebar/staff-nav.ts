@@ -15,7 +15,7 @@ export const STAFF_NAV_ITEMS: StaffNavItem[] = [
   { label: 'Aufträge erstellen', route: '/customer-orders', icon: 'add_box', tone: 'create', roles: ['admin', 'employee'] },
   { label: 'Offene Rechnungen', route: '/open-invoices', icon: 'receipt', tone: 'invoices', roles: ['admin'] },
   { label: 'Etikettendruck', route: '/label-management', icon: 'sell', tone: 'labels', roles: ['admin', 'employee'] },
-  { label: 'Routenplanung', route: '/route-planning', icon: 'map', tone: 'routes', roles: ['admin'] },
+  { label: 'Routenplanung', route: '/route-planning', icon: 'map', tone: 'routes', roles: ['admin', 'employee'] },
   { label: 'Lagerbestand / Inventur', route: '/inventory', icon: 'warehouse', tone: 'inventory', roles: ['admin', 'employee'] },
   { label: 'Mitarbeiteransicht', route: '/employees', icon: 'groups', tone: 'employees', roles: ['admin'] },
   { label: 'Mitarbeiterplanung', route: '/mitarbeiterplanung', icon: 'calendar_month', tone: 'planning', roles: ['admin'] },
