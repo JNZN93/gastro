@@ -1236,77 +1236,146 @@ export class ReportsComponent implements OnInit {
     setTimeout(() => URL.revokeObjectURL(url), 60000);
   }
 
-  /** PDF: eine Zeile pro Artikel, Spalten Name, Menge, Artikelbezeichnung. */
-  private generateHaehnchenKundenPdf(jsPDF: any, autoTable: any) {
-    const doc = new jsPDF({ orientation: 'portrait', format: 'a4' });
+  /** PDF: ein Block pro Kunde, darunter Menge und Artikel. */
+  private generateHaehnchenKundenPdf(jsPDF: any, _autoTable: any) {
+    const doc = new jsPDF({ orientation: 'portrait', format: 'a4', unit: 'mm' });
+    const pageWidth = 210;
+    const pageHeight = 297;
+    const marginX = 12;
+    const contentWidth = pageWidth - marginX * 2;
+    const bottomLimit = 284;
     const date = new Date(this.selectedDate).toLocaleDateString('de-DE');
     const rows = this.reportData.frischeHaehnchenByCustomer;
+    const totalQty = rows.reduce(
+      (sum, row) => sum + row.items.reduce((itemSum, item) => itemSum + item.quantity, 0),
+      0
+    );
 
-    doc.setFontSize(16);
-    doc.text('Frische Hähnchen – je Kunde', 14, 18);
-    doc.setFontSize(10);
-    doc.text(`Datum: ${date}`, 14, 28);
+    const nrGutter = 12;
+    const qtyWidth = 14;
+    const articleX = marginX + nrGutter + qtyWidth + 3;
+    const articleWidth = marginX + contentWidth - 4 - articleX;
 
-    const pageInnerWidth = 182;
-    const mengeWidth = 18;
-    const minArtikelWidth = 70;
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11);
-    let nameWidth = 46;
-    for (const row of rows) {
-      const needed = doc.getTextWidth(row.customerName) + 8;
-      if (needed > nameWidth) nameWidth = needed;
-    }
-    nameWidth = Math.min(Math.ceil(nameWidth), pageInnerWidth - mengeWidth - minArtikelWidth);
-    const artikelWidth = pageInnerWidth - mengeWidth - nameWidth;
+    doc.setProperties({ title: `Hähnchen Kundenliste ${date}`, subject: 'Frische Hähnchen je Kunde' });
 
-    const body: any[] = [];
-    if (rows.length === 0) {
-      body.push(['–', '–', 'Keine Hähnchen-Positionen für dieses Datum']);
-    } else {
-      rows.forEach((row, index) => {
-        const fillColor = index % 2 === 0 ? [255, 251, 235] : [255, 255, 255];
-        row.items.forEach((item, itemIndex) => {
-          body.push([
-            {
-              content: itemIndex === 0 ? row.customerName : '',
-              styles: { fontStyle: 'bold', fillColor }
-            },
-            {
-              content: this.formatQuantity(item.quantity),
-              styles: { halign: 'right', fontStyle: 'bold', fillColor }
-            },
-            {
-              content: item.name,
-              styles: { fillColor }
-            }
-          ]);
-        });
-      });
-    }
+    const drawPageChrome = (continued: boolean): number => {
+      const bandHeight = continued ? 14 : 26;
+      doc.setFillColor(92, 42, 12);
+      doc.rect(0, 0, pageWidth, bandHeight, 'F');
+      doc.setFillColor(217, 119, 6);
+      doc.rect(0, bandHeight, pageWidth, 1.1, 'F');
 
-    autoTable(doc, {
-      head: [['Name', 'Menge', 'Artikelbezeichnung']],
-      body,
-      startY: 36,
-      margin: { left: 14, right: 14 },
-      styles: {
-        fontSize: 11,
-        cellPadding: 3,
-        overflow: 'linebreak',
-        valign: 'middle'
-      },
-      headStyles: {
-        fillColor: [180, 83, 9],
-        textColor: 255,
-        fontStyle: 'bold'
-      },
-      columnStyles: {
-        0: { cellWidth: nameWidth, overflow: 'linebreak' },
-        1: { cellWidth: mengeWidth, halign: 'right' },
-        2: { cellWidth: artikelWidth }
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(continued ? 11 : 16);
+      doc.text('Frische Hähnchen', marginX, continued ? 9 : 11);
+      doc.setFontSize(continued ? 9 : 11);
+      doc.text(date, pageWidth - marginX, continued ? 9 : 11, { align: 'right' });
+
+      if (!continued) {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9.5);
+        doc.text('Kundenliste', marginX, 18.5);
+        const summary = rows.length === 0
+          ? 'Keine Positionen'
+          : `${rows.length} Kunden   ·   ${this.formatQuantity(totalQty)} Stück`;
+        doc.text(summary, pageWidth - marginX, 18.5, { align: 'right' });
       }
+
+      return bandHeight + 5;
+    };
+
+    const layoutCard = (row: { customerName: string; items: Array<{ quantity: number; name: string }> }) => {
+      const sumLabel = row.items.length > 1
+        ? this.formatQuantity(row.items.reduce((sum, item) => sum + item.quantity, 0))
+        : null;
+      const nameWidth = contentWidth - nrGutter - 6 - (sumLabel ? 28 : 0);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      const nameLines = doc.splitTextToSize(row.customerName, nameWidth) as string[];
+      const items = row.items.map(item => {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        const lines = doc.splitTextToSize(item.name, articleWidth) as string[];
+        return {
+          quantity: `${this.formatQuantity(item.quantity)}×`,
+          lines,
+          height: Math.max(5.6, lines.length * 4.15 + 1.2)
+        };
+      });
+      const nameBlock = 3.2 + nameLines.length * 4.8;
+      const itemsBlock = items.reduce((height, item) => height + item.height, 0);
+      const height = nameBlock + 1.2 + itemsBlock + 2;
+      return { nameLines, items, sumLabel, height, nameBlock };
+    };
+
+    let y = drawPageChrome(false);
+
+    if (rows.length === 0) {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(11);
+      doc.setTextColor(87, 83, 78);
+      doc.text('Keine Hähnchen-Positionen für dieses Datum.', marginX, y + 6);
+    }
+
+    rows.forEach((row, index) => {
+      const card = layoutCard(row);
+      if (y + card.height > bottomLimit) {
+        doc.addPage();
+        y = drawPageChrome(true);
+      }
+
+      const fill = index % 2 === 0 ? [255, 248, 237] : [255, 255, 255];
+      doc.setFillColor(fill[0], fill[1], fill[2]);
+      doc.rect(marginX, y, contentWidth, card.height, 'F');
+      doc.setFillColor(217, 119, 6);
+      doc.rect(marginX, y, 1.3, card.height, 'F');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.setTextColor(146, 64, 14);
+      doc.text(String(index + 1), marginX + nrGutter / 2, y + 6.1, { align: 'center' });
+
+      doc.setTextColor(41, 37, 36);
+      doc.text(card.nameLines, marginX + nrGutter, y + 6.1);
+
+      if (card.sumLabel) {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.5);
+        doc.setTextColor(120, 80, 40);
+        doc.text(`Summe ${card.sumLabel}`, marginX + contentWidth - 3.5, y + 6, { align: 'right' });
+      }
+
+      doc.setDrawColor(236, 224, 208);
+      doc.setLineWidth(0.2);
+      const dividerY = y + card.nameBlock;
+      doc.line(marginX + nrGutter, dividerY, marginX + contentWidth - 3.5, dividerY);
+
+      let itemY = dividerY + 1.2;
+      card.items.forEach(item => {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.setTextColor(146, 64, 14);
+        doc.text(item.quantity, marginX + nrGutter + qtyWidth, itemY + 4.1, { align: 'right' });
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.setTextColor(68, 64, 60);
+        doc.text(item.lines, articleX, itemY + 4.1);
+        itemY += item.height;
+      });
+
+      y += card.height + 2.2;
     });
+
+    const pageCount = doc.getNumberOfPages();
+    for (let page = 1; page <= pageCount; page++) {
+      doc.setPage(page);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(168, 162, 158);
+      doc.text(`Seite ${page} von ${pageCount}`, pageWidth - marginX, pageHeight - 8, { align: 'right' });
+    }
 
     const blob = doc.output('blob');
     const url = URL.createObjectURL(blob);
