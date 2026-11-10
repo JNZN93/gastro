@@ -5,7 +5,7 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
       </svg>
-      Zurück
+      <span class="back-label">Zurück</span>
     </button>
     <h1 class="title">
       <svg class="title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -15,10 +15,12 @@
     </h1>
     <div class="view-toggle">
       <button type="button" [class.active]="viewMode === 'route'" (click)="setViewMode('route')">
-        Route planen
+        <span class="toggle-full">Route planen</span>
+        <span class="toggle-short">Route</span>
       </button>
       <button type="button" [class.active]="viewMode === 'addresses'" (click)="setViewMode('addresses')">
-        Lieferadressen
+        <span class="toggle-full">Lieferadressen</span>
+        <span class="toggle-short">Adressen</span>
       </button>
     </div>
   </div>
@@ -43,7 +45,7 @@
             </svg>
             <input
               type="text"
-              placeholder="Kunden durchsuchen..."
+              placeholder="Kunde suchen..."
               [(ngModel)]="addressSearchTerm"
               (ngModelChange)="filterAddressCustomers()"
               class="search-input"
@@ -177,7 +179,9 @@
                 }
               </div>
             }
-            @if (addressFilteredCustomers.length === 0) {
+            @if (!addressSearchTerm.trim()) {
+              <p class="no-delivery-address">Kunde suchen, um eine Lieferadresse zu hinterlegen.</p>
+            } @else if (addressFilteredCustomers.length === 0) {
               <p class="no-delivery-address">Keine Kunden gefunden.</p>
             }
           </div>
@@ -185,7 +189,7 @@
       </div>
     } @else {
     @if (currentStep < 3) {
-      <div class="hardware-scan-status">
+      <div class="hardware-scan-status" [class.is-collapsed]="!scannerHintVisible && !qrScanMessage">
         <input
           #hardwareScanInput
           class="hardware-scan-capture"
@@ -197,7 +201,9 @@
           inputmode="none"
           (input)="onHardwareScanInput()"
         >
-        <p>Scanner bereit. Palettenschein mit dem Gerätescanner erfassen, der Kunde wird der Route hinzugefügt.</p>
+        @if (scannerHintVisible) {
+          <p>Scanner bereit. Palettenschein scannen, der Kunde kommt auf die Route.</p>
+        }
         @if (qrScanMessage) {
           <p class="scanner-result" [class.success]="qrScanStatus === 'success'" [class.info]="qrScanStatus === 'info'" [class.error]="qrScanStatus === 'error'">
             {{ qrScanMessage }}
@@ -208,18 +214,54 @@
     <!-- Step 1: Customer Selection -->
     @if (currentStep === 1) {
       <div class="customer-selection-section">
+        @if (selectedCustomers.length > 0) {
+          <div class="selected-summary">
+            <button
+              type="button"
+              class="selected-summary-toggle"
+              (click)="selectedCustomersOpen = !selectedCustomersOpen"
+              [attr.aria-expanded]="selectedCustomersOpen"
+            >
+              <span>{{ selectedCustomers.length }} ausgewählt</span>
+              <span class="extra-stops-chevron">{{ selectedCustomersOpen ? '▾' : '▸' }}</span>
+            </button>
+            @if (selectedCustomersOpen) {
+              <div class="selected-customers">
+                @for (customer of selectedCustomers; track customer.id) {
+                  <span class="selected-customer-tag">
+                    <span class="tag-name">
+                      <span class="tag-title">
+                        {{ customer.last_name_company || customer.name }}
+                        @if (customer.customer_number) {
+                          <span class="tag-customer-number">({{ customer.customer_number }})</span>
+                        }
+                      </span>
+                      <span class="tag-address">{{ routeStopAddress(customer) }}</span>
+                    </span>
+                    <button class="remove-btn" (click)="toggleCustomerSelection(customer)" aria-label="Entfernen">
+                      ×
+                    </button>
+                  </span>
+                }
+              </div>
+            }
+          </div>
+        }
+
         <div class="section-header">
           <h2>Kunden auswählen</h2>
           <p class="step-description">Wählen Sie die Kunden aus, die Sie besuchen möchten, oder scannen Sie die Palettenscheine mit dem Gerätescanner.</p>
           <div class="selection-controls">
-            @if (!areAllFilteredCustomersSelected()) {
+            @if (searchTerm.trim() && filteredCustomers.length > 0 && !areAllFilteredCustomersSelected()) {
               <button class="btn btn-select-all" (click)="selectAllCustomers()">
                 Alle auswählen
               </button>
             }
-            <button class="btn btn-deselect-all" (click)="confirmDeselectAllCustomers()">
-              Alle abwählen
-            </button>
+            @if (selectedCustomers.length > 0) {
+              <button class="btn btn-deselect-all" (click)="confirmDeselectAllCustomers()">
+                Alle abwählen
+              </button>
+            }
           </div>
         </div>
 
@@ -233,7 +275,7 @@
             </svg>
             <input 
               type="text" 
-              placeholder="Kunden durchsuchen..." 
+              placeholder="Name, Nummer oder Adresse..." 
               [(ngModel)]="searchTerm"
               (ngModelChange)="filterCustomers()"
               class="search-input"
@@ -268,14 +310,20 @@
                       @if (customer.customer_number) {
                         <span class="customer-number">({{ customer.customer_number }})</span>
                       }
+                      @if (customer.name_addition) {
+                        <span class="customer-addition">· {{ customer.name_addition }}</span>
+                      }
                     </h3>
-                    @if (customer.name_addition) {
-                      <p class="customer-addition">{{ customer.name_addition }}</p>
-                    }
                     <p class="customer-address">
-                      @if (getDefaultDeliveryAddress(customer); as delivery) {
+                      @if (routeAddressIds[customer.id] === 0) {
+                        <span class="delivery-badge">Stammdaten</span>
+                        {{ masterAddressLine(customer) }}
+                      } @else if (routeDeliveryAddress(customer)) {
                         <span class="delivery-badge">Lieferadresse</span>
-                        {{ delivery.street }}, {{ delivery.postal_code }} {{ delivery.city }}
+                        {{ routeDeliveryAddress(customer)?.street }}, {{ routeDeliveryAddress(customer)?.postal_code }} {{ routeDeliveryAddress(customer)?.city }}
+                      } @else if (awaitsAddressChoice(customer)) {
+                        <span class="delivery-badge">Adressauswahl</span>
+                        Auswahl beim Hinzufügen
                       } @else {
                         {{ customer.street }} {{ customer.house_number }}, {{ customer.postal_code }} {{ customer.city }}
                       }
@@ -284,28 +332,13 @@
                 </div>
               }
             </div>
+            @if (!searchTerm.trim()) {
+              <p class="no-delivery-address">Name, Nummer oder Adresse eingeben. Gesuchte Kunden erscheinen hier.</p>
+            } @else if (filteredCustomers.length === 0) {
+              <p class="no-delivery-address">Keine Kunden gefunden.</p>
+            }
           }
         </div>
-
-        <!-- Selected Customers Summary -->
-        @if (selectedCustomers.length > 0) {
-          <div class="selected-summary">
-            <h3>{{ selectedCustomers.length }} Kunden ausgewählt</h3>
-            <div class="selected-customers">
-              @for (customer of selectedCustomers; track customer.id) {
-                <span class="selected-customer-tag">
-                  {{ customer.last_name_company || customer.name }}
-                  @if (customer.customer_number) {
-                    <span class="tag-customer-number">({{ customer.customer_number }})</span>
-                  }
-                  <button class="remove-btn" (click)="toggleCustomerSelection(customer)">
-                    ×
-                  </button>
-                </span>
-              }
-            </div>
-          </div>
-        }
       </div>
     }
 
@@ -336,6 +369,54 @@
               Route berechnen
             </button>
           </div>
+        </div>
+
+        <div class="route-endpoints">
+          <div class="route-endpoint">
+            <span class="endpoint-kind">Start</span>
+            <span class="endpoint-value">{{ routeStart.label }}</span>
+            <button type="button" class="btn btn-secondary endpoint-btn" (click)="beginEndpointEdit('start')">Ändern</button>
+            @if (!isDefaultEndpoint(routeStart)) {
+              <button type="button" class="btn btn-secondary endpoint-btn" (click)="resetEndpoint('start')">Standard</button>
+            }
+          </div>
+          <div class="route-endpoint">
+            <span class="endpoint-kind">Ziel</span>
+            <span class="endpoint-value">{{ routeEnd.label }}</span>
+            <button type="button" class="btn btn-secondary endpoint-btn" (click)="beginEndpointEdit('end')">Ändern</button>
+            @if (!isDefaultEndpoint(routeEnd)) {
+              <button type="button" class="btn btn-secondary endpoint-btn" (click)="resetEndpoint('end')">Standard</button>
+            }
+          </div>
+          @if (endpointEdit) {
+            <div class="address-editor">
+              <label for="endpoint-query">{{ endpointEdit === 'start' ? 'Neuer Start' : 'Neues Ziel' }}</label>
+              <input
+                id="endpoint-query"
+                type="text"
+                class="search-input address-query-input"
+                placeholder="Straße oder Geschäft"
+                [(ngModel)]="endpointQuery"
+                (ngModelChange)="onEndpointQueryInput()"
+                autocomplete="off"
+              >
+              @if (isSearchingEndpoint) {
+                <p class="address-hint">Suche Vorschläge...</p>
+              }
+              @if (endpointSuggestions.length > 0) {
+                <div class="suggestion-list">
+                  @for (suggestion of endpointSuggestions; track suggestion.label) {
+                    <button type="button" class="suggestion-item" (click)="selectEndpointSuggestion(suggestion)">
+                      {{ suggestion.label }}
+                    </button>
+                  }
+                </div>
+              }
+              @if (endpointSearchError) {
+                <p class="address-error">{{ endpointSearchError }}</p>
+              }
+            </div>
+          }
         </div>
 
         <ng-container *ngTemplateOutlet="extraStopsPanel"></ng-container>
@@ -453,7 +534,7 @@
             </div>
             <div class="stat-content">
               <h3>{{ formatDistance(totalDistance) }}</h3>
-              <p>Gesamtdistanz</p>
+              <p>Distanz</p>
             </div>
           </div>
 
@@ -465,7 +546,7 @@
             </div>
             <div class="stat-content">
               <h3>{{ formatDuration(totalDuration) }}</h3>
-              <p>Geschätzte Zeit</p>
+              <p>Fahrzeit</p>
             </div>
           </div>
 
@@ -489,7 +570,7 @@
             <div class="start-point">
               <div class="step-number start">S</div>
               <div class="step-content">
-                <p class="step-instruction"><strong>Startpunkt:</strong> Im Winkel 6, 67547 Worms</p>
+                <p class="step-instruction"><strong>Startpunkt:</strong> {{ calculatedStart.label }}</p>
                 <div class="step-timing">
                   <span class="start-time">
                     <strong>Startzeit:</strong> {{ actualStartTime ? formatTime(actualStartTime) : startTime }}
@@ -525,7 +606,7 @@
               <div class="end-point">
                 <div class="step-number end">E</div>
                 <div class="step-content">
-                  <p class="step-instruction"><strong>Endpunkt:</strong> Im Winkel 6, 67547 Worms</p>
+                  <p class="step-instruction"><strong>Endpunkt:</strong> {{ calculatedEnd.label }}</p>
                   <div class="step-timing">
                     <span class="end-time">
                       <strong>Endzeit:</strong> {{ formatTime(endTime) }}
@@ -544,25 +625,28 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 4m0 13V4m-6 3l6-3"/>
               </svg>
-              {{ showMap ? 'Karte ausblenden' : 'Karte anzeigen' }}
+              {{ showMap ? 'Schließen' : 'Karte' }}
             </button>
             <button class="btn btn-secondary" (click)="exportRoute()">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
               </svg>
-              Als PDF exportieren
+              PDF
+            </button>
+            <button class="btn btn-primary" (click)="showRouteQr()">
+              QR
             </button>
             <button class="btn btn-primary" (click)="copyShareLink()">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"/>
               </svg>
-              Google Maps Link kopieren
+              Link kopieren
             </button>
             <button class="btn btn-success" (click)="openInGoogleMaps()">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 4m0 13V4m-6 3l6-3"/>
               </svg>
-              In Google Maps öffnen
+              Maps öffnen
             </button>
           </div>
         </div>
@@ -670,7 +754,10 @@
         class="btn btn-primary btn-next" 
         (click)="nextStep()"
         [disabled]="!canProceedToNextStep()">
-        Weiter zu Schritt 2
+        Weiter
+        @if (selectedCustomers.length + extraStops.length > 0) {
+          <span class="footer-count">{{ selectedCustomers.length + extraStops.length }}</span>
+        }
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
         </svg>
@@ -683,11 +770,11 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
           </svg>
-          Zurück zu Schritt 1
+          Zurück
         </button>
         @if (routeData) {
           <button class="btn btn-primary btn-next" (click)="nextStep()">
-            Weiter zu Schritt 3
+            Weiter
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
             </svg>
@@ -702,17 +789,100 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
           </svg>
-          Zurück zu Schritt 2
+          Zurück
         </button>
         <button class="btn btn-primary" (click)="startNewRoute()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
           </svg>
-          Neue Route planen
+          Neue Route
         </button>
       </div>
     }
   </div>
+  }
+
+  @if (addressChoiceCustomer) {
+    <div class="modal-overlay" (click)="cancelAddressChoice()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Adresse wählen</h3>
+          <button class="close-btn" (click)="cancelAddressChoice()">×</button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-description">
+            Welche Adresse von
+            {{ addressChoiceCustomer.last_name_company || addressChoiceCustomer.name }}
+            soll für diese Route genutzt werden?
+          </p>
+          <div class="address-choice-list">
+            @if (hasMasterAddress(addressChoiceCustomer)) {
+              <button type="button" class="address-choice" (click)="confirmAddressChoice(null)">
+                <strong>Stammdaten</strong>
+                <span>{{ masterAddressLine(addressChoiceCustomer) }}</span>
+              </button>
+            }
+            @for (address of addressChoiceCustomer.deliveryAddresses || []; track address.id) {
+              <button type="button" class="address-choice" (click)="confirmAddressChoice(address)">
+                @if (address.label) {
+                  <strong>{{ address.label }}</strong>
+                }
+                <span>{{ address.street }}, {{ address.postal_code }} {{ address.city }}</span>
+                @if (address.is_default) {
+                  <span class="delivery-badge">Standard</span>
+                }
+              </button>
+            }
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="cancelAddressChoice()">Abbrechen</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (routeQrDataUrl) {
+    <div class="modal-overlay" (click)="closeRouteQr()">
+      <div class="modal-content confirm-modal" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Route weitergeben</h3>
+          <button class="close-btn" (click)="closeRouteQr()">×</button>
+        </div>
+        <div class="modal-body route-qr-body">
+          <img [src]="routeQrDataUrl" alt="QR-Code der Route" class="route-qr">
+          <p class="confirm-details">
+            Der Kollege scannt den Code mit der Kamera. Die Route öffnet sich in Google Maps.
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeRouteQr()">Schließen</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (showNewRouteModal) {
+    <div class="modal-overlay" (click)="cancelNewRoute()">
+      <div class="modal-content confirm-modal" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Neue Route</h3>
+          <button class="close-btn" (click)="cancelNewRoute()">×</button>
+        </div>
+        <div class="modal-body">
+          <p class="confirm-message">Ausgewählte Kunden löschen?</p>
+          <p class="confirm-details">
+            Die berechnete Route wird zurückgesetzt.
+            {{ selectedCustomers.length }} ausgewählte Kunden können bleiben oder entfernt werden.
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="cancelNewRoute()">Abbrechen</button>
+          <button type="button" class="btn btn-secondary" (click)="confirmNewRoute(false)">Behalten</button>
+          <button type="button" class="btn btn-deselect-all" (click)="confirmNewRoute(true)">Löschen</button>
+        </div>
+      </div>
+    </div>
   }
 
   <!-- Bestätigungsmodal für "Alle abwählen" -->

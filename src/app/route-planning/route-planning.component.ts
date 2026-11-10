@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders, HttpClientModule } from '@angular/common/http';
 import { Router } from '@angular/router';
+import * as QRCode from 'qrcode';
 import { environment } from '../../environments/environment';
 
 // Leaflet TypeScript Deklarationen
@@ -81,6 +82,18 @@ interface ExtraRouteStop {
   latitude: number;
 }
 
+interface RouteEndpoint {
+  label: string;
+  longitude: number;
+  latitude: number;
+}
+
+const DEFAULT_ROUTE_ENDPOINT: RouteEndpoint = {
+  label: 'Im Winkel 6, 67547 Worms',
+  longitude: 8.3594,
+  latitude: 49.6326
+};
+
 // RouteResponse Interface wurde entfernt, da wir die echte API-Struktur verwenden
 
 @Component({
@@ -116,6 +129,13 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
   
   // Neue Eigenschaften für das Bestätigungsmodal
   showDeselectConfirmModal: boolean = false;
+  showNewRouteModal = false;
+  routeQrDataUrl: string | null = null;
+  private readonly selectionStorageKey = 'routePlanningSelection';
+  addressChoiceCustomer: Customer | null = null;
+  private addressChoiceQueue: Customer[] = [];
+  /** Gewählte Adresse für diese Route. 0 steht für die Stammdatenadresse. */
+  routeAddressIds: Record<number, number> = {};
 
   viewMode: 'route' | 'addresses' = 'route';
   addressSearchTerm: string = '';
@@ -135,6 +155,7 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
 
   extraStops: ExtraRouteStop[] = [];
   extraStopsOpen = false;
+  selectedCustomersOpen = false;
   extraStopQuery = '';
   extraStopLabel = '';
   extraStopSuggestions: AddressSuggestion[] = [];
@@ -148,6 +169,8 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
   @ViewChild('hardwareScanInput') hardwareScanInput?: ElementRef<HTMLInputElement>;
   qrScanMessage = '';
   qrScanStatus: 'success' | 'info' | 'error' = 'info';
+  scannerHintVisible = true;
+  private scannerHintTimer: ReturnType<typeof setTimeout> | null = null;
   private lastQrValue = '';
   private lastQrAt = 0;
   private qrSeq = 0;
@@ -172,8 +195,18 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
   private readonly OPENROUTE_API_URL = 'https://api.openrouteservice.org/v2/directions/driving-car';
   private readonly OPENROUTE_OPTIMIZATION_URL = 'https://api.openrouteservice.org/optimization/v2/driving-car';
   
-  // Fester Startpunkt: Im Winkel 6, 67547 Worms
-  private readonly START_LOCATION: [number, number] = [8.3594, 49.6326]; // Koordinaten für Worms
+  // Standard: Im Winkel 6, 67547 Worms. Start und Ziel können davon abweichen.
+  routeStart: RouteEndpoint = { ...DEFAULT_ROUTE_ENDPOINT };
+  routeEnd: RouteEndpoint = { ...DEFAULT_ROUTE_ENDPOINT };
+  calculatedStart: RouteEndpoint = { ...DEFAULT_ROUTE_ENDPOINT };
+  calculatedEnd: RouteEndpoint = { ...DEFAULT_ROUTE_ENDPOINT };
+  endpointEdit: 'start' | 'end' | null = null;
+  endpointQuery = '';
+  endpointSuggestions: AddressSuggestion[] = [];
+  endpointSearchError = '';
+  isSearchingEndpoint = false;
+  private endpointSearchTimer: ReturnType<typeof setTimeout> | null = null;
+  private endpointSearchSeq = 0;
 
   constructor(
     private http: HttpClient,
@@ -184,11 +217,17 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
     this.loadCustomers();
     this.hideFooter();
     this.startTime = this.getCurrentTime();
+    this.scannerHintTimer = setTimeout(() => {
+      this.scannerHintVisible = false;
+    }, 5000);
   }
 
   ngOnDestroy(): void {
     if (this.scanIdleTimer) {
       clearTimeout(this.scanIdleTimer);
+    }
+    if (this.scannerHintTimer) {
+      clearTimeout(this.scannerHintTimer);
     }
     this.showFooter();
     this.destroyMap();
@@ -197,6 +236,9 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
     }
     if (this.extraStopSearchTimer) {
       clearTimeout(this.extraStopSearchTimer);
+    }
+    if (this.endpointSearchTimer) {
+      clearTimeout(this.endpointSearchTimer);
     }
   }
 
@@ -279,7 +321,7 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
     }
 
     // Map initialisieren (Koordinaten umkehren: [lng, lat] -> [lat, lng])
-    const initialCoords: [number, number] = [this.START_LOCATION[1], this.START_LOCATION[0]];
+    const initialCoords: [number, number] = [this.calculatedStart.latitude, this.calculatedStart.longitude];
     this.map = L.map('route-map').setView(initialCoords, 10);
 
     // OpenStreetMap Tiles hinzufügen
@@ -290,7 +332,7 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
     // Custom Icons erstellen
     const startIcon = L.divIcon({
       className: 'custom-marker start-marker',
-      html: '<div class="marker-content">🏢<br><span class="marker-label">Gastro Depot</span></div>',
+      html: '<div class="marker-content">S<br><span class="marker-label">Start</span></div>',
       iconSize: [40, 60],
       iconAnchor: [20, 60]
     });
@@ -303,16 +345,36 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
     });
 
     // Startpunkt markieren (Koordinaten umkehren: [lng, lat] -> [lat, lng])
-    const startCoords: [number, number] = [this.START_LOCATION[1], this.START_LOCATION[0]];
+    const startCoords: [number, number] = [this.calculatedStart.latitude, this.calculatedStart.longitude];
     const startMarker = L.marker(startCoords, { icon: startIcon })
       .addTo(this.map)
       .bindPopup(`
         <div class="popup-content">
-          <h4>🏢 Gastro Depot</h4>
-          <p><strong>Adresse:</strong><br>Im Winkel 6<br>67547 Worms</p>
-          <p><strong>Status:</strong> Ausgangspunkt für alle Touren</p>
+          <h4>Start</h4>
+          <p>${this.escapeHtml(this.calculatedStart.label)}</p>
         </div>
       `);
+
+    const markers = [startMarker];
+    const sameEndpoint = Math.abs(this.calculatedStart.longitude - this.calculatedEnd.longitude) < 0.00001
+      && Math.abs(this.calculatedStart.latitude - this.calculatedEnd.latitude) < 0.00001;
+    if (!sameEndpoint) {
+      const endIcon = L.divIcon({
+        className: 'custom-marker start-marker',
+        html: '<div class="marker-content">E<br><span class="marker-label">Ziel</span></div>',
+        iconSize: [40, 60],
+        iconAnchor: [20, 60]
+      });
+      const endMarker = L.marker([this.calculatedEnd.latitude, this.calculatedEnd.longitude], { icon: endIcon })
+        .addTo(this.map)
+        .bindPopup(`
+          <div class="popup-content">
+            <h4>Ziel</h4>
+            <p>${this.escapeHtml(this.calculatedEnd.label)}</p>
+          </div>
+        `);
+      markers.push(endMarker);
+    }
 
     // Kundenstandorte markieren (Koordinaten umkehren: [lng, lat] -> [lat, lng])
     const customerMarkers: any[] = [];
@@ -369,7 +431,7 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
     this.addRouteArrows();
 
     // Map auf alle Marker zoomen
-    const group = new L.featureGroup([startMarker, ...customerMarkers]);
+    const group = new L.featureGroup([...markers, ...customerMarkers]);
     if (group.getBounds().isValid()) {
       this.map.fitBounds(group.getBounds().pad(0.1));
     } else {
@@ -424,7 +486,7 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
         <h4>Legende</h4>
         <div class="legend-item">
           <span class="legend-icon start-icon">🏢</span>
-          <span>Gastro Depot</span>
+          <span>Start / Ziel</span>
         </div>
         <div class="legend-item">
           <span class="legend-icon customer-icon">1</span>
@@ -468,6 +530,8 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
         selected: false,
         deliveryAddresses: []
       }));
+      this.restoreSelection();
+      this.updateSelectedCustomers();
       this.filterCustomers();
       this.filterAddressCustomers();
       this.isLoadingCustomers = false;
@@ -489,7 +553,7 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
 
   private applyCustomerFilter(rawTerm: string): Customer[] {
     if (!rawTerm.trim()) {
-      return [...this.customers];
+      return [];
     }
 
     const normalizedSearchTerm = this.normalizeSearchTerm(rawTerm);
@@ -561,25 +625,48 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
   }
 
   toggleCustomerSelection(customer: Customer) {
-    customer.selected = !customer.selected;
+    if (customer.selected) {
+      customer.selected = false;
+      this.clearRouteAddress(customer.id);
+      this.updateSelectedCustomers();
+      return;
+    }
+    if (this.needsAddressChoice(customer)) {
+      this.askForRouteAddress([customer]);
+      return;
+    }
+    customer.selected = true;
     this.updateSelectedCustomers();
   }
 
   updateSelectedCustomers() {
     this.selectedCustomers = this.customers.filter(customer => customer.selected);
+    this.persistSelection();
   }
 
   selectAllCustomers() {
-    this.filteredCustomers.forEach(customer => {
+    const needsChoice: Customer[] = [];
+    for (const customer of this.filteredCustomers) {
+      if (customer.selected) {
+        continue;
+      }
+      if (this.needsAddressChoice(customer)) {
+        needsChoice.push(customer);
+        continue;
+      }
       customer.selected = true;
-    });
+    }
     this.updateSelectedCustomers();
+    if (needsChoice.length > 0) {
+      this.askForRouteAddress(needsChoice);
+    }
   }
 
   deselectAllCustomers() {
     this.customers.forEach(customer => {
       customer.selected = false;
     });
+    this.routeAddressIds = {};
     this.updateSelectedCustomers();
   }
 
@@ -656,6 +743,10 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
       return;
     }
 
+    if (!this.ensureAddressChoices()) {
+      return;
+    }
+
     if (this.selectedCustomers.length + this.extraStops.length > 1) {
       this.openConstraintsModal();
       return;
@@ -671,6 +762,12 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
   }
 
   async calculateRouteWithConstraints(): Promise<void> {
+    if (!this.ensureAddressChoices()) {
+      return;
+    }
+
+    this.calculatedStart = { ...this.routeStart };
+    this.calculatedEnd = { ...this.routeEnd };
     this.isLoading = true;
     this.showRoute = false;
 
@@ -682,7 +779,7 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
       
       for (const customer of this.selectedCustomers) {
         const customerName = customer.last_name_company || customer.name;
-        const delivery = this.getDefaultDeliveryAddress(customer);
+        const delivery = this.routeDeliveryAddress(customer);
         if (delivery) {
           waypoints.push({
             location: [Number(delivery.longitude), Number(delivery.latitude)],
@@ -813,7 +910,9 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
 
   private async calculateSingleCustomerRoute(waypoint: RouteWaypoint): Promise<any> {
     // Normale Directions API für einen einzelnen Kunden verwenden
-    const coordinates = `${this.START_LOCATION[0]},${this.START_LOCATION[1]};${waypoint.location[0]},${waypoint.location[1]};${this.START_LOCATION[0]},${this.START_LOCATION[1]}`;
+    const start = this.endpointLngLat(this.calculatedStart);
+    const end = this.endpointLngLat(this.calculatedEnd);
+    const coordinates = `${start[0]},${start[1]};${waypoint.location[0]},${waypoint.location[1]};${end[0]},${end[1]}`;
     
     try {
       const response = await fetch(`${this.OPENROUTE_API_URL}?api_key=${this.OPENROUTE_API_KEY}&coordinates=${coordinates}&format=geojson&instructions=true&preference=fastest&units=km`);
@@ -835,7 +934,7 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
           steps: route.properties.segments.map((segment: any, index: number) => ({
             distance: segment.distance / 1000, // Konvertiere Meter zu Kilometer
             duration: segment.duration,
-            location: index === 0 ? this.START_LOCATION : waypoint.location
+            location: index === 0 ? start : waypoint.location
           }))
         }]
       };
@@ -901,8 +1000,8 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
       vehicles: [{
         id: 1,
         profile: 'driving-car', // Standard-Profil ohne Verkehrsdaten
-        start: this.START_LOCATION,
-        end: this.START_LOCATION,
+        start: this.endpointLngLat(this.calculatedStart),
+        end: this.endpointLngLat(this.calculatedEnd),
         time_window: [0, 86400] // Ganzer Tag verfügbar
       }],
       options: {
@@ -1348,13 +1447,58 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
       encodeURIComponent(stop.address)
     ).join('/');
 
-    const startLocation = encodeURIComponent('Im Winkel 6, 67547 Worms');
-    const endLocation = encodeURIComponent('Im Winkel 6, 67547 Worms');
+    const startLocation = encodeURIComponent(this.calculatedStart.label);
+    const endLocation = encodeURIComponent(this.calculatedEnd.label);
 
     // Google Maps Share-URL - jeder Stopp als separater Wegpunkt
     const googleMapsUrl = `https://www.google.com/maps/dir/${startLocation}/${waypoints}/${endLocation}`;
     
     return googleMapsUrl;
+  }
+
+  async showRouteQr(): Promise<void> {
+    const shareUrl = this.generateShareLink();
+    if (!shareUrl) {
+      alert('Keine Route verfügbar zum Teilen.');
+      return;
+    }
+    try {
+      this.routeQrDataUrl = await QRCode.toDataURL(shareUrl, {
+        errorCorrectionLevel: 'L',
+        margin: 2,
+        width: 320
+      });
+    } catch {
+      this.routeQrDataUrl = null;
+      alert('Die Route ist zu lang für einen QR-Code. Nutze das PDF.');
+    }
+  }
+
+  closeRouteQr(): void {
+    this.routeQrDataUrl = null;
+  }
+
+  private sharedRouteUrl(value: string): string | null {
+    try {
+      const url = new URL(value);
+      const host = url.hostname.replace(/^www\./, '');
+      if (!host.endsWith('google.com') && !host.endsWith('google.de')) {
+        return null;
+      }
+      if (!url.pathname.includes('/maps/dir/')) {
+        return null;
+      }
+      if (url.searchParams.get('destination') || url.searchParams.get('query') || url.searchParams.get('q')) {
+        return null;
+      }
+      const parts = url.pathname.split('/').filter(Boolean);
+      if (parts.length < 4) {
+        return null;
+      }
+      return url.toString();
+    } catch {
+      return null;
+    }
   }
 
   async copyShareLink(): Promise<void> {
@@ -1392,8 +1536,8 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
       encodeURIComponent(stop.address)
     ).join('/');
 
-    const startLocation = encodeURIComponent('Im Winkel 6, 67547 Worms');
-    const endLocation = encodeURIComponent('Im Winkel 6, 67547 Worms');
+    const startLocation = encodeURIComponent(this.calculatedStart.label);
+    const endLocation = encodeURIComponent(this.calculatedEnd.label);
 
     const googleMapsUrl = `https://www.google.com/maps/dir/${startLocation}/${waypoints}/${endLocation}`;
     
@@ -1452,7 +1596,61 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
   }
 
   startNewRoute(): void {
+    if (this.selectedCustomers.length === 0) {
+      this.resetToFirstStep();
+      return;
+    }
+    this.showNewRouteModal = true;
+  }
+
+  confirmNewRoute(clearCustomers: boolean): void {
+    this.showNewRouteModal = false;
+    if (clearCustomers) {
+      this.deselectAllCustomers();
+    }
     this.resetToFirstStep();
+  }
+
+  cancelNewRoute(): void {
+    this.showNewRouteModal = false;
+  }
+
+  private persistSelection(): void {
+    const addressIds: Record<string, number> = {};
+    for (const customer of this.selectedCustomers) {
+      const choice = this.routeAddressIds[customer.id];
+      if (choice != null) {
+        addressIds[String(customer.id)] = choice;
+      }
+    }
+    localStorage.setItem(this.selectionStorageKey, JSON.stringify({
+      customerIds: this.selectedCustomers.map(customer => customer.id),
+      addressIds
+    }));
+  }
+
+  private restoreSelection(): void {
+    const raw = localStorage.getItem(this.selectionStorageKey);
+    if (!raw) {
+      return;
+    }
+    try {
+      const saved = JSON.parse(raw) as { customerIds?: number[]; addressIds?: Record<string, number> };
+      const ids = new Set(saved.customerIds || []);
+      const addressIds: Record<number, number> = {};
+      for (const [key, value] of Object.entries(saved.addressIds || {})) {
+        const customerId = Number(key);
+        if (ids.has(customerId) && Number.isFinite(Number(value))) {
+          addressIds[customerId] = Number(value);
+        }
+      }
+      this.routeAddressIds = addressIds;
+      for (const customer of this.customers) {
+        customer.selected = ids.has(customer.id);
+      }
+    } catch {
+      localStorage.removeItem(this.selectionStorageKey);
+    }
   }
 
   setViewMode(mode: 'route' | 'addresses'): void {
@@ -1617,6 +1815,14 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
     this.lastQrAt = now;
     const seq = ++this.qrSeq;
 
+    const sharedRoute = this.sharedRouteUrl(value);
+    if (sharedRoute) {
+      window.open(sharedRoute, '_blank');
+      this.qrScanStatus = 'success';
+      this.qrScanMessage = 'Geteilte Route wird in Google Maps geöffnet.';
+      return;
+    }
+
     const address = this.extractAddressFromQr(value);
     if (!address) {
       this.qrScanStatus = 'error';
@@ -1628,6 +1834,12 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
     if (customer) {
       const name = customer.last_name_company || customer.name || 'Kunde';
       if (!customer.selected) {
+        if (this.needsAddressChoice(customer)) {
+          this.askForRouteAddress([customer]);
+          this.qrScanStatus = 'info';
+          this.qrScanMessage = `${name}: Bitte eine Adresse für die Route wählen.`;
+          return;
+        }
         customer.selected = true;
         this.updateSelectedCustomers();
         this.qrScanStatus = 'success';
@@ -1779,14 +1991,118 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
     return addresses.find(address => address.is_default) || addresses[0] || null;
   }
 
+  routeDeliveryAddress(customer: Customer): DeliveryAddress | null {
+    const addresses = customer.deliveryAddresses || [];
+    const chosenId = this.routeAddressIds[customer.id];
+    if (chosenId === 0) {
+      return null;
+    }
+    if (chosenId != null) {
+      return addresses.find(address => address.id === chosenId) || null;
+    }
+    if (addresses.length === 1 && !this.hasMasterAddress(customer)) {
+      return addresses[0];
+    }
+    return null;
+  }
+
+  hasMasterAddress(customer: Customer): boolean {
+    return this.masterAddressLine(customer).length > 0;
+  }
+
+  awaitsAddressChoice(customer: Customer): boolean {
+    return this.needsAddressChoice(customer);
+  }
+
+  askForRouteAddress(customers: Customer[]): void {
+    const pending = customers.filter(customer => this.needsAddressChoice(customer) && this.routeAddressIds[customer.id] == null);
+    if (pending.length === 0) {
+      return;
+    }
+    if (this.addressChoiceCustomer) {
+      const queued = new Set<number>([
+        this.addressChoiceCustomer.id,
+        ...this.addressChoiceQueue.map(customer => customer.id)
+      ]);
+      for (const customer of pending) {
+        if (!queued.has(customer.id)) {
+          this.addressChoiceQueue.push(customer);
+        }
+      }
+      return;
+    }
+    this.addressChoiceCustomer = pending[0];
+    this.addressChoiceQueue = pending.slice(1);
+  }
+
+  confirmAddressChoice(address: DeliveryAddress | null): void {
+    const customer = this.addressChoiceCustomer;
+    if (!customer) {
+      return;
+    }
+    if (address && address.customer_id !== customer.id) {
+      return;
+    }
+    this.routeAddressIds = { ...this.routeAddressIds, [customer.id]: address ? address.id : 0 };
+    customer.selected = true;
+    this.updateSelectedCustomers();
+    this.showNextAddressChoice();
+  }
+
+  cancelAddressChoice(): void {
+    this.addressChoiceCustomer = null;
+    this.addressChoiceQueue = [];
+  }
+
+  private needsAddressChoice(customer: Customer): boolean {
+    if (this.routeAddressIds[customer.id] != null) {
+      return false;
+    }
+    const deliveryCount = customer.deliveryAddresses?.length || 0;
+    const optionCount = deliveryCount + (this.hasMasterAddress(customer) ? 1 : 0);
+    return optionCount > 1;
+  }
+
+  private ensureAddressChoices(): boolean {
+    const pending = this.selectedCustomers.filter(customer => this.needsAddressChoice(customer));
+    if (pending.length === 0) {
+      return true;
+    }
+    this.askForRouteAddress(pending);
+    return false;
+  }
+
+  private showNextAddressChoice(): void {
+    while (this.addressChoiceQueue.length > 0) {
+      const next = this.addressChoiceQueue.shift()!;
+      if (this.needsAddressChoice(next)) {
+        this.addressChoiceCustomer = next;
+        return;
+      }
+    }
+    this.addressChoiceCustomer = null;
+  }
+
+  private clearRouteAddress(customerId: number): void {
+    if (this.routeAddressIds[customerId] == null) {
+      return;
+    }
+    const next = { ...this.routeAddressIds };
+    delete next[customerId];
+    this.routeAddressIds = next;
+  }
+
   masterAddressLine(customer: Customer): string {
     const street = [customer.street || customer.address, customer.house_number].filter(Boolean).join(' ').trim();
     const cityLine = `${customer.postal_code || ''} ${customer.city || ''}`.trim();
     return [street, cityLine].filter(Boolean).join(', ');
   }
 
-  private routeStopAddress(customer: Customer): string {
-    const delivery = this.getDefaultDeliveryAddress(customer);
+  routeStopAddress(customer: Customer): string {
+    if (this.routeAddressIds[customer.id] === 0) {
+      return `Stammdaten: ${this.masterAddressLine(customer)}`;
+    }
+    const delivery = this.routeDeliveryAddress(customer);
     if (!delivery) {
       return this.masterAddressLine(customer);
     }
@@ -2077,6 +2393,109 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
 
   removeExtraStop(stopId: number): void {
     this.extraStops = this.extraStops.filter(stop => stop.id !== stopId);
+  }
+
+  isDefaultEndpoint(endpoint: RouteEndpoint): boolean {
+    return endpoint.label === DEFAULT_ROUTE_ENDPOINT.label
+      && endpoint.longitude === DEFAULT_ROUTE_ENDPOINT.longitude
+      && endpoint.latitude === DEFAULT_ROUTE_ENDPOINT.latitude;
+  }
+
+  beginEndpointEdit(which: 'start' | 'end'): void {
+    this.endpointEdit = this.endpointEdit === which ? null : which;
+    this.endpointQuery = '';
+    this.endpointSuggestions = [];
+    this.endpointSearchError = '';
+  }
+
+  resetEndpoint(which: 'start' | 'end'): void {
+    if (which === 'start') {
+      this.routeStart = { ...DEFAULT_ROUTE_ENDPOINT };
+    } else {
+      this.routeEnd = { ...DEFAULT_ROUTE_ENDPOINT };
+    }
+    if (this.endpointEdit === which) {
+      this.endpointEdit = null;
+    }
+  }
+
+  onEndpointQueryInput(): void {
+    this.endpointSearchError = '';
+    if (this.endpointSearchTimer) {
+      clearTimeout(this.endpointSearchTimer);
+    }
+    this.endpointSearchTimer = setTimeout(() => {
+      void this.searchEndpointSuggestions();
+    }, 300);
+  }
+
+  selectEndpointSuggestion(suggestion: AddressSuggestion): void {
+    const next: RouteEndpoint = {
+      label: suggestion.label,
+      longitude: suggestion.longitude,
+      latitude: suggestion.latitude
+    };
+    if (this.endpointEdit === 'start') {
+      this.routeStart = next;
+    } else if (this.endpointEdit === 'end') {
+      this.routeEnd = next;
+    }
+    this.endpointEdit = null;
+    this.endpointQuery = '';
+    this.endpointSuggestions = [];
+    this.endpointSearchError = '';
+  }
+
+  private endpointLngLat(endpoint: RouteEndpoint): [number, number] {
+    return [endpoint.longitude, endpoint.latitude];
+  }
+
+  private escapeHtml(value: string): string {
+    return value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  private async searchEndpointSuggestions(): Promise<void> {
+    const query = this.endpointQuery.trim();
+    const requestId = ++this.endpointSearchSeq;
+    this.endpointSuggestions = [];
+    if (query.length < 3) {
+      this.isSearchingEndpoint = false;
+      return;
+    }
+
+    this.isSearchingEndpoint = true;
+    try {
+      const response = await fetch(this.suggestionSearchUrl(query));
+      if (requestId !== this.endpointSearchSeq) {
+        return;
+      }
+      if (!response.ok) {
+        throw new Error('Adressvorschläge sind gerade nicht erreichbar.');
+      }
+      const data = await response.json();
+      const suggestions = (data.features || [])
+        .map((feature: any) => this.toAddressSuggestion(feature))
+        .filter((suggestion: AddressSuggestion | null): suggestion is AddressSuggestion => suggestion !== null);
+      if (requestId !== this.endpointSearchSeq) {
+        return;
+      }
+      this.endpointSuggestions = suggestions;
+      this.endpointSearchError = suggestions.length === 0
+        ? 'Keine Adresse und kein Geschäft gefunden.'
+        : '';
+    } catch (error) {
+      if (requestId !== this.endpointSearchSeq) {
+        return;
+      }
+      this.endpointSearchError = error instanceof Error ? error.message : 'Adressvorschläge sind gerade nicht erreichbar.';
+    } finally {
+      if (requestId === this.endpointSearchSeq) {
+        this.isSearchingEndpoint = false;
+      }
+    }
   }
 
   private async searchExtraStopSuggestions(): Promise<void> {
