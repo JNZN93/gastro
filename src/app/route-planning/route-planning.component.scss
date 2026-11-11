@@ -2519,3 +2519,112 @@
     color: #b91c1c;
   }
 }
+/* Startpunkt: Depot | Aktueller Standort | Manuell */
+.start-mode {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.start-mode-options {
+  display: flex;
+  flex: 1 1 260px;
+  min-width: 0;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #f8fafc;
+}
+
+.start-mode-option {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0.4rem 0.5rem;
+  border: none;
+  background: transparent;
+  color: #475569;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  & + & {
+    border-left: 2px solid #e2e8f0;
+  }
+
+  &.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+  }
+}
+
+/* Fahrer-Navigation im Route-Ergebnis */
+.driver-nav {
+  display: grid;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 0.85rem;
+  border: 2px solid #c6f6d5;
+  border-radius: 12px;
+  background: #f0fff4;
+
+  .btn {
+    width: 100%;
+    min-height: 52px;
+    white-space: normal;
+    text-align: center;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+}
+
+.driver-nav-target {
+  display: grid;
+  gap: 0.15rem;
+  margin: 0;
+  color: #1e293b;
+}
+
+.driver-nav-kicker {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #2f855a;
+}
+
+.driver-nav-address,
+.driver-nav-note,
+.driver-nav-hint {
+  font-size: 0.85rem;
+  color: #475569;
+}
+
+.driver-nav-hint,
+.driver-nav-note {
+  margin: 0;
+}
+
+.driver-nav-hint {
+  color: #2f855a;
+  font-weight: 600;
+}
+
+.order-list .step-item {
+  .step-nav-link {
+    order: 3;
+    flex: 0 0 auto;
+    margin-left: auto;
+    min-height: 40px;
+    padding: 0.3rem 0.8rem;
+  }
+
+  &.is-next {
+    border-color: #48bb78;
+  }
+
+  &.is-done {
+    opacity: 0.55;
+  }
+}

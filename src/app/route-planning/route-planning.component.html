@@ -372,14 +372,27 @@
         </div>
 
         <div class="route-endpoints">
+          <div class="start-mode" role="radiogroup" aria-label="Startpunkt">
+            <span class="endpoint-kind">Startpunkt</span>
+            <div class="start-mode-options">
+              <button type="button" role="radio" class="start-mode-option" [class.active]="startMode === 'depot'" [attr.aria-checked]="startMode === 'depot'" (click)="setStartMode('depot')">Depot</button>
+              <button type="button" role="radio" class="start-mode-option" [class.active]="startMode === 'gps'" [attr.aria-checked]="startMode === 'gps'" (click)="setStartMode('gps')">Aktueller Standort</button>
+              <button type="button" role="radio" class="start-mode-option" [class.active]="startMode === 'manual'" [attr.aria-checked]="startMode === 'manual'" (click)="setStartMode('manual')">Manuell</button>
+            </div>
+          </div>
           <div class="route-endpoint">
             <span class="endpoint-kind">Start</span>
-            <span class="endpoint-value">{{ routeStart.label }}</span>
-            <button type="button" class="btn btn-secondary endpoint-btn" (click)="beginEndpointEdit('start')">Ändern</button>
-            @if (!isDefaultEndpoint(routeStart)) {
-              <button type="button" class="btn btn-secondary endpoint-btn" (click)="resetEndpoint('start')">Standard</button>
+            <span class="endpoint-value" data-testid="start-label">{{ startLabel }}</span>
+            @if (startMode === 'manual') {
+              <button type="button" class="btn btn-secondary endpoint-btn" (click)="beginEndpointEdit('start')">Ändern</button>
+            }
+            @if (startMode === 'gps' && gpsStatus !== 'locating') {
+              <button type="button" class="btn btn-secondary endpoint-btn" (click)="locateDriver()">Neu orten</button>
             }
           </div>
+          @if (startMode === 'gps' && gpsError) {
+            <p class="address-error gps-error" role="alert">{{ gpsError }}</p>
+          }
           <div class="route-endpoint">
             <span class="endpoint-kind">Ziel</span>
             <span class="endpoint-value">{{ routeEnd.label }}</span>
@@ -525,6 +538,53 @@
           <p class="step-description">Ihre optimale Route wurde berechnet. Hier können Sie das Ergebnis einsehen und exportieren.</p>
         </div>
 
+        <!-- Fahrer-Navigation: nächster Stopp einzeln, Gesamtroute als Übersicht -->
+        <section class="driver-nav" aria-label="Navigation">
+          @if (nextNavTarget; as target) {
+            <p class="driver-nav-target" data-testid="next-target">
+              <span class="driver-nav-kicker">
+                @if (target.position !== null) {
+                  Nächster Stopp {{ target.position }} von {{ optimalOrder.length }}
+                } @else {
+                  Alle Stopps erledigt – zurück zum Ziel
+                }
+              </span>
+              <strong>{{ target.name }}</strong>
+              <span class="driver-nav-address">{{ target.label }}</span>
+            </p>
+            <a
+              class="btn btn-success driver-nav-primary"
+              data-testid="nav-next"
+              [href]="nextNavUrl"
+              target="_blank"
+              rel="noopener"
+              (click)="onNavigationOpened()"
+            >
+              {{ target.position !== null ? 'Navigation zum nächsten Stopp starten' : 'Navigation zum Ziel starten' }}
+            </a>
+            @if (target.position !== null) {
+              <button type="button" class="btn btn-secondary driver-nav-done" data-testid="stop-done" (click)="markStopDone()">
+                Stopp {{ target.position }} erledigt – weiter
+              </button>
+            }
+          } @else {
+            <p class="driver-nav-target" data-testid="next-target"><strong>Tour abgeschlossen.</strong></p>
+          }
+          @if (navOpenedHint) {
+            <p class="driver-nav-hint" role="status">{{ navOpenedHint }}</p>
+          }
+          @for (url of routeOverviewUrls; track url; let i = $index) {
+            <a class="btn btn-secondary driver-nav-overview" data-testid="nav-overview" [href]="url" target="_blank" rel="noopener">
+              Route in Google Maps ansehen@if (routeOverviewUrls.length > 1) { (Teil {{ i + 1 }}) }
+            </a>
+          }
+          @if (overviewMayBeTrimmedInBrowser) {
+            <p class="driver-nav-note">
+              Ohne Google-Maps-App zeigt der Browser höchstens 3 Zwischenstopps. Für die Fahrt die Navigation zum nächsten Stopp nutzen.
+            </p>
+          }
+        </section>
+
         <div class="route-stats">
           <div class="stat-card">
             <div class="stat-icon">
@@ -578,9 +638,17 @@
                 </div>
               </div>
             </div>
-            @for (stop of optimalOrder; track stop.position) {
-              <div class="step-item">
+            @for (stop of optimalOrder; track stop.position; let i = $index) {
+              <div class="step-item" [class.is-done]="isStopDone(stop.position)" [class.is-next]="i === navIndex" data-testid="order-stop">
                 <div class="step-number">{{ stop.position }}</div>
+                <a
+                  class="btn btn-secondary step-nav-link"
+                  [href]="navUrlFor(i)"
+                  target="_blank"
+                  rel="noopener"
+                  [attr.aria-label]="'Navigation zu ' + stop.name"
+                  (click)="onNavigationOpened(i)"
+                >Navi</a>
                 <div class="step-content">
                   <p class="step-instruction">
                     <strong>{{ stop.name }}</strong>
@@ -641,12 +709,6 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"/>
               </svg>
               Link kopieren
-            </button>
-            <button class="btn btn-success" (click)="openInGoogleMaps()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 4m0 13V4m-6 3l6-3"/>
-              </svg>
-              Maps öffnen
             </button>
           </div>
         </div>

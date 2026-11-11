@@ -5,6 +5,13 @@ import { HttpClient, HttpHeaders, HttpClientModule } from '@angular/common/http'
 import { Router } from '@angular/router';
 import * as QRCode from 'qrcode';
 import { environment } from '../../environments/environment';
+import {
+  MapsPlace,
+  MAX_WAYPOINTS_MOBILE_BROWSER,
+  buildNavigateUrl,
+  buildRouteOverviewUrls,
+  parseSharedRouteUrl
+} from './google-maps-url';
 
 // Leaflet TypeScript Deklarationen
 declare var L: any;
@@ -86,6 +93,14 @@ interface RouteEndpoint {
   label: string;
   longitude: number;
   latitude: number;
+}
+
+type StartMode = 'depot' | 'gps' | 'manual';
+
+interface NavTarget extends MapsPlace {
+  name: string;
+  /** Position in der optimalen Reihenfolge, null für das Routenziel. */
+  position: number | null;
 }
 
 const DEFAULT_ROUTE_ENDPOINT: RouteEndpoint = {
@@ -207,6 +222,18 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
   isSearchingEndpoint = false;
   private endpointSearchTimer: ReturnType<typeof setTimeout> | null = null;
   private endpointSearchSeq = 0;
+
+  /** Woher die Route startet. Bei 'gps' wird nie still auf das Depot zurückgefallen. */
+  startMode: StartMode = 'depot';
+  calculatedStartMode: StartMode = 'depot';
+  gpsStatus: 'idle' | 'locating' | 'ready' | 'error' = 'idle';
+  gpsError = '';
+  private manualStart: RouteEndpoint | null = null;
+  private gpsSeq = 0;
+
+  /** Index des nächsten Navigationsziels in navTargets (Stopps in optimaler Reihenfolge, danach das Ziel). */
+  navIndex = 0;
+  navOpenedHint = '';
 
   constructor(
     private http: HttpClient,
@@ -743,7 +770,7 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
       return;
     }
 
-    if (!this.ensureAddressChoices()) {
+    if (!this.ensureAddressChoices() || !this.ensureStartReady()) {
       return;
     }
 
@@ -762,12 +789,15 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
   }
 
   async calculateRouteWithConstraints(): Promise<void> {
-    if (!this.ensureAddressChoices()) {
+    if (!this.ensureAddressChoices() || !this.ensureStartReady()) {
       return;
     }
 
     this.calculatedStart = { ...this.routeStart };
     this.calculatedEnd = { ...this.routeEnd };
+    this.calculatedStartMode = this.startMode;
+    this.navIndex = 0;
+    this.navOpenedHint = '';
     this.isLoading = true;
     this.showRoute = false;
 
@@ -1379,6 +1409,7 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
       const classList = (el as HTMLElement).classList || { contains: () => false } as any;
       return (
         classList.contains('export-section') ||
+        classList.contains('driver-nav') ||
         classList.contains('step-navigation-footer') ||
         classList.contains('map-container') ||
         classList.contains('btn')
@@ -1436,24 +1467,81 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
     });
   }
 
-  generateShareLink(): string {
-    if (!this.routeData || !this.optimalOrder.length) {
-      return '';
+  /** Startpunkt für Google Maps. null = Gerätestandort (GPS-Start), damit Maps nicht in die Vorschau fällt. */
+  private mapsOrigin(): MapsPlace | null {
+    if (this.calculatedStartMode === 'gps') {
+      return null;
     }
+    return { ...this.calculatedStart };
+  }
 
-    // Google Maps URL mit allen Stopps erstellen
-    // Jeder Stopp wird als separater Wegpunkt hinzugefügt
-    const waypoints = this.optimalOrder.map(stop => 
-      encodeURIComponent(stop.address)
-    ).join('/');
+  /** Google-Maps-Links der Gesamtroute in optimierter Reihenfolge (mehrere nur bei mehr als 9 Stopps). */
+  get routeOverviewUrls(): string[] {
+    if (!this.routeData || !this.optimalOrder.length) {
+      return [];
+    }
+    return buildRouteOverviewUrls({
+      origin: this.mapsOrigin(),
+      destination: { ...this.calculatedEnd },
+      stops: this.navTargets.filter(target => target.position !== null)
+    });
+  }
 
-    const startLocation = encodeURIComponent(this.calculatedStart.label);
-    const endLocation = encodeURIComponent(this.calculatedEnd.label);
+  get overviewMayBeTrimmedInBrowser(): boolean {
+    return this.optimalOrder.length > MAX_WAYPOINTS_MOBILE_BROWSER;
+  }
 
-    // Google Maps Share-URL - jeder Stopp als separater Wegpunkt
-    const googleMapsUrl = `https://www.google.com/maps/dir/${startLocation}/${waypoints}/${endLocation}`;
-    
-    return googleMapsUrl;
+  /** Stopps in optimaler Reihenfolge, danach das Routenziel. */
+  get navTargets(): NavTarget[] {
+    const stops: NavTarget[] = this.optimalOrder.map(stop => {
+      const waypoint = this.waypoints.find(wp => wp.customerId === stop.stopId);
+      return {
+        label: stop.address,
+        name: stop.name,
+        position: stop.position,
+        longitude: waypoint?.location[0],
+        latitude: waypoint?.location[1]
+      };
+    });
+    if (stops.length === 0) {
+      return [];
+    }
+    return [...stops, { ...this.calculatedEnd, name: 'Ziel', position: null }];
+  }
+
+  get nextNavTarget(): NavTarget | null {
+    return this.navTargets[this.navIndex] ?? null;
+  }
+
+  get nextNavUrl(): string {
+    const target = this.nextNavTarget;
+    return target ? buildNavigateUrl(target) : '';
+  }
+
+  navUrlFor(index: number): string {
+    const target = this.navTargets[index];
+    return target ? buildNavigateUrl(target) : '';
+  }
+
+  /** Läuft beim Antippen der Navigations-Links; der Link selbst öffnet Google Maps (App, sonst Browser). */
+  onNavigationOpened(index = this.navIndex): void {
+    this.navIndex = index;
+    this.navOpenedHint = 'Google Maps wurde geöffnet. Zeigt Maps nur die Vorschau, dort auf „Starten“ tippen.';
+  }
+
+  markStopDone(): void {
+    if (this.navIndex < this.navTargets.length) {
+      this.navIndex++;
+    }
+    this.navOpenedHint = '';
+  }
+
+  isStopDone(position: number): boolean {
+    return position - 1 < this.navIndex;
+  }
+
+  generateShareLink(): string {
+    return this.routeOverviewUrls[0] ?? '';
   }
 
   async showRouteQr(): Promise<void> {
@@ -1478,44 +1566,21 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
     this.routeQrDataUrl = null;
   }
 
-  private sharedRouteUrl(value: string): string | null {
-    try {
-      const url = new URL(value);
-      const host = url.hostname.replace(/^www\./, '');
-      if (!host.endsWith('google.com') && !host.endsWith('google.de')) {
-        return null;
-      }
-      if (!url.pathname.includes('/maps/dir/')) {
-        return null;
-      }
-      if (url.searchParams.get('destination') || url.searchParams.get('query') || url.searchParams.get('q')) {
-        return null;
-      }
-      const parts = url.pathname.split('/').filter(Boolean);
-      if (parts.length < 4) {
-        return null;
-      }
-      return url.toString();
-    } catch {
-      return null;
-    }
-  }
-
   async copyShareLink(): Promise<void> {
-    const shareUrl = this.generateShareLink();
-    
-    if (!shareUrl) {
+    const urls = this.routeOverviewUrls;
+    if (!urls.length) {
       alert('Keine Route verfügbar zum Teilen.');
       return;
     }
+    const shareText = urls.join('\n');
 
     try {
-      await navigator.clipboard.writeText(shareUrl);
+      await navigator.clipboard.writeText(shareText);
       alert('Google Maps Link wurde in die Zwischenablage kopiert!');
     } catch (err) {
       // Fallback für ältere Browser
       const textArea = document.createElement('textarea');
-      textArea.value = shareUrl;
+      textArea.value = shareText;
       document.body.appendChild(textArea);
       textArea.select();
       document.execCommand('copy');
@@ -1525,23 +1590,116 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
   }
 
   openInGoogleMaps(): void {
-    if (!this.optimalOrder.length) {
+    const url = this.generateShareLink();
+    if (!url) {
       alert('Keine Route verfügbar.');
       return;
     }
+    window.open(url, '_blank', 'noopener');
+  }
 
-    // Google Maps URL mit allen Stopps erstellen
-    // Jeder Stopp wird als separater Wegpunkt hinzugefügt
-    const waypoints = this.optimalOrder.map(stop => 
-      encodeURIComponent(stop.address)
-    ).join('/');
+  setStartMode(mode: StartMode): void {
+    this.gpsError = '';
+    if (mode === 'depot') {
+      this.startMode = 'depot';
+      this.routeStart = { ...DEFAULT_ROUTE_ENDPOINT };
+      if (this.endpointEdit === 'start') {
+        this.endpointEdit = null;
+      }
+      return;
+    }
+    if (mode === 'manual') {
+      this.startMode = 'manual';
+      if (this.manualStart) {
+        this.routeStart = { ...this.manualStart };
+      }
+      if (this.endpointEdit !== 'start') {
+        this.beginEndpointEdit('start');
+      }
+      return;
+    }
+    this.startMode = 'gps';
+    if (this.endpointEdit === 'start') {
+      this.endpointEdit = null;
+    }
+    this.locateDriver();
+  }
 
-    const startLocation = encodeURIComponent(this.calculatedStart.label);
-    const endLocation = encodeURIComponent(this.calculatedEnd.label);
+  locateDriver(): void {
+    const seq = ++this.gpsSeq;
+    this.gpsError = '';
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      this.gpsStatus = 'error';
+      this.gpsError = 'Dieses Gerät kann den Standort nicht abfragen. Bitte Depot oder Manuell wählen.';
+      return;
+    }
+    this.gpsStatus = 'locating';
+    navigator.geolocation.getCurrentPosition(
+      position => {
+        if (seq !== this.gpsSeq || this.startMode !== 'gps') {
+          return;
+        }
+        this.routeStart = {
+          label: 'Aktueller Standort',
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude
+        };
+        this.gpsStatus = 'ready';
+      },
+      error => {
+        if (seq !== this.gpsSeq || this.startMode !== 'gps') {
+          return;
+        }
+        this.gpsStatus = 'error';
+        this.gpsError = this.geolocationErrorMessage(error);
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
+    );
+  }
 
-    const googleMapsUrl = `https://www.google.com/maps/dir/${startLocation}/${waypoints}/${endLocation}`;
-    
-    window.open(googleMapsUrl, '_blank');
+  private geolocationErrorMessage(error: GeolocationPositionError): string {
+    switch (error.code) {
+      case error.PERMISSION_DENIED:
+        return 'Standortzugriff verweigert. Bitte den Standort in den Browser- bzw. App-Einstellungen erlauben oder Depot oder Manuell wählen.';
+      case error.POSITION_UNAVAILABLE:
+        return 'Standort nicht verfügbar. Ist GPS eingeschaltet? Erneut versuchen oder Depot oder Manuell wählen.';
+      case error.TIMEOUT:
+        return 'Die Standortsuche hat zu lange gedauert. Bitte erneut versuchen.';
+      default:
+        return 'Standort konnte nicht ermittelt werden.';
+    }
+  }
+
+  get startLabel(): string {
+    if (this.startMode === 'gps') {
+      if (this.gpsStatus === 'ready') {
+        return `Aktueller Standort (${this.routeStart.latitude.toFixed(4)}, ${this.routeStart.longitude.toFixed(4)})`;
+      }
+      return this.gpsStatus === 'locating' ? 'Standort wird ermittelt…' : 'Kein Standort';
+    }
+    if (this.startMode === 'manual' && !this.manualStart) {
+      return 'Bitte Startadresse suchen';
+    }
+    return this.routeStart.label;
+  }
+
+  /** Verhindert, dass bei fehlendem GPS oder fehlender Startadresse still das Depot genommen wird. */
+  private ensureStartReady(): boolean {
+    if (this.startMode === 'gps' && this.gpsStatus !== 'ready') {
+      if (this.gpsStatus !== 'locating') {
+        this.gpsStatus = 'error';
+        this.gpsError = this.gpsError || 'Kein Standort. Bitte erneut versuchen oder Depot oder Manuell wählen.';
+      }
+      alert(this.gpsStatus === 'locating'
+        ? 'Der Standort wird noch ermittelt. Bitte kurz warten.'
+        : this.gpsError);
+      return false;
+    }
+    if (this.startMode === 'manual' && !this.manualStart) {
+      alert('Bitte zuerst eine Startadresse auswählen.');
+      return false;
+    }
+    return true;
   }
 
   goBack() {
@@ -1580,6 +1738,8 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
 
   resetToFirstStep(): void {
     this.currentStep = 1;
+    this.navIndex = 0;
+    this.navOpenedHint = '';
     this.showRoute = false;
     this.routeData = null;
     this.optimalOrder = [];
@@ -1815,7 +1975,7 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
     this.lastQrAt = now;
     const seq = ++this.qrSeq;
 
-    const sharedRoute = this.sharedRouteUrl(value);
+    const sharedRoute = parseSharedRouteUrl(value);
     if (sharedRoute) {
       window.open(sharedRoute, '_blank');
       this.qrScanStatus = 'success';
@@ -2410,7 +2570,8 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
 
   resetEndpoint(which: 'start' | 'end'): void {
     if (which === 'start') {
-      this.routeStart = { ...DEFAULT_ROUTE_ENDPOINT };
+      this.setStartMode('depot');
+      return;
     } else {
       this.routeEnd = { ...DEFAULT_ROUTE_ENDPOINT };
     }
@@ -2437,6 +2598,10 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
     };
     if (this.endpointEdit === 'start') {
       this.routeStart = next;
+      this.manualStart = { ...next };
+      this.startMode = 'manual';
+      this.gpsSeq++;
+      this.gpsError = '';
     } else if (this.endpointEdit === 'end') {
       this.routeEnd = next;
     }
