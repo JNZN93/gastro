@@ -63,7 +63,7 @@ async function mockBackend(context: BrowserContext, customerIds: number[]): Prom
     return route.fulfill({ json: [] });
   });
 
-  await context.route('https://api.openrouteservice.org/geocode/**', route => {
+  await context.route('https://api.heigit.org/pelias/v1/**', route => {
     const url = new URL(route.request().url());
     if (url.pathname.includes('autocomplete')) {
       return route.fulfill({ json: { features: [MANUAL_START_FEATURE] } });
@@ -76,7 +76,7 @@ async function mockBackend(context: BrowserContext, customerIds: number[]): Prom
     return route.fulfill({ json: { features } });
   });
 
-  await context.route('https://api.openrouteservice.org/optimization/**', route => {
+  await context.route('https://api.heigit.org/vroom/**', route => {
     const body = route.request().postDataJSON();
     captured.optimizationBodies.push(body);
     const vehicle = body.vehicles[0];
@@ -93,7 +93,7 @@ async function mockBackend(context: BrowserContext, customerIds: number[]): Prom
     return route.fulfill({ json: { routes: [{ distance: 142.3, duration: t + 3600, steps, geometry: '' }] } });
   });
 
-  await context.route('https://api.openrouteservice.org/v2/directions/**', route => {
+  await context.route('https://api.heigit.org/openrouteservice/v2/directions/**', route => {
     const coords = (new URL(route.request().url()).searchParams.get('coordinates') || '').split(';');
     return route.fulfill({
       json: {

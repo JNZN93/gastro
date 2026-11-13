@@ -207,8 +207,8 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
   
   // OpenRoute Service API Key
   private readonly OPENROUTE_API_KEY = 'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6ImQ4N2IyM2NjZTA1NTQyNTNiNDZmODhhZmQ1NDE1NDBhIiwiaCI6Im11cm11cjY0In0=';
-  private readonly OPENROUTE_API_URL = 'https://api.openrouteservice.org/v2/directions/driving-car';
-  private readonly OPENROUTE_OPTIMIZATION_URL = 'https://api.openrouteservice.org/optimization/v2/driving-car';
+  private readonly OPENROUTE_API_URL = 'https://api.heigit.org/openrouteservice/v2/directions/driving-car/geojson';
+  private readonly OPENROUTE_OPTIMIZATION_URL = 'https://api.heigit.org/vroom/v0';
   
   // Standard: Im Winkel 6, 67547 Worms. Start und Ziel können davon abweichen.
   routeStart: RouteEndpoint = { ...DEFAULT_ROUTE_ENDPOINT };
@@ -904,7 +904,7 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
       console.log(`Geocoding Versuch ${i + 1} für: ${address}`);
       
       try {
-        const response = await fetch(`https://api.openrouteservice.org/geocode/search?api_key=${this.OPENROUTE_API_KEY}&text=${encodeURIComponent(address)}&size=1`);
+        const response = await fetch(`https://api.heigit.org/pelias/v1/search?api_key=${this.OPENROUTE_API_KEY}&text=${encodeURIComponent(address)}&size=1`);
         
         if (!response.ok) {
           console.error(`Geocoding HTTP error für ${customer.last_name_company || customer.name}: ${response.status}`);
@@ -942,10 +942,22 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
     // Normale Directions API für einen einzelnen Kunden verwenden
     const start = this.endpointLngLat(this.calculatedStart);
     const end = this.endpointLngLat(this.calculatedEnd);
-    const coordinates = `${start[0]},${start[1]};${waypoint.location[0]},${waypoint.location[1]};${end[0]},${end[1]}`;
-    
+
     try {
-      const response = await fetch(`${this.OPENROUTE_API_URL}?api_key=${this.OPENROUTE_API_KEY}&coordinates=${coordinates}&format=geojson&instructions=true&preference=fastest&units=km`);
+      const response = await fetch(this.OPENROUTE_API_URL, {
+        method: 'POST',
+        headers: {
+          Authorization: this.OPENROUTE_API_KEY,
+          'Content-Type': 'application/json',
+          Accept: 'application/geo+json'
+        },
+        body: JSON.stringify({
+          coordinates: [start, waypoint.location, end],
+          instructions: true,
+          preference: 'fastest',
+          units: 'm'
+        })
+      });
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -2111,7 +2123,7 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
   private async geocodeScannedAddress(address: string): Promise<ExtraRouteStop | null> {
     try {
       const response = await fetch(
-        `https://api.openrouteservice.org/geocode/search?api_key=${this.OPENROUTE_API_KEY}&text=${encodeURIComponent(address)}&boundary.country=DE&size=1`
+        `https://api.heigit.org/pelias/v1/search?api_key=${this.OPENROUTE_API_KEY}&text=${encodeURIComponent(address)}&boundary.country=DE&size=1`
       );
       if (!response.ok) {
         return null;
@@ -2706,7 +2718,7 @@ export class RoutePlanningComponent implements OnInit, OnDestroy, AfterViewInit 
   }
 
   private suggestionSearchUrl(query: string): string {
-    return `https://api.openrouteservice.org/geocode/autocomplete?api_key=${this.OPENROUTE_API_KEY}&text=${encodeURIComponent(query)}&boundary.country=DE&layers=venue,address&size=8`;
+    return `https://api.heigit.org/pelias/v1/autocomplete?api_key=${this.OPENROUTE_API_KEY}&text=${encodeURIComponent(query)}&boundary.country=DE&layers=venue,address&size=8`;
   }
 
   private toAddressSuggestion(feature: any): AddressSuggestion | null {

@@ -137,7 +137,7 @@ export class DeliveryFeeService {
   private async geocodeWithOpenRoute(query: string): Promise<{ lat: number; lng: number } | null> {
     try {
       const response = await fetch(
-        `https://api.openrouteservice.org/geocode/search?api_key=${DeliveryFeeService.OPENROUTE_API_KEY}&text=${encodeURIComponent(query)}&size=1&boundary.country=DE`
+        `https://api.heigit.org/pelias/v1/search?api_key=${DeliveryFeeService.OPENROUTE_API_KEY}&text=${encodeURIComponent(query)}&size=1&boundary.country=DE`
       );
 
       if (!response.ok) {
