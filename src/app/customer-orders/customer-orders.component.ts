@@ -2461,6 +2461,9 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
 
     // Save to localStorage
     this.globalService.saveCustomerOrders(this.orderItems);
+
+    // Wie beim Start der Ersetzung: Fokus zurück in die Artikelsuche
+    this.focusSearchInput();
   }
 
   // Helper method to remove PFAND items associated with a specific product
