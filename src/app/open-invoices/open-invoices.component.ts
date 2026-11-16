@@ -98,6 +98,9 @@ export class OpenInvoicesComponent implements OnInit {
   duplicateInvoices: Invoice[] = [];
   pendingInvoiceData: any = null;
 
+  // Confirm creating a new invoice without an attachment
+  showNoAttachmentModal: boolean = false;
+
   // Paid status modal
   showPaidStatusModal: boolean = false;
   pendingPaidInvoice: Invoice | null = null;
@@ -307,6 +310,26 @@ export class OpenInvoicesComponent implements OnInit {
     }
 
     // Amount validation removed - negative values are now allowed
+
+    if (!this.newInvoiceRow.file) {
+      this.showNoAttachmentModal = true;
+      return;
+    }
+
+    this.continueSaveNewInvoice();
+  }
+
+  confirmUploadWithoutAttachment() {
+    this.showNoAttachmentModal = false;
+    this.continueSaveNewInvoice();
+  }
+
+  cancelUploadWithoutAttachment() {
+    this.showNoAttachmentModal = false;
+  }
+
+  private continueSaveNewInvoice() {
+    if (!this.newInvoiceRow) return;
 
     this.isCreatingInvoice = true;
     this.errorMessage = '';

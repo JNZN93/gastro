@@ -779,6 +779,35 @@
     </div>
   </div>
 
+  <div class="modal-overlay" [class.active]="showNoAttachmentModal" (click)="cancelUploadWithoutAttachment()"></div>
+  <div class="duplicate-modal no-attachment-modal" [class.active]="showNoAttachmentModal" role="dialog" aria-modal="true">
+    <div class="modal-header">
+      <h2>
+        <mat-icon>attach_file</mat-icon>
+        Kein Anhang ausgewählt
+      </h2>
+      <button mat-icon-button type="button" class="close-btn" (click)="cancelUploadWithoutAttachment()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+    <div class="modal-content">
+      <p class="warning-text">
+        Für die Rechnung <strong>{{ newInvoiceRow?.invoice_number }}</strong> wurde kein Anhang ausgewählt.
+        Möchten Sie die Rechnung ohne Anhang hochladen?
+      </p>
+      <div class="modal-actions">
+        <button mat-stroked-button type="button" class="cancel-btn" (click)="cancelUploadWithoutAttachment()">
+          <mat-icon>close</mat-icon>
+          Abbrechen
+        </button>
+        <button mat-flat-button type="button" class="confirm-btn" (click)="confirmUploadWithoutAttachment()">
+          <mat-icon>check</mat-icon>
+          Ohne Anhang hochladen
+        </button>
+      </div>
+    </div>
+  </div>
+
   <div class="modal-overlay" [class.active]="showHiDriveWarningModal" (click)="closeHiDriveWarningModal()"></div>
   <div class="duplicate-modal hidrive-warning-modal" [class.active]="showHiDriveWarningModal">
     <div class="modal-header">

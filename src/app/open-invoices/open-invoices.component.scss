@@ -2298,6 +2298,25 @@ mat-icon.spinning {
   }
 }
 
+.no-attachment-modal {
+  max-width: 540px;
+
+  .modal-content .warning-text {
+    margin-bottom: 0;
+  }
+
+  .modal-actions {
+    flex-wrap: nowrap;
+    align-items: center;
+
+    .confirm-btn,
+    .cancel-btn {
+      flex: 0 0 auto;
+      white-space: nowrap;
+    }
+  }
+}
+
 // Mobile responsive for duplicate modal
 @media (max-width: 768px) {
   .duplicate-modal {
