@@ -312,7 +312,7 @@
               <mat-icon>visibility</mat-icon>
               Details
             </button>
-            <button mat-stroked-button type="button" class="print-btn" (click)="printAfterReload(order)" title="Kommissionierungsschein drucken">
+            <button mat-stroked-button type="button" class="print-btn" (click)="printAfterReload(order)" title="Lieferschein drucken">
               <mat-icon>print</mat-icon>
               Drucken
             </button>
@@ -796,7 +796,7 @@
           </div>
 
           <h3>Soll zusätzlich ein Palettenschein gedruckt werden?</h3>
-          <p>Der Palettenschein wird als zusätzliche Seite an den Kommissionierungsschein angehängt und enthält Kundenname, Adresse, Lieferdaten sowie Felder für die Warenübergabe.</p>
+          <p>Der Palettenschein wird als zusätzliche Seite an den Lieferschein angehängt und enthält Kundenname, Adresse, Lieferdaten sowie Felder für die Warenübergabe.</p>
 
           @if (orderToPrint) {
             <div class="palettenschein-preview">
@@ -820,7 +820,7 @@
 
         <div class="palettenschein-modal-footer">
           <button mat-stroked-button type="button" class="btn-secondary" (click)="confirmPrintWithoutPalettenschein()">
-            Nein, nur Kommissionierungsschein
+            Nein, nur Lieferschein
           </button>
           <button mat-flat-button type="button" class="btn-primary" (click)="confirmPrintWithPalettenschein()">
             <mat-icon>print</mat-icon>

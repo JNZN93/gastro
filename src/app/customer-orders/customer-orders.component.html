@@ -1743,7 +1743,7 @@
         </div>
 
         <h3>Soll zusätzlich ein Palettenschein gedruckt werden?</h3>
-        <p>Beim Drucken wird der Auftrag zuerst zwischengespeichert (Status: Offen) und danach in den Bearbeitungsmodus gesetzt. Anschließend wird derselbe Kommissionierungsschein wie in der Bestellübersicht erzeugt (optional mit Palettenschein).</p>
+        <p>Beim Drucken wird der Auftrag zuerst zwischengespeichert (Status: Offen) und danach in den Bearbeitungsmodus gesetzt. Anschließend wird derselbe Lieferschein wie in der Bestellübersicht erzeugt (optional mit Palettenschein).</p>
 
         @if (globalService.selectedCustomerForOrders) {
           <div class="palettenschein-preview">
@@ -1769,7 +1769,7 @@
 
       <div class="palettenschein-modal-footer">
         <button class="btn-secondary" (click)="confirmPrintWithoutPalettenschein()" [disabled]="isPrintingOrder">
-          {{ isPrintingOrder ? 'Speichern…' : 'Nein, nur Kommissionierungsschein' }}
+          {{ isPrintingOrder ? 'Speichern…' : 'Nein, nur Lieferschein' }}
         </button>
         <button class="btn-primary" (click)="confirmPrintWithPalettenschein()" [disabled]="isPrintingOrder">
           <span class="material-icons">print</span>

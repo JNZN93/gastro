@@ -2282,7 +2282,7 @@ export class PickingSessionComponent implements OnInit, AfterViewInit, OnDestroy
       this.showPrintModal = false;
     }
 
-    const sheetLabel = this.isBundle ? 'Kommissionierungsscheine' : 'Kommissionierungsschein';
+    const sheetLabel = this.isBundle ? 'Lieferscheine' : 'Lieferschein';
     const feedbackMessage =
       mode === 'both'
         ? this.isBundle

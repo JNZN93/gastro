@@ -333,7 +333,7 @@ export class AdminComponent implements OnInit, OnDestroy {
     // Titel
     doc.setFontSize(20);
     doc.setFont('helvetica', 'bold');
-    doc.text('Kommissionierungsschein', 14, 20);
+    doc.text('Lieferschein', 14, 20);
 
     // Bestellinformationen
     doc.setFontSize(12);
@@ -410,6 +410,8 @@ export class AdminComponent implements OnInit, OnDestroy {
     // Gesamtbetrag unten
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
+
+    doc.setProperties({ title: 'Lieferschein #' + orderId });
 
     // PDF-Dokument öffnen
     doc.autoPrint();

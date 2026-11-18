@@ -63,11 +63,11 @@ export class KommissionierungPdfService {
     doc.setTextColor(colors.secondary[0], colors.secondary[1], colors.secondary[2]);
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
-    doc.text('Kommissionierungsschein – kein Rechnungsdokument', 15, 12);
+    doc.text('Lieferschein – kein Rechnungsdokument', 15, 12);
     
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
-    doc.text('Dieses Dokument dient ausschließlich der Kommissionierung und ersetzt keine Rechnung.', 15, 16.5);
+    doc.text('Dieses Dokument ist ein Lieferschein und ersetzt keine Rechnung.', 15, 16.5);
 
     // Bestellnummer Badge
     doc.setFillColor(colors.accent[0], colors.accent[1], colors.accent[2]);
@@ -292,11 +292,11 @@ export class KommissionierungPdfService {
         doc.setTextColor(colors.secondary[0], colors.secondary[1], colors.secondary[2]);
         doc.setFontSize(11);
         doc.setFont('helvetica', 'bold');
-        doc.text('Kommissionierungsschein – kein Rechnungsdokument', 15, 12);
+        doc.text('Lieferschein – kein Rechnungsdokument', 15, 12);
         
         doc.setFontSize(8);
         doc.setFont('helvetica', 'normal');
-        doc.text('Dieses Dokument dient ausschließlich der Kommissionierung und ersetzt keine Rechnung.', 15, 16.5);
+        doc.text('Dieses Dokument ist ein Lieferschein und ersetzt keine Rechnung.', 15, 16.5);
         
         // Bestellnummer Badge
         doc.setFillColor(colors.accent[0], colors.accent[1], colors.accent[2]);
@@ -441,6 +441,8 @@ export class KommissionierungPdfService {
 
     // Zurück zur ersten Seite
     doc.setPage(1);
+
+    doc.setProperties({ title: 'Lieferschein #' + order.order_id });
 
     // PDF-Dokument öffnen
     doc.autoPrint();

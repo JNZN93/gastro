@@ -518,7 +518,7 @@ export class OrderOverviewComponent implements OnInit {
     this.orderToPrint = null;
   }
 
-  /** Druckt nur den Kommissionierungsschein (ohne Palettenschein). */
+  /** Druckt nur den Lieferschein (ohne Palettenschein). */
   confirmPrintWithoutPalettenschein(): void {
     if (!this.orderToPrint) return;
     const order = this.orderToPrint;
@@ -527,7 +527,7 @@ export class OrderOverviewComponent implements OnInit {
     this.generatePdf(order, false);
   }
 
-  /** Druckt Kommissionierungsschein + Palettenschein. */
+  /** Druckt Lieferschein + Palettenschein. */
   confirmPrintWithPalettenschein(): void {
     if (!this.orderToPrint) return;
     const order = this.orderToPrint;

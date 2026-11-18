@@ -6721,12 +6721,12 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
     this.showPalettenscheinModal = false;
   }
 
-  /** Druckt nur den Kommissionierungsschein (ohne Palettenschein). */
+  /** Druckt nur den Lieferschein (ohne Palettenschein). */
   confirmPrintWithoutPalettenschein(): void {
     void this.saveThenPrintOrder(false);
   }
 
-  /** Druckt Kommissionierungsschein + Palettenschein. */
+  /** Druckt Lieferschein + Palettenschein. */
   confirmPrintWithPalettenschein(): void {
     void this.saveThenPrintOrder(true);
   }

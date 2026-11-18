@@ -17,7 +17,7 @@
           mat-icon-button
           type="button"
           (click)="openPrintModal()"
-          aria-label="Kommissionierungsschein drucken"
+          aria-label="Lieferschein drucken"
         >
           <mat-icon>print</mat-icon>
         </button>
@@ -563,13 +563,13 @@
     <div class="modal-card print-modal" (click)="$event.stopPropagation()">
       <div class="sheet-handle" aria-hidden="true"></div>
       <h2>PDF drucken?</h2>
-      <p class="modal-sub">Kommissionierungsschein mit aktuellem Pick-Stand.</p>
+      <p class="modal-sub">Lieferschein mit aktuellem Pick-Stand.</p>
       <div class="modal-actions stacked">
         <button mat-flat-button color="primary" type="button" (click)="printSheet('both')">
           Mit Palettenschein
         </button>
         <button mat-stroked-button type="button" (click)="printSheet('kommissionierung')">
-          Nur Kommissionierungsschein
+          Nur Lieferschein
         </button>
         <button mat-stroked-button type="button" (click)="printSheet('palettenschein')">
           Nur Palettenschein
@@ -648,13 +648,13 @@
       <p class="modal-sub">{{ getCompleteDetail() }}</p>
 
       <div class="complete-print-section">
-        <p class="complete-print-label">Kommissionierungsschein drucken</p>
+        <p class="complete-print-label">Lieferschein drucken</p>
         <div class="modal-actions stacked">
           <button mat-stroked-button type="button" (click)="printSheet('both', false)">
             Mit Palettenschein
           </button>
           <button mat-stroked-button type="button" (click)="printSheet('kommissionierung', false)">
-            Nur Kommissionierungsschein
+            Nur Lieferschein
           </button>
           <button mat-stroked-button type="button" (click)="printSheet('palettenschein', false)">
             Nur Palettenschein
