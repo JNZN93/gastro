@@ -1,0 +1,90 @@
+@if (changes().length > 0) {
+  <button type="button" class="trigger" (click)="open()" title="Änderungen bei der Kommissionierung anzeigen">
+    <span class="material-icons trigger-icon">fact_check</span>
+    <span class="trigger-label">{{ changes().length }} {{ changes().length === 1 ? 'Änderung' : 'Änderungen' }} bei der Kommissionierung</span>
+    <span class="trigger-short">{{ changes().length }}</span>
+    <span class="material-icons click-hint">open_in_new</span>
+  </button>
+
+  @if (isOpen()) {
+    <div class="backdrop" (click)="close()">
+      <div class="dialog" role="dialog" aria-label="Änderungen bei der Kommissionierung" (click)="$event.stopPropagation()">
+        <div class="dialog-header">
+          <mat-icon class="header-icon">fact_check</mat-icon>
+          <span class="dialog-title">Änderungen bei der Kommissionierung</span>
+          <button type="button" class="close-btn" (click)="close()" title="Schließen">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+
+        <div class="summary">
+          @for (entry of counts(); track entry.type) {
+            <span class="count-chip" [attr.data-type]="entry.type">{{ entry.count }}× {{ labels[entry.type] }}</span>
+          }
+        </div>
+
+        <div class="dialog-body">
+          <table class="changes-table">
+            <thead>
+              <tr>
+                <th class="col-type">Änderung</th>
+                <th>Bestellt</th>
+                <th class="col-qty">Menge</th>
+                <th>Kommissioniert</th>
+                <th class="col-qty">Menge</th>
+              </tr>
+            </thead>
+            @for (round of rounds(); track round.key) {
+              <tbody>
+                <tr class="round-row">
+                  <td colspan="5">{{ round.pickerName }} · {{ round.createdAt | date: 'dd.MM.yyyy, HH:mm' }} Uhr</td>
+                </tr>
+                @for (change of round.changes; track change.id) {
+                  <tr [attr.data-type]="change.change_type">
+                    <td class="col-type"><span class="change-badge">{{ labels[change.change_type] }}</span></td>
+
+                    <td [class.struck]="change.change_type === 'unavailable' || change.change_type === 'removed'">
+                      @if (change.change_type !== 'added') {
+                        <span class="article-text">{{ change.original_text || '–' }}</span>
+                        @if (change.original_article_number) {
+                          <span class="article-number">{{ change.original_article_number }}</span>
+                        }
+                      } @else {
+                        <span class="empty">–</span>
+                      }
+                    </td>
+                    <td class="col-qty">{{ change.change_type === 'added' ? '–' : formatQuantity(change.original_quantity) }}</td>
+
+                    <td>
+                      @switch (change.change_type) {
+                        @case ('unavailable') { <span class="empty">nicht geliefert</span> }
+                        @case ('removed') { <span class="empty">entfernt</span> }
+                        @case ('deferred') { <span class="empty">wird nachgeliefert</span> }
+                        @case ('quantity_changed') { <span class="article-text">{{ change.new_text || '–' }}</span> }
+                        @default {
+                          <span class="article-text changed">{{ change.new_text || '–' }}</span>
+                          @if (change.change_type !== 'text_changed' && change.new_article_number) {
+                            <span class="article-number">{{ change.new_article_number }}</span>
+                          }
+                        }
+                      }
+                    </td>
+                    <td class="col-qty" [class.changed]="change.change_type === 'quantity_changed'">
+                      @if (change.change_type === 'unavailable' || change.change_type === 'removed') {
+                        0
+                      } @else if (change.change_type === 'deferred') {
+                        –
+                      } @else {
+                        {{ formatQuantity(change.new_quantity) }}
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            }
+          </table>
+        </div>
+      </div>
+    </div>
+  }
+}

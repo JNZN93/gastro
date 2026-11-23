@@ -105,6 +105,9 @@
                     <span class="material-icons click-hint">open_in_new</span>
                   </div>
                 }
+                @if (isEditMode && pickingChanges.length > 0) {
+                  <app-picking-changes-panel [changes]="pickingChanges"></app-picking-changes-panel>
+                }
               </div>
               @if (!isSplitMode) {
               <div class="customer-notes-inline">
@@ -204,6 +207,9 @@
                         <span class="article-text" (click)="startEditArticleName(i)" [title]="item.article_text">{{ item.article_text }}</span>
                       }
                     </div>
+                    @for (hint of pickingChangeHints(item); track $index) {
+                      <span class="picking-change-hint" [attr.data-type]="hint.type">{{ hint.text }}</span>
+                    }
                   </td>
                   <td class="article-number">
                     <div class="article-number-container" 
@@ -658,6 +664,9 @@
           }
         </div>
         <div class="customer-actions">
+          @if (isEditMode && pickingChanges.length > 0) {
+            <app-picking-changes-panel [changes]="pickingChanges"></app-picking-changes-panel>
+          }
           <button mat-stroked-button type="button" (click)="openCustomerModal()" class="change-customer-btn">
             <mat-icon>swap_horiz</mat-icon>
           </button>
@@ -820,6 +829,9 @@
                                  #articleNameInput>
                         } @else {
                           {{ item.article_text }}
+                        }
+                        @for (hint of pickingChangeHints(item); track $index) {
+                          <span class="picking-change-hint" [attr.data-type]="hint.type">{{ hint.text }}</span>
                         }
                       </div>
                       <div class="article-number" (click)="startEditItem(i)">

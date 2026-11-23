@@ -1,0 +1,257 @@
+.trigger {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border: 1px solid #ffd8b0;
+  border-radius: 4px;
+  background-color: #ffe8cc;
+  color: #8a3f00;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: normal;
+  white-space: nowrap;
+  cursor: pointer;
+
+  .click-hint {
+    margin-left: 8px;
+    font-size: 16px;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+  }
+
+  &:hover .click-hint {
+    opacity: 1;
+  }
+}
+
+.trigger-icon {
+  font-size: 12px;
+  color: #e67e00;
+}
+
+.trigger-short {
+  display: none;
+  font-weight: 600;
+}
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.dialog {
+  display: flex;
+  flex-direction: column;
+  width: min(820px, 100%);
+  max-height: min(80vh, 640px);
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  font-size: 13px;
+}
+
+.dialog-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid #eee;
+}
+
+.header-icon {
+  color: #c27c00;
+}
+
+.dialog-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.close-btn {
+  display: inline-flex;
+  margin-left: auto;
+  padding: 2px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #666;
+  cursor: pointer;
+
+  &:hover {
+    background: #f1f1f1;
+  }
+}
+
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 14px;
+}
+
+.count-chip {
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  background: #e6e6e6;
+}
+
+.dialog-body {
+  overflow: auto;
+}
+
+.changes-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding: 6px 10px;
+    background: #fafafa;
+    border-bottom: 1px solid #e5e5e5;
+    color: #666;
+    font-size: 11px;
+    font-weight: 600;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 6px 10px;
+    border-bottom: 1px solid #f1f1f1;
+    vertical-align: top;
+  }
+}
+
+.round-row td {
+  padding: 4px 10px;
+  background: #fffaf0;
+  color: #8a6a2b;
+  font-size: 11px;
+  border-bottom: 1px solid #f5e6c4;
+}
+
+.col-type {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.col-qty {
+  width: 1%;
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+th.col-qty {
+  text-align: right;
+}
+
+.article-text {
+  display: block;
+}
+
+.article-number {
+  display: block;
+  color: #999;
+  font-size: 10px;
+}
+
+.changed {
+  font-weight: 600;
+  color: #1f1f1f;
+}
+
+.empty {
+  color: #999;
+  font-style: italic;
+}
+
+.struck .article-text {
+  text-decoration: line-through;
+  color: #888;
+}
+
+.change-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  background: #e6e6e6;
+  color: #333;
+}
+
+[data-type='replaced'] .change-badge,
+.count-chip[data-type='replaced'] {
+  background: #ffd8b0;
+  color: #8a3f00;
+}
+
+[data-type='unavailable'] .change-badge,
+[data-type='removed'] .change-badge,
+.count-chip[data-type='unavailable'],
+.count-chip[data-type='removed'] {
+  background: #ffd1d1;
+  color: #9b1c1c;
+}
+
+[data-type='quantity_changed'] .change-badge,
+.count-chip[data-type='quantity_changed'] {
+  background: #fff0a8;
+  color: #6b5600;
+}
+
+[data-type='text_changed'] .change-badge,
+.count-chip[data-type='text_changed'] {
+  background: #d9e8ff;
+  color: #1d4b8f;
+}
+
+[data-type='added'] .change-badge,
+.count-chip[data-type='added'] {
+  background: #d4f5dc;
+  color: #1c6b34;
+}
+
+[data-type='deferred'] .change-badge,
+.count-chip[data-type='deferred'] {
+  background: #e8dcff;
+  color: #4b2a8f;
+}
+
+@media (max-width: 600px) {
+  .trigger .trigger-label,
+  .trigger .click-hint {
+    display: none;
+  }
+
+  .trigger {
+    padding: 6px 8px;
+    font-size: 13px;
+  }
+
+  .trigger .trigger-icon {
+    font-size: 16px;
+  }
+
+  .trigger .trigger-short {
+    display: inline;
+  }
+
+  .changes-table th,
+  .changes-table td {
+    padding: 4px 6px;
+  }
+}

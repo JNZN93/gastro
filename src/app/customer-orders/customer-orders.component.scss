@@ -795,6 +795,11 @@
 }
 
 .customer-pricing-info {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+
   .pricing-status {
     display: flex;
     align-items: center;
@@ -7755,6 +7760,43 @@
 .article-price-card.main-article {
   background: #fff8e8;
   border-color: #ffe0b2;
+}
+
+.picking-change-hint {
+  display: inline-block;
+  margin: 1px 4px 0 0;
+  padding: 0 4px;
+  border-radius: 3px;
+  background: #e6e6e6;
+  color: #333;
+  font-size: 9px;
+  font-weight: 400;
+  line-height: 1.4;
+
+  &[data-type='replaced'] {
+    background: #ffd8b0;
+    color: #8a3f00;
+  }
+
+  &[data-type='quantity_changed'] {
+    background: #fff0a8;
+    color: #6b5600;
+  }
+
+  &[data-type='text_changed'] {
+    background: #d9e8ff;
+    color: #1d4b8f;
+  }
+
+  &[data-type='added'] {
+    background: #d4f5dc;
+    color: #1c6b34;
+  }
+
+  &[data-type='deferred'] {
+    background: #e8dcff;
+    color: #4b2a8f;
+  }
 }
 
 

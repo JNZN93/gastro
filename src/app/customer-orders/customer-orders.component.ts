@@ -34,10 +34,16 @@ import {
   needsHaehnkeuleSizeChoice,
   withHaehnkeuleSize,
 } from '../utils/haehnkeule-variant.util';
+import { PickingChangesPanelComponent } from './picking-changes-panel/picking-changes-panel.component';
+import {
+  PickingChangeEntry,
+  PickingChangeHint,
+  pickingChangeHintsForArticle,
+} from './picking-changes-panel/picking-changes.model';
 
 @Component({
   selector: 'app-customer-orders',
-  imports: [CommonModule, FormsModule, RouterModule, UploadLoadingComponent, ZXingScannerModule, MatButtonModule, MatFormFieldModule, MatIconModule, MatInputModule, MatProgressSpinnerModule, MatDialogModule, HttpClientModule],
+  imports: [CommonModule, FormsModule, RouterModule, UploadLoadingComponent, ZXingScannerModule, MatButtonModule, MatFormFieldModule, MatIconModule, MatInputModule, MatProgressSpinnerModule, MatDialogModule, HttpClientModule, PickingChangesPanelComponent],
   templateUrl: './customer-orders.component.html',
   styleUrl: './customer-orders.component.scss',
 })
@@ -159,6 +165,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
   // Edit mode properties for existing orders
   isEditMode: boolean = false;
   editingOrderId: number | null = null;
+  pickingChanges: PickingChangeEntry[] = [];
   originalStatus: string = 'open'; // Ursprünglicher Status vor der Bearbeitung
   
   // Drag & Drop properties
@@ -1247,12 +1254,44 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
           isEditMode: this.isEditMode,
           editingOrderId: this.editingOrderId
         });
+        this.loadPickingChanges(this.isEditMode ? this.editingOrderId : null);
         
       } catch (error) {
         console.error('❌ [EDIT-MODE-DATA] Fehler beim Parsen der Bearbeitungsmodus-Daten:', error);
         localStorage.removeItem('editModeData');
       }
     }
+  }
+
+  /** Nur Admins sehen, was bei der Kommissionierung ersetzt, gestrichen oder geändert wurde. */
+  private loadPickingChanges(orderId: number | null): void {
+    this.pickingChanges = [];
+    const token = localStorage.getItem('token');
+    if (!orderId || !token || this.globalService.getUserRole() !== 'admin') {
+      return;
+    }
+
+    this.http
+      .get<{ changes: PickingChangeEntry[] }>(`${environment.apiUrl}/api/orders/${orderId}/picking-changes`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .subscribe({
+        next: (response) => {
+          if (this.editingOrderId === orderId) {
+            this.pickingChanges = response.changes || [];
+          }
+        },
+        error: (error) => {
+          console.error('❌ [PICKING-CHANGES] Änderungen konnten nicht geladen werden:', error);
+        },
+      });
+  }
+
+  pickingChangeHints(item: { article_number?: string | null }): PickingChangeHint[] {
+    if (!this.isEditMode || this.pickingChanges.length === 0) {
+      return [];
+    }
+    return pickingChangeHintsForArticle(this.pickingChanges, item.article_number);
   }
 
   /**
@@ -1413,6 +1452,7 @@ export class CustomerOrdersComponent implements OnInit, OnDestroy {
       };
       localStorage.setItem('editModeData', JSON.stringify(editModeData));
       console.log('💾 [LOAD-ORDER-DATA] Bearbeitungsmodus-Daten im localStorage gespeichert');
+      this.loadPickingChanges(this.editingOrderId);
     }
     
     // Setze die Datumsfelder, falls vorhanden
