@@ -109,6 +109,7 @@ export class ReportsComponent implements OnInit {
     'hähn950gest.',
     'hähn1000geh.',
     'hähn1000gest.',
+    'hähn1050geh.',
     'hähn1050gest.',
     'hähn1100gest.',
     'hähnkeule',
