@@ -551,7 +551,12 @@
 
           <!-- Order Items -->
           <div class="detail-section">
-            <h3>Bestellte Artikel ({{ selectedOrder.items.length }})</h3>
+            <div class="items-section-header">
+              <h3>Bestellte Artikel ({{ selectedOrder.items.length }})</h3>
+              @if (pickingChanges.length > 0) {
+                <app-picking-changes-panel [changes]="pickingChanges"></app-picking-changes-panel>
+              }
+            </div>
             <div class="items-table-container">
               <table class="items-table">
                 <thead>
@@ -569,7 +574,12 @@
                   @for (item of selectedOrder.items; track item.product_id) {
                     <tr>
                       <td class="quantity">{{ item.quantity }}</td>
-                      <td class="product-name">{{ item.product_name }}</td>
+                      <td class="product-name">
+                        {{ item.product_name }}
+                        @for (hint of pickingChangeHints(item); track $index) {
+                          <span class="picking-change-hint" [attr.data-type]="hint.type">{{ hint.text }}</span>
+                        }
+                      </td>
                       <td class="article-number">{{ item.product_article_number }}</td>
                       <td class="price">
                         @if (item.different_price) {

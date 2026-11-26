@@ -16,6 +16,12 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { PickingChangesPanelComponent } from '../customer-orders/picking-changes-panel/picking-changes-panel.component';
+import {
+  PickingChangeEntry,
+  PickingChangeHint,
+  pickingChangeHintsForArticle,
+} from '../customer-orders/picking-changes-panel/picking-changes.model';
 
 interface OrderItem {
   product_id: number;
@@ -60,13 +66,14 @@ interface OrdersResponse {
 @Component({
   selector: 'app-order-overview',
   standalone: true,
-  imports: [CommonModule, FormsModule, NgTemplateOutlet, MatButtonModule, MatFormFieldModule, MatIconModule, MatInputModule, MatTooltipModule],
+  imports: [CommonModule, FormsModule, NgTemplateOutlet, MatButtonModule, MatFormFieldModule, MatIconModule, MatInputModule, MatTooltipModule, PickingChangesPanelComponent],
   templateUrl: './order-overview.component.html',
   styleUrls: ['./order-overview.component.scss']
 })
 export class OrderOverviewComponent implements OnInit {
   orders: Order[] = [];
   selectedOrder: Order | null = null;
+  pickingChanges: PickingChangeEntry[] = [];
   isLoading = false;
   searchTerm = '';
   dateFrom: string = '';
@@ -480,6 +487,7 @@ export class OrderOverviewComponent implements OnInit {
 
   onOrderClick(order: Order) {
     this.selectedOrder = order;
+    this.loadPickingChanges(order.order_id);
   }
 
   /** Erst aktuelle Bestellung inkl. Items laden, dann Details anzeigen. */
@@ -554,6 +562,39 @@ export class OrderOverviewComponent implements OnInit {
 
   closeOrderDetails() {
     this.selectedOrder = null;
+    this.pickingChanges = [];
+  }
+
+  /** Dieselben Kommissionier-Änderungen wie in der Auftragserstellung, nur für Admins. */
+  private loadPickingChanges(orderId: number): void {
+    this.pickingChanges = [];
+    const token = localStorage.getItem('token');
+    const role = this.userRole || this.globalService.getUserRole?.();
+    if (!token || role !== 'admin') {
+      return;
+    }
+
+    this.http
+      .get<{ changes: PickingChangeEntry[] }>(`${environment.apiUrl}/api/orders/${orderId}/picking-changes`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .subscribe({
+        next: (response) => {
+          if (this.selectedOrder?.order_id === orderId) {
+            this.pickingChanges = response.changes || [];
+          }
+        },
+        error: (error) => {
+          console.error('Kommissionierungsänderungen konnten nicht geladen werden:', error);
+        },
+      });
+  }
+
+  pickingChangeHints(item: { product_article_number?: string | null }): PickingChangeHint[] {
+    if (this.pickingChanges.length === 0) {
+      return [];
+    }
+    return pickingChangeHintsForArticle(this.pickingChanges, item.product_article_number);
   }
 
   generatePdf(order: Order, includePalettenschein: boolean = false) {

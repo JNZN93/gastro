@@ -1,6 +1,6 @@
 /// <reference types="jasmine" />
 import { TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { of, throwError } from 'rxjs';
 import { Router } from '@angular/router';
 import { OrderOverviewComponent } from './order-overview.component';
@@ -62,7 +62,7 @@ describe('OrderOverviewComponent', () => {
         { provide: OrderService, useValue: orderService },
         { provide: Router, useValue: { navigate: jasmine.createSpy('navigate') } },
         { provide: AuthService, useValue: { checkToken: () => of({ user: { role: 'admin' } }) } },
-        { provide: GlobalService, useValue: {} },
+        { provide: GlobalService, useValue: { getUserRole: () => 'admin' } },
         { provide: ArtikelDataService, useValue: { getData: () => of([]) } },
         { provide: KommissionierungPdfService, useValue: {} }
       ]
@@ -221,6 +221,52 @@ describe('OrderOverviewComponent', () => {
       expect(orderService.getOrderWithItems).toHaveBeenCalledWith(12, 'token-1');
       expect(window.alert).toHaveBeenCalled();
       expect(component.orders[0].status).toBe('archived');
+    });
+  });
+
+  describe('picking changes in order details', () => {
+    it('shows commissioning changes when the details modal opens', () => {
+      const http = TestBed.inject(HttpTestingController);
+      const order = {
+        ...openOrder,
+        items: [{
+          product_id: 1,
+          quantity: 2,
+          price: '1.00',
+          different_price: null,
+          product_name: 'Milch',
+          product_article_number: '100'
+        }]
+      };
+      orderService.getOrderWithItems.and.returnValue(of({ order }));
+
+      component.openDetailsAfterReload(component.orders[0]);
+
+      const request = http.expectOne('/api/orders/12/picking-changes');
+      request.flush({
+        changes: [{
+          id: 1,
+          order_id: 12,
+          change_type: 'quantity_changed',
+          original_article_number: '100',
+          original_text: 'Milch',
+          original_quantity: 3,
+          original_price: null,
+          new_article_number: '100',
+          new_text: 'Milch',
+          new_quantity: 2,
+          new_price: null,
+          picker_user_name: 'Anna',
+          created_at: '2026-11-26T08:00:00.000Z'
+        }]
+      });
+
+      expect(component.selectedOrder?.order_id).toBe(12);
+      expect(component.pickingChanges.length).toBe(1);
+      expect(component.pickingChangeHints(order.items[0])[0].text).toContain('Menge geändert');
+
+      component.closeOrderDetails();
+      expect(component.pickingChanges).toEqual([]);
     });
   });
 

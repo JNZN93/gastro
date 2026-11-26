@@ -924,6 +924,23 @@ mat-icon.spinning {
         border-bottom: 2px solid #f1f5f9;
       }
 
+      .items-section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #f1f5f9;
+
+        h3 {
+          margin: 0;
+          padding: 0;
+          border: none;
+        }
+      }
+
       .detail-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -983,6 +1000,44 @@ mat-icon.spinning {
           .product-name {
             font-weight: 500;
             color: #1e293b;
+          }
+
+          .picking-change-hint {
+            display: block;
+            width: fit-content;
+            margin: 4px 0 0;
+            padding: 0 4px;
+            border-radius: 3px;
+            background: #e6e6e6;
+            color: #333;
+            font-size: 11px;
+            font-weight: 400;
+            line-height: 1.4;
+
+            &[data-type='replaced'] {
+              background: #ffd8b0;
+              color: #8a3f00;
+            }
+
+            &[data-type='quantity_changed'] {
+              background: #fff0a8;
+              color: #6b5600;
+            }
+
+            &[data-type='text_changed'] {
+              background: #d9e8ff;
+              color: #1d4b8f;
+            }
+
+            &[data-type='added'] {
+              background: #d4f5dc;
+              color: #1c6b34;
+            }
+
+            &[data-type='deferred'] {
+              background: #e8dcff;
+              color: #4b2a8f;
+            }
           }
 
           .article-number {
